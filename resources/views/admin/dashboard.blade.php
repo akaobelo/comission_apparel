@@ -1,292 +1,326 @@
 @extends('layouts.app')
-
-@section('title', 'Admin Dashboard | The Commission Apparel')
-
+@section('title', 'Admin Portal | The Commission Apparel')
 @section('content')
 <div class="max-w-[1600px] mx-auto px-6 py-8 mt-16">
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
-        <div>
-            <div class="inline-flex items-center gap-2 px-3 py-1 bg-red-500/20 border border-red-500/30 text-red-500 text-xs font-bold uppercase tracking-widest rounded-full mb-3">
-                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                System Administrator
-            </div>
-            <h1 class="text-4xl lg:text-5xl font-black uppercase tracking-tight text-white drop-shadow-sm">System <span class="text-secondary">Control</span></h1>
-            <p class="text-slate-400 text-lg mt-2">Manage the platform, review applications, and oversee global operations.</p>
-        </div>
-
-        <div class="flex gap-4">
-            <form action="{{ route('logout') }}" method="POST">
-                @csrf
-                <button type="submit" class="btn btn-outline py-2 px-4 shadow-none">Secure Logout</button>
-            </form>
-        </div>
-    </div>
-
     @if(session('success'))
-        <div class="mb-8 p-4 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 font-medium flex items-center gap-3">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 font-bold flex items-center gap-3">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             {{ session('success') }}
         </div>
     @endif
-
     @if(session('error'))
-        <div class="mb-8 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 font-medium flex items-center gap-3">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 font-bold flex items-center gap-3">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             {{ session('error') }}
         </div>
     @endif
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <!-- Left Column: Pending Approvals -->
-        <div class="lg:col-span-2 space-y-8">
-            <section class="glass-panel p-0 overflow-hidden border-yellow-500/30 shadow-[0_5px_30px_rgba(234,179,8,0.05)]">
-                <div class="p-6 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
-                    <div>
-                        <h3 class="text-xl font-bold uppercase flex items-center gap-3">
-                            <span class="w-8 h-8 rounded-lg bg-yellow-500/20 text-yellow-500 flex items-center justify-center">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                            </span>
-                            Pending Coach Applications
-                        </h3>
-                    </div>
-                    <span class="px-3 py-1 bg-yellow-500/20 text-yellow-500 rounded-full text-xs font-bold">{{ $pendingCoaches->count() }} Waiting</span>
-                </div>
-                
-                <div class="overflow-x-auto">
-                    @if($pendingCoaches->isEmpty())
-                        <div class="p-8 text-center text-slate-500">
-                            No pending applications right now.
-                        </div>
-                    @else
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">
-                                    <th class="p-4 font-bold">Applicant / Organization</th>
-                                    <th class="p-4 font-bold">Registered</th>
-                                    <th class="p-4 font-bold text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800 text-sm">
-                                @foreach($pendingCoaches as $coach)
-                                <tr class="hover:bg-slate-800/30 transition-colors">
-                                    <td class="p-4">
-                                        <div class="font-bold text-white uppercase">{{ $coach->name }}</div>
-                                        <div class="text-xs text-slate-400">{{ $coach->organization ?? 'Organization Not Provided' }}</div>
-                                        <div class="text-[10px] text-primary font-mono mt-1">{{ $coach->email }}</div>
-                                    </td>
-                                    <td class="p-4 text-slate-400">
-                                        {{ $coach->created_at->diffForHumans() }}
-                                    </td>
-                                    <td class="p-4">
-                                        <div class="flex items-center justify-end gap-2">
-                                            <form action="{{ route('admin.users.approve', $coach) }}" method="POST">
-                                                @csrf
-                                                <button class="px-4 py-2 bg-green-500/10 hover:bg-green-500 hover:text-white border border-green-500/50 text-green-400 rounded text-xs font-bold uppercase transition-colors">Approve</button>
-                                            </form>
-                                            <form action="{{ route('admin.users.decline', $coach) }}" method="POST">
-                                                @csrf
-                                                <button class="px-4 py-2 bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/50 text-red-400 rounded text-xs font-bold uppercase transition-colors" onclick="return confirm('Are you sure you want to decline this application?')">Decline</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    @endif
-                </div>
-            </section>
-
-            <!-- Pending Team Stores -->
-            <section class="glass-panel p-0 overflow-hidden border-orange-500/30">
-                <div class="p-6 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
-                    <h3 class="text-xl font-bold uppercase flex items-center gap-3">
-                        <span class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center">
-                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                        </span>
-                        Pending Team Stores
-                    </h3>
-                    @if(isset($pendingStores) && $pendingStores->count() > 0)
-                        <span class="px-3 py-1 bg-orange-500/20 text-orange-500 rounded-full text-xs font-bold">{{ $pendingStores->count() }} Waiting</span>
-                    @endif
-                </div>
-                
-                <div class="overflow-x-auto">
-                    @if(empty($pendingStores) || $pendingStores->isEmpty())
-                        <div class="p-8 text-center text-slate-500">
-                            No team stores awaiting approval.
-                        </div>
-                    @else
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">
-                                    <th class="p-4 font-bold">Store Request</th>
-                                    <th class="p-4 font-bold">Coach Contact</th>
-                                    <th class="p-4 font-bold text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800 text-sm">
-                                @foreach($pendingStores as $store)
-                                <tr class="hover:bg-slate-800/30 transition-colors">
-                                    <td class="p-4">
-                                        <div class="font-bold text-white uppercase">{{ $store->name }}</div>
-                                        <div class="text-[10px] text-orange-400 font-mono mt-1">Requested: {{ $store->created_at->format('M d, Y') }}</div>
-                                    </td>
-                                    <td class="p-4">
-                                        <div class="text-white">{{ $store->user->name ?? 'Unknown' }}</div>
-                                        <div class="text-[10px] text-slate-500">{{ $store->user->email ?? '' }}</div>
-                                    </td>
-                                    <td class="p-4">
-                                        <div class="flex items-center justify-end gap-2">
-                                            <form action="{{ route('admin.stores.approve', $store) }}" method="POST">
-                                                @csrf
-                                                <button class="px-4 py-2 bg-green-500/10 hover:bg-green-500 hover:text-white border border-green-500/50 text-green-400 rounded text-xs font-bold uppercase transition-colors">Activate</button>
-                                            </form>
-                                            <form action="{{ route('admin.stores.decline', $store) }}" method="POST">
-                                                @csrf
-                                                <button class="px-4 py-2 bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/50 text-red-400 rounded text-xs font-bold uppercase transition-colors" onclick="return confirm('Decline this store?')">Decline</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    @endif
-                </div>
-            </section>
-
-            <!-- Finalized Master Orders -->
-            <section class="glass-panel p-0 overflow-hidden border-secondary/30">
-                <div class="p-6 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
-                    <h3 class="text-xl font-bold uppercase flex items-center gap-3 text-secondary">
-                        <span class="w-8 h-8 rounded-lg bg-secondary/20 flex items-center justify-center">
-                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        </span>
-                        Finalized Master Orders (Production)
-                    </h3>
-                </div>
-                
-                <div class="overflow-x-auto">
-                    @if(empty($finalizedStores) || $finalizedStores->isEmpty())
-                        <div class="p-8 text-center text-slate-500">
-                            No finalized master orders from coaches yet.
-                        </div>
-                    @else
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">
-                                    <th class="p-4 font-bold">Store Context</th>
-                                    <th class="p-4 font-bold">Volume</th>
-                                    <th class="p-4 font-bold text-center">Export</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800 text-sm">
-                                @foreach($finalizedStores as $store)
-                                <tr class="hover:bg-slate-800/30 transition-colors">
-                                    <td class="p-4">
-                                        <div class="font-bold text-white uppercase">{{ $store->name }}</div>
-                                        <div class="text-[10px] text-slate-500">Finalized: {{ $store->updated_at->format('M d, g:i A') }}</div>
-                                    </td>
-                                    <td class="p-4">
-                                        <div class="text-white">{{ $store->parentOrders->count() }} Orders</div>
-                                    </td>
-                                    <td class="p-4 text-center">
-                                        <a href="{{ route('admin.stores.export', $store) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded font-bold uppercase text-[10px] tracking-widest hover:bg-secondary/80 transition-colors">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                            Download CSV
-                                        </a>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    @endif
-                </div>
-            </section>
-
-            <section class="glass-panel p-0 overflow-hidden border-primary/30">
-                <div class="p-6 border-b border-slate-700 bg-slate-800/50">
-                    <h3 class="text-xl font-bold uppercase flex items-center gap-3">
-                        <span class="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center">
-                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </span>
-                        Active Coaches
-                    </h3>
-                </div>
-                
-                <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
-                    @if($approvedCoaches->isEmpty())
-                        <div class="p-8 text-center text-slate-500">
-                            No approved coaches yet.
-                        </div>
-                    @else
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">
-                                    <th class="p-4 font-bold">Coach Name</th>
-                                    <th class="p-4 font-bold">Organization</th>
-                                    <th class="p-4 font-bold text-center">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800 text-sm">
-                                @foreach($approvedCoaches as $coach)
-                                <tr class="hover:bg-slate-800/30 transition-colors">
-                                    <td class="p-4 font-bold text-white">{{ $coach->name }}</td>
-                                    <td class="p-4 text-slate-400">{{ $coach->organization ?? 'N/A' }}</td>
-                                    <td class="p-4 text-center">
-                                        <span class="bg-green-500/10 text-green-400 px-2 py-1 rounded text-[10px] uppercase tracking-widest border border-green-500/20">Active</span>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    @endif
-                </div>
-            </section>
-        </div>
-
-        <!-- Right Column: System Stats -->
-        <aside class="space-y-6">
-            <div class="glass-panel p-6 bg-gradient-to-br from-slate-900 to-slate-800">
-                <h4 class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total System Users</h4>
-                <div class="text-4xl font-black text-white">{{ \App\Models\User::count() }}</div>
+    {{-- Header --}}
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+        <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-red-100 border border-red-200 text-red-700 text-xs font-bold uppercase tracking-widest rounded-full mb-2">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Super Admin
             </div>
+            <h1 class="text-4xl font-black uppercase tracking-tight text-slate-900">Admin <span class="text-primary">Control Center</span></h1>
+        </div>
+        <form action="{{ route('logout') }}" method="POST">
+            @csrf
+            <button type="submit" class="btn btn-outline py-2 px-4 text-xs uppercase tracking-wider">Log Out</button>
+        </form>
+    </div>
 
-            <div class="glass-panel p-6">
-                <h4 class="text-sm font-bold uppercase border-b border-slate-700 pb-2 mb-4">Application History</h4>
-                
-                @if($declinedCoaches->isEmpty())
-                    <p class="text-sm text-slate-500 italic">No declined applications.</p>
-                @else
-                    <ul class="space-y-3">
-                        @foreach($declinedCoaches as $coach)
-                        <li class="flex justify-between items-center p-2 rounded bg-slate-900">
-                            <div>
-                                <p class="text-xs text-white font-bold">{{ $coach->name }}</p>
-                                <p class="text-[10px] text-slate-500 uppercase">{{ $coach->organization }}</p>
+    {{-- Stat Cards --}}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-primary">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Total Coaches</p>
+            <div class="text-3xl font-black text-slate-900">{{ $coaches->total() }}</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-orange-400">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Stores Awaiting Approval</p>
+            <div class="text-3xl font-black text-orange-500">{{ $pendingStores->count() }}</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-green-500">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Active Production Stores</p>
+            <div class="text-3xl font-black text-green-600">{{ $productionStores->count() }}</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-slate-400">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Finalized Orders</p>
+            <div class="text-3xl font-black text-slate-900">{{ $finalizedStores->count() }}</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-8">
+        {{-- LEFT COLUMN --}}
+        <div class="space-y-8">
+
+            {{-- ═══ PENDING STORE APPROVALS ═══ --}}
+            @if($pendingStores->isNotEmpty())
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-200 bg-orange-50 flex items-center justify-between">
+                    <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Pending Store Approvals
+                        <span class="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-500 text-white text-[10px] font-black">{{ $pendingStores->count() }}</span>
+                    </h2>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    @foreach($pendingStores as $store)
+                    <div class="p-5 flex flex-col md:flex-row md:items-center gap-4 justify-between">
+                        <div>
+                            <div class="font-bold text-slate-900 uppercase">{{ $store->name }}</div>
+                            <div class="text-sm text-slate-500 mt-0.5">
+                                Coach: <span class="font-semibold text-slate-700">{{ $store->user->name }}</span> — 
+                                {{ $store->user->organization }} — Package: <span class="font-bold text-primary uppercase text-xs">{{ str_replace('_', ' ', $store->package_type ?? 'N/A') }}</span>
                             </div>
-                            <span class="text-[10px] text-red-500 font-bold uppercase tracking-widest px-2 bg-red-500/10 rounded">Declined</span>
-                        </li>
+                            <div class="text-xs text-slate-400 mt-1">Requested {{ $store->created_at->diffForHumans() }}</div>
+                        </div>
+                        <div class="flex gap-2 flex-shrink-0">
+                            <form action="{{ route('admin.stores.approve', $store) }}" method="POST">
+                                @csrf
+                                <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Approve</button>
+                            </form>
+                            <form action="{{ route('admin.stores.decline', $store) }}" method="POST">
+                                @csrf
+                                <button class="px-4 py-2 bg-white border border-red-300 text-red-600 hover:bg-red-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Decline</button>
+                            </form>
+                            <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Edit</a>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- ═══ COACHES DATABASE ═══ --}}
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-200 bg-slate-50">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Coaches Database</h2>
+                        <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2">
+                            <div class="relative">
+                                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name, email, or org..." class="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none w-72 shadow-sm">
+                            </div>
+                            <button type="submit" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors">Search</button>
+                            @if(request('search'))
+                                <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors">Clear</a>
+                            @endif
+                        </form>
+                    </div>
+                </div>
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                            <th class="px-5 py-3">Coach</th>
+                            <th class="px-5 py-3">Organization</th>
+                            <th class="px-5 py-3">Sport</th>
+                            <th class="px-5 py-3">Status</th>
+                            <th class="px-5 py-3">Store</th>
+                            <th class="px-5 py-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm">
+                        @foreach($coaches as $coach)
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-4">
+                                <div class="font-bold text-slate-900">{{ $coach->name }}</div>
+                                <div class="text-xs text-slate-500">{{ $coach->email }}</div>
+                            </td>
+                            <td class="px-5 py-4 text-slate-700">{{ $coach->organization ?? '—' }}</td>
+                            <td class="px-5 py-4 text-slate-700">{{ $coach->sport ?? '—' }}</td>
+                            <td class="px-5 py-4">
+                                @if($coach->status === 'active')
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">Active</span>
+                                @elseif($coach->status === 'declined')
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-700 border border-red-200">Declined</span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">{{ ucfirst($coach->status) }}</span>
+                                @endif
+                            </td>
+                            <td class="px-5 py-4 text-slate-700">
+                                @if($coach->teamStore)
+                                    <a href="{{ route('admin.store.edit', $coach->teamStore) }}" class="text-primary hover:underline text-xs font-bold uppercase">{{ $coach->teamStore->name }}</a>
+                                @else
+                                    <span class="text-slate-400 text-xs">No Store</span>
+                                @endif
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="flex gap-2">
+                                    <a href="{{ route('admin.coach.edit', $coach) }}" class="px-3 py-1.5 bg-white border border-primary text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-colors">Edit</a>
+                                    <form action="{{ route('admin.coach.delete', $coach) }}" method="POST" onsubmit="return confirm('Remove coach {{ addslashes($coach->name) }} from the system? This cannot be undone.')">
+                                        @csrf @method('DELETE')
+                                        <button class="px-3 py-1.5 bg-white border border-red-300 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 transition-colors">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
                         @endforeach
-                    </ul>
+                        @if($coaches->isEmpty())
+                            <tr><td colspan="6" class="px-5 py-10 text-center text-slate-400 text-sm">No coaches found{{ request('search') ? ' matching "' . request('search') . '"' : '' }}.</td></tr>
+                        @endif
+                    </tbody>
+                </table>
+                @if($coaches->hasPages())
+                    <div class="p-5 border-t border-slate-200">{{ $coaches->links() }}</div>
                 @endif
             </div>
-            
-            <div class="glass-panel bg-primary/5 border-primary/20 p-6 text-center">
-                <div class="w-12 h-12 mx-auto rounded-full bg-primary/20 text-primary flex items-center justify-center mb-4">
-                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
-                </div>
-                <h4 class="text-white font-bold uppercase text-sm mb-2">Server Status</h4>
-                <p class="text-xs text-slate-400 mb-4">Database: Connected. All systems operational.</p>
-                <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                    <div class="bg-green-500 h-1.5 w-full"></div>
-                </div>
-            </div>
-        </aside>
 
+            {{-- ═══ FINALIZED MASTER ORDERS ═══ --}}
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-200 bg-slate-50">
+                    <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Master Orders</h2>
+                    <p class="text-sm text-slate-500 mt-1">Aggregate totals per team store that have reached end of registration.</p>
+                </div>
+                @if($finalizedStores->isEmpty())
+                    <div class="p-12 text-center text-slate-400 text-sm">No finalized orders yet.</div>
+                @else
+                    <div class="divide-y divide-slate-100">
+                        @foreach($finalizedStores as $store)
+                        @php
+                            $totalAthletes = $store->parentOrders->count();
+                            $totalItems = $store->parentOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
+                        @endphp
+                        <div class="p-5">
+                            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                <div>
+                                    <div class="font-black text-slate-900 uppercase text-base">{{ $store->name }}</div>
+                                    <div class="text-sm text-slate-500 mt-0.5">
+                                        Coach: {{ $store->user->name }} — {{ $store->user->organization }}
+                                    </div>
+                                    <div class="mt-3 grid grid-cols-3 gap-4">
+                                        <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+                                            <div class="text-2xl font-black text-primary">{{ $totalAthletes }}</div>
+                                            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Athletes</div>
+                                        </div>
+                                        <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+                                            <div class="text-2xl font-black text-slate-900">{{ $totalItems }}</div>
+                                            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
+                                        </div>
+                                        <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+                                            <div class="text-xs font-bold text-slate-900">{{ $store->order_deadline ? $store->order_deadline->format('M d') : '—' }}</div>
+                                            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Deadline</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-2 flex-shrink-0">
+                                    <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-blue-700 transition-colors text-center">Review / Edit</a>
+                                    <a href="{{ route('admin.stores.export', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Export CSV</a>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- RIGHT COLUMN --}}
+        <div class="space-y-6">
+
+            {{-- ═══ ADD DESIGN TO CATALOG ═══ --}}
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50">
+                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Design Catalog</h2>
+                    <p class="text-xs text-slate-500 mt-1">Add a custom design and assign it to coaches.</p>
+                </div>
+                <div class="p-5">
+                    <form action="{{ route('admin.design.create') }}" method="POST" class="space-y-4">
+                        @csrf
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Design Name</label>
+                            <input type="text" name="name" required placeholder="e.g. Springfield Eagles - Home Jersey" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Item Type</label>
+                                <select name="type" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                    <option value="uniform_top">Uniform Top</option>
+                                    <option value="uniform_bottom">Uniform Bottom</option>
+                                    <option value="warmup_top">Warm-up Top</option>
+                                    <option value="warmup_bottom">Warm-up Bottom</option>
+                                    <option value="arm_sleeve">Arm Sleeve</option>
+                                    <option value="backpack">Backpack</option>
+                                    <option value="accessory">Accessory</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Package Category</label>
+                                <select name="category" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                    <option value="package_a">Package A — Base</option>
+                                    <option value="package_b">Package B — Standard</option>
+                                    <option value="package_c">Package C — Full</option>
+                                    <option value="individual">Individual Item</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Image URL (optional)</label>
+                            <input type="url" name="image_url" placeholder="https://..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                        </div>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                                <input type="checkbox" name="has_name_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                <span class="text-xs font-bold uppercase tracking-wide">Name on Item</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                                <input type="checkbox" name="has_number_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                <span class="text-xs font-bold uppercase tracking-wide">Player Number</span>
+                            </label>
+                        </div>
+                        <button type="submit" class="w-full py-2.5 bg-slate-900 hover:bg-slate-700 text-white text-sm font-bold uppercase tracking-wider rounded-lg transition-colors">
+                            Add to Design Catalog
+                        </button>
+                    </form>
+                </div>
+
+                {{-- Existing catalog items --}}
+                @if($designCatalog->isNotEmpty())
+                <div class="border-t border-slate-200 max-h-80 overflow-y-auto">
+                    @foreach($designCatalog as $design)
+                    <div class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0">
+                        <div>
+                            <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">{{ $design->type_label }} · {{ $design->category_label }}</div>
+                        </div>
+                        <form action="{{ route('admin.design.delete', $design) }}" method="POST" onsubmit="return confirm('Delete this design from the catalog?')">
+                            @csrf @method('DELETE')
+                            <button class="text-red-400 hover:text-red-600 transition-colors p-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+
+            {{-- ═══ ACTIVE STORES IN PRODUCTION ═══ --}}
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50">
+                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Active Team Stores</h2>
+                </div>
+                @if($productionStores->isEmpty())
+                    <div class="p-8 text-center text-slate-400 text-sm">No active stores.</div>
+                @else
+                    <div class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                        @foreach($productionStores as $store)
+                        <div class="p-4 flex items-center justify-between gap-4">
+                            <div>
+                                <div class="font-bold text-sm text-slate-900">{{ $store->name }}</div>
+                                <div class="text-xs text-slate-500">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
+                                @if($store->order_deadline)
+                                    <div class="text-[10px] font-bold text-{{ $store->order_deadline->isPast() ? 'red' : 'slate' }}-500 mt-0.5 uppercase tracking-wide">
+                                        Deadline: {{ $store->order_deadline->format('M d, Y') }}
+                                    </div>
+                                @endif
+                            </div>
+                            <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1.5 bg-white border border-primary text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-colors flex-shrink-0">Edit</a>
+                        </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
     </div>
 </div>
 @endsection

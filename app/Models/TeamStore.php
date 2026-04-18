@@ -9,13 +9,17 @@ class TeamStore extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'description',
         'slug',
         'order_deadline',
         'status',
+        'package_type',
+        'pricing_approved',
     ];
 
     protected $casts = [
         'order_deadline' => 'datetime',
+        'pricing_approved' => 'boolean',
     ];
 
     public function user()

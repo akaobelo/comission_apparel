@@ -72,4 +72,10 @@ class User extends Authenticatable
     {
         return $this->hasOne(TeamStore::class);
     }
+
+    // Designs assigned to this coach by admin
+    public function designCatalog()
+    {
+        return $this->belongsToMany(DesignCatalog::class, 'design_catalog_user', 'user_id', 'design_catalog_id');
+    }
 }

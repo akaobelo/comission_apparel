@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -18,35 +17,29 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'email'    => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials)) {
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
             $user = Auth::user();
 
             if ($user->isAdmin()) {
-                // Ignore any intended coach routes if they are an admin
                 return redirect('/admin/dashboard');
             }
 
             if ($user->isCoach()) {
-                if ($user->status === 'pending') {
-                    Auth::logout();
-                    $request->session()->invalidate();
-                    $request->session()->regenerateToken();
-                    return back()->with('error', 'Your account is pending administrator approval.');
-                }
+                // Only declined coaches are blocked
                 if ($user->status === 'declined') {
                     Auth::logout();
                     $request->session()->invalidate();
                     $request->session()->regenerateToken();
-                    return back()->with('error', 'Your account has been declined.');
+                    return back()->with('error', 'Your account has been declined. Please contact The Commission Apparel for assistance.');
                 }
                 return redirect('/coach/dashboard');
             }
-            
+
             return redirect('/');
         }
 
@@ -63,40 +56,44 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'organization' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:20'],
-            'sport' => ['required', 'string', 'max:100'],
-            'logo' => ['nullable', 'image', 'max:2048'], // 2MB Max
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'min:8', 'confirmed'],
+            'name'                  => ['required', 'string', 'max:255'],
+            'organization'          => ['required', 'string', 'max:255'],
+            'phone'                 => ['required', 'string', 'max:20'],
+            'sport'                 => ['required', 'string', 'max:100'],
+            'logo'                  => ['nullable', 'image', 'max:2048'],
+            'email'                 => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'email_confirmation'    => ['required', 'same:email'],
+            'password'              => ['required', 'min:8', 'confirmed'],
         ]);
 
         $logoPath = null;
         if ($request->hasFile('logo')) {
-            // Using public disk so it's accessible via asset()
             $logoPath = $request->file('logo')->store('organization_logos', 'public');
         }
 
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'name'         => $validated['name'],
+            'email'        => $validated['email'],
+            'password'     => Hash::make($validated['password']),
             'organization' => $validated['organization'],
-            'phone' => $validated['phone'],
-            'sport' => $validated['sport'],
-            'logo_path' => $logoPath,
-            'role' => 'coach',
-            'status' => 'pending', // Starts as pending
+            'phone'        => $validated['phone'],
+            'sport'        => $validated['sport'],
+            'logo_path'    => $logoPath,
+            'role'         => 'coach',
+            'status'       => 'active', // Auto-approved — no admin gate
         ]);
 
+        // Notify admin of new coach registration (for their awareness)
         \Illuminate\Support\Facades\Notification::send(
             \App\Models\User::where('role', 'admin')->get(),
             new \App\Notifications\CoachRegistered($user)
         );
 
-        // We do not log them in automatically because they require an admin approval first
-        return redirect('/login')->with('success', 'Account created successfully! Please wait for administrator approval before logging in.');
+        // Log them in immediately
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect('/coach/dashboard')->with('success', 'Welcome to The Commission Apparel! Your coach account is active.');
     }
 
     public function logout(Request $request)

@@ -17,11 +17,11 @@ class CoachMiddleware
     {
         if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isCoach()) {
             $user = \Illuminate\Support\Facades\Auth::user();
-            if ($user->status === 'approved') {
+            // Coaches are auto-approved on registration; only declined accounts are blocked
+            if ($user->status !== 'declined') {
                 return $next($request);
             }
-            // Pending or Declined coach
-            return redirect('/')->with('error', 'Your account is not approved yet.');
+            return redirect('/login')->with('error', 'Your account has been declined. Please contact The Commission Apparel.');
         }
 
         return redirect('/login')->with('error', 'You do not have access to the coach portal.');

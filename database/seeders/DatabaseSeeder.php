@@ -25,14 +25,16 @@ class DatabaseSeeder extends Seeder
             'organization' => 'The Commission Apparel'
         ]);
 
-        // Create a test pending Coach
+        // Create a test Coach (auto-approved under new system)
         User::create([
-            'name' => 'Coach Smith',
-            'email' => 'coach@example.com',
-            'password' => bcrypt('password123'),
-            'role' => 'coach',
-            'status' => 'pending',
-            'organization' => 'Springfield High'
+            'name'         => 'Coach Smith',
+            'email'        => 'coach@example.com',
+            'password'     => bcrypt('password123'),
+            'role'         => 'coach',
+            'status'       => 'active',
+            'organization' => 'Springfield High',
+            'phone'        => '555-867-5309',
+            'sport'        => 'Basketball',
         ]);
     }
 }
