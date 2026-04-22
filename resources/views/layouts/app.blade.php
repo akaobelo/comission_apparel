@@ -16,47 +16,41 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-base text-slate-900 font-sans antialiased overflow-x-hidden selection:bg-primary selection:text-white">
-    <header class="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200 transition-all duration-300" x-data="{ scrolled: false, mobileMenuOpen: false }" @scroll.window="scrolled = (window.pageYOffset > 20)" :class="{ 'py-2 shadow-sm': scrolled, 'py-4': !scrolled }">
-        <div class="max-w-7xl mx-auto px-6 flex items-center justify-between transition-all duration-300" :class="{ 'h-12': scrolled, 'h-16': !scrolled }">
+    <header class="fixed top-0 w-full z-50 bg-black backdrop-blur-xl border-b border-slate-800 transition-all duration-300" x-data="{ scrolled: false, mobileMenuOpen: false }" @scroll.window="scrolled = (window.pageYOffset > 20)" :class="{ 'py-2 shadow-sm': scrolled, 'py-4': !scrolled }">
+        <div class="max-w-7xl mx-auto px-6 flex items-center justify-between transition-all duration-300" :class="{ 'h-14': scrolled, 'h-20': !scrolled }">
             <!-- Logo -->
             <a href="/" class="flex items-center group z-50 relative">
-                <img src="/commission-logo.svg" alt="The Commission Apparel Logo" class="h-10 w-auto group-hover:opacity-80 transition-opacity">
+                <img src="/images/lr-logo.jpeg" alt="The Commission Apparel Logo" class="h-14 md:h-[4.5rem] w-auto group-hover:opacity-80 transition-opacity">
             </a>
             
             <!-- Desktop Navigation -->
             <nav class="hidden lg:flex items-center gap-8 font-medium text-sm tracking-wide">
-                <a href="/#featured" class="text-slate-600 hover:text-primary transition-colors">Featured Work</a>
-                <a href="/#sports" class="text-slate-600 hover:text-primary transition-colors">Sports</a>
-                <a href="/#design" class="text-slate-600 hover:text-primary transition-colors">Design Studio</a>
-                <div class="h-6 w-px bg-slate-300"></div>
-                <a href="/store/search" class="text-slate-600 hover:text-primary transition-colors flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                    Find Team Store
+                <a href="/#design" class="text-white hover:text-secondary transition-colors">Design Collections</a>
+                <a href="/store/search" class="text-white hover:text-secondary transition-colors">Team Stores</a>
+                <a href="/quote" class="text-white hover:text-secondary transition-colors">Request A Quote</a>
+                <div class="h-6 w-px bg-slate-700"></div>
+                <a href="/coach/dashboard" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-white/5 hover:bg-white/10 transition-all rounded-md shadow-sm">
+                    <span class="relative z-10 flex items-center gap-2">
+                        Dashboard Sign-in
+                    </span>
                 </a>
-                <a href="/coach/dashboard" class="btn btn-outline py-2 px-4 text-xs tracking-wider uppercase backdrop-blur-sm">Coach Portal</a>
-                <a href="/quote" class="btn btn-primary py-2 px-5 text-sm">Request Quote</a>
             </nav>
 
             <!-- Mobile Menu Button -->
-            <button class="lg:hidden z-50 relative p-2 text-slate-600 hover:text-primary focus:outline-none" @click="mobileMenuOpen = !mobileMenuOpen">
+            <button class="lg:hidden z-50 relative p-2 text-white hover:text-primary focus:outline-none" @click="mobileMenuOpen = !mobileMenuOpen">
                 <svg x-show="!mobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                <svg x-show="mobileMenuOpen" x-cloak class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <svg x-show="mobileMenuOpen" x-cloak class="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
 
         <!-- Mobile Navigation Dropdown -->
         <div x-show="mobileMenuOpen" x-transition.opacity.duration.200ms class="lg:hidden fixed inset-0 z-40 bg-white/95 backdrop-blur-3xl pt-28 px-6 pb-6 h-screen overflow-y-auto" style="display: none;" x-cloak>
             <nav class="flex flex-col gap-6 font-medium text-lg tracking-wide uppercase">
-                <a href="/#featured" class="text-slate-600 hover:text-primary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Featured Work</a>
-                <a href="/#sports" class="text-slate-600 hover:text-primary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Sports</a>
-                <a href="/#design" class="text-slate-600 hover:text-primary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Design Studio</a>
-                <a href="/store/search" class="text-slate-600 hover:text-primary transition-colors flex items-center gap-3 border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                    Find Team Store
-                </a>
+                <a href="/#design" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Design Collections</a>
+                <a href="/store/search" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Team Stores</a>
+                <a href="/quote" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Request A Quote</a>
                 <div class="flex flex-col gap-4 mt-4">
-                    <a href="/coach/dashboard" class="btn btn-outline py-4 px-4 text-center text-sm tracking-wider uppercase bg-white" @click="mobileMenuOpen = false">Coach Portal</a>
-                    <a href="/quote" class="btn btn-primary py-4 px-5 text-center text-sm uppercase tracking-wider" @click="mobileMenuOpen = false">Request Quote</a>
+                    <a href="/coach/dashboard" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-4 px-4 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">Dashboard Sign-in</a>
                 </div>
             </nav>
         </div>
@@ -70,8 +64,8 @@
         <div class="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
         <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
             <div class="col-span-1 md:col-span-2">
-                <div class="mb-6">
-                    <img src="/commission-logo.svg" alt="The Commission Apparel Logo" class="h-14 w-auto text-white">
+                <div class="mb-6 mix-blend-screen">
+                    <img src="/images/lr-logo.jpeg" alt="The Commission Apparel Logo" class="h-14 w-auto mix-blend-screen">
                 </div>
                 <p class="text-slate-400 max-w-sm mb-6">Elite Custom Uniforms for Teams Worldwide. We build powerful visual identities for programs that expect to win.</p>
                 <div class="flex gap-4">

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\TeamStore;
 use App\Models\ParentOrder;
 use App\Models\DesignCatalog;
+use App\Models\LandingCollection;
 use Illuminate\Support\Str;
 
 class AdminController extends Controller
@@ -50,9 +51,12 @@ class AdminController extends Controller
             ->latest()
             ->get();
 
+        // Landing Collections
+        $landingCollections = LandingCollection::orderBy('sort_order', 'asc')->get();
+
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStores',
-            'designCatalog', 'productionStores'
+            'designCatalog', 'productionStores', 'landingCollections'
         ));
     }
 
@@ -294,5 +298,41 @@ class AdminController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    // ─── LANDING COLLECTIONS ──────────────────────────────────────────────────────
+
+    public function createCollection(Request $request)
+    {
+        $validated = $request->validate([
+            'tab_name'    => ['required', 'string', 'max:255'],
+            'title'       => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'sort_order'  => ['required', 'integer'],
+            'image'       => ['required', 'image', 'max:2048'],
+        ]);
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('collections', 'public');
+            $imagePath = '/storage/' . $path;
+        }
+
+        LandingCollection::create([
+            'tab_name'    => $validated['tab_name'],
+            'title'       => $validated['title'],
+            'description' => $validated['description'],
+            'sort_order'  => $validated['sort_order'],
+            'image_path'  => $imagePath,
+            'is_active'   => true,
+        ]);
+
+        return redirect()->route('admin.dashboard')->with('success', 'Landing collection added successfully.');
+    }
+
+    public function deleteCollection(LandingCollection $collection)
+    {
+        $collection->delete();
+        return redirect()->route('admin.dashboard')->with('success', 'Landing collection removed.');
     }
 }

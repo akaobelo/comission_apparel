@@ -9,7 +9,12 @@ use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\CoachMiddleware;
 
 // ─── Public UI ──────────────────────────────────────────────────────────────
-Route::get('/', function () { return view('welcome'); });
+Route::get('/', function () { 
+    $landingCollections = \App\Models\LandingCollection::where('is_active', true)
+        ->orderBy('sort_order', 'asc')
+        ->get();
+    return view('welcome', compact('landingCollections')); 
+});
 Route::get('/quote', function () { return view('quote'); });
 Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
 
@@ -76,4 +81,8 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     // Order editing
     Route::get('/admin/order/{order}/edit', [AdminController::class, 'editOrder'])->name('admin.order.edit');
     Route::post('/admin/order/{order}/update', [AdminController::class, 'updateOrder'])->name('admin.order.update');
+
+    // Landing Page Collections
+    Route::post('/admin/landing-collections', [AdminController::class, 'createCollection'])->name('admin.landing.create');
+    Route::delete('/admin/landing-collections/{collection}', [AdminController::class, 'deleteCollection'])->name('admin.landing.delete');
 });
