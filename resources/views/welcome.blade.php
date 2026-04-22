@@ -237,7 +237,7 @@
                 
                 <div class="mt-12 flex items-center gap-6 pt-6">
                     <a href="/coach/dashboard" class="btn btn-primary px-6 py-3 font-bold rounded shadow-md">Enter Coach Portal</a>
-                    <a href="#" class="font-bold text-xs uppercase tracking-wide text-secondary hover:text-[#a11825] transition-colors">FOR SALES AGENTS &rarr;</a>
+                    <a href="/sales-agents" class="font-bold text-xs uppercase tracking-wide text-secondary hover:text-[#a11825] transition-colors">FOR SALES AGENTS &rarr;</a>
                 </div>
             </div>
         </div>
