@@ -60,7 +60,7 @@ class AuthController extends Controller
             'organization'          => ['required', 'string', 'max:255'],
             'phone'                 => ['required', 'string', 'max:20'],
             'sport'                 => ['required', 'string', 'max:100'],
-            'logo'                  => ['nullable', 'image', 'max:2048'],
+            'logo'                  => ['nullable', 'image', 'max:10240'], // Increased to 10MB
             'email'                 => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'email_confirmation'    => ['required', 'same:email'],
             'password'              => ['required', 'min:8', 'confirmed'],

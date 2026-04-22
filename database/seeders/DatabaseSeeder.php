@@ -36,5 +36,9 @@ class DatabaseSeeder extends Seeder
             'phone'        => '555-867-5309',
             'sport'        => 'Basketball',
         ]);
+
+        $this->call([
+            LandingCollectionSeeder::class,
+        ]);
     }
 }

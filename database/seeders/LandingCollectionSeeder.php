@@ -33,7 +33,7 @@ class LandingCollectionSeeder extends Seeder
                 'tab_name' => 'Basketball',
                 'title' => 'Springfield Secondary School',
                 'description' => 'Engineered for the court with moisture-wicking tech and unlimited mobility.',
-                'image_path' => '/images/soccer-model.png',
+                'image_path' => '/images/basketball.png',
                 'sort_order' => 3,
                 'is_active' => true,
             ]

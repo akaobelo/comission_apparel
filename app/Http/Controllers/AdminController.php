@@ -309,7 +309,7 @@ class AdminController extends Controller
             'title'       => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'sort_order'  => ['required', 'integer'],
-            'image'       => ['required', 'image', 'max:2048'],
+            'image'       => ['required', 'image', 'max:10240'], // Increased to 10MB
         ]);
 
         $imagePath = null;
