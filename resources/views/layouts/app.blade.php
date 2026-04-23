@@ -20,7 +20,7 @@
         <div class="max-w-7xl mx-auto px-6 flex items-center justify-between transition-all duration-300" :class="{ 'h-14': scrolled, 'h-20': !scrolled }">
             <!-- Logo -->
             <a href="/" class="flex items-center group z-50 relative">
-                <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-12 md:h-[1.8rem] w-auto group-hover:opacity-80 transition-opacity">
+                <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-14 md:h-[2.6rem] w-auto group-hover:opacity-80 transition-opacity">
             </a>
             
             <!-- Desktop Navigation -->
