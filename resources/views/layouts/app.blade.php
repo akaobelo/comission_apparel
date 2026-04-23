@@ -20,7 +20,7 @@
         <div class="max-w-7xl mx-auto px-6 flex items-center justify-between transition-all duration-300" :class="{ 'h-14': scrolled, 'h-20': !scrolled }">
             <!-- Logo -->
             <a href="/" class="flex items-center group z-50 relative">
-                <img src="/images/lr-logo.jpeg" alt="The Commission Apparel Logo" class="h-14 md:h-[4.5rem] w-auto group-hover:opacity-80 transition-opacity">
+                <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-12 md:h-[1.8rem] w-auto group-hover:opacity-80 transition-opacity">
             </a>
             
             <!-- Desktop Navigation -->
@@ -65,7 +65,7 @@
         <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
             <div class="col-span-1 md:col-span-2">
                 <div class="mb-6 mix-blend-screen">
-                    <img src="/images/lr-logo.jpeg" alt="The Commission Apparel Logo" class="h-14 w-auto mix-blend-screen">
+                    <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-14 w-auto mix-blend-screen">
                 </div>
                 <p class="text-slate-400 max-w-sm mb-6">Elite Custom Uniforms for Teams Worldwide. We build powerful visual identities for programs that expect to win.</p>
                 <div class="flex gap-4">

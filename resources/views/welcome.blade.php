@@ -7,9 +7,9 @@
     <!-- Subtle Background Dot Pattern -->
     <div class="absolute inset-0 z-0 opacity-40" style="background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 32px 32px;"></div>
 
-    <div class="relative z-10 max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-2 gap-12 items-center py-12">
-        <div class="max-w-2xl animate-slide-up">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-slate-100 border-l-2 border-slate-400 text-slate-700 text-xs tracking-widest font-bold mb-6 uppercase">
+    <div class="relative z-10 max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-2 gap-12 items-stretch py-12">
+        <div class="max-w-2xl animate-slide-up flex flex-col justify-center">
+            <div class="inline-flex items-center px-4 py-1.5 rounded bg-slate-100 border-l-[3px] border-slate-400 text-slate-700 text-[11px] tracking-widest font-bold mb-6 uppercase">
                 THE COMMISSION APPAREL
             </div>
             
@@ -43,7 +43,7 @@
             </div>
         </div>
 
-        <div class="relative h-[700px] flex items-center justify-center animate-fade-in hidden md:flex">
+        <div class="relative flex items-center justify-center animate-fade-in hidden md:flex h-full w-full min-h-[450px]">
              <!-- Background geometric elements to match mockup flair -->
              <div class="absolute top-1/4 right-0 w-32 h-2 bg-secondary transform -rotate-12 rounded-full opacity-80 z-0"></div>
              <div class="absolute bottom-1/3 left-10 w-24 h-2 bg-secondary transform rotate-6 rounded-full opacity-80 z-0"></div>
@@ -51,7 +51,7 @@
              <div class="absolute bottom-1/4 right-10 w-3 h-3 bg-secondary transform rotate-12 z-0"></div>
 
              <!-- Clean bright background image -->
-             <img src="/images/hero-models.png" alt="Elite Custom Uniform Models" class="relative z-10 w-full h-[650px] object-contain drop-shadow-2xl">
+             <img src="/images/hero-models.png" alt="Elite Custom Uniform Models" class="relative z-10 w-full h-full max-h-[600px] object-contain drop-shadow-2xl">
              
              <!-- Floating Badge -->
              <div class="absolute top-12 left-0 z-20 bg-white p-3 rounded-xl shadow-xl flex items-center gap-3 animate-bounce border border-slate-100">
@@ -132,7 +132,7 @@
 
     <div class="max-w-7xl mx-auto px-6 relative z-10">
         <div class="text-center mb-16">
-            <h2 class="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-4 text-white" style="text-shadow: 0 4px 10px rgba(0,0,0,0.5);">Team<span class="text-secondary drop-shadow-md">Store</span></h2>
+            <h2 class="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-4 text-white" style="text-shadow: 0 4px 10px rgba(0,0,0,0.5);">Team <span class="text-secondary drop-shadow-md ml-3">Store</span></h2>
             <p class="text-slate-200 max-w-2xl mx-auto text-lg font-medium font-black text-white  drop-shadow-sm">Empower your program with a custom online store that eliminates hassle and generates revenue.</p>
         </div>
 
@@ -236,8 +236,8 @@
                 </div>
                 
                 <div class="mt-12 flex items-center gap-6 pt-6">
-                    <a href="/coach/dashboard" class="btn btn-primary px-6 py-3 font-bold rounded shadow-md">Enter Coach Portal</a>
-                    <a href="/sales-agents" class="font-bold text-xs uppercase tracking-wide text-secondary hover:text-[#a11825] transition-colors">FOR SALES AGENTS &rarr;</a>
+                    <a href="/coach/dashboard" class="btn btn-primary px-6 py-3 font-bold rounded shadow-md">Dashboard Sign-in</a>
+                    <a href="/sales-agents" class="font-bold text-xs uppercase tracking-wide text-secondary hover:text-[#a11825] transition-colors">EMPLOYEE SIGN-IN &rarr;</a>
                 </div>
             </div>
         </div>
