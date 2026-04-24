@@ -8,7 +8,7 @@
     <div class="absolute inset-0 z-0 opacity-40" style="background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 32px 32px;"></div>
 
     <div class="relative z-10 max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-2 gap-12 items-stretch py-12">
-        <div class="max-w-2xl animate-slide-up flex flex-col justify-center">
+        <div class="max-w-2xl animate-slide-up flex flex-col justify-center order-2 lg:order-1">
             <div class="inline-flex items-center px-4 py-1.5 rounded bg-slate-100 border-l-[3px] border-slate-400 text-slate-700 text-[11px] tracking-widest font-bold mb-6 uppercase">
                 THE COMMISSION APPAREL
             </div>
@@ -43,7 +43,7 @@
             </div>
         </div>
 
-        <div class="relative flex items-center justify-center animate-fade-in hidden md:flex h-full w-full min-h-[450px]">
+        <div class="relative flex items-center justify-center animate-fade-in h-full w-full min-h-[450px] order-1 lg:order-2">
              <!-- Background geometric elements to match mockup flair -->
              <div class="absolute top-1/4 right-0 w-32 h-2 bg-secondary transform -rotate-12 rounded-full opacity-80 z-0"></div>
              <div class="absolute bottom-1/3 left-10 w-24 h-2 bg-secondary transform rotate-6 rounded-full opacity-80 z-0"></div>
