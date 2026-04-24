@@ -236,7 +236,10 @@
                 </div>
                 
                 <div class="mt-12 flex items-center gap-6 pt-6">
-                    <a href="/coach/dashboard" class="btn btn-primary px-6 py-3 font-bold rounded shadow-md">Dashboard Sign-in</a>
+                    <a href="/coach/dashboard" class="btn btn-primary px-6 py-3 font-bold rounded shadow-md flex items-center justify-center gap-2">
+                        <img src="/images/LR.png" alt="LR Logo" class="h-5 w-auto object-contain">
+                        Dashboard Sign-in
+                    </a>
                     <a href="/sales-agents" class="font-bold text-xs uppercase tracking-wide text-secondary hover:text-[#a11825] transition-colors">EMPLOYEE SIGN-IN &rarr;</a>
                 </div>
             </div>

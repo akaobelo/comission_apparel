@@ -16,8 +16,8 @@
     <div class="relative z-10 w-full max-w-lg px-8">
         <div class="glass-panel p-6 shadow-xl border border-slate-200 bg-white/90 backdrop-blur-xl animate-slide-up">
             <div class="text-center mb-8">
-                <div class="w-16 h-16 mx-auto rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-[0_0_20px_rgba(26,86,204,0.3)] mb-4">
-                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <div class="w-16 h-16 mx-auto rounded-xl bg-secondary flex items-center justify-center shadow-md mb-4">
+                    <img src="/images/LR.png" alt="LR Logo" class="w-12 h-12 object-contain">
                 </div>
                 <h1 class="text-2xl font-black uppercase tracking-tight text-slate-900">System Portal</h1>
                 <p class="text-slate-500 text-sm mt-1">Sign in to your account</p>

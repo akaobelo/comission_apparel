@@ -31,6 +31,7 @@
                 <div class="h-6 w-px bg-slate-700"></div>
                 <a href="/coach/dashboard" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-white/5 hover:bg-white/10 transition-all rounded-md shadow-sm">
                     <span class="relative z-10 flex items-center gap-2">
+                        <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain">
                         Dashboard Sign-in
                     </span>
                 </a>
@@ -50,7 +51,10 @@
                 <a href="/store/search" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Team Stores</a>
                 <a href="/quote" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Request A Quote</a>
                 <div class="flex flex-col gap-4 mt-4">
-                    <a href="/coach/dashboard" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-4 px-4 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">Dashboard Sign-in</a>
+                    <a href="/coach/dashboard" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-4 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">
+                        <img src="/images/LR.png" alt="LR Logo" class="h-5 w-auto object-contain">
+                        Dashboard Sign-in
+                    </a>
                 </div>
             </nav>
         </div>
