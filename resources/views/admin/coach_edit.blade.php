@@ -88,7 +88,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <button type="submit" class="px-4 py-2.5 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0">Assign</button>
+                        <button type="submit" class="px-4 py-2.5 bg-secondary text-white text-sm font-bold rounded-lg hover:bg-[#a11825] transition-colors flex-shrink-0">Assign</button>
                     </form>
                     @endif
 

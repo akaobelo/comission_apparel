@@ -135,7 +135,7 @@
                                 <td class="px-5 py-3 text-slate-600">{{ is_array($order->items_json) ? count($order->items_json) : 0 }} item(s)</td>
                                 <td class="px-5 py-3 text-slate-500 text-xs">{{ $order->created_at->format('M d, Y') }}</td>
                                 <td class="px-5 py-3">
-                                    <a href="{{ route('admin.order.edit', $order) }}" class="px-3 py-1.5 bg-white border border-primary text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-colors">Edit</a>
+                                    <a href="{{ route('admin.order.edit', $order) }}" class="px-3 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
                                 </td>
                             </tr>
                             @endforeach

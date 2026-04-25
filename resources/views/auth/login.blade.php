@@ -51,7 +51,7 @@
                 <div>
                     <div class="flex justify-between items-center mb-2">
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Password</label>
-                        <a href="#" class="text-xs text-primary hover:text-blue-800 transition-colors font-bold">Forgot?</a>
+                        <a href="#" class="text-xs text-secondary hover:text-[#a11825] transition-colors font-bold">Forgot?</a>
                     </div>
                     <div class="relative">
                         <input :type="showPass ? 'text' : 'password'" name="password" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 pr-12 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-400 shadow-sm">
@@ -67,13 +67,13 @@
                     <label for="remember" class="ml-2 text-sm text-slate-600">Remember me for 30 days</label>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-full py-3 mt-2 text-sm uppercase tracking-widest font-bold shadow-[0_4px_20px_rgba(56,189,248,0.2)]">
+                <button type="submit" class="btn btn-primary w-full py-3 mt-2 text-sm uppercase tracking-widest font-bold shadow-[0_4px_20px_rgba(192,30,46,0.3)]">
                     Sign In
                 </button>
             </form>
 
             <div class="mt-8 text-center border-t border-slate-200 pt-6">
-                <p class="text-slate-600 text-sm">Don't have a coach account? <br> <a href="{{ route('register') }}" class="text-primary hover:text-blue-800 transition-colors font-bold mt-1 inline-block">Apply for Access</a></p>
+                <p class="text-slate-600 text-sm">Don't have a coach account? <br> <a href="{{ route('register') }}" class="text-secondary hover:text-[#a11825] transition-colors font-bold mt-1 inline-block">Apply for Access</a></p>
             </div>
         </div>
     </div>

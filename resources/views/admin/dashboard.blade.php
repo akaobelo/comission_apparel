@@ -121,7 +121,7 @@
                                         </div>
                                     @endif
                                 </div>
-                                <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1.5 bg-white border border-primary text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-colors flex-shrink-0">Edit</a>
+                                <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors flex-shrink-0">Edit</a>
                             </div>
                             @endforeach
                         </div>
@@ -166,7 +166,7 @@
                                         </div>
                                     </div>
                                     <div class="flex flex-col gap-2 flex-shrink-0">
-                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-blue-700 transition-colors text-center">Review / Edit</a>
+                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review / Edit</a>
                                         <a href="{{ route('admin.stores.export', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Export CSV</a>
                                     </div>
                                 </div>
@@ -190,7 +190,7 @@
                                 <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name, email, or org..." class="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none w-72 shadow-sm">
                             </div>
-                            <button type="submit" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors">Search</button>
+                            <button type="submit" class="px-4 py-2 bg-secondary text-white text-sm font-bold rounded-lg hover:bg-[#a11825] transition-colors">Search</button>
                             @if(request('search'))
                                 <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors">Clear</a>
                             @endif
@@ -235,7 +235,7 @@
                             </td>
                             <td class="px-5 py-4">
                                 <div class="flex gap-2">
-                                    <a href="{{ route('admin.coach.edit', $coach) }}" class="px-3 py-1.5 bg-white border border-primary text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-colors">Edit</a>
+                                    <a href="{{ route('admin.coach.edit', $coach) }}" class="px-3 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
                                     <form action="{{ route('admin.coach.delete', $coach) }}" method="POST" onsubmit="return confirm('Remove coach {{ addslashes($coach->name) }} from the system? This cannot be undone.')">
                                         @csrf @method('DELETE')
                                         <button class="px-3 py-1.5 bg-white border border-red-300 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 transition-colors">Delete</button>
@@ -288,14 +288,14 @@
                         <div class="grid grid-cols-2 gap-3 items-end">
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Image Upload (4:3 fit)</label>
-                                <input type="file" name="image" required accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-white hover:file:bg-blue-700">
+                                <input type="file" name="image" required accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-secondary file:text-white hover:file:bg-[#a11825]">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Sort Order</label>
                                 <input type="number" name="sort_order" required value="0" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary shadow-sm">
                             </div>
                         </div>
-                        <button type="submit" class="w-full py-2.5 bg-primary hover:bg-blue-700 text-white text-sm font-bold uppercase tracking-wider rounded-lg transition-colors">
+                        <button type="submit" class="w-full py-2.5 bg-secondary hover:bg-[#a11825] text-white text-sm font-bold uppercase tracking-wider rounded-lg transition-colors">
                             Add Collection
                         </button>
                     </form>
@@ -387,7 +387,7 @@
                                 <span class="text-xs font-bold uppercase tracking-wide">Player Number</span>
                             </label>
                         </div>
-                        <button type="submit" class="w-full py-2.5 bg-slate-900 hover:bg-slate-700 text-white text-sm font-bold uppercase tracking-wider rounded-lg transition-colors">
+                        <button type="submit" class="w-full py-2.5 bg-secondary hover:bg-[#a11825] text-white text-sm font-bold uppercase tracking-wider rounded-lg transition-colors">
                             Add to Design Catalog
                         </button>
                     </form>
@@ -411,7 +411,7 @@
                                         <option value="{{ $store->id }}">{{ $store->name }} ({{ $store->user->name }})</option>
                                     @endforeach
                                 </select>
-                                <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-primary hover:bg-blue-700 text-white rounded transition-colors" title="Push Design to Store">Push</button>
+                                <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors" title="Push Design to Store">Push</button>
                             </form>
                             <form action="{{ route('admin.design.delete', $design) }}" method="POST" onsubmit="return confirm('Delete this design from the catalog?')">
                                 @csrf @method('DELETE')

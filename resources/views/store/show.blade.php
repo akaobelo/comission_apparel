@@ -140,16 +140,15 @@
                             $typeLabel = $item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $types));
                         @endphp
 
-                        <!-- Item Card -->
                         <div class="bg-white border rounded-2xl overflow-hidden shadow-sm flex flex-col group relative transition-all duration-300"
-                             :class="items['{{ $item->id }}'].selected ? 'border-primary ring-2 ring-primary/20 shadow-md' : 'border-slate-200 hover:border-primary/50 hover:shadow-lg'">
+                             :class="items['{{ $item->id }}'].selected ? 'border-secondary ring-2 ring-secondary/20 shadow-md' : 'border-slate-200 hover:border-secondary/50 hover:shadow-lg'">
                             
                             <!-- Hidden Select -->
                             <input type="checkbox" name="items[{{ $item->id }}][selected]" value="1" x-model="items['{{ $item->id }}'].selected" class="hidden">
                             <input type="hidden" name="items[{{ $item->id }}][name]" value="{{ $item->name }}">
 
                             <!-- Selected Badge -->
-                            <div x-show="items['{{ $item->id }}'].selected" x-transition class="absolute top-4 right-4 bg-primary text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full z-10 flex items-center gap-1 shadow-md">
+                            <div x-show="items['{{ $item->id }}'].selected" x-transition class="absolute top-4 right-4 bg-secondary text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full z-10 flex items-center gap-1 shadow-md">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                 Selected
                             </div>
@@ -162,7 +161,7 @@
                                             <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300">
                                             <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
                                                 <template x-for="(img, idx) in imgs" :key="idx">
-                                                    <div class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm" :class="idx === imgIdx ? 'bg-primary' : 'bg-white/60'"></div>
+                                                    <div class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm" :class="idx === imgIdx ? 'bg-secondary' : 'bg-white/60'"></div>
                                                 </template>
                                             </div>
                                             <!-- Simple carousel auto-rotate on hover -->
@@ -184,8 +183,8 @@
                                 <h3 class="text-lg font-black text-slate-900 leading-tight mb-3">{{ $item->name }}</h3>
                                 
                                 <div class="mt-auto pt-6">
-                                    <button type="button" @click.prevent="openPanel('{{ $item->id }}')" class="w-full py-3.5 bg-white border-2 border-slate-200 hover:border-slate-900 text-slate-900 text-xs font-black uppercase tracking-widest rounded-xl transition-all"
-                                            :class="items['{{ $item->id }}'].selected ? 'bg-slate-50 border-slate-300 text-slate-600' : ''"
+                                    <button type="button" @click.prevent="openPanel('{{ $item->id }}')" class="w-full py-3.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all"
+                                            :class="items['{{ $item->id }}'].selected ? 'bg-slate-50 border-2 border-slate-300 text-slate-600' : 'bg-secondary text-white hover:bg-[#a11825] shadow-sm hover:shadow-md border-2 border-transparent'"
                                             x-text="items['{{ $item->id }}'].selected ? 'EDIT SIZING' : 'ORDER'">
                                     </button>
                                 </div>
@@ -307,7 +306,7 @@
                                 </div>
 
                                 <div class="pt-8 border-t border-slate-100 mt-8">
-                                    <button type="button" @click="items['{{ $item->id }}'].selected = true; closePanel()" class="w-full py-4 bg-slate-900 text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-primary transition-colors shadow-lg shadow-slate-900/20">Save & Select</button>
+                                    <button type="button" @click="items['{{ $item->id }}'].selected = true; closePanel()" class="w-full py-4 bg-slate-900 text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-secondary transition-colors shadow-lg shadow-slate-900/20">Save & Select</button>
                                     
                                     <button type="button" @click="items['{{ $item->id }}'].selected = false; closePanel()" x-show="items['{{ $item->id }}'].selected" class="w-full py-3 mt-3 bg-red-50 text-red-600 font-bold uppercase tracking-widest text-xs rounded-xl hover:bg-red-100 transition-colors">Remove Item</button>
                                 </div>
@@ -324,7 +323,7 @@
                             <h4 class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">Ready to complete?</h4>
                             <p class="text-lg font-black text-slate-900"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Items Selected</p>
                         </div>
-                        <button type="submit" class="w-full md:w-auto px-12 py-4 md:py-5 bg-primary text-white text-sm font-black uppercase tracking-widest rounded-xl hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(26,86,204,0.3)] transition-all flex-shrink-0">
+                        <button type="submit" class="w-full md:w-auto px-12 py-4 md:py-5 bg-secondary text-white text-sm font-black uppercase tracking-widest rounded-xl hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(192,30,46,0.3)] transition-all flex-shrink-0">
                             Submit My Order
                         </button>
                     </div>

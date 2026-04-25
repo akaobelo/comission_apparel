@@ -143,7 +143,7 @@
 
                             <form action="{{ route('coach.store.pricing.approve', $store) }}" method="POST">
                                 @csrf
-                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide transition-colors shadow-sm">I Approve This Pricing</button>
+                                <button type="submit" class="bg-secondary hover:bg-[#a11825] text-white px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide transition-colors shadow-sm">I Approve This Pricing</button>
                             </form>
                         </div>
                     </div>
@@ -246,7 +246,7 @@
                 @else
                     <div class="flex gap-2">
                         <input type="text" readonly value="{{ url('/store/' . $store->slug) }}" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none" id="storeUrl">
-                        <button onclick="navigator.clipboard.writeText(document.getElementById('storeUrl').value); this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 2000)" class="px-3 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors">Copy</button>
+                        <button onclick="navigator.clipboard.writeText(document.getElementById('storeUrl').value); this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 2000)" class="px-3 py-2 bg-secondary text-white text-xs font-bold rounded-lg hover:bg-[#a11825] transition-colors">Copy</button>
                     </div>
                     <p class="text-[10px] text-slate-500 mt-2">Share this link with your athletes and parents.</p>
                 @endif
@@ -271,7 +271,7 @@
                                     <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Global Design Catalog</h4>
                                     <p class="text-[10px] text-slate-500 mt-1">Browse and add custom designs to your team store.</p>
                                 </div>
-                                <button type="button" @click="catalogOpen = true" class="px-5 py-2.5 bg-primary text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2">
+                                <button type="button" @click="catalogOpen = true" class="px-5 py-2.5 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors shadow-sm flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                                     Browse Catalog
                                 </button>
@@ -310,7 +310,7 @@
                                                 @php 
                                                     $alreadyAdded = $store->items->pluck('design_catalog_id')->contains($design->id); 
                                                 @endphp
-                                                <div class="bg-white border {{ $alreadyAdded ? 'border-primary shadow-md' : 'border-slate-200 shadow-sm hover:border-slate-300' }} rounded-2xl overflow-hidden flex flex-col group transition-all">
+                                                <div class="bg-white border {{ $alreadyAdded ? 'border-secondary shadow-md' : 'border-slate-200 shadow-sm hover:border-slate-300' }} rounded-2xl overflow-hidden flex flex-col group transition-all">
                                                     <!-- Image Hero -->
                                                     <div class="aspect-[4/3] bg-[#f0f2f5] relative overflow-hidden group-hover:bg-[#e4e7ec] transition-colors flex items-center justify-center">
                                                         @if(!empty($design->image_paths))
@@ -319,7 +319,7 @@
                                                                     <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300">
                                                                     <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
                                                                         <template x-for="(img, idx) in imgs" :key="idx">
-                                                                            <div class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm" :class="idx === imgIdx ? 'bg-primary' : 'bg-white/60'"></div>
+                                                                            <div class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm" :class="idx === imgIdx ? 'bg-secondary' : 'bg-white/60'"></div>
                                                                         </template>
                                                                     </div>
                                                                     <!-- Simple carousel auto-rotate on hover -->
@@ -343,7 +343,7 @@
                                                         
                                                         <div class="mt-auto pt-2">
                                                             @if($alreadyAdded)
-                                                                <div class="w-full py-2.5 bg-slate-50 text-primary text-[11px] font-black uppercase tracking-widest rounded-xl text-center border-2 border-primary/20 flex items-center justify-center gap-2">
+                                                                <div class="w-full py-2.5 bg-secondary text-white text-[11px] font-black uppercase tracking-widest rounded-xl text-center border-2 border-transparent shadow-sm flex items-center justify-center gap-2">
                                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                                                     Added
                                                                 </div>

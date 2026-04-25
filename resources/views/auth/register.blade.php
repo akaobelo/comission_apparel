@@ -12,11 +12,11 @@
     <div class="relative z-10 w-full max-w-2xl px-6">
         <div class="glass-panel p-8 md:p-10 shadow-xl border border-slate-200 bg-white/90 backdrop-blur-xl animate-slide-up">
             <div class="text-center mb-8">
-                <div class="w-16 h-16 mx-auto rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-[0_0_20px_rgba(26,86,204,0.3)] mb-4">
-                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                <div class="w-16 h-16 mx-auto rounded-xl bg-secondary flex items-center justify-center shadow-md mb-4">
+                    <img src="/images/LR.png" alt="LR Logo" class="w-12 h-12 object-contain">
                 </div>
                 <h1 class="text-2xl font-black uppercase tracking-tight text-slate-900">Coach Registration</h1>
-                <p class="text-slate-600 text-sm mt-1">Create your coach account to get started. <br> <span class="text-primary font-bold">Your account will be active immediately.</span></p>
+                <p class="text-slate-600 text-sm mt-1">Create your coach account to get started. <br> <span class="text-secondary font-bold">Your account will be active immediately.</span></p>
             </div>
 
             <form action="{{ route('register') }}" method="POST" class="space-y-6" enctype="multipart/form-data" x-data="{ showPass: false, showConfirmPass: false }">
@@ -110,7 +110,7 @@
                 {{-- Logo Upload --}}
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Upload Team Logo (Optional)</label>
-                    <input type="file" name="logo" accept="image/*" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-600 focus:border-primary focus:outline-none transition-all shadow-sm file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:uppercase file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
+                    <input type="file" name="logo" accept="image/*" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-600 focus:border-primary focus:outline-none transition-all shadow-sm file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:uppercase file:bg-secondary/10 file:text-secondary hover:file:bg-secondary/20 cursor-pointer">
                     @error('logo')<p class="text-red-500 text-xs mt-2 font-bold">{{ $message }}</p>@enderror
                 </div>
 
@@ -122,13 +122,13 @@
                     </p>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-full py-4 mt-2 text-sm uppercase tracking-widest font-bold shadow-[0_4px_20px_rgba(26,86,204,0.3)]">
+                <button type="submit" class="btn btn-primary w-full py-4 mt-2 text-sm uppercase tracking-widest font-bold shadow-[0_4px_20px_rgba(192,30,46,0.3)]">
                     Create Coach Account
                 </button>
             </form>
 
             <div class="mt-8 text-center border-t border-slate-200 pt-6">
-                <p class="text-slate-600 text-sm">Already have an account? <a href="{{ route('login') }}" class="text-primary hover:text-blue-800 transition-colors font-bold">Sign In</a></p>
+                <p class="text-slate-600 text-sm">Already have an account? <a href="{{ route('login') }}" class="text-secondary hover:text-[#a11825] transition-colors font-bold">Sign In</a></p>
             </div>
         </div>
     </div>
