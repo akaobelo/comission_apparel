@@ -44,7 +44,6 @@ class StoreController extends Controller
 
         // Build the rich items JSON — each item has per-piece sizing
         $itemsJson = [];
-        $totalRetailPrice = 0;
 
         foreach ($request->items as $itemId => $details) {
             if (!isset($details['selected']) || $details['selected'] != '1') {
@@ -55,26 +54,27 @@ class StoreController extends Controller
             if (!$storeItem) continue;
 
             $qty = max(1, intval($details['qty'] ?? 1));
-            $retailPrice = $storeItem->retail_price ?? 0;
-            $lineTotal = $retailPrice * $qty;
-            $totalRetailPrice += $lineTotal;
 
-            $type = $storeItem->type;
+            $types = $storeItem->types ?? [$storeItem->type];
             $entry = [
                 'id'           => $itemId,
                 'name'         => $storeItem->name,
-                'type'         => $type,
+                'types'        => $types,
                 'qty'          => $qty,
-                'retail_price' => $retailPrice,
+                'sizes'        => [],
             ];
 
             // Backpack/Personalized have name field
-            if (in_array($type, ['backpack']) || ($storeItem->designCatalog && $storeItem->designCatalog->has_name_field)) {
+            if (in_array('backpack', $types) || ($storeItem->designCatalog && $storeItem->designCatalog->has_name_field)) {
                 $entry['name_on_item'] = substr(trim($details['name_on_item'] ?? ''), 0, 50);
-                $entry['size']         = null;
-            } else {
-                $entry['size']         = $details['size'] ?? null;
-                $entry['name_on_item'] = null;
+            }
+
+            // Handle sizes for each sized type
+            $sizedTypes = DesignCatalog::sizedTypes();
+            foreach ($types as $t) {
+                if (in_array($t, $sizedTypes)) {
+                    $entry['sizes'][$t] = $details['sizes'][$t] ?? null;
+                }
             }
 
             // Optional player number
@@ -96,7 +96,7 @@ class StoreController extends Controller
             'special_notes'      => $request->special_notes,
             'items_json'         => $itemsJson,
             'status'             => 'Submitted',
-            'total_retail_price' => $totalRetailPrice,
+            'total_retail_price' => 0, // No longer tracked
         ]);
 
         $store->user->notify(

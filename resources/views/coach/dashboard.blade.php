@@ -31,6 +31,7 @@
         </div>
     @endif
 
+
     {{-- ════ NO STORE YET ════ --}}
     @if(!$store)
     <div class="max-w-2xl mx-auto">
@@ -247,7 +248,7 @@
                         <input type="text" readonly value="{{ url('/store/' . $store->slug) }}" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none" id="storeUrl">
                         <button onclick="navigator.clipboard.writeText(document.getElementById('storeUrl').value); this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 2000)" class="px-3 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors">Copy</button>
                     </div>
-                    <p class="text-[10px] text-slate-500 mt-2">Share this link with your athletes and parents. They will see the approved Retail Prices.</p>
+                    <p class="text-[10px] text-slate-500 mt-2">Share this link with your athletes and parents.</p>
                 @endif
             </div>
 
@@ -259,41 +260,129 @@
                     <p class="text-xs text-slate-500 mt-1">Add your approved custom designs to the store.</p>
                 </div>
                 <div class="p-5">
-                    @if($assignedDesigns->isEmpty())
+                    @if($globalCatalog->isEmpty())
                         <div class="text-center py-6">
-                            <p class="text-sm text-slate-500 font-medium">No designs assigned yet.</p>
-                            <p class="text-xs text-slate-400 mt-1">Admin will assign your approved designs once Ryan has completed them.</p>
+                            <p class="text-sm text-slate-500 font-medium">No designs in the catalog yet.</p>
                         </div>
                     @else
-                        <form action="{{ route('coach.store.item.add', $store) }}" method="POST" class="flex gap-2 mb-4">
-                            @csrf
-                            <div class="flex-1">
-                                <select name="design_catalog_id" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                                    <option value="">Select a design to add...</option>
-                                    @foreach($assignedDesigns as $design)
-                                        @php $alreadyAdded = $store->items->pluck('design_catalog_id')->contains($design->id); @endphp
-                                        <option value="{{ $design->id }}" {{ $alreadyAdded ? 'disabled' : '' }}>
-                                            {{ $design->name }} ({{ $design->type_label }}){{ $alreadyAdded ? ' — Added' : '' }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                        <div x-data="{ catalogOpen: false }" class="mb-8">
+                            <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-sm">
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Global Design Catalog</h4>
+                                    <p class="text-[10px] text-slate-500 mt-1">Browse and add custom designs to your team store.</p>
+                                </div>
+                                <button type="button" @click="catalogOpen = true" class="px-5 py-2.5 bg-primary text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                                    Browse Catalog
+                                </button>
                             </div>
-                            <button type="submit" class="px-4 py-2.5 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors">Add</button>
-                        </form>
+
+                            <!-- Catalog Modal -->
+                            <div x-show="catalogOpen" x-cloak class="fixed inset-0 z-50 flex justify-center items-center">
+                                <!-- Backdrop -->
+                                <div x-show="catalogOpen" x-transition.opacity @click="catalogOpen = false" class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"></div>
+
+                                <!-- Modal Content -->
+                                <div x-show="catalogOpen" 
+                                     x-transition:enter="transition ease-out duration-300 transform"
+                                     x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+                                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                     x-transition:leave="transition ease-in duration-200 transform"
+                                     x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                                     x-transition:leave-end="opacity-0 translate-y-8 scale-95"
+                                     class="relative w-full max-w-6xl max-h-[90vh] bg-slate-50 rounded-2xl shadow-2xl flex flex-col mx-4 overflow-hidden">
+                                    
+                                    <!-- Header -->
+                                    <div class="flex items-center justify-between p-6 bg-white border-b border-slate-200">
+                                        <div>
+                                            <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Global Design Catalog</h2>
+                                            <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-bold">Parents will not see your wholesale costs</p>
+                                        </div>
+                                        <button type="button" @click="catalogOpen = false" class="text-slate-400 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-100 transition-colors">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </div>
+
+                                    <!-- Grid Container -->
+                                    <div class="flex-1 overflow-y-auto p-6 md:p-8">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                            @foreach($globalCatalog as $design)
+                                                @php 
+                                                    $alreadyAdded = $store->items->pluck('design_catalog_id')->contains($design->id); 
+                                                @endphp
+                                                <div class="bg-white border {{ $alreadyAdded ? 'border-primary shadow-md' : 'border-slate-200 shadow-sm hover:border-slate-300' }} rounded-2xl overflow-hidden flex flex-col group transition-all">
+                                                    <!-- Image Hero -->
+                                                    <div class="aspect-[4/3] bg-[#f0f2f5] relative overflow-hidden group-hover:bg-[#e4e7ec] transition-colors flex items-center justify-center">
+                                                        @if(!empty($design->image_paths))
+                                                            @if(count($design->image_paths) > 1)
+                                                                <div class="w-full h-full relative" x-data="{ imgIdx: 0, imgs: {{ json_encode($design->image_paths) }} }">
+                                                                    <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300">
+                                                                    <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+                                                                        <template x-for="(img, idx) in imgs" :key="idx">
+                                                                            <div class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm" :class="idx === imgIdx ? 'bg-primary' : 'bg-white/60'"></div>
+                                                                        </template>
+                                                                    </div>
+                                                                    <!-- Simple carousel auto-rotate on hover -->
+                                                                    <div class="absolute inset-0" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0"></div>
+                                                                </div>
+                                                            @else
+                                                                <img src="{{ $design->image_paths[0] }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
+                                                            @endif
+                                                        @elseif($design->image_url)
+                                                            <img src="{{ $design->image_url }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
+                                                        @else
+                                                            <div class="text-slate-400 font-medium text-xs">No Image</div>
+                                                        @endif
+                                                    </div>
+
+                                                    <!-- Card Content -->
+                                                    <div class="p-5 flex flex-col flex-1 border-t border-slate-100">
+                                                        <span class="text-[10px] font-black uppercase tracking-widest text-red-600 mb-1.5">{{ $design->type_label }}</span>
+                                                        <h3 class="text-sm font-black text-slate-900 leading-tight mb-2 line-clamp-2" title="{{ $design->name }}">{{ $design->name }}</h3>
+                                                        <div class="text-[11px] font-bold text-slate-500 mb-4">Base Cost: <span class="text-slate-900">${{ number_format($design->wholesale_price, 2) }}</span></div>
+                                                        
+                                                        <div class="mt-auto pt-2">
+                                                            @if($alreadyAdded)
+                                                                <div class="w-full py-2.5 bg-slate-50 text-primary text-[11px] font-black uppercase tracking-widest rounded-xl text-center border-2 border-primary/20 flex items-center justify-center gap-2">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                                    Added
+                                                                </div>
+                                                            @else
+                                                                <form action="{{ route('coach.store.item.add', $store) }}" method="POST">
+                                                                    @csrf
+                                                                    <input type="hidden" name="design_catalog_id" value="{{ $design->id }}">
+                                                                    <button type="submit" class="w-full py-2.5 bg-white border-2 border-slate-200 hover:border-slate-900 hover:bg-slate-900 hover:text-white text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all">
+                                                                        Add to Store
+                                                                    </button>
+                                                                </form>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     @endif
 
                     {{-- Current items in store --}}
+                    <h3 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3 border-b border-slate-100 pb-1">Current Store Items</h3>
                     @if($store->items->isNotEmpty())
-                        <div class="space-y-2">
+                        <div class="space-y-3">
                             @foreach($store->items as $item)
-                            <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                            <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm group hover:border-primary transition-colors">
                                 <div>
                                     <div class="font-bold text-sm text-slate-900">{{ $item->name }}</div>
-                                    <div class="text-[10px] font-bold uppercase tracking-wider text-primary">{{ str_replace('_', ' ', $item->type) }}</div>
+                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-1 flex gap-3">
+                                        <span>Type: <span class="text-primary">{{ $item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $item->types ?? [])) }}</span></span>
+                                        <span>Base Cost: <span class="text-slate-700">${{ number_format($item->wholesale_price, 2) }}</span></span>
+                                    </div>
                                 </div>
                                 <form action="{{ route('coach.store.item.remove', $item) }}" method="POST" onsubmit="return confirm('Remove this item from your store?')">
                                     @csrf
-                                    <button class="text-red-400 hover:text-red-600 transition-colors p-1">
+                                    <button class="text-slate-300 hover:text-red-500 transition-colors p-2 bg-slate-50 rounded-lg hover:bg-red-50">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>
                                 </form>

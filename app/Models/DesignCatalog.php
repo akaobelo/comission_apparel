@@ -11,16 +11,22 @@ class DesignCatalog extends Model
     protected $fillable = [
         'name',
         'type',
+        'types',
         'category',
         'image_url',
+        'image_paths',
         'has_name_field',
         'has_number_field',
         'notes',
+        'wholesale_price',
     ];
 
     protected $casts = [
         'has_name_field' => 'boolean',
         'has_number_field' => 'boolean',
+        'wholesale_price' => 'decimal:2',
+        'types' => 'array',
+        'image_paths' => 'array',
     ];
 
     // Coaches this design is assigned to
@@ -32,6 +38,24 @@ class DesignCatalog extends Model
     // Human-readable type label
     public function getTypeLabelAttribute(): string
     {
+        if (!empty($this->types) && is_array($this->types)) {
+            $labels = [];
+            foreach ($this->types as $t) {
+                $labels[] = match($t) {
+                    'uniform_top'    => 'Uniform Top',
+                    'uniform_bottom' => 'Uniform Bottom',
+                    'warmup_top'     => 'Warm-up Top',
+                    'warmup_bottom'  => 'Warm-up Bottom',
+                    'backpack'       => 'Backpack',
+                    'arm_sleeve'     => 'Arm Sleeve',
+                    'accessory'      => 'Accessory',
+                    default          => ucfirst(str_replace('_', ' ', $t)),
+                };
+            }
+            return implode(', ', $labels);
+        }
+
+        // Fallback to legacy single type
         return match($this->type) {
             'uniform_top'    => 'Uniform Top',
             'uniform_bottom' => 'Uniform Bottom',
@@ -40,7 +64,7 @@ class DesignCatalog extends Model
             'backpack'       => 'Backpack',
             'arm_sleeve'     => 'Arm Sleeve',
             'accessory'      => 'Accessory',
-            default          => ucfirst(str_replace('_', ' ', $this->type)),
+            default          => ucfirst(str_replace('_', ' ', $this->type ?? '')),
         };
     }
 

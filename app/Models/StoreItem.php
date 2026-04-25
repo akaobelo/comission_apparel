@@ -11,7 +11,9 @@ class StoreItem extends Model
         'design_catalog_id',
         'name',
         'type',
+        'types',
         'image_url',
+        'image_paths',
         'wholesale_price',
         'retail_price',
     ];
@@ -19,6 +21,8 @@ class StoreItem extends Model
     protected $casts = [
         'wholesale_price' => 'decimal:2',
         'retail_price'    => 'decimal:2',
+        'types'           => 'array',
+        'image_paths'     => 'array',
     ];
 
     public function teamStore()
@@ -30,4 +34,5 @@ class StoreItem extends Model
     {
         return $this->belongsTo(\App\Models\DesignCatalog::class, 'design_catalog_id');
     }
+
 }

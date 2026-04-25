@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Admin Portal | The Commission Apparel')
 @section('content')
-<div class="max-w-[1600px] mx-auto px-6 py-8 mt-16">
+<div class="max-w-[1600px] mx-auto px-6 pb-8 pt-32 lg:pt-40">
     @if(session('success'))
         <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 font-bold flex items-center gap-3">
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -256,6 +256,7 @@
 
         </div>
 
+
         {{-- ═══ LANDING PAGE SETTINGS TAB ═══ --}}
         <div x-show="activeAdminTab === 'landing'" x-cloak class="max-w-4xl">
 
@@ -327,6 +328,7 @@
                 <div class="p-6 text-center text-sm text-slate-400">No collections configured.</div>
                 @endif
             </div>
+        </div>
 
         {{-- ═══ DESIGN CATALOG TAB ═══ --}}
         <div x-show="activeAdminTab === 'catalog'" x-cloak class="max-w-4xl">
@@ -336,7 +338,7 @@
                     <p class="text-xs text-slate-500 mt-1">Add a custom design and assign it to coaches.</p>
                 </div>
                 <div class="p-5">
-                    <form action="{{ route('admin.design.create') }}" method="POST" class="space-y-4">
+                    <form action="{{ route('admin.design.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                         @csrf
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Design Name</label>
@@ -344,16 +346,16 @@
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Item Type</label>
-                                <select name="type" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                                    <option value="uniform_top">Uniform Top</option>
-                                    <option value="uniform_bottom">Uniform Bottom</option>
-                                    <option value="warmup_top">Warm-up Top</option>
-                                    <option value="warmup_bottom">Warm-up Bottom</option>
-                                    <option value="arm_sleeve">Arm Sleeve</option>
-                                    <option value="backpack">Backpack</option>
-                                    <option value="accessory">Accessory</option>
-                                </select>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Item Types (Select all that apply)</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer"><input type="checkbox" name="types[]" value="uniform_top" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm"><span class="text-xs">Uniform Top</span></label>
+                                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer"><input type="checkbox" name="types[]" value="uniform_bottom" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm"><span class="text-xs">Uniform Bottom</span></label>
+                                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer"><input type="checkbox" name="types[]" value="warmup_top" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm"><span class="text-xs">Warm-up Top</span></label>
+                                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer"><input type="checkbox" name="types[]" value="warmup_bottom" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm"><span class="text-xs">Warm-up Bottom</span></label>
+                                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer"><input type="checkbox" name="types[]" value="arm_sleeve" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm"><span class="text-xs">Arm Sleeve</span></label>
+                                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer"><input type="checkbox" name="types[]" value="backpack" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm"><span class="text-xs">Backpack</span></label>
+                                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer"><input type="checkbox" name="types[]" value="accessory" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm"><span class="text-xs">Accessory</span></label>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Package Category</label>
@@ -365,9 +367,15 @@
                                 </select>
                             </div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Image URL (optional)</label>
-                            <input type="url" name="image_url" placeholder="https://..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Upload Images (Max 5)</label>
+                                <input type="file" name="images[]" multiple accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Wholesale Price ($)</label>
+                                <input type="number" step="0.01" name="wholesale_price" required placeholder="e.g. 45.00" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
                         </div>
                         <div class="flex gap-4">
                             <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
@@ -394,12 +402,24 @@
                             <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
                             <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">{{ $design->type_label }} · {{ $design->category_label }}</div>
                         </div>
-                        <form action="{{ route('admin.design.delete', $design) }}" method="POST" onsubmit="return confirm('Delete this design from the catalog?')">
-                            @csrf @method('DELETE')
-                            <button class="text-red-400 hover:text-red-600 transition-colors p-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                        </form>
+                        <div class="flex items-center gap-3">
+                            <form action="{{ route('admin.design.assign-to-store', $design) }}" method="POST" class="flex items-center gap-1">
+                                @csrf
+                                <select name="team_store_id" required class="text-xs bg-white border border-slate-300 rounded px-2 py-1 w-32 focus:border-primary focus:outline-none">
+                                    <option value="">Assign to store...</option>
+                                    @foreach($allStores as $store)
+                                        <option value="{{ $store->id }}">{{ $store->name }} ({{ $store->user->name }})</option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-primary hover:bg-blue-700 text-white rounded transition-colors" title="Push Design to Store">Push</button>
+                            </form>
+                            <form action="{{ route('admin.design.delete', $design) }}" method="POST" onsubmit="return confirm('Delete this design from the catalog?')">
+                                @csrf @method('DELETE')
+                                <button class="text-red-400 hover:text-red-600 transition-colors p-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                     @endforeach
                 </div>

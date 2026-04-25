@@ -29,8 +29,12 @@ class CoachController extends Controller
             'individual' => $assignedDesigns->where('category', 'individual'),
         ];
 
-        return view('coach.dashboard', compact('user', 'store', 'assignedDesigns', 'packageDesigns'));
+        // Global Design Catalog for picking
+        $globalCatalog = DesignCatalog::latest()->get();
+
+        return view('coach.dashboard', compact('user', 'store', 'assignedDesigns', 'packageDesigns', 'globalCatalog'));
     }
+
 
     public function createStore(Request $request)
     {
@@ -70,18 +74,7 @@ class CoachController extends Controller
         if ($store->user_id !== $request->user()->id) abort(403);
 
         $request->validate([
-            'design_catalog_id' => [
-                'required',
-                'exists:design_catalog,id',
-                function($attribute, $value, $fail) use ($request) {
-                    // Ensure the design is actually assigned to this coach
-                    $isAssigned = $request->user()->designCatalog()
-                        ->where('design_catalog_id', $value)->exists();
-                    if (!$isAssigned) {
-                        $fail('This design is not assigned to your profile.');
-                    }
-                }
-            ],
+            'design_catalog_id' => ['required', 'exists:design_catalog,id'],
         ]);
 
         $design = DesignCatalog::findOrFail($request->design_catalog_id);
@@ -95,8 +88,12 @@ class CoachController extends Controller
         $store->items()->create([
             'design_catalog_id' => $design->id,
             'name'              => $design->name,
-            'type'              => $design->type,
-            'image_url'         => $design->image_url,
+            'type'              => null, // Deprecated
+            'types'             => $design->types,
+            'image_url'         => null, // Deprecated
+            'image_paths'       => $design->image_paths,
+            'wholesale_price'   => $design->wholesale_price,
+            'retail_price'      => 0, // Parents don't see prices anymore
         ]);
 
         return redirect()->route('coach.dashboard')

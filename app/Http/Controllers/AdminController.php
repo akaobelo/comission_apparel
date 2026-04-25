@@ -8,6 +8,7 @@ use App\Models\TeamStore;
 use App\Models\ParentOrder;
 use App\Models\DesignCatalog;
 use App\Models\LandingCollection;
+use App\Models\StoreItem;
 use Illuminate\Support\Str;
 
 class AdminController extends Controller
@@ -51,12 +52,13 @@ class AdminController extends Controller
             ->latest()
             ->get();
 
-        // Landing Collections
         $landingCollections = LandingCollection::orderBy('sort_order', 'asc')->get();
+
+        $allStores = TeamStore::with('user')->orderBy('name')->get();
 
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStores',
-            'designCatalog', 'productionStores', 'landingCollections'
+            'designCatalog', 'productionStores', 'landingCollections', 'allStores'
         ));
     }
 
@@ -104,16 +106,32 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'name'             => ['required', 'string', 'max:255'],
-            'type'             => ['required', 'in:uniform_top,uniform_bottom,warmup_top,warmup_bottom,backpack,arm_sleeve,accessory'],
+            'types'            => ['required', 'array', 'min:1'],
+            'types.*'          => ['string', 'in:uniform_top,uniform_bottom,warmup_top,warmup_bottom,backpack,arm_sleeve,accessory'],
             'category'         => ['required', 'in:package_a,package_b,package_c,individual'],
-            'image_url'        => ['nullable', 'url'],
+            'images'           => ['nullable', 'array', 'max:5'],
+            'images.*'         => ['image', 'max:5120'], // max 5MB per image
             'has_name_field'   => ['boolean'],
             'has_number_field' => ['boolean'],
             'notes'            => ['nullable', 'string'],
+            'wholesale_price'  => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $validated['has_name_field']   = $request->boolean('has_name_field');
         $validated['has_number_field'] = $request->boolean('has_number_field');
+
+        $imagePaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('designs', 'public');
+                $imagePaths[] = '/storage/' . $path;
+            }
+        }
+        $validated['image_paths'] = $imagePaths;
+
+        // Make sure type and image_url are set to null since we are migrating to JSON
+        $validated['type'] = null;
+        $validated['image_url'] = null;
 
         DesignCatalog::create($validated);
 
@@ -146,6 +164,34 @@ class AdminController extends Controller
         $coach->designCatalog()->detach($design->id);
         return redirect()->route('admin.coach.edit', $coach)
             ->with('success', 'Design removed from coach.');
+    }
+
+    public function assignToStore(Request $request, DesignCatalog $design)
+    {
+        $request->validate([
+            'team_store_id' => 'required|exists:team_stores,id'
+        ]);
+
+        $store = TeamStore::findOrFail($request->team_store_id);
+
+        if ($store->items()->where('design_catalog_id', $design->id)->exists()) {
+            return back()->with('error', "{$design->name} is already assigned to {$store->name}");
+        }
+
+        StoreItem::create([
+            'team_store_id' => $store->id,
+            'design_catalog_id' => $design->id,
+            'name' => $design->name,
+            'type' => $design->type, // Legacy
+            'types' => $design->types,
+            'image_url' => $design->image_url,
+            'image_paths' => $design->image_paths,
+            'wholesale_price' => $design->wholesale_price,
+            'retail_price' => 0, // Coach needs to set retail price before store goes live
+            'status' => 'pending_pricing',
+        ]);
+
+        return back()->with('success', "{$design->name} was successfully added to {$store->name}!");
     }
 
     // ─── STORE MANAGEMENT ────────────────────────────────────────────────────────

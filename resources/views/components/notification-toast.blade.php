@@ -1,4 +1,4 @@
-<div x-data="notificationSystem()" x-init="init()" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none" style="max-width: 400px;">
+<div x-data="notificationSystem()" x-init="init()" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none w-full max-w-lg pr-6 pb-6 lg:pr-0 lg:pb-0">
     <template x-for="notification in notifications" :key="notification.id">
         <div x-show="notification.show" 
              x-transition:enter="transition ease-out duration-300"
@@ -7,7 +7,7 @@
              x-transition:leave="transition ease-in duration-200"
              x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
              x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-             class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-lg bg-slate-800 shadow-[0_5px_30px_rgba(0,0,0,0.3)] ring-1 ring-white/10"
+             class="pointer-events-auto w-full overflow-hidden rounded-lg bg-slate-800 shadow-[0_5px_30px_rgba(0,0,0,0.3)] ring-1 ring-white/10"
              :class="{ 'border-l-4 border-primary': notification.data.icon === 'box', 'border-l-4 border-secondary': notification.data.icon === 'check-circle' }">
             <div class="p-4">
                 <div class="flex items-start">

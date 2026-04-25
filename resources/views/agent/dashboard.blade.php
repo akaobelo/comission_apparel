@@ -3,7 +3,7 @@
 @section('title', 'Sales Agent Portal | The Commission Apparel')
 
 @section('content')
-<div class="max-w-[1600px] mx-auto px-6 py-8 mt-16" x-data="{ activeTab: 'performance' }">
+<div class="max-w-[1600px] mx-auto px-6 pb-8 pt-32 lg:pt-40" x-data="{ activeTab: 'performance' }">
     <!-- Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
         <div>

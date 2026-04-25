@@ -52,229 +52,321 @@
         </div>
     @endif
 
-    <div class="grid grid-cols-1 xl:grid-cols-[1fr_480px] gap-12">
-        {{-- LEFT: Roster --}}
-        <div class="space-y-8 order-2 xl:order-1">
-            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div class="p-6 border-b border-slate-200 bg-slate-50">
-                    <h2 class="text-xl font-black uppercase text-slate-900 tracking-tight">Submitted Roster ({{ $store->parentOrders->count() }} Athletes)</h2>
-                    <p class="text-slate-600 text-sm mt-1">Athletes listed below have successfully submitted their order. If your name is not shown, please use the form.</p>
+    <div class="max-w-6xl mx-auto space-y-16">
+        @if($store->status === 'submitted_to_admin')
+            <div class="bg-red-50 border border-red-200 rounded-2xl shadow-sm p-10 text-center">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5 border border-red-200">
+                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                 </div>
-                <div class="p-6 bg-white">
-                    @if($store->parentOrders->isEmpty())
-                        <div class="text-center p-10 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                            <svg class="w-10 h-10 text-slate-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            <p class="text-slate-500 font-bold uppercase tracking-widest text-sm">No Roster Entries Yet</p>
-                            <p class="text-slate-400 text-xs mt-1.5">Be the first to submit your sizing.</p>
+                <h3 class="text-2xl font-black uppercase tracking-tight text-slate-900 mb-2">Store Closed — In Production</h3>
+                <p class="text-slate-600 text-base max-w-lg mx-auto">The coach has finalized the order roster. Production is underway. No new orders can be taken at this time.</p>
+            </div>
+        @elseif($store->status !== 'approved' && $store->status !== 'submitted_to_admin')
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-10 text-center">
+                <h3 class="text-2xl font-black uppercase tracking-tight text-amber-900 mb-2">Store Not Yet Active</h3>
+                <p class="text-slate-600 text-base">This store is awaiting approval. Check back soon.</p>
+            </div>
+        @elseif(!$store->pricing_approved)
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-10 text-center">
+                <h3 class="text-2xl font-black uppercase tracking-tight text-amber-900 mb-2">Pricing In Review</h3>
+                <p class="text-slate-600 text-base">The coach is currently reviewing the finalized pricing. The store will open shortly.</p>
+            </div>
+        @elseif($store->items->isEmpty())
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-12 text-center">
+                <h3 class="text-2xl font-black uppercase tracking-tight text-slate-900 mb-2">Items Coming Soon</h3>
+                <p class="text-slate-600 text-base">The coach hasn't added any items yet. Check back soon once designs are finalized.</p>
+            </div>
+        @else
+            {{-- ═══ NEW ORDER FORM GRID ═══ --}}
+            <form action="{{ route('store.order.submit', $store->slug) }}" method="POST" 
+                  x-data="{
+                      activeItemId: null,
+                      slideOpen: false,
+                      items: {
+                          @foreach($store->items as $item)
+                          '{{ $item->id }}': { selected: false, qty: 1 },
+                          @endforeach
+                      },
+                      openPanel(id) {
+                          this.activeItemId = id;
+                          this.slideOpen = true;
+                          document.body.style.overflow = 'hidden';
+                      },
+                      closePanel() {
+                          this.slideOpen = false;
+                          document.body.style.overflow = 'auto';
+                          setTimeout(() => { this.activeItemId = null; }, 300);
+                      }
+                  }">
+                @csrf
+
+                {{-- Athlete Info --}}
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-8 md:p-10 mb-10">
+                    <h2 class="text-xl font-black uppercase tracking-tight text-slate-900 mb-6">Athlete Information</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Athlete Full Name <span class="text-red-500">*</span></label>
+                            <input type="text" name="athlete_name" required placeholder="e.g. Jordan Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
+                            @error('athlete_name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                         </div>
-                    @else
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            @foreach($store->parentOrders as $order)
-                            <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between shadow-sm hover:border-primary/40 transition-colors">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center font-black text-primary">{{ substr($order->athlete_name, 0, 1) }}</div>
+                        <div>
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Gender / Pattern Base</label>
+                            <select name="gender" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:outline-none transition-all font-medium">
+                                <option value="">Select cut pattern...</option>
+                                <option value="Mens / Boys">Men's / Boy's Cut</option>
+                                <option value="Womens / Girls">Women's / Girl's Cut</option>
+                                <option value="Unisex">Unisex</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Store Items Grid --}}
+                <div class="mb-8">
+                    <h2 class="text-xl font-black uppercase tracking-tight text-slate-900 mb-6 flex items-center justify-between">
+                        <span>Available Designs</span>
+                        <span class="text-sm font-bold text-slate-500"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Selected</span>
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        @foreach($store->items as $item)
+                        @php
+                            $types = $item->types ?? [$item->type];
+                            $isBackpack = in_array('backpack', $types);
+                            $sizedTypes = \App\Models\DesignCatalog::sizedTypes();
+                            $itemSizedTypes = array_intersect($types, $sizedTypes);
+                            $hasNumber  = $item->designCatalog?->has_number_field ?? false;
+                            $hasNameField = $item->designCatalog?->has_name_field ?? false;
+                            $typeLabel = $item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $types));
+                        @endphp
+
+                        <!-- Item Card -->
+                        <div class="bg-white border rounded-2xl overflow-hidden shadow-sm flex flex-col group relative transition-all duration-300"
+                             :class="items['{{ $item->id }}'].selected ? 'border-primary ring-2 ring-primary/20 shadow-md' : 'border-slate-200 hover:border-primary/50 hover:shadow-lg'">
+                            
+                            <!-- Hidden Select -->
+                            <input type="checkbox" name="items[{{ $item->id }}][selected]" value="1" x-model="items['{{ $item->id }}'].selected" class="hidden">
+                            <input type="hidden" name="items[{{ $item->id }}][name]" value="{{ $item->name }}">
+
+                            <!-- Selected Badge -->
+                            <div x-show="items['{{ $item->id }}'].selected" x-transition class="absolute top-4 right-4 bg-primary text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full z-10 flex items-center gap-1 shadow-md">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                Selected
+                            </div>
+
+                            <!-- Image Hero -->
+                            <div class="aspect-[4/3] bg-[#f0f2f5] relative overflow-hidden group-hover:bg-[#e4e7ec] transition-colors flex items-center justify-center cursor-pointer" @click="openPanel('{{ $item->id }}')">
+                                @if(!empty($item->image_paths))
+                                    @if(count($item->image_paths) > 1)
+                                        <div class="w-full h-full relative" x-data="{ imgIdx: 0, imgs: {{ json_encode($item->image_paths) }} }">
+                                            <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300">
+                                            <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+                                                <template x-for="(img, idx) in imgs" :key="idx">
+                                                    <div class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm" :class="idx === imgIdx ? 'bg-primary' : 'bg-white/60'"></div>
+                                                </template>
+                                            </div>
+                                            <!-- Simple carousel auto-rotate on hover -->
+                                            <div class="absolute inset-0" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0"></div>
+                                        </div>
+                                    @else
+                                        <img src="{{ $item->image_paths[0] }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
+                                    @endif
+                                @elseif($item->image_url)
+                                    <img src="{{ $item->image_url }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
+                                @else
+                                    <div class="text-slate-400 font-medium">No Image</div>
+                                @endif
+                            </div>
+
+                            <!-- Card Content -->
+                            <div class="p-6 flex flex-col flex-1 bg-white border-t border-slate-100">
+                                <span class="text-[10px] font-black uppercase tracking-widest text-red-600 mb-2">{{ $typeLabel }}</span>
+                                <h3 class="text-lg font-black text-slate-900 leading-tight mb-3">{{ $item->name }}</h3>
+                                
+                                <div class="mt-auto pt-6">
+                                    <button type="button" @click.prevent="openPanel('{{ $item->id }}')" class="w-full py-3.5 bg-white border-2 border-slate-200 hover:border-slate-900 text-slate-900 text-xs font-black uppercase tracking-widest rounded-xl transition-all"
+                                            :class="items['{{ $item->id }}'].selected ? 'bg-slate-50 border-slate-300 text-slate-600' : ''"
+                                            x-text="items['{{ $item->id }}'].selected ? 'EDIT SIZING' : 'ORDER'">
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Special Notes --}}
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-8 md:p-10 mb-32">
+                    <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Special Sizing Notes (Optional)</label>
+                    <textarea name="special_notes" rows="2" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:outline-none placeholder:text-slate-400 transition-all font-medium" placeholder="e.g. Needs extra length on pants..."></textarea>
+                </div>
+
+                {{-- SIZING SLIDE-OVER PANEL --}}
+                <div x-show="slideOpen" x-cloak class="fixed inset-0 z-50 flex justify-end">
+                    <!-- Full-Size Image Preview & Backdrop -->
+                    <div x-show="slideOpen" x-transition.opacity @click="closePanel()" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex flex-col p-4 md:p-8 md:pr-[480px]">
+                        <button type="button" class="absolute top-6 left-6 text-white/50 hover:text-white transition-colors z-10" @click="closePanel()">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                        
+                        <!-- Image Viewer -->
+                        <div class="w-full h-full flex items-center justify-center relative pointer-events-none" @click.stop>
+                            @foreach($store->items as $item)
+                                <div x-show="activeItemId === '{{ $item->id }}'" class="w-full h-full flex items-center justify-center p-2 md:p-4">
+                                    @if(!empty($item->image_paths))
+                                        <div class="relative w-full h-full flex items-center justify-center" x-data="{ imgIdx: 0, imgs: {{ json_encode($item->image_paths) }} }">
+                                            <img :src="imgs[imgIdx]" class="max-w-full max-h-full object-contain drop-shadow-2xl pointer-events-auto rounded-lg">
+                                            @if(count($item->image_paths) > 1)
+                                                <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 pointer-events-auto">
+                                                    <template x-for="(img, idx) in imgs" :key="idx">
+                                                        <button type="button" @click.stop="imgIdx = idx" class="w-2.5 h-2.5 rounded-full transition-colors shadow-sm" :class="idx === imgIdx ? 'bg-primary' : 'bg-white/40 hover:bg-white/80'"></button>
+                                                    </template>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @elseif($item->image_url)
+                                        <img src="{{ $item->image_url }}" class="max-w-full max-h-full object-contain drop-shadow-2xl pointer-events-auto rounded-lg">
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    
+                    <!-- Panel -->
+                    <div x-show="slideOpen" 
+                         @click.stop
+                         x-transition:enter="transition ease-out duration-300 transform"
+                         x-transition:enter-start="translate-x-full"
+                         x-transition:enter-end="translate-x-0"
+                         x-transition:leave="transition ease-in duration-200 transform"
+                         x-transition:leave-start="translate-x-0"
+                         x-transition:leave-end="translate-x-full"
+                         class="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
+                        
+                        <div class="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50">
+                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Select Sizes</h2>
+                            <button type="button" @click="closePanel()" class="text-slate-400 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-200 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        
+                        <div class="flex-1 overflow-y-auto p-6">
+                            @foreach($store->items as $item)
+                            @php
+                                $types = $item->types ?? [$item->type];
+                                $isBackpack = in_array('backpack', $types);
+                                $sizedTypes = \App\Models\DesignCatalog::sizedTypes();
+                                $itemSizedTypes = array_intersect($types, $sizedTypes);
+                                $hasNumber  = $item->designCatalog?->has_number_field ?? false;
+                                $hasNameField = $item->designCatalog?->has_name_field ?? false;
+                            @endphp
+                            
+                            <div x-show="activeItemId === '{{ $item->id }}'" class="space-y-6">
+                                <div>
+                                    <h3 class="text-xl font-black text-slate-900 mb-1">{{ $item->name }}</h3>
+                                    <p class="text-[10px] font-bold uppercase tracking-widest text-primary">{{ $item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $types)) }}</p>
+                                </div>
+                                
+                                <div class="space-y-5">
+                                    @if($isBackpack || $hasNameField)
                                     <div>
-                                        <div class="font-bold text-slate-900">{{ $order->athlete_name }}</div>
-                                        <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{{ count(is_array($order->items_json) ? $order->items_json : []) }} items</div>
+                                        <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Name on Item</label>
+                                        <input type="text" name="items[{{ $item->id }}][name_on_item]" placeholder="Enter first and last name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none font-medium">
+                                    </div>
+                                    @endif
+
+                                    @foreach($itemSizedTypes as $t)
+                                    <div>
+                                        <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">{{ str_replace('_', ' ', $t) }} Size <span class="text-red-500">*</span></label>
+                                        <select name="items[{{ $item->id }}][sizes][{{ $t }}]" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:outline-none font-medium">
+                                            <optgroup label="Youth Sizes">
+                                                @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $s)
+                                                    <option value="{{ $s }}">{{ $s }}</option>
+                                                @endforeach
+                                            </optgroup>
+                                            <optgroup label="Adult Sizes">
+                                                @foreach(['AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL'] as $s)
+                                                    <option value="{{ $s }}" {{ $s === 'AM' ? 'selected' : '' }}>{{ $s }}</option>
+                                                @endforeach
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                    @endforeach
+
+                                    @if($hasNumber)
+                                    <div>
+                                        <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Player Number (optional)</label>
+                                        <input type="text" name="items[{{ $item->id }}][number]" placeholder="e.g. 24" maxlength="3" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none font-medium">
+                                    </div>
+                                    @endif
+
+                                    <div>
+                                        <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Quantity</label>
+                                        <input type="number" name="items[{{ $item->id }}][qty]" value="1" min="1" max="5" x-model.number="items['{{ $item->id }}'].qty" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none font-medium">
                                     </div>
                                 </div>
-                                <span class="w-7 h-7 flex items-center justify-center bg-green-100 text-green-600 rounded-full border border-green-200">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                </span>
+
+                                <div class="pt-8 border-t border-slate-100 mt-8">
+                                    <button type="button" @click="items['{{ $item->id }}'].selected = true; closePanel()" class="w-full py-4 bg-slate-900 text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-primary transition-colors shadow-lg shadow-slate-900/20">Save & Select</button>
+                                    
+                                    <button type="button" @click="items['{{ $item->id }}'].selected = false; closePanel()" x-show="items['{{ $item->id }}'].selected" class="w-full py-3 mt-3 bg-red-50 text-red-600 font-bold uppercase tracking-widest text-xs rounded-xl hover:bg-red-100 transition-colors">Remove Item</button>
+                                </div>
                             </div>
                             @endforeach
                         </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        {{-- RIGHT: Order Form --}}
-        <div class="order-1 xl:order-2">
-            @if($store->status === 'submitted_to_admin')
-                <div class="bg-red-50 border border-red-200 rounded-xl shadow-sm p-8 text-center">
-                    <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-200">
-                        <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                     </div>
-                    <h3 class="text-xl font-black uppercase text-slate-900 mb-2">Store Closed — In Production</h3>
-                    <p class="text-slate-600 text-sm">The coach has finalized the order roster. Production is underway. No new orders can be taken at this time.</p>
                 </div>
-            @elseif($store->status !== 'approved' && $store->status !== 'submitted_to_admin')
-                <div class="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center">
-                    <h3 class="text-xl font-black uppercase text-amber-900 mb-2">Store Not Yet Active</h3>
-                    <p class="text-slate-600 text-sm">This store is awaiting approval. Check back soon.</p>
+
+                {{-- STICKY BOTTOM SUBMIT BAR --}}
+                <div class="fixed bottom-0 left-0 right-0 p-4 md:p-6 bg-white/90 backdrop-blur-md border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-40 flex justify-center">
+                    <div class="max-w-[1400px] w-full flex items-center justify-between gap-6 px-4">
+                        <div class="hidden md:block">
+                            <h4 class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">Ready to complete?</h4>
+                            <p class="text-lg font-black text-slate-900"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Items Selected</p>
+                        </div>
+                        <button type="submit" class="w-full md:w-auto px-12 py-4 md:py-5 bg-primary text-white text-sm font-black uppercase tracking-widest rounded-xl hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(26,86,204,0.3)] transition-all flex-shrink-0">
+                            Submit My Order
+                        </button>
+                    </div>
                 </div>
-            @elseif(!$store->pricing_approved)
-                <div class="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center">
-                    <h3 class="text-xl font-black uppercase text-amber-900 mb-2">Pricing In Review</h3>
-                    <p class="text-slate-600 text-sm">The coach is currently reviewing the finalized pricing. The store will open shortly.</p>
-                </div>
-            @elseif($store->items->isEmpty())
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-8 text-center">
-                    <h3 class="text-xl font-black uppercase text-slate-900 mb-2">Items Coming Soon</h3>
-                    <p class="text-slate-600 text-sm">The coach hasn't added any items yet. Check back soon once designs are finalized.</p>
-                </div>
-            @else
-                {{-- ═══ ORDER FORM ═══ --}}
-                <div class="bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden sticky top-28">
-                    <div class="p-6 border-b border-slate-100 bg-slate-50">
-                        <h3 class="text-xl font-black uppercase text-slate-900 tracking-tight flex items-center gap-2">
-                            <span class="w-7 h-7 rounded bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </form>
+        @endif
+
+        {{-- Submitted Roster --}}
+        <div class="mt-24 pt-16 border-t border-slate-200">
+            <h2 class="text-2xl font-black uppercase text-slate-900 tracking-tight text-center mb-2">Submitted Roster</h2>
+            <p class="text-slate-600 text-sm text-center mb-10 max-w-lg mx-auto">Athletes listed below have successfully submitted their order. If your name is not shown, please use the form above.</p>
+            
+            <div class="max-w-4xl mx-auto">
+                @if($store->parentOrders->isEmpty())
+                    <div class="text-center p-12 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+                        <svg class="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <p class="text-slate-500 font-black uppercase tracking-widest text-sm">No Roster Entries Yet</p>
+                        <p class="text-slate-400 text-xs mt-2 font-medium">Be the first to submit your sizing.</p>
+                    </div>
+                @else
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        @foreach($store->parentOrders as $order)
+                        <div class="bg-white border border-slate-200 rounded-2xl p-5 flex items-center justify-between shadow-sm hover:border-primary/40 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center font-black text-primary">{{ substr($order->athlete_name, 0, 1) }}</div>
+                                <div>
+                                    <div class="font-bold text-slate-900 text-sm">{{ $order->athlete_name }}</div>
+                                    <div class="text-[10px] text-slate-500 font-black uppercase tracking-widest">{{ count(is_array($order->items_json) ? $order->items_json : []) }} items</div>
+                                </div>
+                            </div>
+                            <span class="w-6 h-6 flex items-center justify-center bg-green-100 text-green-600 rounded-full border border-green-200 flex-shrink-0">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                             </span>
-                            Size Selection Form
-                        </h3>
-                        <p class="text-slate-600 text-sm mt-2">No account or payment required. Submit your athlete's sizing below.</p>
+                        </div>
+                        @endforeach
                     </div>
-
-                    <div class="p-6">
-                        <form action="{{ route('store.order.submit', $store->slug) }}" method="POST" class="space-y-8">
-                            @csrf
-
-                            {{-- Athlete Info --}}
-                            <div class="space-y-4" x-data="{
-                                items: {
-                                    @foreach($store->items as $item)
-                                    '{{ $item->id }}': { selected: false, qty: 1, price: {{ $item->retail_price ?? 0 }} },
-                                    @endforeach
-                                },
-                                get total() {
-                                    let sum = 0;
-                                    for(const key in this.items) {
-                                        if(this.items[key].selected) {
-                                            sum += this.items[key].qty * this.items[key].price;
-                                        }
-                                    }
-                                    return sum.toFixed(2);
-                                }
-                            }">
-                                <div>
-                                    <label class="block text-xs font-black uppercase tracking-widest text-slate-600 mb-2">Athlete Full Name <span class="text-red-500">*</span></label>
-                                    <input type="text" name="athlete_name" required placeholder="e.g. Jordan Smith" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold shadow-sm">
-                                    @error('athlete_name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-black uppercase tracking-widest text-slate-600 mb-2">Gender / Pattern Base</label>
-                                    <select name="gender" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                                        <option value="">Select cut pattern...</option>
-                                        <option value="Mens / Boys">Men's / Boy's Cut</option>
-                                        <option value="Womens / Girls">Women's / Girl's Cut</option>
-                                        <option value="Unisex">Unisex</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <hr class="border-slate-200">
-
-                            {{-- Per-Item Sizing --}}
-                            <div>
-                                <label class="block text-xs font-black uppercase tracking-widest text-slate-700 mb-4">Select Items & Sizes</label>
-                                <p class="text-xs text-slate-500 mb-4">Check each item you are ordering and fill in the required sizing below it.</p>
-
-                                <div class="space-y-4" x-data>
-                                    @foreach($store->items as $item)
-                                    @php
-                                        $isBackpack = $item->type === 'backpack';
-                                        $hasSizes   = in_array($item->type, \App\Models\DesignCatalog::sizedTypes());
-                                        $hasNumber  = $item->designCatalog?->has_number_field ?? false;
-                                        $hasNameField = $item->designCatalog?->has_name_field ?? false;
-                                    @endphp
-
-                                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm" x-data="{ currentItemId: '{{ $item->id }}' }">
-                                        {{-- Item header (checkbox) --}}
-                                        <label for="item_sel_{{ $item->id }}" class="flex items-center gap-4 p-4 cursor-pointer hover:bg-slate-50 transition-colors" @click="items[currentItemId].selected = document.getElementById('item_sel_{{ $item->id }}').checked">
-                                            <input type="checkbox" id="item_sel_{{ $item->id }}" name="items[{{ $item->id }}][selected]" value="1" x-model="items[currentItemId].selected" class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary shadow-sm cursor-pointer">
-                                            <div class="flex-1">
-                                                <div class="font-bold text-slate-900 text-lg">{{ $item->name }}</div>
-                                                <div class="flex items-center gap-2 mt-0.5">
-                                                    <span class="text-xs font-bold uppercase tracking-wider text-primary">{{ str_replace('_', ' ', $item->type) }}</span>
-                                                    @if($item->retail_price > 0)
-                                                    <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">${{ number_format($item->retail_price, 2) }}</span>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                            @if($item->image_url)
-                                                <img src="{{ $item->image_url }}" alt="" class="w-14 h-14 object-contain rounded-lg border border-slate-200 bg-slate-50 flex-shrink-0">
-                                            @endif
-                                        </label>
-
-                                        <input type="hidden" name="items[{{ $item->id }}][name]" value="{{ $item->name }}">
-                                        <input type="hidden" name="items[{{ $item->id }}][type]" value="{{ $item->type }}">
-
-                                        {{-- Expandable sizing panel --}}
-                                        <div x-show="items[currentItemId].selected" x-transition class="border-t border-slate-200 bg-slate-50 p-4" style="display:none;">
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                                                @if($isBackpack || $hasNameField)
-                                                {{-- Backpack / personalized items: name input --}}
-                                                <div class="sm:col-span-2">
-                                                    <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Name on {{ str_replace('_', ' ', ucfirst($item->type)) }}</label>
-                                                    <input type="text" name="items[{{ $item->id }}][name_on_item]" placeholder="Enter first and last name" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm font-medium">
-                                                </div>
-                                                @endif
-
-                                                @if($hasSizes)
-                                                {{-- Standard sized items --}}
-                                                <div>
-                                                    <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Size</label>
-                                                    <select name="items[{{ $item->id }}][size]" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm text-sm">
-                                                        <optgroup label="Youth Sizes">
-                                                            @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $s)
-                                                                <option value="{{ $s }}">{{ $s }}</option>
-                                                            @endforeach
-                                                        </optgroup>
-                                                        <optgroup label="Adult Sizes">
-                                                            @foreach(['AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL'] as $s)
-                                                                <option value="{{ $s }}" {{ $s === 'AM' ? 'selected' : '' }}>{{ $s }}</option>
-                                                            @endforeach
-                                                        </optgroup>
-                                                    </select>
-                                                </div>
-                                                @endif
-
-                                                @if($hasNumber)
-                                                {{-- Player number --}}
-                                                <div>
-                                                    <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Player Number (optional)</label>
-                                                    <input type="text" name="items[{{ $item->id }}][number]" placeholder="e.g. 24" maxlength="3" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
-                                                </div>
-                                                @endif
-
-                                                <div>
-                                                    <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Quantity</label>
-                                                    <input type="number" name="items[{{ $item->id }}][qty]" value="1" min="1" max="5" x-model.number="items[currentItemId].qty" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <hr class="border-slate-200">
-
-                            {{-- Notes & Submit --}}
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-xs font-black uppercase tracking-widest text-slate-600 mb-2">Special Sizing Notes (Optional)</label>
-                                    <textarea name="special_notes" rows="2" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:border-primary focus:outline-none placeholder:text-slate-400 shadow-sm" placeholder="e.g. Needs extra length on pants..."></textarea>
-                                </div>
-                            </div>
-
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 flex items-center justify-between">
-                                <span class="text-sm font-black uppercase tracking-widest text-slate-600">Estimated Total</span>
-                                <span class="text-3xl font-black text-slate-900">$<span x-text="total">0.00</span></span>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary w-full py-5 text-base font-black uppercase tracking-widest hover:-translate-y-0.5 transition-transform shadow-[0_8px_24px_rgba(26,86,204,0.25)]">
-                                Submit My Order
-                            </button>
-                            <p class="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-3">Total is for review only · No payment processed today</p>
-                        </form>
-                    </div>
-                </div>
-            @endif
+                @endif
+            </div>
         </div>
     </div>
 </div>
+
+
+
 @endsection

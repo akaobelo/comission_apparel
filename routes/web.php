@@ -65,6 +65,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     // Design catalog management
     Route::post('/admin/design', [AdminController::class, 'createDesign'])->name('admin.design.create');
     Route::delete('/admin/design/{design}', [AdminController::class, 'deleteDesign'])->name('admin.design.delete');
+    Route::post('/admin/design/{design}/assign-to-store', [AdminController::class, 'assignToStore'])->name('admin.design.assign-to-store');
 
     // Assign designs to coaches
     Route::post('/admin/coach/{coach}/assign-design', [AdminController::class, 'assignDesign'])->name('admin.coach.assign-design');
