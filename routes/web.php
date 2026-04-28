@@ -36,6 +36,7 @@ Route::get('/catalog', function (\Illuminate\Http\Request $request) {
 })->name('catalog.index');
 
 // Public Team Stores (parent-facing, no auth)
+Route::get('/store/search', [StoreController::class, 'search'])->name('store.search');
 Route::get('/store/{slug}', [StoreController::class, 'show'])->name('store.show');
 Route::post('/store/{slug}/order', [StoreController::class, 'submitOrder'])->name('store.order.submit');
 
@@ -78,6 +79,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     // Coach CRUD
     Route::get('/admin/coach/{user}/edit', [AdminController::class, 'editCoach'])->name('admin.coach.edit');
     Route::post('/admin/coach/{user}/update', [AdminController::class, 'updateCoach'])->name('admin.coach.update');
+    Route::post('/admin/coach/{user}/reset-password', [AdminController::class, 'resetCoachPassword'])->name('admin.coach.reset-password');
     Route::delete('/admin/coach/{user}/delete', [AdminController::class, 'deleteCoach'])->name('admin.coach.delete');
 
     // Design catalog management

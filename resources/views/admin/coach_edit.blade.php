@@ -69,6 +69,29 @@
                     </form>
                 </div>
             </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-200 bg-slate-50">
+                    <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Reset Coach Password</h2>
+                </div>
+                <div class="p-6">
+                    <form action="{{ route('admin.coach.reset-password', $user) }}" method="POST" class="space-y-5">
+                        @csrf
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">New Password</label>
+                                <input type="password" name="password" required minlength="8" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                @error('password')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Confirm New Password</label>
+                                <input type="password" name="password_confirmation" required minlength="8" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-outline py-3 px-8 text-sm uppercase tracking-wider font-bold" onclick="return confirm('Reset this coach password now?')">Reset Password</button>
+                    </form>
+                </div>
+            </div>
         </div>
 
         {{-- Right: Assigned Designs --}}

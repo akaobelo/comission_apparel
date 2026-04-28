@@ -9,6 +9,31 @@ use App\Models\DesignCatalog;
 
 class StoreController extends Controller
 {
+    public function search(Request $request)
+    {
+        $query = TeamStore::query()
+            ->with('user')
+            ->where('status', 'approved')
+            ->where('pricing_approved', true);
+
+        if ($request->filled('q')) {
+            $keyword = trim($request->q);
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', "%{$keyword}%")
+                    ->orWhereHas('user', function ($userQuery) use ($keyword) {
+                        $userQuery->where('organization', 'like', "%{$keyword}%")
+                            ->orWhere('first_name', 'like', "%{$keyword}%")
+                            ->orWhere('last_name', 'like', "%{$keyword}%")
+                            ->orWhere('sport', 'like', "%{$keyword}%");
+                    });
+            });
+        }
+
+        $stores = $query->latest()->paginate(12)->withQueryString();
+
+        return view('store.search', compact('stores'));
+    }
+
     public function show($slug)
     {
         $store = TeamStore::where('slug', $slug)

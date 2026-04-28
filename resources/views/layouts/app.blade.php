@@ -8,6 +8,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
     <!-- Alpine.js -->
@@ -25,8 +26,8 @@
             
             <!-- Desktop Navigation -->
             <nav class="hidden lg:flex items-center gap-8 font-medium text-sm tracking-wide">
-                <a href="/#design" class="text-white hover:text-secondary transition-colors">Design Collections</a>
-                <a href="/store/search" class="text-white hover:text-secondary transition-colors">Team Stores</a>
+                <a href="{{ route('catalog.index') }}" class="text-white hover:text-secondary transition-colors">Design Collections</a>
+                <a href="{{ route('store.search') }}" class="text-white hover:text-secondary transition-colors">Team Stores</a>
                 <a href="/quote" class="text-white hover:text-secondary transition-colors">Request A Quote</a>
                 <div class="h-6 w-px bg-slate-700"></div>
                 <a href="/coach/dashboard" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
@@ -47,8 +48,8 @@
         <!-- Mobile Navigation Dropdown -->
         <div x-show="mobileMenuOpen" x-transition.opacity.duration.200ms class="lg:hidden fixed inset-0 z-40 bg-white/95 backdrop-blur-3xl pt-28 px-6 pb-6 h-screen overflow-y-auto" style="display: none;" x-cloak>
             <nav class="flex flex-col gap-6 font-medium text-lg tracking-wide uppercase">
-                <a href="/#design" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Design Collections</a>
-                <a href="/store/search" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Team Stores</a>
+                <a href="{{ route('catalog.index') }}" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Design Collections</a>
+                <a href="{{ route('store.search') }}" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Team Stores</a>
                 <a href="/quote" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Request A Quote</a>
                 <div class="flex flex-col gap-4 mt-4">
                     <a href="/coach/dashboard" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-4 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">
@@ -85,7 +86,7 @@
                     <li><a href="/coach/dashboard" class="hover:text-secondary transition-colors">Coach Portal</a></li>
                     <li><a href="#" class="hover:text-secondary transition-colors">Employee Login</a></li>
                     <li><a href="#" class="hover:text-secondary transition-colors">Track Order</a></li>
-                    <li><a href="#" class="hover:text-secondary transition-colors">Design Collection</a></li>
+                    <li><a href="{{ route('catalog.index') }}" class="hover:text-secondary transition-colors">Design Collection</a></li>
                 </ul>
             </div>
             <div>

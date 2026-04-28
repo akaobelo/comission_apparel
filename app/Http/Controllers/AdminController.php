@@ -93,6 +93,22 @@ class AdminController extends Controller
             ->with('success', "Coach {$user->name}'s profile has been updated.");
     }
 
+    public function resetCoachPassword(Request $request, User $user)
+    {
+        if ($user->role !== 'coach') abort(404);
+
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user->update([
+            'password' => $validated['password'],
+        ]);
+
+        return redirect()->route('admin.coach.edit', $user)
+            ->with('success', "Password reset successfully for Coach {$user->name}.");
+    }
+
     public function deleteCoach(User $user)
     {
         if ($user->role !== 'coach') abort(404);

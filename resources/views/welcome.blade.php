@@ -36,7 +36,7 @@
             </ul>
             
             <div class="flex flex-col sm:flex-row gap-4">
-                <a href="#sports" class="btn btn-primary px-8 py-4 text-base font-black uppercase tracking-wider rounded-md shadow-md transition-all">View Uniform Gallery</a>
+                <a href="{{ route('catalog.index') }}" class="btn btn-primary px-8 py-4 text-base font-black uppercase tracking-wider rounded-md shadow-md transition-all">View Design Collection</a>
                 <a href="/coach/dashboard" class="btn border-2 border-slate-300 bg-white !text-slate-900 hover:bg-slate-50 px-8 py-4 text-base font-black uppercase tracking-wider rounded-md shadow-sm transition-all">Create Team Store</a>
             </div>
         </div>
@@ -64,7 +64,7 @@
                 <h2 class="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-2 text-slate-900">View our Custom <span class="text-secondary">Collections</span></h2>
                 <p class="text-slate-600 text-lg font-medium max-w-xl">Purpose-built cuts and materials for every arena.</p>
             </div>
-            <a href="{{ route('catalog.index') }}" class="btn btn-primary whitespace-nowrap px-8 py-3 rounded md:mt-2">View Full Catalog</a>
+            <a href="{{ route('catalog.index') }}" class="btn btn-primary whitespace-nowrap px-8 py-3 rounded md:mt-2">View Design Collection</a>
         </div>
 
         <!-- Alpine Tabs -->
