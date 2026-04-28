@@ -27,9 +27,14 @@
                         @csrf
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Full Name</label>
-                                <input type="text" name="name" value="{{ old('name', $user->name) }}" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
-                                @error('name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">First Name</label>
+                                <input type="text" name="first_name" value="{{ old('first_name', $user->first_name) }}" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                @error('first_name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Last Name</label>
+                                <input type="text" name="last_name" value="{{ old('last_name', $user->last_name) }}" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                @error('last_name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Email Address</label>

@@ -17,7 +17,7 @@
             Build Your <span class="text-secondary">Armor</span>
         </h1>
         <p class="text-slate-300 text-sm md:text-base max-w-2xl mx-auto">
-            Ready for a bespoke uniform package? Tell us about your organization below, and our elite design team will deliver a comprehensive proposal and mockup within 48 hours.
+            Ready for your 100% customized package? Tell us about your organization below, and our elite design team will deliver a comprehensive proposal and mockup within 48 hours.
         </p>
     </div>
 </div>
@@ -35,11 +35,15 @@
                 <h3 class="text-lg font-black uppercase text-slate-900 mb-4 border-b border-slate-200 pb-1">1. Point of Contact</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Full Name</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">First Name</label>
                         <input type="text" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-400 shadow-sm" placeholder="e.g. Coach Jackson">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Role/Title</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Last Name</label>
+                        <input type="text" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-400 shadow-sm" placeholder="e.g. Coach Jackson">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Position/Title</label>
                         <input type="text" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-400 shadow-sm" placeholder="e.g. Head Coach, Athletic Director">
                     </div>
                     <div>
@@ -55,17 +59,17 @@
 
             <!-- Section 2 -->
             <div>
-                <h3 class="text-lg font-black uppercase text-slate-900 mb-4 border-b border-slate-200 pb-1">2. Team Details</h3>
+                <h3 class="text-lg font-black uppercase text-slate-900 mb-4 border-b border-slate-200 pb-1">2. Organization Details</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div class="md:col-span-2">
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Organization / Team Name</label>
                         <input type="text" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-400 shadow-sm" placeholder="e.g. Metro High School Eagles">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Sport</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Apparel Category</label>
                         <div class="relative">
                             <select class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none appearance-none shadow-sm">
-                                <option value="" disabled selected>Select Sport...</option>
+                                <option value="" disabled selected>Make Your Selection...</option>
                                 <option>Football (Tackle)</option>
                                 <option>Flag Football</option>
                                 <option>Basketball</option>

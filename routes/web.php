@@ -17,6 +17,23 @@ Route::get('/', function () {
 });
 Route::get('/quote', function () { return view('quote'); });
 Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
+Route::get('/catalog', function (\Illuminate\Http\Request $request) {
+    $selectedSport = $request->query('sport');
+
+    $designCatalogQuery = \App\Models\DesignCatalog::query();
+    if (!empty($selectedSport)) {
+        $designCatalogQuery->where('sport', $selectedSport);
+    }
+
+    $designCatalog = $designCatalogQuery->latest()->get();
+    $availableSports = \App\Models\DesignCatalog::whereNotNull('sport')
+        ->where('sport', '!=', '')
+        ->distinct()
+        ->orderBy('sport')
+        ->pluck('sport');
+
+    return view('catalog.index', compact('designCatalog', 'availableSports', 'selectedSport'));
+})->name('catalog.index');
 
 // Public Team Stores (parent-facing, no auth)
 Route::get('/store/{slug}', [StoreController::class, 'show'])->name('store.show');
@@ -44,6 +61,7 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     Route::post('/coach/store', [CoachController::class, 'createStore'])->name('coach.store.create');
     Route::post('/coach/store/{store}/item', [CoachController::class, 'addStoreItem'])->name('coach.store.item.add');
     Route::post('/coach/item/{item}/remove', [CoachController::class, 'removeStoreItem'])->name('coach.store.item.remove');
+    Route::post('/coach/item/{item}/markup', [CoachController::class, 'updateItemMarkup'])->name('coach.store.item.markup');
     Route::post('/coach/store/{store}/deadline', [CoachController::class, 'updateDeadline'])->name('coach.store.deadline');
     Route::post('/coach/store/{store}/submit', [CoachController::class, 'submitMasterOrder'])->name('coach.store.submit');
     Route::post('/coach/store/{store}/approve-pricing', [CoachController::class, 'approvePricing'])->name('coach.store.pricing.approve');
@@ -64,6 +82,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
 
     // Design catalog management
     Route::post('/admin/design', [AdminController::class, 'createDesign'])->name('admin.design.create');
+    Route::put('/admin/design/{design}', [AdminController::class, 'updateDesign'])->name('admin.design.update');
     Route::delete('/admin/design/{design}', [AdminController::class, 'deleteDesign'])->name('admin.design.delete');
     Route::post('/admin/design/{design}/assign-to-store', [AdminController::class, 'assignToStore'])->name('admin.design.assign-to-store');
 

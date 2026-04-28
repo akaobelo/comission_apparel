@@ -32,7 +32,57 @@ class CoachController extends Controller
         // Global Design Catalog for picking
         $globalCatalog = DesignCatalog::latest()->get();
 
-        return view('coach.dashboard', compact('user', 'store', 'assignedDesigns', 'packageDesigns', 'globalCatalog'));
+        $salesSummary = [
+            'orders_count' => 0,
+            'total_sales' => 0,
+            'total_items_sold' => 0,
+            'average_order_value' => 0,
+            'order_rows' => [],
+        ];
+
+        if ($store) {
+            $priceByItemId = $store->items->keyBy('id');
+            $orderRows = [];
+            $totalSales = 0;
+            $totalItemsSold = 0;
+
+            foreach ($store->parentOrders as $order) {
+                $orderTotal = 0;
+                $orderItemsCount = 0;
+                $items = is_array($order->items_json) ? $order->items_json : [];
+
+                foreach ($items as $orderedItem) {
+                    $itemId = isset($orderedItem['id']) ? (int) $orderedItem['id'] : null;
+                    $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
+                    $orderItemsCount += $qty;
+
+                    $storeItem = $itemId ? $priceByItemId->get($itemId) : null;
+                    $retailPrice = $storeItem ? (float) $storeItem->retail_price : 0;
+                    $orderTotal += ($retailPrice * $qty);
+                }
+
+                $totalSales += $orderTotal;
+                $totalItemsSold += $orderItemsCount;
+
+                $orderRows[] = [
+                    'athlete_name' => $order->athlete_name,
+                    'items_count' => $orderItemsCount,
+                    'order_total' => $orderTotal,
+                    'submitted_at' => $order->created_at,
+                ];
+            }
+
+            $ordersCount = count($orderRows);
+            $salesSummary = [
+                'orders_count' => $ordersCount,
+                'total_sales' => $totalSales,
+                'total_items_sold' => $totalItemsSold,
+                'average_order_value' => $ordersCount > 0 ? $totalSales / $ordersCount : 0,
+                'order_rows' => $orderRows,
+            ];
+        }
+
+        return view('coach.dashboard', compact('user', 'store', 'assignedDesigns', 'packageDesigns', 'globalCatalog', 'salesSummary'));
     }
 
 
@@ -93,7 +143,7 @@ class CoachController extends Controller
             'image_url'         => null, // Deprecated
             'image_paths'       => $design->image_paths,
             'wholesale_price'   => $design->wholesale_price,
-            'retail_price'      => 0, // Parents don't see prices anymore
+            'retail_price'      => $design->wholesale_price,
         ]);
 
         return redirect()->route('coach.dashboard')
@@ -108,6 +158,23 @@ class CoachController extends Controller
         $item->delete();
         return redirect()->route('coach.dashboard')
             ->with('success', 'Item removed from store.');
+    }
+
+    public function updateItemMarkup(Request $request, StoreItem $item)
+    {
+        $store = $item->teamStore;
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'markup' => 'required|numeric|min:0',
+        ]);
+
+        $item->update([
+            'retail_price' => $item->wholesale_price + $request->markup,
+        ]);
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Item markup updated successfully.');
     }
 
     public function updateDeadline(Request $request, TeamStore $store)

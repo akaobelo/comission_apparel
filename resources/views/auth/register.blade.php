@@ -22,13 +22,22 @@
             <form action="{{ route('register') }}" method="POST" class="space-y-6" enctype="multipart/form-data" x-data="{ showPass: false, showConfirmPass: false }">
                 @csrf
 
-                {{-- Row 1: Name + Email --}}
+                {{-- Row 1: First Name + Last Name --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Full Name</label>
-                        <input type="text" name="name" value="{{ old('name') }}" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-400 shadow-sm" placeholder="e.g. Jordan Smith">
-                        @error('name')<p class="text-red-500 text-xs mt-2 font-bold">{{ $message }}</p>@enderror
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">First Name</label>
+                        <input type="text" name="first_name" value="{{ old('first_name') }}" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-400 shadow-sm" placeholder="e.g. Jordan">
+                        @error('first_name')<p class="text-red-500 text-xs mt-2 font-bold">{{ $message }}</p>@enderror
                     </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Last Name</label>
+                        <input type="text" name="last_name" value="{{ old('last_name') }}" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-400 shadow-sm" placeholder="e.g. Smith">
+                        @error('last_name')<p class="text-red-500 text-xs mt-2 font-bold">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+
+                {{-- Row 1.5: Organization --}}
+                <div class="grid grid-cols-1 gap-6">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Organization / School Name</label>
                         <input type="text" name="organization" value="{{ old('organization') }}" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-400 shadow-sm" placeholder="e.g. Springfield High Athletics">

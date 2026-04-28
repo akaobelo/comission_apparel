@@ -181,6 +181,10 @@
                             <div class="p-6 flex flex-col flex-1 bg-white border-t border-slate-100">
                                 <span class="text-[10px] font-black uppercase tracking-widest text-red-600 mb-2">{{ $typeLabel }}</span>
                                 <h3 class="text-lg font-black text-slate-900 leading-tight mb-3">{{ $item->name }}</h3>
+                                <div class="text-sm font-bold text-slate-700">
+                                    Store Price:
+                                    <span class="text-green-700">${{ number_format($item->retail_price, 2) }}</span>
+                                </div>
                                 
                                 <div class="mt-auto pt-6">
                                     <button type="button" @click.prevent="openPanel('{{ $item->id }}')" class="w-full py-3.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all"
@@ -264,6 +268,7 @@
                                 <div>
                                     <h3 class="text-xl font-black text-slate-900 mb-1">{{ $item->name }}</h3>
                                     <p class="text-[10px] font-bold uppercase tracking-widest text-primary">{{ $item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $types)) }}</p>
+                                    <p class="text-xs font-bold text-green-700 mt-2">Store Price: ${{ number_format($item->retail_price, 2) }}</p>
                                 </div>
                                 
                                 <div class="space-y-5">

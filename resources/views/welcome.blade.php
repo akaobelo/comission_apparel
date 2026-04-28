@@ -3,15 +3,13 @@
 @section('content')
 
 <!-- Hero Section -->
-<section class="relative bg-white min-h-[90vh] flex items-center justify-center pt-20 overflow-hidden">
+<section class="relative bg-white min-h-[80vh] flex items-center justify-center pt-20 overflow-hidden">
     <!-- Subtle Background Dot Pattern -->
     <div class="absolute inset-0 z-0 opacity-40" style="background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 32px 32px;"></div>
 
-    <div class="relative z-10 max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-2 gap-12 items-stretch py-12">
+    <div class="relative z-10 max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-2 gap-12 items-stretch pt-12 pb-4 lg:pb-8">
         <div class="max-w-2xl animate-slide-up flex flex-col justify-center order-2 lg:order-1">
-            <div class="inline-flex items-center px-4 py-1.5 rounded bg-slate-100 border-l-[3px] border-slate-400 text-slate-700 text-[11px] tracking-widest font-bold mb-6 uppercase">
-                THE COMMISSION APPAREL
-            </div>
+           
             
             <h1 class="text-7xl md:text-7xl lg:text-7xl font-black tracking-tighter leading-[0.85] mb-6 uppercase text-slate-950">
                 Elite Custom <br/>
@@ -54,28 +52,19 @@
              <img src="/images/hero-models.png" alt="Elite Custom Uniform Models" class="relative z-10 w-full h-full max-h-[600px] object-contain drop-shadow-2xl">
              
              <!-- Floating Badge -->
-             <div class="absolute top-12 left-0 z-20 bg-white p-3 rounded-xl shadow-xl flex items-center gap-3 animate-bounce border border-slate-100">
-                <div class="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-500 font-bold border border-green-100">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <div class="pr-2">
-                    <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Order Status</div>
-                    <div class="font-black text-slate-800 text-sm">Arriving Early</div>
-                </div>
-             </div>
-        </div>
+            
     </div>
 </section>
 
 <!-- Sports Tabs / Uniform Gallery -->
-<section id="sports" class="py-24 bg-white" x-data="{ activeTab: 'football' }">
+<section id="sports" class="pt-2 pb-12 lg:pt-4 lg:pb-16 bg-white" x-data="{ activeTab: 'football' }">
     <div class="max-w-7xl mx-auto px-6 relative z-10">
         <div class="flex flex-col md:flex-row md:items-start justify-between mb-12 gap-6">
             <div>
                 <h2 class="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-2 text-slate-900">View our Custom <span class="text-secondary">Collections</span></h2>
                 <p class="text-slate-600 text-lg font-medium max-w-xl">Purpose-built cuts and materials for every arena.</p>
             </div>
-            <a href="/quote" class="btn btn-primary whitespace-nowrap px-8 py-3 rounded md:mt-2">View Full Catalog</a>
+            <a href="{{ route('catalog.index') }}" class="btn btn-primary whitespace-nowrap px-8 py-3 rounded md:mt-2">View Full Catalog</a>
         </div>
 
         <!-- Alpine Tabs -->
@@ -87,7 +76,7 @@
                     <span x-text="tab === 'merch' ? 'Custom Merch' : tab"></span>
                 </button>
             </template>
-            <a href="/catalog" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 border-transparent text-slate-500 hover:text-secondary relative top-[1px]">View All</a>
+            <a href="{{ route('catalog.index') }}" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 border-transparent text-slate-500 hover:text-secondary relative top-[1px]">View All</a>
         </div>
 
         <!-- Gallery Grid -->
@@ -103,7 +92,8 @@
                     <h3 class="text-xl font-black uppercase mb-2 text-slate-900">{{ $collection->title }}</h3>
                     <p class="text-slate-600 text-sm mb-6 font-medium">{{ $collection->description }}</p>
                     <div class="flex items-center gap-3">
-                        <a href="/quote" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 w-full py-2 shadow-sm font-bold text-sm tracking-wider rounded transition-colors uppercase text-center">Start Design</a>
+                    <!-- class="btn btn-primary px-8 py-4 text-base font-black uppercase tracking-wider rounded-md shadow-md transition-all"     -->
+                    <a href="/quote" class="border btn btn-primary border-slate-300  rounded-md bg-secondary  w-full py-2 shadow-sm font-bold text-sm  uppercase text-center">Talk to an Expert</a>
                     </div>
                 </div>
             </div>
@@ -115,79 +105,82 @@
         </div>
 
         <!-- Custom CTA Full Width Banner -->
-        <div class="mt-12 bg-white flex flex-col md:flex-row justify-center items-center gap-6 py-6 border-t border-slate-100">
-            <h3 class="text-2xl font-black uppercase text-slate-900">Got a Vision?</h3>
-            <a href="/quote" class="btn btn-primary py-3 px-8 rounded shadow-md text-sm font-bold tracking-wider uppercase">Talk to an Expert</a>
-        </div>
+        
     </div>
 </section>
 
 <!-- Team Store Section -->
-<section id="team-store" class="py-24 relative border-b border-slate-900 overflow-hidden bg-slate-900" style="background-color: #0f172a;">
-    <!-- Dashboard Background Image - Acting as a shadow texture -->
-    <div class="absolute inset-0 z-0 opacity-20">
-        <img src="/images/dashboard-concept.png" alt="Coach Dashboard" class="w-full h-full object-cover object-top object-left">
-    </div>
-    <div class="absolute inset-0 z-0 bg-black bg-opacity-50" style="background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.8));"></div>
-
-    <div class="max-w-7xl mx-auto px-6 relative z-10">
-        <div class="text-center mb-16">
-            <h2 class="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-4 text-white" style="text-shadow: 0 4px 10px rgba(0,0,0,0.5);">Team <span class="text-secondary drop-shadow-md ml-3">Store</span></h2>
-            <p class="text-slate-200 max-w-2xl mx-auto text-lg font-medium font-black text-white  drop-shadow-sm">Empower your program with a custom online store that eliminates hassle and generates revenue.</p>
+<section id="team-store" class="py-24 bg-[#0a0a0a] border-y border-slate-900">
+    <div class="max-w-[90rem] mx-auto px-6">
+        
+        <!-- UI Mockup Image -->
+        <div class="mb-16 px-4 lg:px-6 max-w-[85rem] mx-auto">
+             <div class="w-full rounded-xl overflow-hidden shadow-2xl relative" style="aspect-ratio: 3.2 / 1;">
+                 <img src="/images/team-store-background-v2.png" alt="Team Store UI Previews" class="absolute w-full max-w-none h-auto left-0 -top-[9%] md:-top-[12%] lg:-top-[15%]">
+             </div>
         </div>
 
-        <div class="grid md:grid-cols-2 gap-8 lg:gap-16 gap-y-16 max-w-5xl mx-auto">
-            <div class="flex gap-5 relative">
-                <div class="mt-1 w-10 h-10 rounded bg-secondary shadow-sm flex items-center justify-center shrink-0 text-white">
-                    <svg class="w-5 h-5 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <div>
-                    <h3 class="text-lg md:text-xl font-black text-white uppercase mb-3 drop-shadow-md">Custom Designs That Drive Demand</h3>
-                    <p class="text-slate-300 font-medium leading-relaxed drop-shadow-sm text-justify">We create high-quality, exclusive apparel designs tailored to your team—making your store something people actually want to shop from, not just another generic merch page.</p>
-                </div>
-            </div>
-
-            <div class="flex gap-5 relative">
-                <div class="mt-1 w-10 h-10 rounded bg-secondary shadow-sm flex items-center justify-center shrink-0 text-white">
-                    <svg class="w-5 h-5 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <div>
-                    <h3 class="text-lg md:text-xl font-black text-white uppercase mb-3 drop-shadow-md">Parents Order Directly</h3>
-                    <p class="text-slate-300 font-medium leading-relaxed drop-shadow-sm text-justify">Families simply use your team store link to place their own orders, eliminating the need for coaches to collect forms, track sizes, or manage money.</p>
-                </div>
-            </div>
-
-            <div class="flex gap-5 relative">
-                <div class="mt-1 w-10 h-10 rounded bg-secondary shadow-sm flex items-center justify-center shrink-0 text-white">
-                    <svg class="w-5 h-5 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <div>
-                    <h3 class="text-lg md:text-xl font-black text-white uppercase mb-3 drop-shadow-md">Turn Your Program Into a Revenue Stream</h3>
-                    <p class="text-slate-300 font-medium leading-relaxed drop-shadow-sm text-justify">Your custom team store allows you to generate ongoing income from every purchase—helping fund travel, equipment, and program growth without additional fundraising efforts.</p>
-                </div>
-            </div>
-
-            <div class="flex gap-5 relative">
-                <div class="mt-1 w-10 h-10 rounded bg-secondary shadow-sm flex items-center justify-center shrink-0 text-white">
-                    <svg class="w-5 h-5 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <div>
-                    <h3 class="text-lg md:text-xl font-black text-white uppercase mb-3 drop-shadow-md">Professional, Branded Experience</h3>
-                    <p class="text-slate-300 font-medium leading-relaxed drop-shadow-sm text-justify">Your athletes, parents, and supporters get access to a clean, custom-designed online store that reflects your team’s identity and elevates your brand.</p>
-                </div>
-            </div>
+        <!-- Text Content -->
+        <div class="max-w-4xl mx-auto text-center mb-16">
+            <h2 class="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase text-white mb-6">TEAM <span class="text-secondary ml-1">STORE</span></h2>
+            <p class="text-slate-100 text-lg md:text-xl font-medium tracking-wide">Empower your program with a custom online store that eliminates hassle and generates revenue.</p>
         </div>
 
-        <!-- <div class="mt-20 text-center">
-            <a href="/coach/dashboard" class="btn btn-primary px-10 py-4 text-base font-black uppercase tracking-wider rounded-md shadow-[0_0_20px_rgba(200,20,50,0.5)] transition-all hover:scale-105">Get Started Now</a>
-        </div> -->
+        <!-- Features Grid -->
+        <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12">
+            
+            <!-- Feature 1 -->
+            <div class="flex gap-4">
+                <div class="shrink-0 mt-1.5">
+                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
+                </div>
+                <div>
+                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">CUSTOM DESIGNS THAT DRIVE DEMAND</h3>
+                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">We create high-quality, exclusive apparel designs tailored to your team—making your store something people actually want to shop from, not just another generic merch page.</p>
+                </div>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="flex gap-4">
+                <div class="shrink-0 mt-1.5">
+                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
+                </div>
+                <div>
+                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">PARENTS ORDER DIRECTLY</h3>
+                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Families simply use your team store link to place their own orders, eliminating the need for coaches to collect forms, track sizes, or manage money.</p>
+                </div>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="flex gap-4">
+                <div class="shrink-0 mt-1.5">
+                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
+                </div>
+                <div>
+                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">TURN YOUR PROGRAM INTO A REVENUE STREAM</h3>
+                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Your custom team store allows you to generate ongoing income from every purchase—helping fund travel, equipment, and program growth without additional fundraising efforts.</p>
+                </div>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="flex gap-4">
+                <div class="shrink-0 mt-1.5">
+                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
+                </div>
+                <div>
+                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">PROFESSIONAL, BRANDED EXPERIENCE</h3>
+                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Your athletes, parents, and supporters get access to a clean, custom-designed online store that reflects your team's identity and elevates your brand.</p>
+                </div>
+            </div>
+
+        </div>
     </div>
 </section>
 
 
 
 <!-- Powerful Features (Team Stores & Dashboard Teaser) -->
-<section id="system" class="py-24 bg-slate-50 border-t border-slate-200 overflow-hidden">
+<section id="system" class="py-12 lg:py-16 bg-slate-50 border-t border-slate-200 overflow-hidden">
     <div class="max-w-7xl mx-auto px-6">
         <div class="grid lg:grid-cols-2 gap-16 items-center">
             
@@ -235,7 +228,7 @@
 
                 </div>
                 
-                <div class="mt-12 flex items-center gap-6 pt-6">
+                <div class="mt-8 flex items-center gap-6 pt-4 border-t border-slate-200/50">
                     <a href="/coach/dashboard" class="btn btn-primary px-6 py-3 font-bold rounded shadow-md flex items-center justify-center gap-2">
                         <img src="/images/LR.png" alt="LR Logo" class="h-5 w-auto object-contain">
                         Dashboard Sign-in
@@ -248,24 +241,36 @@
 </section>
 
 <!-- Testimonials Section -->
-<section id="testimonials" class="py-24 bg-white border-t border-slate-200 overflow-hidden">
-    <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
-        <div class="max-w-xl">
-            <h2 class="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-8 text-slate-900">
-                <span class="text-secondary">"</span> TESTIMONIALS <span class="text-secondary">"</span>
-            </h2>
-            <p class="text-slate-700 text-lg md:text-xl font-medium leading-relaxed mb-6">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-            </p>
-            <div class="font-black text-slate-900 text-lg mb-10">
-                - Justin Gatlin
-            </div>
-            <a href="/testimonials" class="btn btn-primary px-8 py-3 font-bold text-sm tracking-wider uppercase rounded shadow-md transition-all">More Testimonials</a>
+<section id="testimonials" class="py-12 lg:py-16 bg-white border-t border-slate-200 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-6">
+        <h2 class="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-10 text-slate-900">
+            <span class="text-secondary">"</span> TESTIMONIALS <span class="text-secondary">"</span>
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <article class="bg-slate-50 border border-slate-200 rounded-xl p-8">
+                <p class="text-slate-700 text-base md:text-lg font-medium leading-relaxed mb-6">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </p>
+                <div class="inline-block border border-primary/30 bg-white px-4 py-2">
+                    <p class="font-black text-slate-900 text-base">- Justin Gatlin</p>
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-1">USA Track &amp; Field</p>
+                </div>
+            </article>
+
+            <article class="hidden md:block bg-slate-50 border border-slate-200 rounded-xl p-8">
+                <p class="text-slate-700 text-base md:text-lg font-medium leading-relaxed mb-6">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </p>
+                <div class="inline-block border border-primary/30 bg-white px-4 py-2">
+                    <p class="font-black text-slate-900 text-base">- Justin Gatlin</p>
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-1">USA Track &amp; Field</p>
+                </div>
+            </article>
         </div>
-        <div class="relative flex justify-center">
-             <div class="absolute inset-0 bg-slate-50 rounded-full scale-110 -z-10 origin-center blur-2xl opacity-50"></div>
-             <!-- Testimonial Image -->
-             <img src="/images/testimonials.png" alt="Justin Gatlin Testimonial" class="w-full max-w-[600px] h-auto object-contain shrink-0 drop-shadow-xl">
+
+        <div class="mt-8">
+            <a href="/testimonials" class="btn btn-primary px-8 py-3 font-bold text-sm tracking-wider uppercase rounded shadow-md transition-all">More Testimonials</a>
         </div>
     </div>
 </section>

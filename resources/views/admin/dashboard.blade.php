@@ -21,7 +21,7 @@
             <div class="inline-flex items-center gap-2 px-3 py-1 bg-red-100 border border-red-200 text-red-700 text-xs font-bold uppercase tracking-widest rounded-full mb-2">
                 <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Super Admin
             </div>
-            <h1 class="text-4xl font-black uppercase tracking-tight text-slate-900">Admin <span class="text-primary">Control Center</span></h1>
+            <h1 class="text-4xl font-black uppercase tracking-tight text-slate-900">Admin <span class="text-secondary">Control Center</span></h1>
         </div>
         <form action="{{ route('logout') }}" method="POST">
             @csrf
@@ -49,13 +49,25 @@
         </div>
     </div>
 
-    <div x-data="{ activeAdminTab: 'stores' }">
+    <div x-data="{
+        activeAdminTab: 'stores',
+        init() {
+            const savedTab = localStorage.getItem('adminActiveTab');
+            if (savedTab) {
+                this.activeAdminTab = savedTab;
+            }
+        },
+        setTab(tab) {
+            this.activeAdminTab = tab;
+            localStorage.setItem('adminActiveTab', tab);
+        }
+    }">
         {{-- Admin Navigation Tabs --}}
         <div class="flex overflow-x-auto pb-0 mb-8 border-b border-slate-200 gap-8">
-            <button @click="activeAdminTab = 'stores'" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'stores' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-900'">Stores & Orders</button>
-            <button @click="activeAdminTab = 'coaches'" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'coaches' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-900'">Coaches</button>
-            <button @click="activeAdminTab = 'catalog'" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'catalog' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-900'">Design Catalog</button>
-            <button @click="activeAdminTab = 'landing'" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'landing' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-900'">Landing Page Settings</button>
+            <button @click="setTab('stores')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'stores' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Stores & Orders</button>
+            <button @click="setTab('coaches')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'coaches' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Coaches</button>
+            <button @click="setTab('catalog')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'catalog' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Design Catalog</button>
+            <button @click="setTab('landing')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'landing' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Landing Page Settings</button>
         </div>
 
         {{-- ═══ STORES & ORDERS TAB ═══ --}}
@@ -200,7 +212,9 @@
                 <table class="w-full text-left">
                     <thead class="bg-slate-50 border-b border-slate-200">
                         <tr class="text-xs font-bold uppercase tracking-wider text-slate-500">
-                            <th class="px-5 py-3">Coach</th>
+                            <th class="px-5 py-3">ID</th>
+                            <th class="px-5 py-3">First Name</th>
+                            <th class="px-5 py-3">Last Name</th>
                             <th class="px-5 py-3">Organization</th>
                             <th class="px-5 py-3">Sport</th>
                             <th class="px-5 py-3">Status</th>
@@ -211,9 +225,13 @@
                     <tbody class="divide-y divide-slate-100 text-sm">
                         @foreach($coaches as $coach)
                         <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-4 text-slate-500 font-mono text-xs">#{{ $coach->id }}</td>
                             <td class="px-5 py-4">
-                                <div class="font-bold text-slate-900">{{ $coach->name }}</div>
+                                <div class="font-bold text-slate-900">{{ $coach->first_name }}</div>
                                 <div class="text-xs text-slate-500">{{ $coach->email }}</div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="font-bold text-slate-900">{{ $coach->last_name }}</div>
                             </td>
                             <td class="px-5 py-4 text-slate-700">{{ $coach->organization ?? '—' }}</td>
                             <td class="px-5 py-4 text-slate-700">{{ $coach->sport ?? '—' }}</td>
@@ -245,7 +263,7 @@
                         </tr>
                         @endforeach
                         @if($coaches->isEmpty())
-                            <tr><td colspan="6" class="px-5 py-10 text-center text-slate-400 text-sm">No coaches found{{ request('search') ? ' matching "' . request('search') . '"' : '' }}.</td></tr>
+                            <tr><td colspan="8" class="px-5 py-10 text-center text-slate-400 text-sm">No coaches found{{ request('search') ? ' matching "' . request('search') . '"' : '' }}.</td></tr>
                         @endif
                     </tbody>
                 </table>
@@ -331,18 +349,23 @@
         </div>
 
         {{-- ═══ DESIGN CATALOG TAB ═══ --}}
-        <div x-show="activeAdminTab === 'catalog'" x-cloak class="max-w-4xl">
-            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div class="p-5 border-b border-slate-200 bg-slate-50">
-                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Design Catalog</h2>
-                    <p class="text-xs text-slate-500 mt-1">Add a custom design and assign it to coaches.</p>
-                </div>
-                <div class="p-5">
-                    <form action="{{ route('admin.design.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+        <div x-show="activeAdminTab === 'catalog'" x-cloak>
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50">
+                        <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Design</h2>
+                        <p class="text-xs text-slate-500 mt-1">Create catalog entries for coaches and stores.</p>
+                    </div>
+                    <div class="p-5">
+                        <form action="{{ route('admin.design.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                         @csrf
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Design Name</label>
                             <input type="text" name="name" required placeholder="e.g. Springfield Eagles - Home Jersey" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Sport</label>
+                            <input type="text" name="sport" placeholder="e.g. Football, Basketball" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
@@ -359,18 +382,19 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Package Category</label>
-                                <select name="category" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <input list="create_category_options" name="category" required placeholder="e.g. package_a or Custom Package" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <datalist id="create_category_options">
                                     <option value="package_a">Package A — Base</option>
                                     <option value="package_b">Package B — Standard</option>
                                     <option value="package_c">Package C — Full</option>
                                     <option value="individual">Individual Item</option>
-                                </select>
+                                </datalist>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Upload Images (Max 5)</label>
-                                <input type="file" name="images[]" multiple accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Upload Images</label>
+                                <input type="file" name="images[]" multiple accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-secondary file:text-white hover:file:bg-[#a11825]">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Wholesale Price ($)</label>
@@ -390,40 +414,120 @@
                         <button type="submit" class="w-full py-2.5 bg-secondary hover:bg-[#a11825] text-white text-sm font-bold uppercase tracking-wider rounded-lg transition-colors">
                             Add to Design Catalog
                         </button>
-                    </form>
+                        </form>
+                    </div>
                 </div>
 
-                {{-- Existing catalog items --}}
-                @if($designCatalog->isNotEmpty())
-                <div class="border-t border-slate-200 max-h-80 overflow-y-auto">
-                    @foreach($designCatalog as $design)
-                    <div class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0">
-                        <div>
-                            <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">{{ $design->type_label }} · {{ $design->category_label }}</div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <form action="{{ route('admin.design.assign-to-store', $design) }}" method="POST" class="flex items-center gap-1">
-                                @csrf
-                                <select name="team_store_id" required class="text-xs bg-white border border-slate-300 rounded px-2 py-1 w-32 focus:border-primary focus:outline-none">
-                                    <option value="">Assign to store...</option>
-                                    @foreach($allStores as $store)
-                                        <option value="{{ $store->id }}">{{ $store->name }} ({{ $store->user->name }})</option>
-                                    @endforeach
-                                </select>
-                                <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors" title="Push Design to Store">Push</button>
-                            </form>
-                            <form action="{{ route('admin.design.delete', $design) }}" method="POST" onsubmit="return confirm('Delete this design from the catalog?')">
-                                @csrf @method('DELETE')
-                                <button class="text-red-400 hover:text-red-600 transition-colors p-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                </button>
-                            </form>
-                        </div>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50">
+                        <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Update Existing Catalog</h2>
+                        <p class="text-xs text-slate-500 mt-1">Edit design details and push items to team stores.</p>
                     </div>
-                    @endforeach
+                    @if($designCatalog->isNotEmpty())
+                    <div class="max-h-[900px] overflow-y-auto">
+                        @foreach($designCatalog as $design)
+                        @php
+                            $typeOptions = ['uniform_top', 'uniform_bottom', 'warmup_top', 'warmup_bottom', 'arm_sleeve', 'backpack', 'accessory'];
+                        @endphp
+                        <div class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0">
+                            <div class="flex-1 pr-4">
+                                <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">
+                                    {{ $design->sport ? $design->sport . ' · ' : '' }}{{ $design->type_label }} · {{ $design->category_label }}
+                                </div>
+                                <details class="mt-2">
+                                    <summary class="text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer hover:text-primary">Edit design</summary>
+                                    <form action="{{ route('admin.design.update', $design) }}" method="POST" enctype="multipart/form-data" class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+                                        @csrf
+                                        @method('PUT')
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            <div>
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Name</label>
+                                                <input type="text" name="name" value="{{ $design->name }}" required class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Sport</label>
+                                                <input type="text" name="sport" value="{{ $design->sport }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Category</label>
+                                                <input list="edit_category_options_{{ $design->id }}" name="category" value="{{ $design->category }}" required class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                                <datalist id="edit_category_options_{{ $design->id }}">
+                                                    <option value="package_a">Package A — Base</option>
+                                                    <option value="package_b">Package B — Standard</option>
+                                                    <option value="package_c">Package C — Full</option>
+                                                    <option value="individual">Individual Item</option>
+                                                </datalist>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Item Types</label>
+                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                                @foreach($typeOptions as $typeOption)
+                                                    <label class="flex items-center gap-1.5 text-[10px] text-slate-700">
+                                                        <input
+                                                            type="checkbox"
+                                                            name="types[]"
+                                                            value="{{ $typeOption }}"
+                                                            class="rounded border-slate-300 text-primary focus:ring-primary"
+                                                            {{ in_array($typeOption, $design->types ?? []) ? 'checked' : '' }}
+                                                        >
+                                                        <span>{{ ucwords(str_replace('_', ' ', $typeOption)) }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            <div>
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Wholesale Price ($)</label>
+                                                <input type="number" step="0.01" min="0" name="wholesale_price" value="{{ $design->wholesale_price }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Replace Images (optional)</label>
+                                                <input type="file" name="images[]" multiple accept="image/*" class="w-full text-[10px] text-slate-500 file:mr-2 file:py-1.5 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-secondary file:text-white hover:file:bg-[#a11825]">
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-wrap gap-3">
+                                            <label class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                                                <input type="checkbox" name="has_name_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary" {{ $design->has_name_field ? 'checked' : '' }}>
+                                                Name on Item
+                                            </label>
+                                            <label class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                                                <input type="checkbox" name="has_number_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary" {{ $design->has_number_field ? 'checked' : '' }}>
+                                                Player Number
+                                            </label>
+                                        </div>
+                                        <button type="submit" class="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded hover:bg-slate-700 transition-colors">
+                                            Save Changes
+                                        </button>
+                                    </form>
+                                </details>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <form action="{{ route('admin.design.assign-to-store', $design) }}" method="POST" class="flex items-center gap-1">
+                                    @csrf
+                                    <select name="team_store_id" required class="text-xs bg-white border border-slate-300 rounded px-2 py-1 w-32 focus:border-primary focus:outline-none">
+                                        <option value="">Assign to store...</option>
+                                        @foreach($allStores as $store)
+                                            <option value="{{ $store->id }}">{{ $store->name }} ({{ $store->user->name }})</option>
+                                        @endforeach
+                                    </select>
+                                    <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors" title="Push Design to Store">Push</button>
+                                </form>
+                                <form action="{{ route('admin.design.delete', $design) }}" method="POST" onsubmit="return confirm('Delete this design from the catalog?')">
+                                    @csrf @method('DELETE')
+                                    <button class="text-red-400 hover:text-red-600 transition-colors p-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <div class="p-6 text-center text-sm text-slate-400">No designs in catalog yet.</div>
+                    @endif
                 </div>
-                @endif
             </div>
         </div>
     </div>

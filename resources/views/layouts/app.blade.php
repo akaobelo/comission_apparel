@@ -64,7 +64,7 @@
         @yield('content')
     </main>
 
-    <footer class="bg-slate-950 border-t border-slate-800 py-12 lg:py-20 relative overflow-hidden mt-20">
+    <footer class="bg-slate-950 border-t border-slate-800 py-12 lg:py-16 relative overflow-hidden">
         <div class="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
         <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
             <div class="col-span-1 md:col-span-2">
@@ -83,8 +83,9 @@
                 <ul class="space-y-2 text-slate-400">
                     <li><a href="#" class="hover:text-secondary transition-colors">Team Stores</a></li>
                     <li><a href="/coach/dashboard" class="hover:text-secondary transition-colors">Coach Portal</a></li>
-                    <li><a href="#" class="hover:text-secondary transition-colors">Sales Agent Login</a></li>
+                    <li><a href="#" class="hover:text-secondary transition-colors">Employee Login</a></li>
                     <li><a href="#" class="hover:text-secondary transition-colors">Track Order</a></li>
+                    <li><a href="#" class="hover:text-secondary transition-colors">Design Collection</a></li>
                 </ul>
             </div>
             <div>

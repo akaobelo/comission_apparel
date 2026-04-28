@@ -23,7 +23,8 @@ class AdminController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('organization', 'like', "%{$search}%");
             });
@@ -77,7 +78,8 @@ class AdminController extends Controller
         if ($user->role !== 'coach') abort(404);
 
         $validated = $request->validate([
-            'name'         => ['required', 'string', 'max:255'],
+            'first_name'   => ['required', 'string', 'max:255'],
+            'last_name'    => ['required', 'string', 'max:255'],
             'email'        => ['required', 'email', 'unique:users,email,' . $user->id],
             'organization' => ['required', 'string', 'max:255'],
             'phone'        => ['required', 'string', 'max:20'],
@@ -106,11 +108,12 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'name'             => ['required', 'string', 'max:255'],
+            'sport'            => ['nullable', 'string', 'max:100'],
             'types'            => ['required', 'array', 'min:1'],
             'types.*'          => ['string', 'in:uniform_top,uniform_bottom,warmup_top,warmup_bottom,backpack,arm_sleeve,accessory'],
-            'category'         => ['required', 'in:package_a,package_b,package_c,individual'],
-            'images'           => ['nullable', 'array', 'max:5'],
-            'images.*'         => ['image', 'max:5120'], // max 5MB per image
+            'category'         => ['required', 'string', 'max:255'],
+            'images'           => ['nullable', 'array', 'max:100'],
+            'images.*'         => ['image', 'max:10240'], // max 10MB per image
             'has_name_field'   => ['boolean'],
             'has_number_field' => ['boolean'],
             'notes'            => ['nullable', 'string'],
@@ -145,6 +148,50 @@ class AdminController extends Controller
         $design->delete();
         return redirect()->route('admin.dashboard')
             ->with('success', "Design \"{$name}\" removed from catalog.");
+    }
+
+    public function updateDesign(Request $request, DesignCatalog $design)
+    {
+        $validated = $request->validate([
+            'name'             => ['required', 'string', 'max:255'],
+            'sport'            => ['nullable', 'string', 'max:100'],
+            'types'            => ['required', 'array', 'min:1'],
+            'types.*'          => ['string', 'in:uniform_top,uniform_bottom,warmup_top,warmup_bottom,backpack,arm_sleeve,accessory'],
+            'category'         => ['required', 'string', 'max:255'],
+            'images'           => ['nullable', 'array', 'max:100'],
+            'images.*'         => ['image', 'max:10240'],
+            'has_name_field'   => ['boolean'],
+            'has_number_field' => ['boolean'],
+            'notes'            => ['nullable', 'string'],
+            'wholesale_price'  => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $validated['has_name_field'] = $request->boolean('has_name_field');
+        $validated['has_number_field'] = $request->boolean('has_number_field');
+
+        if ($request->hasFile('images')) {
+            $imagePaths = [];
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('designs', 'public');
+                $imagePaths[] = '/storage/' . $path;
+            }
+            $validated['image_paths'] = $imagePaths;
+            $validated['image_url'] = null;
+        }
+
+        $validated['type'] = null;
+
+        $design->update($validated);
+
+        // Keep existing store items in sync when base design details change.
+        StoreItem::where('design_catalog_id', $design->id)->update([
+            'name' => $validated['name'],
+            'types' => $validated['types'],
+            'wholesale_price' => $validated['wholesale_price'] ?? null,
+        ]);
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Design \"{$design->name}\" updated successfully.");
     }
 
     public function assignDesign(Request $request, User $coach)

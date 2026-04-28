@@ -40,7 +40,9 @@
             <svg class="w-6 h-6 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <div>
                 <p class="font-bold text-blue-900">Waiting on Designs</p>
-                <p class="text-sm text-blue-700 mt-1">No custom designs have been assigned to your profile yet. Your designs will appear here once Ryan completes them and admin approves them. You can still request your Team Store now.</p>
+                <p class="text-sm text-blue-700 mt-1">Please contact our design experts to begin creating your custom items. Once your designs are completed, submitted, and approved, they will appear here for you to add to your team store and price as you see fit.</p>
+                <p class="text-sm text-blue-700 mt-1">In the meantime, you may proceed with the setting up your team store and can upload the designs once they have been approved.</p>
+
             </div>
         </div>
         @endif
@@ -109,7 +111,27 @@
         $isLocked = $store->status === 'submitted_to_admin';
     @endphp
 
-    <div class="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-8">
+    <div x-data="{ activeCoachTab: 'overview' }" class="space-y-6">
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-2 inline-flex gap-2">
+            <button
+                type="button"
+                @click="activeCoachTab = 'overview'"
+                class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors"
+                :class="activeCoachTab === 'overview' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'"
+            >
+                Store Overview
+            </button>
+            <button
+                type="button"
+                @click="activeCoachTab = 'sales'"
+                class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors"
+                :class="activeCoachTab === 'sales' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'"
+            >
+                Sales
+            </button>
+        </div>
+
+    <div x-show="activeCoachTab === 'overview'" class="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-8">
         {{-- LEFT: Main management --}}
         <div class="space-y-6">
 
@@ -372,12 +394,35 @@
                     @if($store->items->isNotEmpty())
                         <div class="space-y-3">
                             @foreach($store->items as $item)
+                            @php
+                                $markupValue = max(0, (float) $item->retail_price - (float) $item->wholesale_price);
+                            @endphp
                             <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm group hover:border-primary transition-colors">
-                                <div>
+                                <div class="flex-1 pr-3">
                                     <div class="font-bold text-sm text-slate-900">{{ $item->name }}</div>
                                     <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-1 flex gap-3">
                                         <span>Type: <span class="text-primary">{{ $item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $item->types ?? [])) }}</span></span>
                                         <span>Base Cost: <span class="text-slate-700">${{ number_format($item->wholesale_price, 2) }}</span></span>
+                                        <span>Store Price: <span class="text-green-700">${{ number_format($item->retail_price, 2) }}</span></span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <form action="{{ route('coach.store.item.markup', $item) }}" method="POST" class="flex flex-wrap items-end gap-2">
+                                            @csrf
+                                            <div>
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Markup ($)</label>
+                                                <input
+                                                    type="number"
+                                                    name="markup"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value="{{ number_format($markupValue, 2, '.', '') }}"
+                                                    class="w-24 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
+                                                >
+                                            </div>
+                                            <button type="submit" class="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-slate-700 transition-colors">
+                                                Update Price
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                                 <form action="{{ route('coach.store.item.remove', $item) }}" method="POST" onsubmit="return confirm('Remove this item from your store?')">
@@ -401,6 +446,46 @@
             </div>
             @endif
         </div>
+    </div>
+
+    <div x-show="activeCoachTab === 'sales'" x-cloak class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Total Sales</p>
+                <p class="text-3xl font-black text-green-700">${{ number_format($salesSummary['total_sales'], 2) }}</p>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Orders Submitted</p>
+                <p class="text-3xl font-black text-slate-900">{{ $salesSummary['orders_count'] }}</p>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Average Order</p>
+                <p class="text-3xl font-black text-primary">${{ number_format($salesSummary['average_order_value'], 2) }}</p>
+                <p class="text-[10px] uppercase tracking-wider text-slate-500 mt-1">Items sold: {{ $salesSummary['total_items_sold'] }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="p-5 border-b border-slate-200 bg-slate-50">
+                <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Sales by Parent Order</h3>
+            </div>
+            @if(empty($salesSummary['order_rows']))
+                <div class="p-8 text-center text-sm text-slate-500">No parent orders yet. Share your parent order link to start generating sales.</div>
+            @else
+                <div class="divide-y divide-slate-100">
+                    @foreach($salesSummary['order_rows'] as $row)
+                        <div class="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div>
+                                <p class="font-bold text-slate-900 text-sm">{{ $row['athlete_name'] }}</p>
+                                <p class="text-[10px] uppercase tracking-wider text-slate-500">{{ $row['items_count'] }} item(s) · {{ $row['submitted_at']->format('M d, Y') }}</p>
+                            </div>
+                            <p class="text-base font-black text-green-700">${{ number_format($row['order_total'], 2) }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </div>
     </div>
     @endif
 </div>
