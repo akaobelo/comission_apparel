@@ -8,8 +8,10 @@ use App\Models\TeamStore;
 use App\Models\ParentOrder;
 use App\Models\DesignCatalog;
 use App\Models\LandingCollection;
+use App\Models\QuoteRequest;
 use App\Models\StoreItem;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 
 class AdminController extends Controller
 {
@@ -53,13 +55,24 @@ class AdminController extends Controller
             ->latest()
             ->get();
 
+        $quoteRequests = Schema::hasTable('quote_requests')
+            ? QuoteRequest::latest()->get()
+            : collect();
+
         $landingCollections = LandingCollection::orderBy('sort_order', 'asc')->get();
 
         $allStores = TeamStore::with('user')->orderBy('name')->get();
 
+        $availableSports = DesignCatalog::whereNotNull('sport')
+            ->where('sport', '!=', '')
+            ->distinct()
+            ->orderBy('sport')
+            ->pluck('sport');
+
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStores',
-            'designCatalog', 'productionStores', 'landingCollections', 'allStores'
+            'designCatalog', 'productionStores', 'quoteRequests', 'landingCollections', 'allStores',
+            'availableSports'
         ));
     }
 

@@ -73,7 +73,7 @@
             </form>
 
             <div class="mt-8 text-center border-t border-slate-200 pt-6">
-                <p class="text-slate-600 text-sm">Don't have a coach account? <br> <a href="{{ route('register') }}" class="text-secondary hover:text-[#a11825] transition-colors font-bold mt-1 inline-block">Apply for Access</a></p>
+                <p class="text-slate-600 text-sm">Don't have an account? <br> <a href="{{ route('register') }}" class="text-secondary hover:text-[#a11825] transition-colors font-bold mt-1 inline-block">Apply for Access</a></p>
             </div>
         </div>
     </div>

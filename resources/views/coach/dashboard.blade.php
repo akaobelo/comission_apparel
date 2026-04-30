@@ -13,7 +13,7 @@
         </div>
         <form action="{{ route('logout') }}" method="POST">
             @csrf
-            <button type="submit" class="btn btn-outline py-2 px-4 text-xs uppercase tracking-wider">Sign Out</button>
+            <button type="submit" class="btn btn-outline bg-secondary py-2 px-4 text-xs uppercase tracking-wider text-white">Sign Out</button>
         </form>
     </div>
 
@@ -67,8 +67,8 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Package / Order Type</label>
-                    <select name="package_type" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                        <option value="" disabled selected>Select a package type...</option>
+                    <select name="package_type" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        <option value="" disabled selected>Select a package type (Optional)...</option>
                         <option value="package_a">Package A — Base Kit (1 Uniform Set)</option>
                         <option value="package_b">Package B — Standard (Uniform + Warm-up)</option>
                         <option value="package_c">Package C — Full Program (Complete Kit)</option>
@@ -117,7 +117,7 @@
                 type="button"
                 @click="activeCoachTab = 'overview'"
                 class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors"
-                :class="activeCoachTab === 'overview' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'"
+                :class="activeCoachTab === 'overview' ? 'bg-secondary text-white' : 'text-slate-600 hover:bg-[#a11825]'"
             >
                 Store Overview
             </button>
@@ -125,7 +125,7 @@
                 type="button"
                 @click="activeCoachTab = 'sales'"
                 class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors"
-                :class="activeCoachTab === 'sales' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'"
+                :class="activeCoachTab === 'sales' ? 'bg-secondary text-white' : 'text-slate-600 hover:bg-[#a11825]'"
             >
                 Sales
             </button>
@@ -250,7 +250,7 @@
                 <form action="{{ route('coach.store.deadline', $store) }}" method="POST" class="flex gap-3">
                     @csrf
                     <input type="date" name="deadline" value="{{ $store->order_deadline?->format('Y-m-d') }}" class="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-900 focus:border-primary focus:outline-none shadow-sm text-sm">
-                    <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-700 transition-colors">Set Deadline</button>
+                    <button type="submit" class="px-5 py-2.5 bg-secondary text-white text-sm font-bold rounded-lg hover:bg-[#a11825] transition-colors">Set Deadline</button>
                 </form>
             </div>
             @endif
@@ -273,6 +273,29 @@
                     <p class="text-[10px] text-slate-500 mt-2">Share this link with your athletes and parents.</p>
                 @endif
             </div>
+
+            {{-- Store Branding --}}
+            @if(!$isLocked)
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+                <h3 class="text-sm font-black uppercase tracking-tight text-slate-900 mb-3">Store Branding</h3>
+                <form action="{{ route('coach.store.cover', $store) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    @csrf
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Cover Image (Max 5MB)</label>
+                        @if($store->cover_image_path)
+                            <div class="mb-3 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 aspect-[3/1] relative">
+                                <img src="{{ Storage::url($store->cover_image_path) }}" alt="Cover" class="w-full h-full object-cover">
+                            </div>
+                        @endif
+                        <div class="flex gap-2 flex-col sm:flex-row">
+                            <input type="file" name="cover_image" accept="image/*" required class="flex-1 block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-lg bg-white focus:outline-none">
+                            <button type="submit" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase rounded-lg hover:bg-[#a11825] transition-colors">Upload</button>
+                        </div>
+                        @error('cover_image')<p class="text-red-500 text-[10px] mt-1 font-bold">{{ $message }}</p>@enderror
+                    </div>
+                </form>
+            </div>
+            @endif
 
             {{-- Team Builder: Add Items --}}
             @if(!$isLocked)
@@ -419,7 +442,7 @@
                                                     class="w-24 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
                                                 >
                                             </div>
-                                            <button type="submit" class="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-slate-700 transition-colors">
+                                            <button type="submit" class="px-3 py-1.5 bg-secondary text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors">
                                                 Update Price
                                             </button>
                                         </form>

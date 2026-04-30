@@ -6,7 +6,11 @@
 {{-- Hero --}}
 <div class="relative w-full min-h-[40vh] flex flex-col pt-32 pb-16 justify-end overflow-hidden">
     <div class="absolute inset-0 bg-slate-950"></div>
-    <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=2500')] bg-cover bg-center opacity-10 mix-blend-screen"></div>
+    @if($store->cover_image_path)
+        <div class="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-screen" style="background-image: url('{{ Storage::url($store->cover_image_path) }}')"></div>
+    @else
+        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=2500')] bg-cover bg-center opacity-10 mix-blend-screen"></div>
+    @endif
     <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent"></div>
 
     <div class="relative z-10 max-w-[1400px] w-full mx-auto px-6 flex flex-col md:flex-row items-end justify-between gap-6">
@@ -217,8 +221,26 @@
                             @foreach($store->items as $item)
                                 <div x-show="activeItemId === '{{ $item->id }}'" class="w-full h-full flex items-center justify-center p-2 md:p-4">
                                     @if(!empty($item->image_paths))
-                                        <div class="relative w-full h-full flex items-center justify-center" x-data="{ imgIdx: 0, imgs: {{ json_encode($item->image_paths) }} }">
-                                            <img :src="imgs[imgIdx]" class="max-w-full max-h-full object-contain drop-shadow-2xl pointer-events-auto rounded-lg">
+                                        <div class="relative w-full h-full flex items-center justify-center" x-data="{ imgIdx: 0, imgs: {{ json_encode($item->image_paths) }}, touchStartX: 0, touchEndX: 0 }"
+                                             @touchstart.window="if(activeItemId === '{{ $item->id }}') touchStartX = $event.changedTouches[0].screenX"
+                                             @touchend.window="if(activeItemId === '{{ $item->id }}') { touchEndX = $event.changedTouches[0].screenX; if(touchStartX - touchEndX > 50) { imgIdx = (imgIdx + 1) % imgs.length; } else if(touchEndX - touchStartX > 50) { imgIdx = (imgIdx - 1 + imgs.length) % imgs.length; } }"
+                                             @keydown.right.window="if(activeItemId === '{{ $item->id }}' && slideOpen && imgs.length > 1) imgIdx = (imgIdx + 1) % imgs.length"
+                                             @keydown.left.window="if(activeItemId === '{{ $item->id }}' && slideOpen && imgs.length > 1) imgIdx = (imgIdx - 1 + imgs.length) % imgs.length">
+                                            
+                                            <template x-if="imgs.length > 1">
+                                                <button type="button" @click.stop="imgIdx = (imgIdx - 1 + imgs.length) % imgs.length" class="absolute left-4 z-10 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors pointer-events-auto">
+                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                                </button>
+                                            </template>
+
+                                            <img :src="imgs[imgIdx]" class="max-w-full max-h-full object-contain drop-shadow-2xl pointer-events-auto rounded-lg select-none">
+                                            
+                                            <template x-if="imgs.length > 1">
+                                                <button type="button" @click.stop="imgIdx = (imgIdx + 1) % imgs.length" class="absolute right-4 md:right-12 z-10 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors pointer-events-auto">
+                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                                </button>
+                                            </template>
+
                                             @if(count($item->image_paths) > 1)
                                                 <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 pointer-events-auto">
                                                     <template x-for="(img, idx) in imgs" :key="idx">

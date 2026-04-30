@@ -17,17 +17,19 @@ class DatabaseSeeder extends Seeder
     {
         // Create an initial Admin user
         User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@commissionapparel.com',
-            'password' => bcrypt('password123'),
-            'role' => 'admin',
-            'status' => 'approved',
-            'organization' => 'The Commission Apparel'
+            'first_name'   => 'Admin',
+            'last_name'    => 'User',
+            'email'        => 'admin@commissionapparel.com',
+            'password'     => bcrypt('password123'),
+            'role'         => 'admin',
+            'status'       => 'approved',
+            'organization' => 'The Commission Apparel',
         ]);
 
         // Create a test Coach (auto-approved under new system)
         User::create([
-            'name'         => 'Coach Smith',
+            'first_name'   => 'Coach',
+            'last_name'    => 'Smith',
             'email'        => 'coach@example.com',
             'password'     => bcrypt('password123'),
             'role'         => 'coach',

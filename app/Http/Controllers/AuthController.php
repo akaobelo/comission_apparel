@@ -50,7 +50,14 @@ class AuthController extends Controller
 
     public function showRegister()
     {
-        return view('auth.register');
+        $sports = \App\Models\DesignCatalog::whereNotNull('sport')
+            ->where('sport', '!=', '')
+            ->distinct()
+            ->orderBy('sport')
+            ->pluck('sport')
+            ->toArray();
+
+        return view('auth.register', compact('sports'));
     }
 
     public function register(Request $request)

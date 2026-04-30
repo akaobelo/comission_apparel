@@ -91,7 +91,7 @@ class CoachController extends Controller
         $request->validate([
             'name'         => 'required|string|max:255',
             'description'  => 'nullable|string|max:1000',
-            'package_type' => 'required|in:package_a,package_b,package_c,individual',
+            'package_type' => 'nullable|in:package_a,package_b,package_c,individual',
         ]);
 
         $user = $request->user();
@@ -258,5 +258,27 @@ class CoachController extends Controller
 
         return redirect()->route('coach.dashboard')
             ->with('success', 'Pricing approved! The public storefront is now live with the approved pricing.');
+    }
+    public function updateCoverImage(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'cover_image' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'], // Max 5MB
+        ]);
+
+        if ($request->hasFile('cover_image')) {
+            // Delete old image if exists
+            if ($store->cover_image_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($store->cover_image_path);
+            }
+
+            // Store new image
+            $path = $request->file('cover_image')->store('covers', 'public');
+            $store->update(['cover_image_path' => $path]);
+        }
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Store cover image updated successfully.');
     }
 }

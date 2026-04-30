@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CoachController;
+use App\Http\Controllers\QuoteRequestController;
 use App\Http\Controllers\StoreController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\CoachMiddleware;
@@ -15,7 +16,8 @@ Route::get('/', function () {
         ->get();
     return view('welcome', compact('landingCollections')); 
 });
-Route::get('/quote', function () { return view('quote'); });
+Route::get('/quote', [QuoteRequestController::class, 'show'])->name('quote.show');
+Route::post('/quote', [QuoteRequestController::class, 'store'])->name('quote.store');
 Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
 Route::get('/catalog', function (\Illuminate\Http\Request $request) {
     $selectedSport = $request->query('sport');
@@ -66,6 +68,7 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     Route::post('/coach/store/{store}/deadline', [CoachController::class, 'updateDeadline'])->name('coach.store.deadline');
     Route::post('/coach/store/{store}/submit', [CoachController::class, 'submitMasterOrder'])->name('coach.store.submit');
     Route::post('/coach/store/{store}/approve-pricing', [CoachController::class, 'approvePricing'])->name('coach.store.pricing.approve');
+    Route::post('/coach/store/{store}/cover', [CoachController::class, 'updateCoverImage'])->name('coach.store.cover');
 
     // Coach can edit parent orders
     Route::get('/coach/order/{order}/edit', [CoachController::class, 'editOrder'])->name('coach.order.edit');
@@ -87,6 +90,9 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::put('/admin/design/{design}', [AdminController::class, 'updateDesign'])->name('admin.design.update');
     Route::delete('/admin/design/{design}', [AdminController::class, 'deleteDesign'])->name('admin.design.delete');
     Route::post('/admin/design/{design}/assign-to-store', [AdminController::class, 'assignToStore'])->name('admin.design.assign-to-store');
+    Route::get('/admin/design/{design}/assign-to-store', function () {
+        return redirect()->route('admin.dashboard')->with('error', 'Your session expired or you refreshed a form submission. Please try assigning the design again.');
+    });
 
     // Assign designs to coaches
     Route::post('/admin/coach/{coach}/assign-design', [AdminController::class, 'assignDesign'])->name('admin.coach.assign-design');

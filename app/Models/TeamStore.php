@@ -11,6 +11,7 @@ class TeamStore extends Model
         'name',
         'description',
         'slug',
+        'cover_image_path',
         'order_deadline',
         'status',
         'package_type',

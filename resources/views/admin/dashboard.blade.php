@@ -25,7 +25,7 @@
         </div>
         <form action="{{ route('logout') }}" method="POST">
             @csrf
-            <button type="submit" class="btn btn-outline py-2 px-4 text-xs uppercase tracking-wider">Log Out</button>
+            <button type="submit" class="btn btn-outline py-2 px-4 text-xs uppercase tracking-wider bg-secondary text-white">Log Out</button>
         </form>
     </div>
 
@@ -73,6 +73,57 @@
         {{-- ═══ STORES & ORDERS TAB ═══ --}}
         <div x-show="activeAdminTab === 'stores'" x-cloak class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="space-y-8">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-200 bg-slate-50">
+                        <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Quote Inquiries</h2>
+                        <p class="text-sm text-slate-500 mt-1">Public quote requests submitted from the website.</p>
+                    </div>
+                    @if($quoteRequests->isEmpty())
+                        <div class="p-8 text-center text-slate-400 text-sm">No quote inquiries yet.</div>
+                    @else
+                        <div class="divide-y divide-slate-100 max-h-[32rem] overflow-y-auto">
+                            @foreach($quoteRequests as $quoteRequest)
+                                <div class="p-5">
+                                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                                        <div>
+                                            <div class="font-bold text-slate-900">
+                                                {{ $quoteRequest->organization_name }}
+                                                <span class="text-slate-500 font-medium">· {{ $quoteRequest->apparel_category }}</span>
+                                            </div>
+                                            <div class="text-sm text-slate-500 mt-1">
+                                                {{ $quoteRequest->first_name }} {{ $quoteRequest->last_name }} · {{ $quoteRequest->position_title }}
+                                            </div>
+                                            <div class="text-sm text-slate-500">
+                                                {{ $quoteRequest->email }} · {{ $quoteRequest->phone }}
+                                            </div>
+                                            <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Estimated Qty</div>
+                                                    <div class="text-sm font-black text-slate-900">{{ $quoteRequest->estimated_quantity }}</div>
+                                                </div>
+                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Package</div>
+                                                    <div class="text-sm font-black text-primary uppercase">{{ str_replace('_', ' ', $quoteRequest->package_type) }}</div>
+                                                </div>
+                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Target Date</div>
+                                                    <div class="text-sm font-black text-slate-900">{{ $quoteRequest->target_delivery_date?->format('M d, Y') ?? 'Not provided' }}</div>
+                                                </div>
+                                            </div>
+                                            @if($quoteRequest->design_vision)
+                                                <p class="text-sm text-slate-600 mt-3">{{ $quoteRequest->design_vision }}</p>
+                                            @endif
+                                        </div>
+                                        <div class="text-xs text-slate-400 flex-shrink-0">
+                                            {{ $quoteRequest->created_at->diffForHumans() }}
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
                 {{-- ═══ PENDING STORE APPROVALS ═══ --}}
             @if($pendingStores->isNotEmpty())
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -216,7 +267,7 @@
                             <th class="px-5 py-3">First Name</th>
                             <th class="px-5 py-3">Last Name</th>
                             <th class="px-5 py-3">Organization</th>
-                            <th class="px-5 py-3">Sport</th>
+                            <th class="px-5 py-3">Apparel Category</th>
                             <th class="px-5 py-3">Status</th>
                             <th class="px-5 py-3">Store</th>
                             <th class="px-5 py-3">Actions</th>
@@ -365,7 +416,12 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Sport</label>
-                            <input type="text" name="sport" placeholder="e.g. Football, Basketball" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            <input list="create_sport_options" name="sport" placeholder="e.g. Football, Basketball" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            <datalist id="create_sport_options">
+                                @foreach($availableSports as $sport_option)
+                                    <option value="{{ $sport_option }}">
+                                @endforeach
+                            </datalist>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
@@ -447,7 +503,12 @@
                                             </div>
                                             <div>
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Sport</label>
-                                                <input type="text" name="sport" value="{{ $design->sport }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                                <input list="edit_sport_options_{{ $design->id }}" name="sport" value="{{ $design->sport }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                                <datalist id="edit_sport_options_{{ $design->id }}">
+                                                    @foreach($availableSports as $sport_option)
+                                                        <option value="{{ $sport_option }}">
+                                                    @endforeach
+                                                </datalist>
                                             </div>
                                             <div>
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Category</label>
