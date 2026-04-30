@@ -172,15 +172,15 @@ class CoachController extends Controller
         if ($store->user_id !== $request->user()->id) abort(403);
 
         $request->validate([
-            'markup' => 'required|numeric|min:0',
+            'retail_price' => 'required|numeric|min:' . $item->wholesale_price,
         ]);
 
         $item->update([
-            'retail_price' => $item->wholesale_price + $request->markup,
+            'retail_price' => $request->retail_price,
         ]);
 
         return redirect()->route('coach.dashboard')
-            ->with('success', 'Item markup updated successfully.');
+            ->with('success', 'Store price updated successfully.');
     }
 
     public function updateDeadline(Request $request, TeamStore $store)

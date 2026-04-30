@@ -419,8 +419,8 @@
                                     </div>
 
                                     <!-- Grid Container -->
-                                    <div class="flex-1 overflow-y-auto p-6 md:p-8">
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                                    <div class="flex-1 overflow-y-auto p-4 md:p-6">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                             @forelse($assignedDesigns as $design)
                                                 @php 
                                                     $alreadyAdded = $store->items->pluck('design_catalog_id')->contains($design->id); 
@@ -430,11 +430,20 @@
                                                     <div class="aspect-[4/3] bg-[#f0f2f5] relative overflow-hidden group-hover:bg-[#e4e7ec] transition-colors flex items-center justify-center">
                                                         @if(!empty($design->image_paths))
                                                             @if(count($design->image_paths) > 1)
-                                                                <div class="w-full h-full relative" x-data="{ imgIdx: 0, imgs: {{ json_encode($design->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
+                                                                <div class="w-full h-full relative group/slider" x-data="{ imgIdx: 0, imgs: {{ json_encode($design->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
                                                                     <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300">
-                                                                    <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+                                                                    
+                                                                    <!-- Manual Navigation Arrows -->
+                                                                    <button type="button" @click.stop="imgIdx = (imgIdx - 1 + imgs.length) % imgs.length; clearInterval(imgInterval)" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-slate-700 flex items-center justify-center shadow hover:bg-white transition-colors lg:opacity-0 lg:group-hover/slider:opacity-100 focus:outline-none">
+                                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                                                    </button>
+                                                                    <button type="button" @click.stop="imgIdx = (imgIdx + 1) % imgs.length; clearInterval(imgInterval)" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-slate-700 flex items-center justify-center shadow hover:bg-white transition-colors lg:opacity-0 lg:group-hover/slider:opacity-100 focus:outline-none">
+                                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                                                    </button>
+
+                                                                    <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
                                                                         <template x-for="(img, idx) in imgs" :key="idx">
-                                                                            <div class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm" :class="idx === imgIdx ? 'bg-secondary' : 'bg-white/60'"></div>
+                                                                            <button type="button" @click.stop="imgIdx = idx; clearInterval(imgInterval)" class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm focus:outline-none" :class="idx === imgIdx ? 'bg-secondary' : 'bg-white/60'"></button>
                                                                         </template>
                                                                     </div>
                                                                 </div>
@@ -493,15 +502,12 @@
                     @if($store->items->isNotEmpty())
                         <div class="space-y-3">
                             @foreach($store->items as $item)
-                            @php
-                                $markupValue = max(0, (float) $item->retail_price - (float) $item->wholesale_price);
-                            @endphp
                             <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm group hover:border-primary transition-colors">
                                 <div class="flex-1 pr-3">
                                     <div class="font-bold text-sm text-slate-900">{{ $item->name }}</div>
                                     <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-1 flex gap-3">
                                         <span>Type: <span class="text-primary">{{ $item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $item->types ?? [])) }}</span></span>
-                                        <span>Base Cost: <span class="text-slate-700">${{ number_format($item->wholesale_price, 2) }}</span></span>
+                                        <span>Manufacturer's Price: <span class="text-slate-700">${{ number_format($item->wholesale_price, 2) }}</span></span>
                                         <span>Store Price: <span class="text-green-700">${{ number_format($item->retail_price, 2) }}</span></span>
                                     </div>
                                     <div class="mt-2">
@@ -511,10 +517,10 @@
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Enter your retail price ($)</label>
                                                 <input
                                                     type="number"
-                                                    name="markup"
-                                                    min="0"
+                                                    name="retail_price"
+                                                    min="{{ $item->wholesale_price }}"
                                                     step="0.01"
-                                                    value="{{ number_format($markupValue, 2, '.', '') }}"
+                                                    value="{{ number_format($item->retail_price, 2, '.', '') }}"
                                                     class="w-24 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
                                                 >
                                             </div>

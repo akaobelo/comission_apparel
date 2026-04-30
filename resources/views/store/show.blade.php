@@ -108,8 +108,8 @@
                 @csrf
 
                 {{-- Athlete Info --}}
-                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-8 overflow-hidden" id="athlete-info-section">
-                    <button type="button" @click="athleteInfoOpen = !athleteInfoOpen" class="w-full flex items-center justify-between p-6 md:p-8 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="athleteInfoOpen ? 'border-slate-100 bg-slate-50/50' : ''">
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-4 overflow-hidden" id="athlete-info-section">
+                    <button type="button" @click="athleteInfoOpen = !athleteInfoOpen" class="w-full flex items-center justify-between p-4 md:p-4 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="athleteInfoOpen ? 'border-slate-100 bg-slate-50/50' : ''">
                         <div>
                             <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Ready to Order?</h2>
                             <p class="text-xs font-bold text-slate-500 mt-1" x-show="!athleteInfoOpen">Click here to enter Athlete Information</p>
@@ -220,11 +220,20 @@
                             <div class="aspect-[4/3] bg-[#f0f2f5] relative overflow-hidden group-hover:bg-[#e4e7ec] transition-colors flex items-center justify-center cursor-pointer" @click="openPanel('{{ $item->id }}')">
                                 @if(!empty($item->image_paths))
                                     @if(count($item->image_paths) > 1)
-                                        <div class="w-full h-full relative" x-data="{ imgIdx: 0, imgs: {{ json_encode($item->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
+                                        <div class="w-full h-full relative group/slider" x-data="{ imgIdx: 0, imgs: {{ json_encode($item->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
                                             <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300">
-                                            <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+                                            
+                                            <!-- Manual Navigation Arrows -->
+                                            <button type="button" @click.stop="imgIdx = (imgIdx - 1 + imgs.length) % imgs.length; clearInterval(imgInterval)" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-slate-700 flex items-center justify-center shadow hover:bg-white transition-colors lg:opacity-0 lg:group-hover/slider:opacity-100 focus:outline-none">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                            </button>
+                                            <button type="button" @click.stop="imgIdx = (imgIdx + 1) % imgs.length; clearInterval(imgInterval)" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-slate-700 flex items-center justify-center shadow hover:bg-white transition-colors lg:opacity-0 lg:group-hover/slider:opacity-100 focus:outline-none">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                            </button>
+
+                                            <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
                                                 <template x-for="(img, idx) in imgs" :key="idx">
-                                                    <div class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm" :class="idx === imgIdx ? 'bg-secondary' : 'bg-white/60'"></div>
+                                                    <button type="button" @click.stop="imgIdx = idx; clearInterval(imgInterval)" class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm focus:outline-none" :class="idx === imgIdx ? 'bg-secondary' : 'bg-white/60'"></button>
                                                 </template>
                                             </div>
                                         </div>
@@ -262,7 +271,7 @@
                 {{-- Special Notes --}}
                 <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8 mb-32">
                     <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Special Sizing Notes (Optional)</label>
-                    <textarea name="special_notes" rows="2" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none placeholder:text-slate-400 transition-all font-medium" placeholder="e.g. Needs extra length on pants..."></textarea>
+                    <input type="text" name="special_notes" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 transition-all font-medium" placeholder="e.g. Needs extra length on pants...">
                 </div>
 
                 {{-- SIZING SLIDE-OVER PANEL --}}

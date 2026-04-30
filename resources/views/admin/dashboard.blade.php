@@ -452,14 +452,31 @@
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Design Name</label>
                             <input type="text" name="name" required placeholder="e.g. Springfield Eagles - Home Jersey" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                         </div>
-                        <div>
+                        <div x-data="{
+                            open: false,
+                            search: '',
+                            options: {{ json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) }},
+                            get filteredOptions() {
+                                if (this.search === '') return this.options;
+                                return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
+                            },
+                            selectOption(val) {
+                                this.search = val;
+                                this.open = false;
+                            }
+                        }" class="relative">
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Sport</label>
-                            <input list="create_sport_options" name="sport" placeholder="e.g. Football, Basketball" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
-                            <datalist id="create_sport_options">
-                                @foreach($availableSports as $sport_option)
-                                    <option value="{{ $sport_option }}">
-                                @endforeach
-                            </datalist>
+                            <div class="relative">
+                                <input type="text" name="sport" x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Football, Basketball" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 pr-10 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
+                                <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-700 focus:outline-none">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </button>
+                            </div>
+                            <div x-show="open && filteredOptions.length > 0" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                <template x-for="opt in filteredOptions" :key="opt">
+                                    <div @click="selectOption(opt)" class="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer font-medium" x-text="opt"></div>
+                                </template>
+                            </div>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
@@ -565,14 +582,31 @@
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Name</label>
                                                 <input type="text" name="name" value="{{ $design->name }}" required class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">
                                             </div>
-                                            <div>
+                                            <div x-data="{
+                                                open: false,
+                                                search: '{{ addslashes($design->sport) }}',
+                                                options: {{ json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) }},
+                                                get filteredOptions() {
+                                                    if (this.search === '') return this.options;
+                                                    return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
+                                                },
+                                                selectOption(val) {
+                                                    this.search = val;
+                                                    this.open = false;
+                                                }
+                                            }" class="relative">
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Sport</label>
-                                                <input list="edit_sport_options_{{ $design->id }}" name="sport" value="{{ $design->sport }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">
-                                                <datalist id="edit_sport_options_{{ $design->id }}">
-                                                    @foreach($availableSports as $sport_option)
-                                                        <option value="{{ $sport_option }}">
-                                                    @endforeach
-                                                </datalist>
+                                                <div class="relative">
+                                                    <input type="text" name="sport" x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Football" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 pr-8 text-xs text-slate-900 focus:border-primary focus:outline-none" autocomplete="off">
+                                                    <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-2 text-slate-500 hover:text-slate-700 focus:outline-none">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                                    </button>
+                                                </div>
+                                                <div x-show="open && filteredOptions.length > 0" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-40 overflow-y-auto">
+                                                    <template x-for="opt in filteredOptions" :key="opt">
+                                                        <div @click="selectOption(opt)" class="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer font-medium" x-text="opt"></div>
+                                                    </template>
+                                                </div>
                                             </div>
                                             <div>
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Category</label>
