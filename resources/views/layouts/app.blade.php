@@ -17,11 +17,11 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-base text-slate-900 font-sans antialiased overflow-x-hidden selection:bg-primary selection:text-white">
-    <header class="fixed top-0 w-full z-50 bg-black backdrop-blur-xl border-b border-slate-800 transition-all duration-300" x-data="{ scrolled: false, mobileMenuOpen: false }" @scroll.window="scrolled = (window.pageYOffset > 20)" :class="{ 'py-2 shadow-sm': scrolled, 'py-4': !scrolled }">
-        <div class="max-w-7xl mx-auto px-6 flex items-center justify-between transition-all duration-300" :class="{ 'h-14': scrolled, 'h-20': !scrolled }">
+    <header class="fixed top-0 w-full z-50 bg-black backdrop-blur-xl border-b border-slate-800 transition-all duration-300" x-data="{ scrolled: false, mobileMenuOpen: false }" @scroll.window="scrolled = (window.pageYOffset > 20)" :class="{ 'py-1.5 shadow-sm': scrolled, 'py-2.5': !scrolled }">
+        <div class="max-w-7xl mx-auto px-6 flex items-center justify-between transition-all duration-300" :class="{ 'h-12': scrolled, 'h-14 md:h-16': !scrolled }">
             <!-- Logo -->
             <a href="/" class="flex items-center group z-50 relative">
-                <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-14 md:h-[2.6rem] w-auto group-hover:opacity-80 transition-opacity">
+                <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-10 md:h-[2.2rem] w-auto group-hover:opacity-80 transition-opacity">
             </a>
             
             <!-- Desktop Navigation -->

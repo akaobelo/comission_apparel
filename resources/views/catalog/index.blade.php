@@ -77,7 +77,7 @@
                 No designs found for this sport yet.
             </div>
         @else
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 @foreach($designCatalog as $design)
                     @php
                         $imageSrc = null;
@@ -118,9 +118,9 @@
                             @endif
                             </div>
 
-                            <div class="p-4 flex flex-col flex-1 bg-white border-t border-slate-100 justify-center">
-                                <span class="text-[10px] font-black uppercase tracking-widest text-red-600 mb-1">{{ $design->type_label }}</span>
-                                <h2 class="text-[10px] font-black text-slate-900 uppercase tracking-widest truncate" title="{{ $design->name }}">{{ $design->name }}</h2>
+                            <div class="p-4 md:p-5 flex flex-col flex-1 bg-white border-t border-slate-100">
+                                <span class="text-[10px] font-black uppercase tracking-widest text-red-600 mb-2">{{ $design->type_label }}</span>
+                                <h2 class="text-base font-black text-slate-900 leading-tight mb-2 truncate" title="{{ $design->name }}">{{ $design->name }}</h2>
                             </div>
                         </div>
                     </div>

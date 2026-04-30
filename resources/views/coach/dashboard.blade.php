@@ -420,7 +420,7 @@
 
                                     <!-- Grid Container -->
                                     <div class="flex-1 overflow-y-auto p-6 md:p-8">
-                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                                             @forelse($assignedDesigns as $design)
                                                 @php 
                                                     $alreadyAdded = $store->items->pluck('design_catalog_id')->contains($design->id); 

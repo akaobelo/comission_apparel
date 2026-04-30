@@ -84,7 +84,9 @@
         @else
             {{-- ═══ NEW ORDER FORM GRID ═══ --}}
             <form action="{{ route('store.order.submit', $store->slug) }}" method="POST" 
+                  @invalid.capture="athleteInfoOpen = true; setTimeout(() => document.getElementById('athlete-info-section').scrollIntoView({behavior: 'smooth', block: 'start'}), 100)"
                   x-data="{
+                      athleteInfoOpen: {{ $errors->any() ? 'true' : 'false' }},
                       activeItemId: null,
                       slideOpen: false,
                       items: {
@@ -106,9 +108,20 @@
                 @csrf
 
                 {{-- Athlete Info --}}
-                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8 mb-8">
-                    <h2 class="text-xl font-black uppercase tracking-tight text-slate-900 mb-2">Ready to Order?</h2>
-                    <div class="mb-6 text-sm text-slate-600 space-y-3 border-l-4 border-secondary pl-4 py-1">
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-8 overflow-hidden" id="athlete-info-section">
+                    <button type="button" @click="athleteInfoOpen = !athleteInfoOpen" class="w-full flex items-center justify-between p-6 md:p-8 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="athleteInfoOpen ? 'border-slate-100 bg-slate-50/50' : ''">
+                        <div>
+                            <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Ready to Order?</h2>
+                            <p class="text-xs font-bold text-slate-500 mt-1" x-show="!athleteInfoOpen">Click here to enter Athlete Information</p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="hidden sm:inline-block text-[10px] font-bold uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20" x-show="!athleteInfoOpen">Required</span>
+                            <svg class="w-6 h-6 text-slate-400 transition-transform duration-300" :class="athleteInfoOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </button>
+                    
+                    <div x-show="athleteInfoOpen" x-transition.opacity class="px-6 md:px-8 pb-6 md:pb-8 pt-6">
+                        <div class="mb-6 text-sm text-slate-600 space-y-3 border-l-4 border-secondary pl-4 py-1">
                         <p class="font-bold text-slate-900 uppercase">Athlete Information</p>
                         <p>Please enter your athlete's information below to begin your order. Once completed, you'll be able to select individual items or choose from our available packages.</p>
                         <p class="font-bold text-secondary">If you are ordering for multiple athletes, please note that a separate order must be completed for each athlete.</p>
@@ -168,6 +181,7 @@
                             <input type="email" name="guardian_email" placeholder="e.g. parent@example.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                         </div>
                     </div>
+                    </div>
                 </div>
 
                 {{-- Store Items Grid --}}
@@ -177,7 +191,7 @@
                         <span class="text-sm font-bold text-slate-500"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Selected</span>
                     </h2>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                         @foreach($store->items as $item)
                         @php
                             $types = $item->types ?? [$item->type];
@@ -225,16 +239,16 @@
                             </div>
 
                             <!-- Card Content -->
-                            <div class="p-6 flex flex-col flex-1 bg-white border-t border-slate-100">
+                            <div class="p-4 md:p-5 flex flex-col flex-1 bg-white border-t border-slate-100">
                                 <span class="text-[10px] font-black uppercase tracking-widest text-red-600 mb-2">{{ $typeLabel }}</span>
-                                <h3 class="text-lg font-black text-slate-900 leading-tight mb-3">{{ $item->name }}</h3>
+                                <h3 class="text-base font-black text-slate-900 leading-tight mb-2">{{ $item->name }}</h3>
                                 <div class="text-sm font-bold text-slate-700">
                                     Store Price:
                                     <span class="text-green-700">${{ number_format($item->retail_price, 2) }}</span>
                                 </div>
                                 
-                                <div class="mt-auto pt-6">
-                                    <button type="button" @click.prevent="openPanel('{{ $item->id }}')" class="w-full py-3.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all"
+                                <div class="mt-auto pt-4">
+                                    <button type="button" @click.prevent="openPanel('{{ $item->id }}')" class="w-full py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all"
                                             :class="items['{{ $item->id }}'].selected ? 'bg-slate-50 border-2 border-slate-300 text-slate-600' : 'bg-secondary text-white hover:bg-[#a11825] shadow-sm hover:shadow-md border-2 border-transparent'"
                                             x-text="items['{{ $item->id }}'].selected ? 'EDIT SIZING' : 'ORDER'">
                                     </button>

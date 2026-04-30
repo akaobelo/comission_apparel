@@ -7,7 +7,7 @@
     <div class="absolute inset-0 bg-slate-950"></div>
     <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-slate-900"></div>
     <div class="relative z-10 max-w-7xl mx-auto w-full px-6">
-    <h1 class="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase text-white mb-6">TEAM <span class="text-secondary ml-1">STORE</span></h1>
+    <h1 class="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase text-white mb-6">TEAM <span class="text-secondary ml-1">STORES</span></h1>
         <p class="text-slate-300 mt-2 text-sm md:text-base">Choose your team and continue to the same parent order page.</p>
     </div>
 </div>
@@ -32,35 +32,35 @@
             <p class="text-slate-600">Try a different search term or check back later for newly opened stores.</p>
         </div>
     @else
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
             @foreach($stores as $store)
-                <a href="{{ route('store.show', $store->slug) }}" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:border-primary/40 transition-all">
-                    <div class="flex items-start justify-between gap-4">
+                <a href="{{ route('store.show', $store->slug) }}" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-primary/40 transition-all flex flex-col h-full">
+                    <div class="flex items-start justify-between gap-3">
                         <div class="flex-1">
-                            <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-2">{{ $store->user->sport ?? 'Team Athletics' }}</p>
-                            <h2 class="text-xl font-black text-slate-900 leading-tight">{{ $store->name }}</h2>
-                            <p class="text-sm text-slate-600 mt-2">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-1">{{ $store->user->sport ?? 'Team Athletics' }}</p>
+                            <h2 class="text-lg font-black text-slate-900 leading-tight">{{ $store->name }}</h2>
+                            <p class="text-sm text-slate-600 mt-1">
                                 {{ $store->user->organization ?? 'Organization not set' }}
                             </p>
-                            <p class="text-xs text-slate-500 mt-1">Coach {{ $store->user->name }}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">Coach {{ $store->user->name }}</p>
                         </div>
                         <div class="flex flex-col items-end gap-2 shrink-0">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">Open</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">Open</span>
                             @if($store->user->logo_path)
-                                <img src="{{ Str::startsWith($store->user->logo_path, 'http') ? $store->user->logo_path : '/storage/' . $store->user->logo_path }}" alt="Team Logo" class="w-16 h-16 object-contain rounded-full border border-slate-200 shadow-sm mt-1 bg-white">
+                                <img src="{{ Str::startsWith($store->user->logo_path, 'http') ? $store->user->logo_path : '/storage/' . $store->user->logo_path }}" alt="Team Logo" class="w-12 h-12 md:w-14 md:h-14 object-contain rounded-full border border-slate-200 shadow-sm mt-1 bg-white">
                             @endif
                         </div>
                     </div>
 
-                    <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
-                        <div class="text-xs text-slate-500">
+                    <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                        <div class="text-[11px] md:text-xs text-slate-500">
                             @if($store->order_deadline)
                                 Deadline: <span class="font-bold text-slate-700">{{ $store->order_deadline->format('M d, Y') }}</span>
                             @else
                                 No deadline posted
                             @endif
                         </div>
-                        <span class="text-xs font-black uppercase tracking-wider text-secondary">Open Store →</span>
+                        <span class="text-[10px] md:text-xs font-black uppercase tracking-wider text-secondary">Open Store →</span>
                     </div>
                 </a>
             @endforeach
