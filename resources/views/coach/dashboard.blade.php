@@ -303,7 +303,7 @@
                 @else
                     <div class="flex gap-2">
                         <input type="text" readonly value="{{ url('/store/' . $store->slug) }}" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none" id="storeUrl">
-                        <button onclick="navigator.clipboard.writeText(document.getElementById('storeUrl').value); this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 2000)" class="px-3 py-2 bg-secondary text-white text-xs font-bold rounded-lg hover:bg-[#a11825] transition-colors">Copy</button>
+                        <button onclick="const input = document.getElementById('storeUrl'); input.select(); if(navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(input.value); } else { document.execCommand('copy'); } this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 2000)" class="px-3 py-2 bg-secondary text-white text-xs font-bold rounded-lg hover:bg-[#a11825] transition-colors">Copy</button>
                     </div>
                     <p class="text-[10px] text-slate-500 mt-2">Share this link with your athletes and parents.</p>
                 @endif

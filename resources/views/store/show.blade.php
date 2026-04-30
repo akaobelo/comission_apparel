@@ -17,8 +17,8 @@
     <div class="relative z-10 max-w-[1400px] w-full mx-auto px-6 flex flex-col md:flex-row items-end justify-between gap-6">
         <div class="flex items-end gap-5">
             @if($store->user->logo_path)
-                <div class="w-20 h-20 rounded-xl bg-slate-900 border-2 border-white/20 overflow-hidden flex items-center justify-center p-2">
-                    <img src="{{ Storage::url($store->user->logo_path) }}" alt="Team Logo" class="max-w-full max-h-full object-contain">
+                <div class="w-20 h-20 rounded-full bg-slate-900 border-2 border-white/20 overflow-hidden flex items-center justify-center shadow-md">
+                    <img src="{{ Str::startsWith($store->user->logo_path, 'http') ? $store->user->logo_path : Storage::url($store->user->logo_path) }}" alt="Team Logo" class="w-full h-full object-cover">
                 </div>
             @endif
             <div class="mb-1">
