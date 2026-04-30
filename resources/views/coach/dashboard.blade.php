@@ -30,7 +30,13 @@
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Upload New Logo</label>
                                 <input type="file" name="logo" accept="image/jpeg,image/png,image/webp" required class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
-                                <p class="text-[10px] text-slate-500 mt-2 uppercase font-medium">Max size: 5MB. Recommended: square PNG with transparent background.</p>
+                                <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex gap-3 text-left">
+                                    <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <div class="text-xs text-blue-800">
+                                        <strong class="block uppercase tracking-wider mb-1">Display Note</strong>
+                                        Your logo will be displayed in a circular frame. For best results, use a <strong>square PNG with a transparent background</strong>. Max size: 5MB.
+                                    </div>
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-primary w-full py-3 uppercase tracking-widest text-xs font-bold shadow-md">Upload & Save</button>
                         </form>
@@ -309,26 +315,55 @@
                 @endif
             </div>
 
-            {{-- Store Branding --}}
+            {{-- Branding & Artwork --}}
             @if(!$isLocked)
-            <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
-                <h3 class="text-sm font-black uppercase tracking-tight text-slate-900 mb-3">Store Branding</h3>
-                <form action="{{ route('coach.store.cover', $store) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Cover Image (Max 5MB)</label>
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50">
+                    <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Branding & Artwork</h3>
+                    <p class="text-xs text-slate-500 mt-1">Customize how your store appears to parents.</p>
+                </div>
+                
+                {{-- Organization Logo --}}
+                <div class="p-5 border-b border-slate-100">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Organization Logo (Circle Display)</h4>
+                    <form action="{{ route('coach.profile.logo') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="flex items-center gap-4 mb-3">
+                            <div class="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                @if($user->logo_path)
+                                    <img src="{{ Str::startsWith($user->logo_path, 'http') ? $user->logo_path : asset('storage/' . $user->logo_path) }}" alt="Logo" class="w-full h-full object-cover">
+                                @else
+                                    <span class="text-lg font-black text-slate-400">{{ substr($user->organization ?? $user->name, 0, 1) }}</span>
+                                @endif
+                            </div>
+                            <div class="flex-1 flex gap-2 flex-col sm:flex-row">
+                                <input type="file" name="logo" accept="image/jpeg,image/png,image/webp" required class="flex-1 block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-lg bg-white focus:outline-none">
+                                <button type="submit" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase rounded-lg hover:bg-[#a11825] transition-colors">Save Logo</button>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-500">Max 5MB. Square PNG with transparent background recommended.</p>
+                        @error('logo')<p class="text-red-500 text-[10px] mt-1 font-bold">{{ $message }}</p>@enderror
+                    </form>
+                </div>
+
+                {{-- Store Cover --}}
+                <div class="p-5">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Store Cover Image (Wide Display)</h4>
+                    <form action="{{ route('coach.store.cover', $store) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
                         @if($store->cover_image_path)
                             <div class="mb-3 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 aspect-[3/1] relative">
                                 <img src="{{ Storage::url($store->cover_image_path) }}" alt="Cover" class="w-full h-full object-cover">
                             </div>
                         @endif
                         <div class="flex gap-2 flex-col sm:flex-row">
-                            <input type="file" name="cover_image" accept="image/*" required class="flex-1 block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-lg bg-white focus:outline-none">
-                            <button type="submit" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase rounded-lg hover:bg-[#a11825] transition-colors">Upload</button>
+                            <input type="file" name="cover_image" accept="image/*" required class="flex-1 block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-lg bg-white focus:outline-none">
+                            <button type="submit" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase rounded-lg hover:bg-[#a11825] transition-colors">Save Cover</button>
                         </div>
+                        <p class="text-[10px] text-slate-500 mt-2">Max 5MB. High-resolution landscape image recommended.</p>
                         @error('cover_image')<p class="text-red-500 text-[10px] mt-1 font-bold">{{ $message }}</p>@enderror
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
             @endif
 

@@ -106,28 +106,28 @@
                 @csrf
 
                 {{-- Athlete Info --}}
-                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-8 md:p-10 mb-10">
-                    <h2 class="text-xl font-black uppercase tracking-tight text-slate-900 mb-2">Athlete Information</h2>
-                    <div class="mb-8 text-sm text-slate-600 space-y-3 border-l-4 border-secondary pl-4 py-1">
-                        <p class="font-bold text-slate-900">Ready to Order?</p>
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8 mb-8">
+                    <h2 class="text-xl font-black uppercase tracking-tight text-slate-900 mb-2">Ready to Order?</h2>
+                    <div class="mb-6 text-sm text-slate-600 space-y-3 border-l-4 border-secondary pl-4 py-1">
+                        <p class="font-bold text-slate-900 uppercase">Athlete Information</p>
                         <p>Please enter your athlete's information below to begin your order. Once completed, you'll be able to select individual items or choose from our available packages.</p>
                         <p class="font-bold text-secondary">If you are ordering for multiple athletes, please note that a separate order must be completed for each athlete.</p>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">First Name <span class="text-red-500">*</span></label>
-                            <input type="text" name="athlete_first_name" required placeholder="e.g. Jordan" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">First Name <span class="text-red-500">*</span></label>
+                            <input type="text" name="athlete_first_name" required placeholder="e.g. Jordan" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
                             @error('athlete_first_name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Last Name <span class="text-red-500">*</span></label>
-                            <input type="text" name="athlete_last_name" required placeholder="e.g. Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Last Name <span class="text-red-500">*</span></label>
+                            <input type="text" name="athlete_last_name" required placeholder="e.g. Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
                             @error('athlete_last_name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Gender / Pattern Base <span class="text-red-500">*</span></label>
-                            <select name="gender" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:outline-none transition-all font-medium">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Gender / Pattern Base <span class="text-red-500">*</span></label>
+                            <select name="gender" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none transition-all font-medium">
                                 <option value="">Select cut pattern...</option>
                                 <option value="Mens / Boys">Men's / Boy's Cut</option>
                                 <option value="Womens / Girls">Women's / Girl's Cut</option>
@@ -136,36 +136,36 @@
                             @error('gender')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Name on Jersey (if applicable)</label>
-                            <input type="text" name="jersey_name" placeholder="e.g. SMITH" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Name on Jersey (if applicable)</label>
+                            <input type="text" name="jersey_name" placeholder="e.g. SMITH" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Jersey Number (if applicable)</label>
-                            <input type="text" name="jersey_number" placeholder="e.g. 24" maxlength="3" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Jersey Number (if applicable)</label>
+                            <input type="text" name="jersey_number" placeholder="e.g. 24" maxlength="3" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Name on Backpack (if applicable)</label>
-                            <input type="text" name="backpack_name" placeholder="e.g. Jordan Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Name on Backpack (if applicable)</label>
+                            <input type="text" name="backpack_name" placeholder="e.g. Jordan Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                         </div>
                         
                         <div class="md:col-span-2 mt-4 pt-6 border-t border-slate-100">
                             <h3 class="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-4">Parent/Guardian Information</h3>
                         </div>
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Parent's/Guardian's First Name</label>
-                            <input type="text" name="guardian_first_name" placeholder="First Name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Parent's/Guardian's First Name</label>
+                            <input type="text" name="guardian_first_name" placeholder="First Name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Parent's/Guardian's Last Name</label>
-                            <input type="text" name="guardian_last_name" placeholder="Last Name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Parent's/Guardian's Last Name</label>
+                            <input type="text" name="guardian_last_name" placeholder="Last Name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Parent's/Guardian's Phone</label>
-                            <input type="tel" name="guardian_phone" placeholder="e.g. (555) 123-4567" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Parent's/Guardian's Phone</label>
+                            <input type="tel" name="guardian_phone" placeholder="e.g. (555) 123-4567" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Parent's/Guardian's Email</label>
-                            <input type="email" name="guardian_email" placeholder="e.g. parent@example.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Parent's/Guardian's Email</label>
+                            <input type="email" name="guardian_email" placeholder="e.g. parent@example.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                         </div>
                     </div>
                 </div>
@@ -246,9 +246,9 @@
                 </div>
 
                 {{-- Special Notes --}}
-                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-8 md:p-10 mb-32">
-                    <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Special Sizing Notes (Optional)</label>
-                    <textarea name="special_notes" rows="2" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:outline-none placeholder:text-slate-400 transition-all font-medium" placeholder="e.g. Needs extra length on pants..."></textarea>
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8 mb-32">
+                    <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Special Sizing Notes (Optional)</label>
+                    <textarea name="special_notes" rows="2" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none placeholder:text-slate-400 transition-all font-medium" placeholder="e.g. Needs extra length on pants..."></textarea>
                 </div>
 
                 {{-- SIZING SLIDE-OVER PANEL --}}
@@ -339,8 +339,8 @@
                                 <div class="space-y-5">
                                     @foreach($itemSizedTypes as $t)
                                     <div>
-                                        <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">{{ str_replace('_', ' ', $t) }} Size <span class="text-red-500">*</span></label>
-                                        <select name="items[{{ $item->id }}][sizes][{{ $t }}]" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:outline-none font-medium">
+                                        <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">{{ str_replace('_', ' ', $t) }} Size <span class="text-red-500">*</span></label>
+                                        <select name="items[{{ $item->id }}][sizes][{{ $t }}]" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium">
                                             <optgroup label="Youth Sizes">
                                                 @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $s)
                                                     <option value="{{ $s }}">{{ $s }}</option>
@@ -356,8 +356,8 @@
                                     @endforeach
 
                                     <div>
-                                        <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Quantity</label>
-                                        <input type="number" name="items[{{ $item->id }}][qty]" value="1" min="1" max="5" x-model.number="items['{{ $item->id }}'].qty" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none font-medium">
+                                        <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Quantity</label>
+                                        <input type="number" name="items[{{ $item->id }}][qty]" value="1" min="1" max="5" x-model.number="items['{{ $item->id }}'].qty" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none font-medium">
                                     </div>
                                 </div>
 
@@ -373,13 +373,13 @@
                 </div>
 
                 {{-- STICKY BOTTOM SUBMIT BAR --}}
-                <div class="fixed bottom-0 left-0 right-0 p-4 md:p-6 bg-white/90 backdrop-blur-md border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-40 flex justify-center">
+                <div class="fixed bottom-0 left-0 right-0 p-3 md:p-4 bg-white/90 backdrop-blur-md border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-40 flex justify-center">
                     <div class="max-w-[1400px] w-full flex items-center justify-between gap-6 px-4">
                         <div class="hidden md:block">
                             <h4 class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">Ready to complete?</h4>
                             <p class="text-lg font-black text-slate-900"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Items Selected</p>
                         </div>
-                        <button type="submit" class="w-full md:w-auto px-12 py-4 md:py-5 bg-secondary text-white text-sm font-black uppercase tracking-widest rounded-xl hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(192,30,46,0.3)] transition-all flex-shrink-0">
+                        <button type="submit" class="w-full md:w-auto px-8 py-3 md:py-3.5 bg-secondary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(192,30,46,0.3)] transition-all flex-shrink-0">
                             Submit My Order
                         </button>
                     </div>
