@@ -36,7 +36,7 @@
             @foreach($stores as $store)
                 <a href="{{ route('store.show', $store->slug) }}" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:border-primary/40 transition-all">
                     <div class="flex items-start justify-between gap-4">
-                        <div>
+                        <div class="flex-1">
                             <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-2">{{ $store->user->sport ?? 'Team Athletics' }}</p>
                             <h2 class="text-xl font-black text-slate-900 leading-tight">{{ $store->name }}</h2>
                             <p class="text-sm text-slate-600 mt-2">
@@ -44,7 +44,12 @@
                             </p>
                             <p class="text-xs text-slate-500 mt-1">Coach {{ $store->user->name }}</p>
                         </div>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">Open</span>
+                        <div class="flex flex-col items-end gap-2 shrink-0">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">Open</span>
+                            @if($store->user->logo_path)
+                                <img src="{{ Str::startsWith($store->user->logo_path, 'http') ? $store->user->logo_path : '/storage/' . $store->user->logo_path }}" alt="Team Logo" class="w-16 h-16 object-contain rounded-full border border-slate-200 shadow-sm mt-1 bg-white">
+                            @endif
+                        </div>
                     </div>
 
                     <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">

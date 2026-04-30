@@ -10,6 +10,8 @@ use App\Models\DesignCatalog;
 use App\Models\LandingCollection;
 use App\Models\QuoteRequest;
 use App\Models\StoreItem;
+use App\Models\PasswordResetLog;
+use App\Models\Testimonial;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
 
@@ -69,10 +71,14 @@ class AdminController extends Controller
             ->orderBy('sport')
             ->pluck('sport');
 
+        $passwordResetLogs = PasswordResetLog::with('user')->latest()->get();
+
+        $testimonials = Testimonial::orderBy('sort_order', 'asc')->get();
+
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStores',
             'designCatalog', 'productionStores', 'quoteRequests', 'landingCollections', 'allStores',
-            'availableSports'
+            'availableSports', 'passwordResetLogs', 'testimonials'
         ));
     }
 
@@ -139,7 +145,7 @@ class AdminController extends Controller
             'name'             => ['required', 'string', 'max:255'],
             'sport'            => ['nullable', 'string', 'max:100'],
             'types'            => ['required', 'array', 'min:1'],
-            'types.*'          => ['string', 'in:uniform_top,uniform_bottom,warmup_top,warmup_bottom,backpack,arm_sleeve,accessory'],
+            'types.*'          => ['string', 'in:accessory,arm_sleeve,backpack,headwear,hoodie,jacket,leggings,pants,polo,shirt_short,shirt_long,shorts,socks,uniform_top,uniform_bottom,uniform_set,warmup_top,warmup_bottom,warmup_set'],
             'category'         => ['required', 'string', 'max:255'],
             'images'           => ['nullable', 'array', 'max:100'],
             'images.*'         => ['image', 'max:10240'], // max 10MB per image
@@ -174,6 +180,18 @@ class AdminController extends Controller
     public function deleteDesign(DesignCatalog $design)
     {
         $name = $design->name;
+
+        // Delete associated images
+        if (!empty($design->image_paths)) {
+            foreach ($design->image_paths as $path) {
+                $pathToRemove = str_replace('/storage/', '', $path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            }
+        } elseif (!empty($design->image_url)) {
+            $pathToRemove = str_replace('/storage/', '', $design->image_url);
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+        }
+
         $design->delete();
         return redirect()->route('admin.dashboard')
             ->with('success', "Design \"{$name}\" removed from catalog.");
@@ -185,7 +203,7 @@ class AdminController extends Controller
             'name'             => ['required', 'string', 'max:255'],
             'sport'            => ['nullable', 'string', 'max:100'],
             'types'            => ['required', 'array', 'min:1'],
-            'types.*'          => ['string', 'in:uniform_top,uniform_bottom,warmup_top,warmup_bottom,backpack,arm_sleeve,accessory'],
+            'types.*'          => ['string', 'in:accessory,arm_sleeve,backpack,headwear,hoodie,jacket,leggings,pants,polo,shirt_short,shirt_long,shorts,socks,uniform_top,uniform_bottom,uniform_set,warmup_top,warmup_bottom,warmup_set'],
             'category'         => ['required', 'string', 'max:255'],
             'images'           => ['nullable', 'array', 'max:100'],
             'images.*'         => ['image', 'max:10240'],
@@ -198,26 +216,51 @@ class AdminController extends Controller
         $validated['has_name_field'] = $request->boolean('has_name_field');
         $validated['has_number_field'] = $request->boolean('has_number_field');
 
-        if ($request->hasFile('images')) {
-            $imagePaths = [];
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('designs', 'public');
-                $imagePaths[] = '/storage/' . $path;
-            }
-            $validated['image_paths'] = $imagePaths;
-            $validated['image_url'] = null;
+        $existingPaths = is_array($design->image_paths) ? $design->image_paths : [];
+
+        // If no image paths exist but a legacy image_url exists, migrate it
+        if (empty($existingPaths) && !empty($design->image_url)) {
+            $existingPaths[] = $design->image_url;
         }
 
+        // Handle image removals first
+        if ($request->has('remove_images') && is_array($request->remove_images)) {
+            foreach ($request->remove_images as $index) {
+                if (isset($existingPaths[$index])) {
+                    $pathToRemove = str_replace('/storage/', '', $existingPaths[$index]);
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+                    unset($existingPaths[$index]);
+                }
+            }
+            $existingPaths = array_values($existingPaths); // re-index
+        }
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('designs', 'public');
+                $existingPaths[] = '/storage/' . $path;
+            }
+        }
+        
+        $validated['image_paths'] = array_values($existingPaths);
+        $validated['image_url'] = null;
         $validated['type'] = null;
 
         $design->update($validated);
 
         // Keep existing store items in sync when base design details change.
-        StoreItem::where('design_catalog_id', $design->id)->update([
+        $syncData = [
             'name' => $validated['name'],
             'types' => $validated['types'],
             'wholesale_price' => $validated['wholesale_price'] ?? null,
-        ]);
+        ];
+        
+        if (isset($validated['image_paths'])) {
+            $syncData['image_paths'] = $validated['image_paths'];
+            $syncData['image_url'] = null;
+        }
+
+        StoreItem::where('design_catalog_id', $design->id)->update($syncData);
 
         return redirect()->route('admin.dashboard')
             ->with('success', "Design \"{$design->name}\" updated successfully.");
@@ -249,25 +292,15 @@ class AdminController extends Controller
         ]);
 
         $store = TeamStore::findOrFail($request->team_store_id);
+        $coach = $store->user;
 
-        if ($store->items()->where('design_catalog_id', $design->id)->exists()) {
-            return back()->with('error', "{$design->name} is already assigned to {$store->name}");
+        if ($coach->designCatalog()->where('design_catalog_id', $design->id)->exists()) {
+            return back()->with('error', "{$design->name} is already available in {$coach->name}'s catalog.");
         }
 
-        StoreItem::create([
-            'team_store_id' => $store->id,
-            'design_catalog_id' => $design->id,
-            'name' => $design->name,
-            'type' => $design->type, // Legacy
-            'types' => $design->types,
-            'image_url' => $design->image_url,
-            'image_paths' => $design->image_paths,
-            'wholesale_price' => $design->wholesale_price,
-            'retail_price' => 0, // Coach needs to set retail price before store goes live
-            'status' => 'pending_pricing',
-        ]);
+        $coach->designCatalog()->attach($design->id);
 
-        return back()->with('success', "{$design->name} was successfully added to {$store->name}!");
+        return back()->with('success', "{$design->name} was successfully pushed to {$coach->name}'s catalog! They can now review and add it to their store.");
     }
 
     // ─── STORE MANAGEMENT ────────────────────────────────────────────────────────
@@ -346,9 +379,18 @@ class AdminController extends Controller
     public function updateOrder(Request $request, ParentOrder $order)
     {
         $request->validate([
-            'athlete_name'  => ['required', 'string', 'max:255'],
-            'special_notes' => ['nullable', 'string'],
-            'items'         => ['required', 'array'],
+            'athlete_first_name'  => ['required', 'string', 'max:255'],
+            'athlete_last_name'   => ['required', 'string', 'max:255'],
+            'gender'              => ['nullable', 'string', 'max:50'],
+            'jersey_name'         => ['nullable', 'string', 'max:255'],
+            'jersey_number'       => ['nullable', 'string', 'max:10'],
+            'backpack_name'       => ['nullable', 'string', 'max:255'],
+            'guardian_first_name' => ['nullable', 'string', 'max:255'],
+            'guardian_last_name'  => ['nullable', 'string', 'max:255'],
+            'guardian_phone'      => ['nullable', 'string', 'max:255'],
+            'guardian_email'      => ['nullable', 'email', 'max:255'],
+            'special_notes'       => ['nullable', 'string'],
+            'items'               => ['required', 'array'],
         ]);
 
         // Rebuild items JSON from form data
@@ -357,20 +399,27 @@ class AdminController extends Controller
             $itemsJson[] = [
                 'id'           => $item['id'] ?? $idx,
                 'name'         => $item['name'] ?? 'Unknown',
-                'type'         => $item['type'] ?? 'accessory',
-                'size'         => $item['size'] ?? null,
+                'types'        => $item['types'] ?? [],
+                'sizes'        => $item['sizes'] ?? [],
                 'qty'          => $item['qty'] ?? 1,
-                'name_on_item' => $item['name_on_item'] ?? null,
-                'number'       => $item['number'] ?? null,
             ];
         }
 
         $order->update([
-            'athlete_name'  => $request->athlete_name,
-            'special_notes' => $request->special_notes,
-            'items_json'    => $itemsJson,
-            'is_edited'     => true,
-            'edited_by'     => 'admin',
+            'athlete_first_name'  => $request->athlete_first_name,
+            'athlete_last_name'   => $request->athlete_last_name,
+            'gender'              => $request->gender,
+            'jersey_name'         => $request->jersey_name,
+            'jersey_number'       => $request->jersey_number,
+            'backpack_name'       => $request->backpack_name,
+            'guardian_first_name' => $request->guardian_first_name,
+            'guardian_last_name'  => $request->guardian_last_name,
+            'guardian_phone'      => $request->guardian_phone,
+            'guardian_email'      => $request->guardian_email,
+            'special_notes'       => $request->special_notes,
+            'items_json'          => $itemsJson,
+            'is_edited'           => true,
+            'edited_by'           => 'admin',
         ]);
 
         return redirect()->route('admin.order.edit', $order)
@@ -392,7 +441,12 @@ class AdminController extends Controller
             "Expires"             => "0"
         ];
 
-        $columns = ['Athlete Name', 'Gender', 'Item', 'Type', 'Size', 'Qty', 'Name on Item', 'Number', 'Special Notes', 'Edited?'];
+        $columns = [
+            'Athlete First Name', 'Athlete Last Name', 'Gender', 
+            'Jersey Name', 'Jersey Number', 'Backpack Name',
+            'Guardian First Name', 'Guardian Last Name', 'Guardian Phone', 'Guardian Email',
+            'Item', 'Types', 'Sizes', 'Qty', 'Special Notes', 'Edited?'
+        ];
 
         $callback = function() use ($orders, $columns) {
             $file = fopen('php://output', 'w');
@@ -401,15 +455,31 @@ class AdminController extends Controller
             foreach ($orders as $order) {
                 if (is_array($order->items_json)) {
                     foreach ($order->items_json as $item) {
+                        $typesStr = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
+                        
+                        $sizesArr = [];
+                        if (isset($item['sizes']) && is_array($item['sizes'])) {
+                            foreach ($item['sizes'] as $t => $s) {
+                                $sizesArr[] = "$t: $s";
+                            }
+                        }
+                        $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
+
                         fputcsv($file, [
-                            $order->athlete_name,
+                            $order->athlete_first_name,
+                            $order->athlete_last_name,
                             $order->gender ?? 'Not Specified',
+                            $order->jersey_name ?? '',
+                            $order->jersey_number ?? '',
+                            $order->backpack_name ?? '',
+                            $order->guardian_first_name ?? '',
+                            $order->guardian_last_name ?? '',
+                            $order->guardian_phone ?? '',
+                            $order->guardian_email ?? '',
                             $item['name'] ?? 'Unknown Item',
-                            $item['type'] ?? 'N/A',
-                            $item['size'] ?? 'N/A',
+                            $typesStr,
+                            $sizesStr,
                             $item['qty'] ?? 1,
-                            $item['name_on_item'] ?? '',
-                            $item['number'] ?? '',
                             $order->special_notes ?? '',
                             $order->is_edited ? 'Yes' : 'No',
                         ]);
@@ -454,7 +524,79 @@ class AdminController extends Controller
 
     public function deleteCollection(LandingCollection $collection)
     {
+        if ($collection->image_path) {
+            $pathToRemove = str_replace('/storage/', '', $collection->image_path);
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+        }
         $collection->delete();
         return redirect()->route('admin.dashboard')->with('success', 'Landing collection removed.');
+    }
+
+    // ─── TESTIMONIALS ────────────────────────────────────────────────────────────
+
+    public function createTestimonial(Request $request)
+    {
+        $validated = $request->validate([
+            'client_name'  => ['required', 'string', 'max:255'],
+            'organization' => ['nullable', 'string', 'max:255'],
+            'content'      => ['required', 'string'],
+            'sort_order'   => ['required', 'integer'],
+            'image'        => ['nullable', 'image', 'max:5120'], // 5MB max
+        ]);
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('testimonials', 'public');
+            $imagePath = '/storage/' . $path;
+        }
+
+        Testimonial::create([
+            'client_name'  => $validated['client_name'],
+            'organization' => $validated['organization'],
+            'content'      => $validated['content'],
+            'sort_order'   => $validated['sort_order'],
+            'image_path'   => $imagePath,
+            'is_active'    => true,
+        ]);
+
+        return redirect()->route('admin.dashboard')->with('success', 'Testimonial added successfully.');
+    }
+
+    public function updateTestimonial(Request $request, Testimonial $testimonial)
+    {
+        $validated = $request->validate([
+            'client_name'  => ['required', 'string', 'max:255'],
+            'organization' => ['nullable', 'string', 'max:255'],
+            'content'      => ['required', 'string'],
+            'sort_order'   => ['required', 'integer'],
+            'image'        => ['nullable', 'image', 'max:5120'],
+            'is_active'    => ['nullable', 'boolean']
+        ]);
+
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($testimonial->image_path) {
+                $pathToRemove = str_replace('/storage/', '', $testimonial->image_path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            }
+            $path = $request->file('image')->store('testimonials', 'public');
+            $validated['image_path'] = '/storage/' . $path;
+        }
+
+        $validated['is_active'] = $request->has('is_active');
+
+        $testimonial->update($validated);
+
+        return redirect()->route('admin.dashboard')->with('success', 'Testimonial updated successfully.');
+    }
+
+    public function deleteTestimonial(Testimonial $testimonial)
+    {
+        if ($testimonial->image_path) {
+            $pathToRemove = str_replace('/storage/', '', $testimonial->image_path);
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+        }
+        $testimonial->delete();
+        return redirect()->route('admin.dashboard')->with('success', 'Testimonial removed.');
     }
 }

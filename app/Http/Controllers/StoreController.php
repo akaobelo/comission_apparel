@@ -62,9 +62,18 @@ class StoreController extends Controller
         }
 
         $request->validate([
-            'athlete_name'  => 'required|string|max:255',
-            'special_notes' => 'nullable|string|max:1000',
-            'items'         => 'required|array|min:1',
+            'athlete_first_name'  => 'required|string|max:255',
+            'athlete_last_name'   => 'required|string|max:255',
+            'gender'              => 'required|string|max:50',
+            'jersey_name'         => 'nullable|string|max:255',
+            'jersey_number'       => 'nullable|string|max:10',
+            'backpack_name'       => 'nullable|string|max:255',
+            'guardian_first_name' => 'nullable|string|max:255',
+            'guardian_last_name'  => 'nullable|string|max:255',
+            'guardian_phone'      => 'nullable|string|max:255',
+            'guardian_email'      => 'nullable|email|max:255',
+            'special_notes'       => 'nullable|string|max:1000',
+            'items'               => 'required|array|min:1',
         ]);
 
         // Build the rich items JSON — each item has per-piece sizing
@@ -89,22 +98,12 @@ class StoreController extends Controller
                 'sizes'        => [],
             ];
 
-            // Backpack/Personalized have name field
-            if (in_array('backpack', $types) || ($storeItem->designCatalog && $storeItem->designCatalog->has_name_field)) {
-                $entry['name_on_item'] = substr(trim($details['name_on_item'] ?? ''), 0, 50);
-            }
-
             // Handle sizes for each sized type
             $sizedTypes = DesignCatalog::sizedTypes();
             foreach ($types as $t) {
                 if (in_array($t, $sizedTypes)) {
                     $entry['sizes'][$t] = $details['sizes'][$t] ?? null;
                 }
-            }
-
-            // Optional player number
-            if (!empty($details['number'])) {
-                $entry['number'] = substr(trim($details['number']), 0, 3);
             }
 
             $itemsJson[] = $entry;
@@ -115,19 +114,29 @@ class StoreController extends Controller
         }
 
         ParentOrder::create([
-            'team_store_id'      => $store->id,
-            'athlete_name'       => trim($request->athlete_name),
-            'gender'             => $request->gender ?? null,
-            'special_notes'      => $request->special_notes,
-            'items_json'         => $itemsJson,
-            'status'             => 'Submitted',
-            'total_retail_price' => 0, // No longer tracked
+            'team_store_id'       => $store->id,
+            'athlete_first_name'  => trim($request->athlete_first_name),
+            'athlete_last_name'   => trim($request->athlete_last_name),
+            'gender'              => trim($request->gender),
+            'jersey_name'         => $request->jersey_name,
+            'jersey_number'       => $request->jersey_number,
+            'backpack_name'       => $request->backpack_name,
+            'guardian_first_name' => $request->guardian_first_name,
+            'guardian_last_name'  => $request->guardian_last_name,
+            'guardian_phone'      => $request->guardian_phone,
+            'guardian_email'      => $request->guardian_email,
+            'special_notes'       => $request->special_notes,
+            'items_json'          => $itemsJson,
+            'status'              => 'Submitted',
+            'total_retail_price'  => 0, // No longer tracked
         ]);
 
+        $fullName = trim($request->athlete_first_name . ' ' . $request->athlete_last_name);
+
         $store->user->notify(
-            new \App\Notifications\ParentOrderPlaced($request->athlete_name, $store->name)
+            new \App\Notifications\ParentOrderPlaced($fullName, $store->name)
         );
 
-        return back()->with('success', 'Order successfully submitted for ' . $request->athlete_name . '! Your coach will be notified.');
+        return back()->with('success', 'Order successfully submitted for ' . $fullName . '! Your coach will be notified.');
     }
 }

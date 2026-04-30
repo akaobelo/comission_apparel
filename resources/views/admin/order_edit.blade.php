@@ -8,7 +8,7 @@
             Back to Store
         </a>
         <span class="text-slate-300">/</span>
-        <span class="text-slate-700 font-bold">Editing: {{ $order->athlete_name }}'s Order</span>
+        <span class="text-slate-700 font-bold">Editing: {{ $order->athlete_first_name }} {{ $order->athlete_last_name }}'s Order</span>
     </div>
 
     @if(session('success'))
@@ -28,12 +28,48 @@
         <div class="p-6">
             <form action="{{ route('admin.order.update', $order) }}" method="POST" class="space-y-6">
                 @csrf
-                <div class="grid grid-cols-2 gap-5">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-5 border-b border-slate-200 pb-6 mb-6">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Athlete Name</label>
-                        <input type="text" name="athlete_name" value="{{ old('athlete_name', $order->athlete_name) }}" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">First Name</label>
+                        <input type="text" name="athlete_first_name" value="{{ old('athlete_first_name', $order->athlete_first_name) }}" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                     </div>
                     <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Last Name</label>
+                        <input type="text" name="athlete_last_name" value="{{ old('athlete_last_name', $order->athlete_last_name) }}" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Gender</label>
+                        <input type="text" name="gender" value="{{ old('gender', $order->gender) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Jersey Name</label>
+                        <input type="text" name="jersey_name" value="{{ old('jersey_name', $order->jersey_name) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Jersey Number</label>
+                        <input type="text" name="jersey_number" value="{{ old('jersey_number', $order->jersey_number) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Backpack Name</label>
+                        <input type="text" name="backpack_name" value="{{ old('backpack_name', $order->backpack_name) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Guardian First Name</label>
+                        <input type="text" name="guardian_first_name" value="{{ old('guardian_first_name', $order->guardian_first_name) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Guardian Last Name</label>
+                        <input type="text" name="guardian_last_name" value="{{ old('guardian_last_name', $order->guardian_last_name) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Guardian Phone</label>
+                        <input type="text" name="guardian_phone" value="{{ old('guardian_phone', $order->guardian_phone) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Guardian Email</label>
+                        <input type="email" name="guardian_email" value="{{ old('guardian_email', $order->guardian_email) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                    </div>
+                    <div class="col-span-2">
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Special Notes</label>
                         <input type="text" name="special_notes" value="{{ old('special_notes', $order->special_notes) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                     </div>
@@ -51,33 +87,34 @@
                                 </div>
                                 <input type="hidden" name="items[{{ $idx }}][id]" value="{{ $item['id'] ?? $idx }}">
                                 <input type="hidden" name="items[{{ $idx }}][name]" value="{{ $item['name'] ?? '' }}">
-                                <input type="hidden" name="items[{{ $idx }}][type]" value="{{ $item['type'] ?? '' }}">
+                                @if(isset($item['types']) && is_array($item['types']))
+                                    @foreach($item['types'] as $tIdx => $type)
+                                        <input type="hidden" name="items[{{ $idx }}][types][{{ $tIdx }}]" value="{{ $type }}">
+                                    @endforeach
+                                @else
+                                    <input type="hidden" name="items[{{ $idx }}][type]" value="{{ $item['type'] ?? '' }}">
+                                @endif
                                 <div class="flex flex-wrap gap-3">
-                                    @if(($item['type'] ?? '') === 'backpack')
+                                    @php
+                                        $sizes = $item['sizes'] ?? [];
+                                        if (empty($sizes) && isset($item['size'])) {
+                                            $sizes = ['default' => $item['size']];
+                                        }
+                                    @endphp
+                                    @foreach($sizes as $sizeType => $sizeVal)
                                         <div>
-                                            <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Name on Backpack</label>
-                                            <input type="text" name="items[{{ $idx }}][name_on_item]" value="{{ old("items.{$idx}.name_on_item", $item['name_on_item'] ?? '') }}" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm w-36">
-                                        </div>
-                                    @else
-                                        <div>
-                                            <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Size</label>
-                                            <select name="items[{{ $idx }}][size]" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                            <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">{{ $sizeType === 'default' ? 'Size' : str_replace('_', ' ', $sizeType) }}</label>
+                                            <select name="items[{{ $idx }}][sizes][{{ $sizeType }}]" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                                                 @foreach($sizeChart as $size)
-                                                    <option value="{{ $size }}" {{ old("items.{$idx}.size", $item['size'] ?? '') === $size ? 'selected' : '' }}>{{ $size }}</option>
+                                                    <option value="{{ $size }}" {{ $sizeVal === $size ? 'selected' : '' }}>{{ $size }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
-                                    @endif
+                                    @endforeach
                                     <div>
                                         <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Qty</label>
                                         <input type="number" name="items[{{ $idx }}][qty]" value="{{ old("items.{$idx}.qty", $item['qty'] ?? 1) }}" min="1" max="10" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm w-16">
                                     </div>
-                                    @if(!empty($item['number']) || in_array($item['type'] ?? '', ['uniform_top', 'uniform_bottom']))
-                                    <div>
-                                        <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Player #</label>
-                                        <input type="text" name="items[{{ $idx }}][number]" value="{{ old("items.{$idx}.number", $item['number'] ?? '') }}" placeholder="00" maxlength="3" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm w-16">
-                                    </div>
-                                    @endif
                                 </div>
                             </div>
                         </div>

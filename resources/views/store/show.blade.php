@@ -7,11 +7,12 @@
 <div class="relative w-full min-h-[40vh] flex flex-col pt-32 pb-16 justify-end overflow-hidden">
     <div class="absolute inset-0 bg-slate-950"></div>
     @if($store->cover_image_path)
-        <div class="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-screen" style="background-image: url('{{ Storage::url($store->cover_image_path) }}')"></div>
+        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ Storage::url($store->cover_image_path) }}')"></div>
     @else
-        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=2500')] bg-cover bg-center opacity-10 mix-blend-screen"></div>
+        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=2500')] bg-cover bg-center"></div>
     @endif
-    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent"></div>
+    <!-- Light gradient only at the bottom to ensure the white title text is readable -->
+    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
 
     <div class="relative z-10 max-w-[1400px] w-full mx-auto px-6 flex flex-col md:flex-row items-end justify-between gap-6">
         <div class="flex items-end gap-5">
@@ -106,21 +107,65 @@
 
                 {{-- Athlete Info --}}
                 <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-8 md:p-10 mb-10">
-                    <h2 class="text-xl font-black uppercase tracking-tight text-slate-900 mb-6">Athlete Information</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <h2 class="text-xl font-black uppercase tracking-tight text-slate-900 mb-2">Athlete Information</h2>
+                    <div class="mb-8 text-sm text-slate-600 space-y-3 border-l-4 border-secondary pl-4 py-1">
+                        <p class="font-bold text-slate-900">Ready to Order?</p>
+                        <p>Please enter your athlete's information below to begin your order. Once completed, you'll be able to select individual items or choose from our available packages.</p>
+                        <p class="font-bold text-secondary">If you are ordering for multiple athletes, please note that a separate order must be completed for each athlete.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Athlete Full Name <span class="text-red-500">*</span></label>
-                            <input type="text" name="athlete_name" required placeholder="e.g. Jordan Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
-                            @error('athlete_name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">First Name <span class="text-red-500">*</span></label>
+                            <input type="text" name="athlete_first_name" required placeholder="e.g. Jordan" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
+                            @error('athlete_first_name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Gender / Pattern Base</label>
-                            <select name="gender" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:outline-none transition-all font-medium">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Last Name <span class="text-red-500">*</span></label>
+                            <input type="text" name="athlete_last_name" required placeholder="e.g. Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
+                            @error('athlete_last_name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Gender / Pattern Base <span class="text-red-500">*</span></label>
+                            <select name="gender" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:outline-none transition-all font-medium">
                                 <option value="">Select cut pattern...</option>
                                 <option value="Mens / Boys">Men's / Boy's Cut</option>
                                 <option value="Womens / Girls">Women's / Girl's Cut</option>
                                 <option value="Unisex">Unisex</option>
                             </select>
+                            @error('gender')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Name on Jersey (if applicable)</label>
+                            <input type="text" name="jersey_name" placeholder="e.g. SMITH" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Jersey Number (if applicable)</label>
+                            <input type="text" name="jersey_number" placeholder="e.g. 24" maxlength="3" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Name on Backpack (if applicable)</label>
+                            <input type="text" name="backpack_name" placeholder="e.g. Jordan Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                        </div>
+                        
+                        <div class="md:col-span-2 mt-4 pt-6 border-t border-slate-100">
+                            <h3 class="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-4">Parent/Guardian Information</h3>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Parent's/Guardian's First Name</label>
+                            <input type="text" name="guardian_first_name" placeholder="First Name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Parent's/Guardian's Last Name</label>
+                            <input type="text" name="guardian_last_name" placeholder="Last Name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Parent's/Guardian's Phone</label>
+                            <input type="tel" name="guardian_phone" placeholder="e.g. (555) 123-4567" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">Parent's/Guardian's Email</label>
+                            <input type="email" name="guardian_email" placeholder="e.g. parent@example.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                         </div>
                     </div>
                 </div>
@@ -161,15 +206,13 @@
                             <div class="aspect-[4/3] bg-[#f0f2f5] relative overflow-hidden group-hover:bg-[#e4e7ec] transition-colors flex items-center justify-center cursor-pointer" @click="openPanel('{{ $item->id }}')">
                                 @if(!empty($item->image_paths))
                                     @if(count($item->image_paths) > 1)
-                                        <div class="w-full h-full relative" x-data="{ imgIdx: 0, imgs: {{ json_encode($item->image_paths) }} }">
+                                        <div class="w-full h-full relative" x-data="{ imgIdx: 0, imgs: {{ json_encode($item->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
                                             <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300">
                                             <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
                                                 <template x-for="(img, idx) in imgs" :key="idx">
                                                     <div class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm" :class="idx === imgIdx ? 'bg-secondary' : 'bg-white/60'"></div>
                                                 </template>
                                             </div>
-                                            <!-- Simple carousel auto-rotate on hover -->
-                                            <div class="absolute inset-0" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0"></div>
                                         </div>
                                     @else
                                         <img src="{{ $item->image_paths[0] }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
@@ -294,13 +337,6 @@
                                 </div>
                                 
                                 <div class="space-y-5">
-                                    @if($isBackpack || $hasNameField)
-                                    <div>
-                                        <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Name on Item</label>
-                                        <input type="text" name="items[{{ $item->id }}][name_on_item]" placeholder="Enter first and last name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none font-medium">
-                                    </div>
-                                    @endif
-
                                     @foreach($itemSizedTypes as $t)
                                     <div>
                                         <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">{{ str_replace('_', ' ', $t) }} Size <span class="text-red-500">*</span></label>
@@ -318,13 +354,6 @@
                                         </select>
                                     </div>
                                     @endforeach
-
-                                    @if($hasNumber)
-                                    <div>
-                                        <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Player Number (optional)</label>
-                                        <input type="text" name="items[{{ $item->id }}][number]" placeholder="e.g. 24" maxlength="3" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none font-medium">
-                                    </div>
-                                    @endif
 
                                     <div>
                                         <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Quantity</label>

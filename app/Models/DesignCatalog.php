@@ -43,13 +43,25 @@ class DesignCatalog extends Model
             $labels = [];
             foreach ($this->types as $t) {
                 $labels[] = match($t) {
-                    'uniform_top'    => 'Uniform Top',
-                    'uniform_bottom' => 'Uniform Bottom',
-                    'warmup_top'     => 'Warm-up Top',
-                    'warmup_bottom'  => 'Warm-up Bottom',
-                    'backpack'       => 'Backpack',
-                    'arm_sleeve'     => 'Arm Sleeve',
-                    'accessory'      => 'Accessory',
+                    'accessory'      => 'Accessories',
+                    'arm_sleeve'     => 'Arm Sleeves',
+                    'backpack'       => 'Backpacks',
+                    'headwear'       => 'Headwear',
+                    'hoodie'         => 'Hoodies & Pullovers',
+                    'jacket'         => 'Jackets',
+                    'leggings'       => 'Leggings/Tights',
+                    'pants'          => 'Pants',
+                    'polo'           => 'Polos',
+                    'shirt_short'    => 'Shirts (short sleeve)',
+                    'shirt_long'     => 'Shirts (long sleeve)',
+                    'shorts'         => 'Shorts',
+                    'socks'          => 'Socks',
+                    'uniform_top'    => 'Uniform (top)',
+                    'uniform_bottom' => 'Uniform (bottom)',
+                    'uniform_set'    => 'Uniform Set (top/bottom)',
+                    'warmup_top'     => 'Warm-up (top)',
+                    'warmup_bottom'  => 'Warm-up (bottom)',
+                    'warmup_set'     => 'Warm-up (top/bottom)',
                     default          => ucfirst(str_replace('_', ' ', $t)),
                 };
             }
@@ -58,13 +70,25 @@ class DesignCatalog extends Model
 
         // Fallback to legacy single type
         return match($this->type) {
-            'uniform_top'    => 'Uniform Top',
-            'uniform_bottom' => 'Uniform Bottom',
-            'warmup_top'     => 'Warm-up Top',
-            'warmup_bottom'  => 'Warm-up Bottom',
-            'backpack'       => 'Backpack',
-            'arm_sleeve'     => 'Arm Sleeve',
-            'accessory'      => 'Accessory',
+            'accessory'      => 'Accessories',
+            'arm_sleeve'     => 'Arm Sleeves',
+            'backpack'       => 'Backpacks',
+            'headwear'       => 'Headwear',
+            'hoodie'         => 'Hoodies & Pullovers',
+            'jacket'         => 'Jackets',
+            'leggings'       => 'Leggings/Tights',
+            'pants'          => 'Pants',
+            'polo'           => 'Polos',
+            'shirt_short'    => 'Shirts (short sleeve)',
+            'shirt_long'     => 'Shirts (long sleeve)',
+            'shorts'         => 'Shorts',
+            'socks'          => 'Socks',
+            'uniform_top'    => 'Uniform (top)',
+            'uniform_bottom' => 'Uniform (bottom)',
+            'uniform_set'    => 'Uniform Set (top/bottom)',
+            'warmup_top'     => 'Warm-up (top)',
+            'warmup_bottom'  => 'Warm-up (bottom)',
+            'warmup_set'     => 'Warm-up (top/bottom)',
             default          => ucfirst(str_replace('_', ' ', $this->type ?? '')),
         };
     }
@@ -84,7 +108,11 @@ class DesignCatalog extends Model
     // All types that use the standard size chart
     public static function sizedTypes(): array
     {
-        return ['uniform_top', 'uniform_bottom', 'warmup_top', 'warmup_bottom', 'arm_sleeve', 'accessory'];
+        return [
+            'accessory', 'arm_sleeve', 'headwear', 'hoodie', 'jacket', 'leggings', 'pants', 
+            'polo', 'shirt_short', 'shirt_long', 'shorts', 'socks', 'uniform_top', 'uniform_bottom', 
+            'uniform_set', 'warmup_top', 'warmup_bottom', 'warmup_set'
+        ];
     }
 
     // Standard size chart used across all garments

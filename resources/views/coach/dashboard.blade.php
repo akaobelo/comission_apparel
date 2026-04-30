@@ -4,12 +4,47 @@
 <div class="max-w-[1400px] mx-auto px-6 pb-8 pt-32 lg:pt-40">
     {{-- Header --}}
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-            <div class="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest rounded-full mb-2">
-                Coach Portal
+        <div class="flex items-center gap-5">
+            {{-- Profile Logo / Uploader --}}
+            <div x-data="{ openLogoModal: false }" class="relative">
+                <button @click="openLogoModal = true" class="w-16 h-16 rounded-full bg-slate-100 border-2 border-slate-200 flex items-center justify-center overflow-hidden hover:border-primary transition-colors group relative shadow-sm">
+                    @if($user->logo_path)
+                        <img src="{{ Str::startsWith($user->logo_path, 'http') ? $user->logo_path : asset('storage/' . $user->logo_path) }}" alt="Logo" class="w-full h-full object-cover">
+                    @else
+                        <span class="text-xl font-black text-slate-400 group-hover:text-primary transition-colors">{{ substr($user->organization ?? $user->name, 0, 1) }}</span>
+                    @endif
+                    <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
+                </button>
+
+                <!-- Modal -->
+                <div x-show="openLogoModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" x-cloak>
+                    <div @click.away="openLogoModal = false" class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-slide-up mx-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-black uppercase text-slate-900">Update Organization Logo</h3>
+                            <button @click="openLogoModal = false" class="text-slate-400 hover:text-red-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                        </div>
+                        <form action="{{ route('coach.profile.logo') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                            @csrf
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Upload New Logo</label>
+                                <input type="file" name="logo" accept="image/jpeg,image/png,image/webp" required class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
+                                <p class="text-[10px] text-slate-500 mt-2 uppercase font-medium">Max size: 5MB. Recommended: square PNG with transparent background.</p>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-full py-3 uppercase tracking-widest text-xs font-bold shadow-md">Upload & Save</button>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <h1 class="text-3xl font-black uppercase text-slate-900">Welcome, {{ $user->name }}</h1>
-            <p class="text-slate-600 text-sm mt-1">{{ $user->organization }} · {{ $user->sport }}</p>
+
+            <div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest rounded-full mb-2">
+                    Coach Portal
+                </div>
+                <h1 class="text-3xl font-black uppercase text-slate-900">Welcome, {{ $user->name }}</h1>
+                <p class="text-slate-600 text-sm mt-1">{{ $user->organization }} · {{ $user->sport }}</p>
+            </div>
         </div>
         <form action="{{ route('logout') }}" method="POST">
             @csrf
@@ -313,7 +348,7 @@
                         <div x-data="{ catalogOpen: false }" class="mb-8">
                             <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-sm">
                                 <div>
-                                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Global Design Catalog</h4>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Your Assigned Designs</h4>
                                     <p class="text-[10px] text-slate-500 mt-1">Browse and add custom designs to your team store.</p>
                                 </div>
                                 <button type="button" @click="catalogOpen = true" class="px-5 py-2.5 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors shadow-sm flex items-center gap-2">
@@ -340,7 +375,7 @@
                                     <!-- Header -->
                                     <div class="flex items-center justify-between p-6 bg-white border-b border-slate-200">
                                         <div>
-                                            <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Global Design Catalog</h2>
+                                            <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Assigned Design Catalog</h2>
                                             <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-bold">Parents will not see your wholesale costs</p>
                                         </div>
                                         <button type="button" @click="catalogOpen = false" class="text-slate-400 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-100 transition-colors">
@@ -351,7 +386,7 @@
                                     <!-- Grid Container -->
                                     <div class="flex-1 overflow-y-auto p-6 md:p-8">
                                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                            @foreach($globalCatalog as $design)
+                                            @forelse($assignedDesigns as $design)
                                                 @php 
                                                     $alreadyAdded = $store->items->pluck('design_catalog_id')->contains($design->id); 
                                                 @endphp
@@ -360,15 +395,13 @@
                                                     <div class="aspect-[4/3] bg-[#f0f2f5] relative overflow-hidden group-hover:bg-[#e4e7ec] transition-colors flex items-center justify-center">
                                                         @if(!empty($design->image_paths))
                                                             @if(count($design->image_paths) > 1)
-                                                                <div class="w-full h-full relative" x-data="{ imgIdx: 0, imgs: {{ json_encode($design->image_paths) }} }">
+                                                                <div class="w-full h-full relative" x-data="{ imgIdx: 0, imgs: {{ json_encode($design->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
                                                                     <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300">
                                                                     <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
                                                                         <template x-for="(img, idx) in imgs" :key="idx">
                                                                             <div class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm" :class="idx === imgIdx ? 'bg-secondary' : 'bg-white/60'"></div>
                                                                         </template>
                                                                     </div>
-                                                                    <!-- Simple carousel auto-rotate on hover -->
-                                                                    <div class="absolute inset-0" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0"></div>
                                                                 </div>
                                                             @else
                                                                 <img src="{{ $design->image_paths[0] }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
@@ -404,7 +437,15 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                            @endforeach
+                                            @empty
+                                                <div class="col-span-full py-12 text-center">
+                                                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200">
+                                                        <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                    </div>
+                                                    <h3 class="text-lg font-black text-slate-900 uppercase tracking-tight">No Designs Assigned</h3>
+                                                    <p class="text-sm text-slate-500 mt-2 max-w-md mx-auto">You do not currently have any approved designs assigned to your profile. Please contact The Commission Apparel to request designs.</p>
+                                                </div>
+                                            @endforelse
                                         </div>
                                     </div>
                                 </div>
@@ -432,7 +473,7 @@
                                         <form action="{{ route('coach.store.item.markup', $item) }}" method="POST" class="flex flex-wrap items-end gap-2">
                                             @csrf
                                             <div>
-                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Markup ($)</label>
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Enter your retail price ($)</label>
                                                 <input
                                                     type="number"
                                                     name="markup"
@@ -450,8 +491,9 @@
                                 </div>
                                 <form action="{{ route('coach.store.item.remove', $item) }}" method="POST" onsubmit="return confirm('Remove this item from your store?')">
                                     @csrf
-                                    <button class="text-slate-300 hover:text-red-500 transition-colors p-2 bg-slate-50 rounded-lg hover:bg-red-50">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    <button class="text-white transition-colors px-3 py-1.5 bg-slate-900 border border-slate-900 rounded-lg hover:bg-black flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        Remove
                                     </button>
                                 </form>
                             </div>

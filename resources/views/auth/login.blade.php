@@ -51,7 +51,7 @@
                 <div>
                     <div class="flex justify-between items-center mb-2">
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Password</label>
-                        <a href="#" class="text-xs text-secondary hover:text-[#a11825] transition-colors font-bold">Forgot?</a>
+                        <a href="{{ route('password.verify.form') }}" class="text-xs text-secondary hover:text-[#a11825] transition-colors font-bold">Forgot?</a>
                     </div>
                     <div class="relative">
                         <input :type="showPass ? 'text' : 'password'" name="password" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 pr-12 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-400 shadow-sm">

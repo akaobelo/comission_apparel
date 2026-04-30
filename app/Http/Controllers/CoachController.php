@@ -129,6 +129,12 @@ class CoachController extends Controller
 
         $design = DesignCatalog::findOrFail($request->design_catalog_id);
 
+        // Check if design is assigned to this coach
+        if (!$request->user()->designCatalog()->where('design_catalog.id', $design->id)->exists()) {
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'You do not have permission to add this design. Please contact The Commission Apparel to request permission.');
+        }
+
         // Check it isn't already in the store
         if ($store->items()->where('design_catalog_id', $design->id)->exists()) {
             return redirect()->route('coach.dashboard')
@@ -220,9 +226,18 @@ class CoachController extends Controller
         if ($store->user_id !== $request->user()->id) abort(403);
 
         $request->validate([
-            'athlete_name'  => ['required', 'string', 'max:255'],
-            'special_notes' => ['nullable', 'string'],
-            'items'         => ['required', 'array'],
+            'athlete_first_name'  => ['required', 'string', 'max:255'],
+            'athlete_last_name'   => ['required', 'string', 'max:255'],
+            'gender'              => ['nullable', 'string', 'max:50'],
+            'jersey_name'         => ['nullable', 'string', 'max:255'],
+            'jersey_number'       => ['nullable', 'string', 'max:10'],
+            'backpack_name'       => ['nullable', 'string', 'max:255'],
+            'guardian_first_name' => ['nullable', 'string', 'max:255'],
+            'guardian_last_name'  => ['nullable', 'string', 'max:255'],
+            'guardian_phone'      => ['nullable', 'string', 'max:255'],
+            'guardian_email'      => ['nullable', 'email', 'max:255'],
+            'special_notes'       => ['nullable', 'string'],
+            'items'               => ['required', 'array'],
         ]);
 
         $itemsJson = [];
@@ -230,24 +245,33 @@ class CoachController extends Controller
             $itemsJson[] = [
                 'id'           => $item['id'] ?? $idx,
                 'name'         => $item['name'] ?? 'Unknown',
-                'type'         => $item['type'] ?? 'accessory',
-                'size'         => $item['size'] ?? null,
+                'types'        => $item['types'] ?? [],
+                'sizes'        => $item['sizes'] ?? [],
                 'qty'          => $item['qty'] ?? 1,
-                'name_on_item' => $item['name_on_item'] ?? null,
-                'number'       => $item['number'] ?? null,
             ];
         }
 
         $order->update([
-            'athlete_name'  => $request->athlete_name,
-            'special_notes' => $request->special_notes,
-            'items_json'    => $itemsJson,
-            'is_edited'     => true,
-            'edited_by'     => 'coach',
+            'athlete_first_name'  => $request->athlete_first_name,
+            'athlete_last_name'   => $request->athlete_last_name,
+            'gender'              => $request->gender,
+            'jersey_name'         => $request->jersey_name,
+            'jersey_number'       => $request->jersey_number,
+            'backpack_name'       => $request->backpack_name,
+            'guardian_first_name' => $request->guardian_first_name,
+            'guardian_last_name'  => $request->guardian_last_name,
+            'guardian_phone'      => $request->guardian_phone,
+            'guardian_email'      => $request->guardian_email,
+            'special_notes'       => $request->special_notes,
+            'items_json'          => $itemsJson,
+            'is_edited'           => true,
+            'edited_by'           => 'coach',
         ]);
 
+        $fullName = trim($request->athlete_first_name . ' ' . $request->athlete_last_name);
+
         return redirect()->route('coach.dashboard')
-            ->with('success', "Order for {$order->athlete_name} has been updated.");
+            ->with('success', "Order for {$fullName} has been updated.");
     }
 
     public function approvePricing(Request $request, TeamStore $store)
@@ -270,7 +294,8 @@ class CoachController extends Controller
         if ($request->hasFile('cover_image')) {
             // Delete old image if exists
             if ($store->cover_image_path) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($store->cover_image_path);
+                $pathToRemove = str_replace('/storage/', '', $store->cover_image_path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
             }
 
             // Store new image
@@ -280,5 +305,29 @@ class CoachController extends Controller
 
         return redirect()->route('coach.dashboard')
             ->with('success', 'Store cover image updated successfully.');
+    }
+
+    public function updateProfileLogo(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'], // Max 5MB
+        ]);
+
+        if ($request->hasFile('logo')) {
+            // Delete old logo if exists
+            if ($user->logo_path) {
+                $pathToRemove = str_replace('/storage/', '', $user->logo_path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            }
+
+            // Store new logo
+            $path = $request->file('logo')->store('organization_logos', 'public');
+            $user->update(['logo_path' => $path]);
+        }
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Organization logo updated successfully.');
     }
 }

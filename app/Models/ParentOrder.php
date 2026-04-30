@@ -8,8 +8,16 @@ class ParentOrder extends Model
 {
     protected $fillable = [
         'team_store_id',
-        'athlete_name',
+        'athlete_first_name',
+        'athlete_last_name',
         'gender',
+        'jersey_name',
+        'jersey_number',
+        'backpack_name',
+        'guardian_first_name',
+        'guardian_last_name',
+        'guardian_phone',
+        'guardian_email',
         'items_json',
         'special_notes',
         'status',
@@ -17,6 +25,11 @@ class ParentOrder extends Model
         'edited_by',
         'total_retail_price',
     ];
+
+    public function getAthleteNameAttribute()
+    {
+        return $this->athlete_first_name . ' ' . $this->athlete_last_name;
+    }
 
     protected $casts = [
         'items_json' => 'array',

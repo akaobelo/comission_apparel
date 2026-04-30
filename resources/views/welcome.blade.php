@@ -247,30 +247,82 @@
             <span class="text-secondary">"</span> TESTIMONIALS <span class="text-secondary">"</span>
         </h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <article class="bg-slate-50 border border-slate-200 rounded-xl p-8">
-                <p class="text-slate-700 text-base md:text-lg font-medium leading-relaxed mb-6">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                </p>
-                <div class="inline-block border border-primary/30 bg-white px-4 py-2">
-                    <p class="font-black text-slate-900 text-base">- Justin Gatlin</p>
-                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-1">USA Track &amp; Field</p>
+        @if(isset($testimonials) && $testimonials->isNotEmpty())
+        <div x-data="{ 
+            activePage: 0,
+            itemsPerPage: window.innerWidth < 768 ? 1 : ({{ $testimonials->count() }} > 1 ? 2 : 1),
+            get totalPages() { return Math.ceil({{ $testimonials->count() }} / this.itemsPerPage) },
+            next() { this.activePage = (this.activePage + 1) % this.totalPages },
+            prev() { this.activePage = (this.activePage - 1 + this.totalPages) % this.totalPages },
+            init() {
+                window.addEventListener('resize', () => {
+                    this.itemsPerPage = window.innerWidth < 768 ? 1 : ({{ $testimonials->count() }} > 1 ? 2 : 1);
+                    if (this.activePage >= this.totalPages) this.activePage = 0;
+                });
+                
+                this.$watch('totalPages', (val) => {
+                    if (val > 1 && !this.interval) {
+                        this.interval = setInterval(() => { this.next() }, 6000);
+                    } else if (val <= 1 && this.interval) {
+                        clearInterval(this.interval);
+                        this.interval = null;
+                    }
+                });
+                
+                if (this.totalPages > 1) {
+                    this.interval = setInterval(() => { this.next() }, 6000);
+                }
+            }
+        }" class="relative w-full">
+            <div class="overflow-hidden relative w-full -mx-3">
+                <div class="flex transition-transform duration-500 ease-out"
+                     :style="'transform: translateX(-' + (activePage * 100) + '%)'">
+                    @foreach($testimonials as $testimonial)
+                    <div class="shrink-0 p-3 flex" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <article class="bg-slate-50 border border-slate-100 rounded-xl p-8 md:p-10 w-full flex flex-col justify-between shadow-sm">
+                            <p class="text-black text-sm md:text-base font-medium leading-relaxed mb-8" style="color: #000000;">
+                                "{{ $testimonial->content }}"
+                            </p>
+                            <div class="flex items-center gap-4 mt-auto">
+                                @if($testimonial->image_path)
+                                    <img src="{{ $testimonial->image_path }}" alt="{{ $testimonial->client_name }}" class="w-12 h-12 rounded-full object-cover shrink-0">
+                                @else
+                                    <div class="w-12 h-12 rounded-full bg-[#1e40af] text-white flex items-center justify-center font-black text-lg shrink-0">
+                                        {{ substr($testimonial->client_name, 0, 1) }}
+                                    </div>
+                                @endif
+                                <div class="border-l-[3px] border-secondary pl-4">
+                                    <p class="font-black text-slate-900 text-sm uppercase tracking-wide">{{ $testimonial->client_name }}</p>
+                                    @if($testimonial->organization)
+                                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-0.5">{{ $testimonial->organization }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                    @endforeach
                 </div>
-            </article>
-
-            <article class="hidden md:block bg-slate-50 border border-slate-200 rounded-xl p-8">
-                <p class="text-slate-700 text-base md:text-lg font-medium leading-relaxed mb-6">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                </p>
-                <div class="inline-block border border-primary/30 bg-white px-4 py-2">
-                    <p class="font-black text-slate-900 text-base">- Justin Gatlin</p>
-                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-1">USA Track &amp; Field</p>
-                </div>
-            </article>
+            </div>
+            
+            <!-- Carousel Controls -->
+            <div class="flex items-center gap-2 mt-8" x-show="totalPages > 1" x-cloak>
+                <template x-for="i in totalPages" :key="i">
+                    <button @click="activePage = i - 1" class="h-2.5 rounded-full transition-all" :class="activePage === i - 1 ? 'bg-secondary w-6' : 'bg-slate-200 hover:bg-slate-300 w-2.5'"></button>
+                </template>
+            </div>
         </div>
+        @else
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-10 text-center text-slate-500 text-sm font-bold uppercase tracking-wider max-w-4xl">
+                No testimonials yet.
+            </div>
+        @endif
 
-        <div class="mt-8">
-            <a href="/testimonials" class="btn btn-primary px-8 py-3 font-bold text-sm tracking-wider uppercase rounded shadow-md transition-all">More Testimonials</a>
+        <div class="mt-12 text-left">
+            <a href="{{ route('testimonials.index') }}" class="btn btn-primary px-8 py-3.5 font-bold text-sm tracking-widest uppercase rounded shadow-md transition-all inline-flex items-center gap-2">
+                More Testimonials
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </a>
         </div>
     </div>
 </section>

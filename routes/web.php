@@ -14,17 +14,34 @@ Route::get('/', function () {
     $landingCollections = \App\Models\LandingCollection::where('is_active', true)
         ->orderBy('sort_order', 'asc')
         ->get();
-    return view('welcome', compact('landingCollections')); 
+    $testimonials = \App\Models\Testimonial::where('is_active', true)
+        ->orderBy('sort_order', 'asc')
+        ->limit(5)
+        ->get();
+    return view('welcome', compact('landingCollections', 'testimonials')); 
 });
+Route::get('/testimonials', function () {
+    $testimonials = \App\Models\Testimonial::where('is_active', true)
+        ->orderBy('sort_order', 'asc')
+        ->get();
+    return view('testimonials.index', compact('testimonials'));
+})->name('testimonials.index');
 Route::get('/quote', [QuoteRequestController::class, 'show'])->name('quote.show');
 Route::post('/quote', [QuoteRequestController::class, 'store'])->name('quote.store');
 Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
 Route::get('/catalog', function (\Illuminate\Http\Request $request) {
     $selectedSport = $request->query('sport');
+    $selectedType = $request->query('item_type');
 
     $designCatalogQuery = \App\Models\DesignCatalog::query();
     if (!empty($selectedSport)) {
         $designCatalogQuery->where('sport', $selectedSport);
+    }
+    if (!empty($selectedType)) {
+        $designCatalogQuery->where(function($q) use ($selectedType) {
+            $q->where('types', 'LIKE', '%"'.$selectedType.'"%')
+              ->orWhere('type', $selectedType);
+        });
     }
 
     $designCatalog = $designCatalogQuery->latest()->get();
@@ -34,7 +51,7 @@ Route::get('/catalog', function (\Illuminate\Http\Request $request) {
         ->orderBy('sport')
         ->pluck('sport');
 
-    return view('catalog.index', compact('designCatalog', 'availableSports', 'selectedSport'));
+    return view('catalog.index', compact('designCatalog', 'availableSports', 'selectedSport', 'selectedType'));
 })->name('catalog.index');
 
 // Public Team Stores (parent-facing, no auth)
@@ -48,6 +65,13 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// ─── Internal Password Reset ─────────────────────────────────────────────────
+Route::get('/forgot-password', [\App\Http\Controllers\InternalPasswordResetController::class, 'showVerifyForm'])->name('password.verify.form');
+Route::get('/forgot-password/verify', function() { return redirect()->route('password.verify.form'); });
+Route::post('/forgot-password/verify', [\App\Http\Controllers\InternalPasswordResetController::class, 'verifyIdentity'])->name('password.verify.submit');
+Route::get('/forgot-password/reset', [\App\Http\Controllers\InternalPasswordResetController::class, 'showResetForm'])->name('password.reset.form');
+Route::post('/forgot-password/reset', [\App\Http\Controllers\InternalPasswordResetController::class, 'updatePassword'])->name('password.update');
 
 // ─── Notifications (auth) ────────────────────────────────────────────────────
 Route::middleware(['auth'])->group(function () {
@@ -69,6 +93,7 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     Route::post('/coach/store/{store}/submit', [CoachController::class, 'submitMasterOrder'])->name('coach.store.submit');
     Route::post('/coach/store/{store}/approve-pricing', [CoachController::class, 'approvePricing'])->name('coach.store.pricing.approve');
     Route::post('/coach/store/{store}/cover', [CoachController::class, 'updateCoverImage'])->name('coach.store.cover');
+    Route::post('/coach/profile/logo', [CoachController::class, 'updateProfileLogo'])->name('coach.profile.logo');
 
     // Coach can edit parent orders
     Route::get('/coach/order/{order}/edit', [CoachController::class, 'editOrder'])->name('coach.order.edit');
@@ -113,4 +138,9 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     // Landing Page Collections
     Route::post('/admin/landing-collections', [AdminController::class, 'createCollection'])->name('admin.landing.create');
     Route::delete('/admin/landing-collections/{collection}', [AdminController::class, 'deleteCollection'])->name('admin.landing.delete');
+
+    // Testimonials
+    Route::post('/admin/testimonials', [AdminController::class, 'createTestimonial'])->name('admin.testimonials.create');
+    Route::put('/admin/testimonials/{testimonial}', [AdminController::class, 'updateTestimonial'])->name('admin.testimonials.update');
+    Route::delete('/admin/testimonials/{testimonial}', [AdminController::class, 'deleteTestimonial'])->name('admin.testimonials.delete');
 });
