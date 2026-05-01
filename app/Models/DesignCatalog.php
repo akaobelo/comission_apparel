@@ -20,6 +20,7 @@ class DesignCatalog extends Model
         'has_number_field',
         'notes',
         'wholesale_price',
+        'sort_order',
     ];
 
     protected $casts = [

@@ -16,6 +16,7 @@ class StoreItem extends Model
         'image_paths',
         'wholesale_price',
         'retail_price',
+        'sort_order',
     ];
 
     protected $casts = [

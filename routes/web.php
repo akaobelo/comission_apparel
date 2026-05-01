@@ -18,7 +18,12 @@ Route::get('/', function () {
         ->orderBy('sort_order', 'asc')
         ->limit(5)
         ->get();
-    return view('welcome', compact('landingCollections', 'testimonials')); 
+    $heroSettings = [
+        'subtitle'   => \App\Models\SiteSetting::where('key', 'hero_subtitle')->value('value') ?? 'Premium armor tailored for programs that demand greatness. Built for the modern athlete, delivered with lightning speed.',
+        'media_path' => \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value') ?? asset('images/hero-models.png'),
+        'media_type' => \App\Models\SiteSetting::where('key', 'hero_media_type')->value('value') ?? 'image',
+    ];
+    return view('welcome', compact('landingCollections', 'testimonials', 'heroSettings')); 
 });
 Route::get('/testimonials', function () {
     $testimonials = \App\Models\Testimonial::where('is_active', true)
@@ -28,6 +33,7 @@ Route::get('/testimonials', function () {
 })->name('testimonials.index');
 Route::get('/quote', [QuoteRequestController::class, 'show'])->name('quote.show');
 Route::post('/quote', [QuoteRequestController::class, 'store'])->name('quote.store');
+Route::get('/quote/success', function () { return view('quote_success'); })->name('quote.success');
 Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
 Route::get('/catalog', function (\Illuminate\Http\Request $request) {
     $selectedSport = $request->query('sport');
@@ -44,7 +50,7 @@ Route::get('/catalog', function (\Illuminate\Http\Request $request) {
         });
     }
 
-    $designCatalog = $designCatalogQuery->latest()->get();
+    $designCatalog = $designCatalogQuery->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
     $availableSports = \App\Models\DesignCatalog::whereNotNull('sport')
         ->where('sport', '!=', '')
         ->distinct()
@@ -138,6 +144,9 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     // Landing Page Collections
     Route::post('/admin/landing-collections', [AdminController::class, 'createCollection'])->name('admin.landing.create');
     Route::delete('/admin/landing-collections/{collection}', [AdminController::class, 'deleteCollection'])->name('admin.landing.delete');
+
+    // Hero Settings
+    Route::post('/admin/hero-settings', [AdminController::class, 'updateHeroSettings'])->name('admin.hero-settings.update');
 
     // Testimonials
     Route::post('/admin/testimonials', [AdminController::class, 'createTestimonial'])->name('admin.testimonials.create');

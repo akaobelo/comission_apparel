@@ -112,7 +112,7 @@
                     <button type="button" @click="athleteInfoOpen = !athleteInfoOpen" class="w-full flex items-center justify-between p-4 md:p-4 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="athleteInfoOpen ? 'border-slate-100 bg-slate-50/50' : ''">
                         <div>
                             <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Ready to Order?</h2>
-                            <p class="text-xs font-bold text-slate-500 mt-1" x-show="!athleteInfoOpen">Click here to enter Athlete Information</p>
+                            <p class="text-xs font-bold text-slate-500 mt-1" x-show="!athleteInfoOpen"><span class="text-secondary font-black">CLICK HERE</span> to enter Athlete Information</p>
                         </div>
                         <div class="flex items-center gap-4">
                             <span class="hidden sm:inline-block text-[10px] font-bold uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20" x-show="!athleteInfoOpen">Required</span>

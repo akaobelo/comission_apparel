@@ -16,7 +16,9 @@ class CoachController extends Controller
         $user = $request->user();
 
         // Load store with items and orders
-        $store = $user->teamStore()->with(['items.designCatalog', 'parentOrders'])->first();
+        $store = $user->teamStore()->with(['items' => function($q) {
+            $q->orderBy('sort_order', 'asc');
+        }, 'items.designCatalog', 'parentOrders'])->first();
 
         // Designs assigned to this coach (for item builder)
         $assignedDesigns = $user->designCatalog()->latest()->get();
@@ -141,6 +143,8 @@ class CoachController extends Controller
                 ->with('error', 'That design is already added to your store.');
         }
 
+        $maxSort = $store->items()->max('sort_order') ?? 0;
+
         $store->items()->create([
             'design_catalog_id' => $design->id,
             'name'              => $design->name,
@@ -150,6 +154,7 @@ class CoachController extends Controller
             'image_paths'       => $design->image_paths,
             'wholesale_price'   => $design->wholesale_price,
             'retail_price'      => $design->wholesale_price,
+            'sort_order'        => $maxSort + 1,
         ]);
 
         return redirect()->route('coach.dashboard')
@@ -173,10 +178,12 @@ class CoachController extends Controller
 
         $request->validate([
             'retail_price' => 'required|numeric|min:' . $item->wholesale_price,
+            'sort_order'   => 'nullable|integer',
         ]);
 
         $item->update([
             'retail_price' => $request->retail_price,
+            'sort_order'   => $request->sort_order ?? $item->sort_order,
         ]);
 
         return redirect()->route('coach.dashboard')

@@ -45,8 +45,7 @@ class QuoteRequestController extends Controller
         ]);
 
         return redirect()
-            ->route('quote.show')
-            ->with('success', 'Quote requested successfully! Our design team will contact you shortly.');
+            ->route('quote.success');
     }
 
     private function sportOptions(): array

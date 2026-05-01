@@ -4,7 +4,7 @@
 
 @section('content')
 <section class="pt-32 pb-16 bg-white border-b border-slate-200">
-    <div class="max-w-7xl mx-auto px-6">
+    <div class="max-w-[1500px] mx-auto px-6">
         <div class="max-w-3xl">
             <p class="text-xs font-black uppercase tracking-widest text-secondary mb-3">Design Collections</p>
             <h1 class="text-4xl md:text-5xl font-black tracking-tight uppercase text-slate-900">View Full Catalog</h1>
@@ -16,7 +16,7 @@
 </section>
 
 <section class="py-12 bg-slate-50 min-h-[50vh]" x-data="{ previewOpen: false, previewImgs: [], previewIdx: 0, previewAlt: '', touchStartX: 0, touchEndX: 0 }" @keydown.escape.window="previewOpen = false; document.body.style.overflow = 'auto';" @keydown.right.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx + 1) % previewImgs.length" @keydown.left.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx - 1 + previewImgs.length) % previewImgs.length">
-    <div class="max-w-7xl mx-auto px-6">
+    <div class="max-w-[1500px] mx-auto px-6">
         <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <form method="GET" action="{{ route('catalog.index') }}" class="flex flex-wrap items-center gap-2">
                 <label for="sport" class="text-xs font-black uppercase tracking-wider text-slate-600">Filter by Sport</label>
@@ -45,9 +45,15 @@
                         'uniform_top' => 'Uniform (top)',
                         'uniform_bottom' => 'Uniform (bottom)',
                         'uniform_set' => 'Uniform Set (top/bottom)',
+                        'uniform_set_2' => 'Uniform Set #2 (top/bottom)',
                         'warmup_top' => 'Warm-up (top)',
                         'warmup_bottom' => 'Warm-up (bottom)',
                         'warmup_set' => 'Warm-up (top/bottom)',
+                        'warmup_set_2' => 'Warm-up Set #2 (top/bottom)',
+                        'uniform_package_gold' => 'Uniform Package (Gold)',
+                        'uniform_package_silver' => 'Uniform Package (Silver)',
+                        'uniform_package_bronze' => 'Uniform Package (Bronze)',
+                        'uniform_package_custom' => 'Uniform Package (Custom)',
                     ];
                 @endphp
                 <label for="item_type" class="text-xs font-black uppercase tracking-wider text-slate-600 ml-2">Item Type</label>

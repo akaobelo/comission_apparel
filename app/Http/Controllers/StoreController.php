@@ -37,7 +37,9 @@ class StoreController extends Controller
     public function show($slug)
     {
         $store = TeamStore::where('slug', $slug)
-            ->with(['items.designCatalog', 'parentOrders', 'user'])
+            ->with(['items' => function($q) {
+                $q->orderBy('sort_order', 'asc');
+            }, 'items.designCatalog', 'parentOrders', 'user'])
             ->firstOrFail();
 
         $sizeChart = DesignCatalog::sizeChart();

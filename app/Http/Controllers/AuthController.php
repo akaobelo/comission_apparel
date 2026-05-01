@@ -20,6 +20,9 @@ class AuthController extends Controller
             'email'    => ['required', 'email'],
             'password' => ['required'],
         ]);
+        
+        // Ensure email is lowercase for case-insensitive matching
+        $credentials['email'] = strtolower($credentials['email']);
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
@@ -62,6 +65,12 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        // Normalize email to lowercase before validation to ensure unique checks are case-insensitive
+        $request->merge([
+            'email' => strtolower($request->input('email')),
+            'email_confirmation' => strtolower($request->input('email_confirmation')),
+        ]);
+
         $validated = $request->validate([
             'first_name'            => ['required', 'string', 'max:255'],
             'last_name'             => ['required', 'string', 'max:255'],

@@ -23,6 +23,10 @@ class InternalPasswordResetController extends Controller
      */
     public function verifyIdentity(Request $request)
     {
+        $request->merge([
+            'email' => strtolower($request->input('email')),
+        ]);
+
         $request->validate([
             'email' => ['required', 'email'],
             'phone' => ['required', 'string'],

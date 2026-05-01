@@ -49,7 +49,7 @@ class AdminController extends Controller
             ->get();
 
         // Design catalog
-        $designCatalog = DesignCatalog::latest()->get();
+        $designCatalog = DesignCatalog::orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
 
         // Production orders (in production status)
         $productionStores = TeamStore::where('status', 'approved')
@@ -75,10 +75,16 @@ class AdminController extends Controller
 
         $testimonials = Testimonial::orderBy('sort_order', 'asc')->get();
 
+        $heroSettings = [
+            'subtitle'   => \App\Models\SiteSetting::where('key', 'hero_subtitle')->value('value') ?? 'Premium armor tailored for programs that demand greatness. Built for the modern athlete, delivered with lightning speed.',
+            'media_path' => \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value'),
+            'media_type' => \App\Models\SiteSetting::where('key', 'hero_media_type')->value('value') ?? 'image',
+        ];
+
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStores',
             'designCatalog', 'productionStores', 'quoteRequests', 'landingCollections', 'allStores',
-            'availableSports', 'passwordResetLogs', 'testimonials'
+            'availableSports', 'passwordResetLogs', 'testimonials', 'heroSettings'
         ));
     }
 
@@ -87,7 +93,7 @@ class AdminController extends Controller
     public function editCoach(User $user)
     {
         if ($user->role !== 'coach') abort(404);
-        $designCatalog = DesignCatalog::latest()->get();
+        $designCatalog = DesignCatalog::orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
         $assignedDesignIds = $user->designCatalog()->pluck('design_catalog_id')->toArray();
         return view('admin.coach_edit', compact('user', 'designCatalog', 'assignedDesignIds'));
     }
@@ -145,7 +151,7 @@ class AdminController extends Controller
             'name'             => ['required', 'string', 'max:255'],
             'sport'            => ['nullable', 'string', 'max:100'],
             'types'            => ['required', 'array', 'min:1'],
-            'types.*'          => ['string', 'in:accessory,arm_sleeve,backpack,headwear,hoodie,jacket,leggings,pants,polo,shirt_short,shirt_long,shorts,socks,uniform_top,uniform_bottom,uniform_set,warmup_top,warmup_bottom,warmup_set'],
+            'types.*'          => ['string', 'in:accessory,arm_sleeve,backpack,headwear,hoodie,jacket,leggings,pants,polo,shirt_short,shirt_long,shorts,socks,uniform_top,uniform_bottom,uniform_set,uniform_set_2,warmup_top,warmup_bottom,warmup_set,warmup_set_2,uniform_package_gold,uniform_package_silver,uniform_package_bronze,uniform_package_custom'],
             'category'         => ['required', 'string', 'max:255'],
             'images'           => ['nullable', 'array', 'max:100'],
             'images.*'         => ['image', 'max:10240'], // max 10MB per image
@@ -153,6 +159,7 @@ class AdminController extends Controller
             'has_number_field' => ['boolean'],
             'notes'            => ['nullable', 'string'],
             'wholesale_price'  => ['nullable', 'numeric', 'min:0'],
+            'sort_order'       => ['nullable', 'integer'],
         ]);
 
         $validated['has_name_field']   = $request->boolean('has_name_field');
@@ -170,6 +177,10 @@ class AdminController extends Controller
         // Make sure type and image_url are set to null since we are migrating to JSON
         $validated['type'] = null;
         $validated['image_url'] = null;
+        
+        if (!isset($validated['sort_order'])) {
+            $validated['sort_order'] = DesignCatalog::max('sort_order') + 1;
+        }
 
         DesignCatalog::create($validated);
 
@@ -191,6 +202,8 @@ class AdminController extends Controller
             $pathToRemove = str_replace('/storage/', '', $design->image_url);
             \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
         }
+        // Delete associated store items so they are removed from all coach stores
+        \App\Models\StoreItem::where('design_catalog_id', $design->id)->delete();
 
         $design->delete();
         return redirect()->route('admin.dashboard')
@@ -203,7 +216,7 @@ class AdminController extends Controller
             'name'             => ['required', 'string', 'max:255'],
             'sport'            => ['nullable', 'string', 'max:100'],
             'types'            => ['required', 'array', 'min:1'],
-            'types.*'          => ['string', 'in:accessory,arm_sleeve,backpack,headwear,hoodie,jacket,leggings,pants,polo,shirt_short,shirt_long,shorts,socks,uniform_top,uniform_bottom,uniform_set,warmup_top,warmup_bottom,warmup_set'],
+            'types.*'          => ['string', 'in:accessory,arm_sleeve,backpack,headwear,hoodie,jacket,leggings,pants,polo,shirt_short,shirt_long,shorts,socks,uniform_top,uniform_bottom,uniform_set,uniform_set_2,warmup_top,warmup_bottom,warmup_set,warmup_set_2,uniform_package_gold,uniform_package_silver,uniform_package_bronze,uniform_package_custom'],
             'category'         => ['required', 'string', 'max:255'],
             'images'           => ['nullable', 'array', 'max:100'],
             'images.*'         => ['image', 'max:10240'],
@@ -211,6 +224,7 @@ class AdminController extends Controller
             'has_number_field' => ['boolean'],
             'notes'            => ['nullable', 'string'],
             'wholesale_price'  => ['nullable', 'numeric', 'min:0'],
+            'sort_order'       => ['nullable', 'integer'],
         ]);
 
         $validated['has_name_field'] = $request->boolean('has_name_field');
@@ -351,14 +365,16 @@ class AdminController extends Controller
             'items' => ['required', 'array'],
             'items.*.wholesale_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.retail_price' => ['nullable', 'numeric', 'min:0'],
+            'items.*.sort_order' => ['nullable', 'integer'],
         ]);
 
-        foreach ($request->items as $itemId => $prices) {
+        foreach ($request->items as $itemId => $data) {
             $storeItem = $store->items()->find($itemId);
             if ($storeItem) {
                 $storeItem->update([
-                    'wholesale_price' => $prices['wholesale_price'] ?? null,
-                    'retail_price' => $prices['retail_price'] ?? null,
+                    'wholesale_price' => $data['wholesale_price'] ?? null,
+                    'retail_price' => $data['retail_price'] ?? null,
+                    'sort_order' => $data['sort_order'] ?? $storeItem->sort_order,
                 ]);
             }
         }
@@ -598,5 +614,50 @@ class AdminController extends Controller
         }
         $testimonial->delete();
         return redirect()->route('admin.dashboard')->with('success', 'Testimonial removed.');
+    }
+
+    // ─── HERO SETTINGS ────────────────────────────────────────────────────────────
+
+    public function updateHeroSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'hero_subtitle' => ['required', 'string'],
+            'hero_media'    => ['nullable', 'file', 'mimes:jpeg,png,jpg,gif,webp,mp4,mov,avi', 'max:20480'], // 20MB max
+        ]);
+
+        \App\Models\SiteSetting::updateOrCreate(
+            ['key' => 'hero_subtitle'],
+            ['value' => $validated['hero_subtitle']]
+        );
+
+        if ($request->hasFile('hero_media')) {
+            $file = $request->file('hero_media');
+            $mimeType = $file->getMimeType();
+            $isImage = str_starts_with($mimeType, 'image/');
+            $isVideo = str_starts_with($mimeType, 'video/');
+
+            if ($isImage || $isVideo) {
+                // Delete old media if it exists
+                $oldMediaPath = \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value');
+                if ($oldMediaPath) {
+                    $pathToRemove = str_replace('/storage/', '', $oldMediaPath);
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+                }
+
+                $path = $file->store('hero', 'public');
+                
+                \App\Models\SiteSetting::updateOrCreate(
+                    ['key' => 'hero_media_path'],
+                    ['value' => '/storage/' . $path]
+                );
+
+                \App\Models\SiteSetting::updateOrCreate(
+                    ['key' => 'hero_media_type'],
+                    ['value' => $isVideo ? 'video' : 'image']
+                );
+            }
+        }
+
+        return redirect()->route('admin.dashboard')->with('success', 'Hero settings updated successfully.');
     }
 }

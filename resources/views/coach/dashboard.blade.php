@@ -524,8 +524,17 @@
                                                     class="w-24 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
                                                 >
                                             </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Sort Order</label>
+                                                <input
+                                                    type="number"
+                                                    name="sort_order"
+                                                    value="{{ $item->sort_order }}"
+                                                    class="w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
+                                                >
+                                            </div>
                                             <button type="submit" class="px-3 py-1.5 bg-secondary text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors">
-                                                Update Price
+                                                Update
                                             </button>
                                         </form>
                                     </div>

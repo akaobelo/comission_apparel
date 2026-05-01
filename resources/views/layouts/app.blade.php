@@ -13,12 +13,15 @@
     
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
     
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-base text-slate-900 font-sans antialiased overflow-x-hidden selection:bg-primary selection:text-white">
-    <header class="fixed top-0 w-full z-50 bg-black backdrop-blur-xl border-b border-slate-800 transition-all duration-300" x-data="{ scrolled: false, mobileMenuOpen: false }" @scroll.window="scrolled = (window.pageYOffset > 20)" :class="{ 'py-1.5 shadow-sm': scrolled, 'py-2.5': !scrolled }">
-        <div class="max-w-7xl mx-auto px-6 flex items-center justify-between transition-all duration-300" :class="{ 'h-12': scrolled, 'h-14 md:h-16': !scrolled }">
+<body class="bg-base text-slate-900 font-sans antialiased selection:bg-primary selection:text-white">
+    <header class="fixed top-0 left-0 w-full z-50 bg-black backdrop-blur-xl border-b border-slate-800 transition-all duration-300" x-data="{ scrolled: false, mobileMenuOpen: false }" @scroll.window="scrolled = (window.pageYOffset > 20)" :class="{ 'py-1.5 shadow-sm': scrolled, 'py-2.5': !scrolled }">
+        <div class="max-w-[1500px] mx-auto px-6 flex items-center justify-between transition-all duration-300" :class="{ 'h-12': scrolled, 'h-14 md:h-16': !scrolled }">
             <!-- Logo -->
             <a href="/" class="flex items-center group z-50 relative">
                 <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-10 md:h-[2.2rem] w-auto group-hover:opacity-80 transition-opacity">
@@ -67,7 +70,7 @@
 
     <footer class="bg-slate-950 border-t border-slate-800 py-12 lg:py-16 relative overflow-hidden">
         <div class="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
-        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
+        <div class="max-w-[1500px] mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
             <div class="col-span-1 md:col-span-2">
                 <div class="mb-6 mix-blend-screen">
                     <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-14 w-auto mix-blend-screen">
@@ -99,7 +102,7 @@
                 </ul>
             </div>
         </div>
-        <div class="max-w-7xl mx-auto px-6 mt-12 pt-8 border-t border-slate-800 text-center text-sm text-slate-500">
+        <div class="max-w-[1500px] mx-auto px-6 mt-12 pt-8 border-t border-slate-800 text-center text-sm text-slate-500">
             &copy; {{ date('Y') }} The Commission Apparel. All rights reserved.
         </div>
     </footer>

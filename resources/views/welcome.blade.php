@@ -7,7 +7,7 @@
     <!-- Subtle Background Dot Pattern -->
     <div class="absolute inset-0 z-0 opacity-40" style="background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 32px 32px;"></div>
 
-    <div class="relative z-10 max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-2 gap-12 items-stretch pt-12 pb-4 lg:pb-8">
+    <div class="relative z-10 max-w-[1500px] mx-auto px-6 w-full grid lg:grid-cols-2 gap-12 items-stretch pt-12 pb-4 lg:pb-8">
         <div class="max-w-2xl animate-slide-up flex flex-col justify-center order-2 lg:order-1">
            
             
@@ -17,7 +17,7 @@
             </h1>
             
             <p class="text-xl md:text-2xl text-slate-600 font-medium max-w-xl mb-8 leading-relaxed">
-                Premium armor tailored for programs that demand greatness. Built for the modern athlete, delivered with lightning speed.
+                {{ $heroSettings['subtitle'] }}
             </p>
 
             <ul class="space-y-3 mb-10 text-slate-700 font-bold tracking-wide text-base md:text-lg">
@@ -48,8 +48,12 @@
              <div class="absolute top-1/3 left-0 w-4 h-4 bg-slate-800 transform rotate-45 z-0"></div>
              <div class="absolute bottom-1/4 right-10 w-3 h-3 bg-secondary transform rotate-12 z-0"></div>
 
-             <!-- Clean bright background image -->
-             <img src="/images/hero-models.png" alt="Elite Custom Uniform Models" class="relative z-10 w-full h-full max-h-[600px] object-contain drop-shadow-2xl">
+             <!-- Clean bright background media -->
+             @if(($heroSettings['media_type'] ?? 'image') === 'video')
+                 <video src="{{ $heroSettings['media_path'] }}" autoplay loop muted playsinline class="relative z-10 w-full h-full max-h-[600px] object-contain drop-shadow-2xl"></video>
+             @else
+                 <img src="{{ $heroSettings['media_path'] }}" alt="Elite Custom Uniform Models" class="relative z-10 w-full h-full max-h-[600px] object-contain drop-shadow-2xl">
+             @endif
              
              <!-- Floating Badge -->
             
@@ -57,27 +61,17 @@
 </section>
 
 <!-- Sports Tabs / Uniform Gallery -->
-<section id="sports" class="pt-2 pb-12 lg:pt-4 lg:pb-16 bg-white" x-data="{ activeTab: 'football' }">
-    <div class="max-w-7xl mx-auto px-6 relative z-10">
+<section id="sports" class="pt-2 pb-12 lg:pt-4 lg:pb-16 bg-white">
+    <div class="max-w-[1500px] mx-auto px-6 relative z-10">
         <div class="flex flex-col md:flex-row md:items-start justify-between mb-12 gap-6">
             <div>
                 <h2 class="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-2 text-slate-900">View our Custom <span class="text-secondary">Collections</span></h2>
-                <p class="text-slate-600 text-lg font-medium max-w-xl">Purpose-built cuts and materials for every arena.</p>
+                <p class="text-slate-600 text-lg font-medium max-w-3xl">Stand out with fully custom designs crafted to capture the essence of your program or organization</p>
             </div>
             <a href="{{ route('catalog.index') }}" class="btn btn-primary whitespace-nowrap px-8 py-3 rounded md:mt-2">View Design Collection</a>
         </div>
 
-        <!-- Alpine Tabs -->
-        <div class="flex overflow-x-auto pb-4 mb-8 -mx-6 px-6 md:mx-0 md:px-0 hide-scrollbar gap-8 border-b border-slate-200">
-            <template x-for="tab in ['football', 'basketball', 'track', 'soccer', 'baseball', 'merch']">
-                <button @click="activeTab = tab" 
-                        class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]"
-                        :class="activeTab === tab ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">
-                    <span x-text="tab === 'merch' ? 'Custom Merch' : tab"></span>
-                </button>
-            </template>
-            <a href="{{ route('catalog.index') }}" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 border-transparent text-slate-500 hover:text-secondary relative top-[1px]">View All</a>
-        </div>
+
 
         <!-- Gallery Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
@@ -89,7 +83,7 @@
                 </div>
                 <div class="p-6">
                     <div class="text-secondary text-xs font-black tracking-widest uppercase mb-2">{{ $collection->tab_name }}</div>
-                    <h3 class="text-xl font-black uppercase mb-2 text-slate-900">{{ $collection->title }}</h3>
+                    <h3 class="text-base font-black uppercase text-slate-900 leading-tight mb-2 truncate" title="{{ $collection->title }}">{{ $collection->title }}</h3>
                     <p class="text-slate-600 text-sm mb-6 font-medium">{{ $collection->description }}</p>
                     <div class="flex items-center gap-3">
                     <!-- class="btn btn-primary px-8 py-4 text-base font-black uppercase tracking-wider rounded-md shadow-md transition-all"     -->
@@ -181,7 +175,7 @@
 
 <!-- Powerful Features (Team Stores & Dashboard Teaser) -->
 <section id="system" class="py-12 lg:py-16 bg-slate-50 border-t border-slate-200 overflow-hidden">
-    <div class="max-w-7xl mx-auto px-6">
+    <div class="max-w-[1500px] mx-auto px-6">
         <div class="grid lg:grid-cols-2 gap-16 items-center">
             
             <div class="order-2 lg:order-1 relative rounded-xl overflow-hidden shadow-2xl border border-slate-200">
@@ -242,7 +236,7 @@
 
 <!-- Testimonials Section -->
 <section id="testimonials" class="py-12 lg:py-16 bg-white border-t border-slate-200 overflow-hidden">
-    <div class="max-w-7xl mx-auto px-6">
+    <div class="max-w-[1500px] mx-auto px-6">
         <h2 class="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-10 text-slate-900">
             <span class="text-secondary">"</span> TESTIMONIALS <span class="text-secondary">"</span>
         </h2>

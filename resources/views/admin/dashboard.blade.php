@@ -43,22 +43,26 @@
     </div>
 
     {{-- Stat Cards --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+    <div class="grid gap-4 mb-10" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-primary">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Total Coaches</p>
             <div class="text-3xl font-black text-slate-900">{{ $coaches->total() }}</div>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-orange-400">
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Stores Awaiting Approval</p>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Pending Stores</p>
             <div class="text-3xl font-black text-orange-500">{{ $pendingStores->count() }}</div>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-green-500">
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Active Production Stores</p>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Active Stores</p>
             <div class="text-3xl font-black text-green-600">{{ $productionStores->count() }}</div>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-slate-400">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Finalized Orders</p>
             <div class="text-3xl font-black text-slate-900">{{ $finalizedStores->count() }}</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-blue-500">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Quote Inquiries</p>
+            <div class="text-3xl font-black text-blue-600">{{ $quoteRequests->count() }}</div>
         </div>
     </div>
 
@@ -344,6 +348,40 @@
         {{-- ═══ LANDING PAGE SETTINGS TAB ═══ --}}
         <div x-show="activeAdminTab === 'landing'" x-cloak class="max-w-4xl">
 
+            {{-- ═══ HERO SECTION CONFIGURATION ═══ --}}
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-8">
+                <div class="p-5 border-b border-slate-200 bg-slate-50">
+                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Hero Section Setup</h2>
+                    <p class="text-xs text-slate-500 mt-1">Configure the main landing page text and background media (image or video).</p>
+                </div>
+                <div class="p-6">
+                    <form action="{{ route('admin.hero-settings.update') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
+                        @csrf
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Hero Subtitle</label>
+                            <textarea name="hero_subtitle" required rows="3" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">{{ $heroSettings['subtitle'] }}</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Hero Media (Image or Video)</label>
+                            @if($heroSettings['media_path'])
+                                <div class="mb-3 rounded-lg overflow-hidden border border-slate-200 inline-block">
+                                    @if($heroSettings['media_type'] === 'video')
+                                        <video src="{{ $heroSettings['media_path'] }}" autoplay loop muted playsinline class="h-32 w-auto object-cover"></video>
+                                    @else
+                                        <img src="{{ $heroSettings['media_path'] }}" class="h-32 w-auto object-cover">
+                                    @endif
+                                </div>
+                            @endif
+                            <input type="file" name="hero_media" accept="image/*,video/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:tracking-wider file:bg-secondary file:text-white hover:file:bg-[#a11825]">
+                            <p class="text-[10px] text-slate-400 mt-1.5 font-medium uppercase tracking-wider">Leave blank to keep current. Max 20MB. Videos will auto-play on mute.</p>
+                        </div>
+                        <button type="submit" class="py-2.5 px-6 bg-slate-900 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">
+                            Save Hero Settings
+                        </button>
+                    </form>
+                </div>
+            </div>
+
             {{-- ═══ LANDING PAGE COLLECTIONS ═══ --}}
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
@@ -356,9 +394,34 @@
                     <form action="{{ route('admin.landing.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                         @csrf
                         <div class="grid grid-cols-2 gap-3">
-                            <div>
+                            <div x-data="{
+                                open: false,
+                                search: '',
+                                options: {{ json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) }},
+                                get filteredOptions() {
+                                    if (this.search === '') return this.options;
+                                    return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
+                                },
+                                selectOption(val) {
+                                    this.search = val;
+                                    this.open = false;
+                                }
+                            }" class="relative z-20">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Sport / Tab Name</label>
-                                <input type="text" name="tab_name" required placeholder="e.g. Tackle Football" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary shadow-sm">
+                                <div class="relative">
+                                    <input type="text" name="tab_name" required x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Tackle Football" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 pr-10 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
+                                    
+                                    <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600 focus:outline-none">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                </div>
+
+                                <ul x-show="open" x-transition.opacity.duration.200ms class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto py-1" style="display: none;">
+                                    <template x-for="option in filteredOptions" :key="option">
+                                        <li @click="selectOption(option)" class="px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer transition-colors font-medium" x-text="option"></li>
+                                    </template>
+                                    <li x-show="filteredOptions.length === 0" class="px-3 py-2 text-sm text-slate-500 italic">Press enter to use "<span x-text="search"></span>"</li>
+                                </ul>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Organization Title</label>
@@ -434,9 +497,15 @@
                     'uniform_top' => 'Uniform (top)',
                     'uniform_bottom' => 'Uniform (bottom)',
                     'uniform_set' => 'Uniform Set (top/bottom)',
+                    'uniform_set_2' => 'Uniform Set #2 (top/bottom)',
                     'warmup_top' => 'Warm-up (top)',
                     'warmup_bottom' => 'Warm-up (bottom)',
                     'warmup_set' => 'Warm-up (top/bottom)',
+                    'warmup_set_2' => 'Warm-up Set #2 (top/bottom)',
+                    'uniform_package_gold' => 'Uniform Package (Gold)',
+                    'uniform_package_silver' => 'Uniform Package (Silver)',
+                    'uniform_package_bronze' => 'Uniform Package (Bronze)',
+                    'uniform_package_custom' => 'Uniform Package (Custom)',
                 ];
             @endphp
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -492,16 +561,14 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Package Category</label>
-                                <input list="create_category_options" name="category" required placeholder="e.g. package_a or Custom Package" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                                <datalist id="create_category_options">
-                                    <option value="package_a">Package A — Base</option>
-                                    <option value="package_b">Package B — Standard</option>
-                                    <option value="package_c">Package C — Full</option>
+                                <select name="category" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                    <option value="" disabled selected>Select Category</option>
                                     <option value="individual">Individual Item</option>
-                                </datalist>
+                                    <option value="package">Package</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Upload Images</label>
                                 <input type="file" name="images[]" multiple accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-secondary file:text-white hover:file:bg-[#a11825]">
@@ -509,6 +576,10 @@
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Wholesale Price ($)</label>
                                 <input type="number" step="0.01" name="wholesale_price" required placeholder="e.g. 45.00" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Sort Order</label>
+                                <input type="number" name="sort_order" placeholder="Auto" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
                         </div>
                         <div class="flex gap-4">
@@ -658,13 +729,17 @@
                                                 </div>
                                             </div>
                                         @endif
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                                             <div>
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Wholesale Price ($)</label>
                                                 <input type="number" step="0.01" min="0" name="wholesale_price" value="{{ $design->wholesale_price }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">
                                             </div>
                                             <div>
-                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Add More Images (optional)</label>
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Sort Order</label>
+                                                <input type="number" name="sort_order" value="{{ $design->sort_order }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Add More Images</label>
                                                 <input type="file" name="images[]" multiple accept="image/*" class="w-full text-[10px] text-slate-500 file:mr-2 file:py-1.5 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-secondary file:text-white hover:file:bg-[#a11825]">
                                             </div>
                                         </div>
