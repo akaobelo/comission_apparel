@@ -357,10 +357,10 @@
                     <p class="text-xs text-slate-500 mt-1">Configure the main landing page text and background media (image or video).</p>
                 </div>
                 <div class="p-6">
-                    <form id="remove-media-form" action="{{ route('admin.hero-settings.remove-media') }}" method="POST" class="hidden">
+                    <form id="remove-media-form" action="{{ url('/admin/hero-settings/remove-media') }}" method="POST" class="hidden">
                         @csrf
                     </form>
-                    <form action="{{ route('admin.hero-settings.update') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
+                    <form action="{{ url('/admin/hero-settings') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
                         @csrf
                         <div>
                             <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Hero Subtitle</label>
@@ -410,7 +410,7 @@
                     </div>
                 </div>
                 <div class="p-5 border-b border-slate-200 bg-slate-50">
-                    <form action="{{ route('admin.landing.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    <form action="{{ url('/admin/landing-collections') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                         @csrf
                         <div class="grid grid-cols-2 gap-3">
                             <div x-data="{
@@ -481,7 +481,7 @@
                             <div class="text-sm font-bold text-slate-900 truncate">{{ $collection->title }}</div>
                             <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">{{ $collection->tab_name }} · Sort: {{ $collection->sort_order }}</div>
                         </div>
-                        <form action="{{ route('admin.landing.delete', $collection) }}" method="POST" onsubmit="return confirm('Remove this collection from the landing page?')">
+                        <form action="{{ url('/admin/landing-collections/' . $collection->id) }}" method="POST" onsubmit="return confirm('Remove this collection from the landing page?')">
                             @csrf @method('DELETE')
                             <button class="text-red-400 hover:text-red-600 transition-colors p-1">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -883,7 +883,7 @@
                         <p class="text-xs text-slate-500 mt-1">Publish a new client testimonial to the landing page.</p>
                     </div>
                     <div class="p-6">
-                        <form action="{{ route('admin.testimonials.create') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
+                        <form action="{{ url('/admin/testimonials') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
                             @csrf
                             <div>
                                 <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Client Name *</label>
@@ -947,7 +947,7 @@
                                         <button type="button" @click="editModal = true" class="text-blue-500 hover:text-blue-700 p-1 transition-colors">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                         </button>
-                                        <form action="{{ route('admin.testimonials.delete', $testimonial) }}" method="POST" onsubmit="return confirm('Delete this testimonial permanently?')">
+                                        <form action="{{ url('/admin/testimonials/' . $testimonial->id) }}" method="POST" onsubmit="return confirm('Delete this testimonial permanently?')">
                                             @csrf @method('DELETE')
                                             <button class="text-red-400 hover:text-red-600 p-1 transition-colors">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -970,7 +970,7 @@
                                         <button @click="editModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
                                     </div>
                                     <div class="p-6">
-                                        <form action="{{ route('admin.testimonials.update', $testimonial) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                        <form action="{{ url('/admin/testimonials/' . $testimonial->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                                             @csrf @method('PUT')
                                             <div>
                                                 <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Client Name *</label>

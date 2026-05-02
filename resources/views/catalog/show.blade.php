@@ -2,6 +2,30 @@
 
 @section('title', $collection . ' | Design Collections | The Commission Apparel')
 
+@php
+    if (!isset($collection)) {
+        $collection = request()->route('collection') ?? 'Collection';
+    }
+    if (!isset($selectedSport)) {
+        $selectedSport = request()->query('sport');
+    }
+    if (!isset($designCatalog)) {
+        $designCatalogQuery = \App\Models\DesignCatalog::where('collection_name', $collection);
+        if (!empty($selectedSport)) {
+            $designCatalogQuery->where('sport', $selectedSport);
+        }
+        $designCatalog = $designCatalogQuery->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
+    }
+    if (!isset($availableSports)) {
+        $availableSports = \App\Models\DesignCatalog::where('collection_name', $collection)
+            ->whereNotNull('sport')
+            ->where('sport', '!=', '')
+            ->distinct()
+            ->orderBy('sport')
+            ->pluck('sport');
+    }
+@endphp
+
 @section('content')
 <section class="pt-8 md:pt-24 pb-4 md:pb-6 bg-white border-b border-slate-200">
     <div class="max-w-[1500px] mx-auto px-6">

@@ -2,6 +2,34 @@
 
 @section('title', 'Design Catalog | The Commission Apparel')
 
+@php
+    if (!isset($collections)) {
+        $collections = \App\Models\DesignCatalog::whereNotNull('collection_name')
+            ->where('collection_name', '!=', '')
+            ->select('collection_name')
+            ->distinct()
+            ->orderBy('collection_name')
+            ->get()
+            ->map(function ($item) {
+                $firstDesign = \App\Models\DesignCatalog::where('collection_name', $item->collection_name)
+                    ->orderBy('sort_order', 'asc')
+                    ->first();
+                return (object) [
+                    'name' => $item->collection_name,
+                    'image' => !empty($firstDesign->image_paths) ? $firstDesign->image_paths[0] : ($firstDesign->image_url ?? null)
+                ];
+            });
+    }
+
+    if (!isset($orphanedDesigns)) {
+        $orphanedDesigns = \App\Models\DesignCatalog::whereNull('collection_name')
+            ->orWhere('collection_name', '')
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+@endphp
+
 @section('content')
 <section class="pt-8 md:pt-24 pb-4 md:pb-6 bg-white border-b border-slate-200">
     <div class="max-w-[1500px] mx-auto px-6">
