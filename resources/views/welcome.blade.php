@@ -1,5 +1,21 @@
 @extends('layouts.app')
 
+@php
+    if (!isset($heroSettings)) {
+        $heroSettings = [
+            'subtitle'   => \App\Models\SiteSetting::where('key', 'hero_subtitle')->value('value') ?? 'Premium armor tailored for programs that demand greatness. Built for the modern athlete, delivered with lightning speed.',
+            'media_path' => \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value') ?? asset('images/hero-models.png'),
+            'media_type' => \App\Models\SiteSetting::where('key', 'hero_media_type')->value('value') ?? 'image',
+        ];
+    }
+    if (!isset($landingCollections)) {
+        $landingCollections = \App\Models\LandingCollection::where('is_active', true)->orderBy('sort_order', 'asc')->get();
+    }
+    if (!isset($testimonials)) {
+        $testimonials = \App\Models\Testimonial::where('is_active', true)->orderBy('sort_order', 'asc')->limit(5)->get();
+    }
+@endphp
+
 @section('content')
 
 <!-- Hero Section -->
