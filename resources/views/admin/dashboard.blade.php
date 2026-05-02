@@ -597,7 +597,7 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Item Types (Select all that apply)</label>
-                                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                                     @foreach($typeOptions as $val => $label)
                                     <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
                                         <input type="checkbox" name="types[]" value="{{ $val }}" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
@@ -765,7 +765,7 @@
                                         </div>
                                             <div>
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Item Types</label>
-                                                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                                                     @foreach($typeOptions as $val => $label)
                                                         <label class="flex items-center gap-1.5 text-[10px] text-slate-700">
                                                             <input
