@@ -71,6 +71,12 @@ class AdminController extends Controller
             ->orderBy('sport')
             ->pluck('sport');
 
+        $availableCollections = DesignCatalog::whereNotNull('collection_name')
+            ->where('collection_name', '!=', '')
+            ->distinct()
+            ->orderBy('collection_name')
+            ->pluck('collection_name');
+
         $passwordResetLogs = PasswordResetLog::with('user')->latest()->get();
 
         $testimonials = Testimonial::orderBy('sort_order', 'asc')->get();
@@ -84,7 +90,7 @@ class AdminController extends Controller
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStores',
             'designCatalog', 'productionStores', 'quoteRequests', 'landingCollections', 'allStores',
-            'availableSports', 'passwordResetLogs', 'testimonials', 'heroSettings'
+            'availableSports', 'availableCollections', 'passwordResetLogs', 'testimonials', 'heroSettings'
         ));
     }
 
@@ -149,6 +155,7 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'name'             => ['required', 'string', 'max:255'],
+            'collection_name'  => ['nullable', 'string', 'max:255'],
             'sport'            => ['nullable', 'string', 'max:100'],
             'types'            => ['required', 'array', 'min:1'],
             'types.*'          => ['string', 'in:accessory,arm_sleeve,backpack,headwear,hoodie,jacket,leggings,pants,polo,shirt_short,shirt_long,shorts,socks,uniform_top,uniform_bottom,uniform_set,uniform_set_2,warmup_top,warmup_bottom,warmup_set,warmup_set_2,uniform_package_gold,uniform_package_silver,uniform_package_bronze,uniform_package_custom'],
@@ -214,6 +221,7 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'name'             => ['required', 'string', 'max:255'],
+            'collection_name'  => ['nullable', 'string', 'max:255'],
             'sport'            => ['nullable', 'string', 'max:100'],
             'types'            => ['required', 'array', 'min:1'],
             'types.*'          => ['string', 'in:accessory,arm_sleeve,backpack,headwear,hoodie,jacket,leggings,pants,polo,shirt_short,shirt_long,shorts,socks,uniform_top,uniform_bottom,uniform_set,uniform_set_2,warmup_top,warmup_bottom,warmup_set,warmup_set_2,uniform_package_gold,uniform_package_silver,uniform_package_bronze,uniform_package_custom'],
@@ -633,8 +641,11 @@ class AdminController extends Controller
         if ($request->hasFile('hero_media')) {
             $file = $request->file('hero_media');
             $mimeType = $file->getMimeType();
-            $isImage = str_starts_with($mimeType, 'image/');
-            $isVideo = str_starts_with($mimeType, 'video/');
+            $extension = strtolower($file->getClientOriginalExtension());
+            $videoExtensions = ['mp4', 'mov', 'avi', 'webm', 'ogg', 'mkv'];
+            
+            $isImage = str_starts_with($mimeType, 'image/') || in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
+            $isVideo = str_starts_with($mimeType, 'video/') || in_array($extension, $videoExtensions);
 
             if ($isImage || $isVideo) {
                 // Delete old media if it exists
@@ -659,5 +670,19 @@ class AdminController extends Controller
         }
 
         return redirect()->route('admin.dashboard')->with('success', 'Hero settings updated successfully.');
+    }
+
+    public function removeHeroMedia(Request $request)
+    {
+        $oldMediaPath = \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value');
+        if ($oldMediaPath) {
+            $pathToRemove = str_replace('/storage/', '', $oldMediaPath);
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            
+            \App\Models\SiteSetting::where('key', 'hero_media_path')->delete();
+            \App\Models\SiteSetting::where('key', 'hero_media_type')->delete();
+        }
+
+        return redirect()->route('admin.dashboard')->with('success', 'Hero media removed successfully.');
     }
 }

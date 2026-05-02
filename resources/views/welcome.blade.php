@@ -3,11 +3,11 @@
 @section('content')
 
 <!-- Hero Section -->
-<section class="relative bg-white min-h-[80vh] flex items-center justify-center pt-20 overflow-hidden">
+<section class="relative bg-white min-h-[80vh] flex items-center justify-center pt-4 lg:pt-20 overflow-hidden">
     <!-- Subtle Background Dot Pattern -->
     <div class="absolute inset-0 z-0 opacity-40" style="background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 32px 32px;"></div>
 
-    <div class="relative z-10 max-w-[1500px] mx-auto px-6 w-full grid lg:grid-cols-2 gap-12 items-stretch pt-12 pb-4 lg:pb-8">
+    <div class="relative z-10 max-w-[1500px] mx-auto px-6 w-full grid lg:grid-cols-2 gap-12 items-stretch pt-4 lg:pt-12 pb-4 lg:pb-8">
         <div class="max-w-2xl animate-slide-up flex flex-col justify-center order-2 lg:order-1">
            
             
@@ -50,7 +50,17 @@
 
              <!-- Clean bright background media -->
              @if(($heroSettings['media_type'] ?? 'image') === 'video')
-                 <video src="{{ $heroSettings['media_path'] }}" autoplay loop muted playsinline class="relative z-10 w-full h-full max-h-[600px] object-contain drop-shadow-2xl"></video>
+                 @php
+                     $ext = strtolower(pathinfo($heroSettings['media_path'], PATHINFO_EXTENSION));
+                     $mime = 'video/mp4';
+                     if ($ext === 'mov') $mime = 'video/quicktime';
+                     elseif ($ext === 'webm') $mime = 'video/webm';
+                     elseif ($ext === 'ogg') $mime = 'video/ogg';
+                 @endphp
+                 <video autoplay loop muted playsinline class="relative z-10 w-full h-full max-h-[600px] object-contain drop-shadow-2xl">
+                     <source src="{{ asset($heroSettings['media_path']) }}" type="{{ $mime }}">
+                     Your browser does not support the video tag.
+                 </video>
              @else
                  <img src="{{ $heroSettings['media_path'] }}" alt="Elite Custom Uniform Models" class="relative z-10 w-full h-full max-h-[600px] object-contain drop-shadow-2xl">
              @endif
@@ -108,7 +118,7 @@
     <div class="max-w-[90rem] mx-auto px-6">
         
         <!-- UI Mockup Image -->
-        <div class="mb-16 px-4 lg:px-6 max-w-[85rem] mx-auto">
+        <div class="mb-6 md:mb-10 px-4 lg:px-6 max-w-[85rem] mx-auto">
              <div class="w-full rounded-xl overflow-hidden shadow-2xl relative" style="aspect-ratio: 3.2 / 1;">
                  <img src="/images/team-store-background-v2.png" alt="Team Store UI Previews" class="absolute w-full max-w-none h-auto left-0 -top-[9%] md:-top-[12%] lg:-top-[15%]">
              </div>

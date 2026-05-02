@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Coach Portal | The Commission Apparel')
 @section('content')
-<div class="max-w-[1400px] mx-auto px-6 pb-8 pt-32 lg:pt-40">
+<div class="max-w-[1400px] mx-auto px-6 pb-8" style="padding-top: clamp(2rem, 10vw, 7rem);">
     {{-- Header --}}
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div class="flex items-center gap-5">

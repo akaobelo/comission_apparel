@@ -35,30 +35,54 @@ Route::get('/quote', [QuoteRequestController::class, 'show'])->name('quote.show'
 Route::post('/quote', [QuoteRequestController::class, 'store'])->name('quote.store');
 Route::get('/quote/success', function () { return view('quote_success'); })->name('quote.success');
 Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
-Route::get('/catalog', function (\Illuminate\Http\Request $request) {
-    $selectedSport = $request->query('sport');
-    $selectedType = $request->query('item_type');
+Route::get('/catalog', function () {
+    // Get all distinct collections and their first image
+    $collections = \App\Models\DesignCatalog::whereNotNull('collection_name')
+        ->where('collection_name', '!=', '')
+        ->select('collection_name')
+        ->distinct()
+        ->orderBy('collection_name')
+        ->get()
+        ->map(function ($item) {
+            $firstDesign = \App\Models\DesignCatalog::where('collection_name', $item->collection_name)
+                ->orderBy('sort_order', 'asc')
+                ->first();
+            return (object) [
+                'name' => $item->collection_name,
+                'image' => !empty($firstDesign->image_paths) ? $firstDesign->image_paths[0] : ($firstDesign->image_url ?? null)
+            ];
+        });
 
-    $designCatalogQuery = \App\Models\DesignCatalog::query();
+    // Get orphaned designs (no collection)
+    $orphanedDesigns = \App\Models\DesignCatalog::whereNull('collection_name')
+        ->orWhere('collection_name', '')
+        ->orderBy('sort_order', 'asc')
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    return view('catalog.index', compact('collections', 'orphanedDesigns'));
+})->name('catalog.index');
+
+Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request, $collection) {
+    $selectedSport = $request->query('sport');
+    
+    $designCatalogQuery = \App\Models\DesignCatalog::where('collection_name', $collection);
+    
     if (!empty($selectedSport)) {
         $designCatalogQuery->where('sport', $selectedSport);
     }
-    if (!empty($selectedType)) {
-        $designCatalogQuery->where(function($q) use ($selectedType) {
-            $q->where('types', 'LIKE', '%"'.$selectedType.'"%')
-              ->orWhere('type', $selectedType);
-        });
-    }
-
+    
     $designCatalog = $designCatalogQuery->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
-    $availableSports = \App\Models\DesignCatalog::whereNotNull('sport')
+    
+    $availableSports = \App\Models\DesignCatalog::where('collection_name', $collection)
+        ->whereNotNull('sport')
         ->where('sport', '!=', '')
         ->distinct()
         ->orderBy('sport')
         ->pluck('sport');
-
-    return view('catalog.index', compact('designCatalog', 'availableSports', 'selectedSport', 'selectedType'));
-})->name('catalog.index');
+        
+    return view('catalog.show', compact('designCatalog', 'availableSports', 'selectedSport', 'collection'));
+})->name('catalog.show');
 
 // Public Team Stores (parent-facing, no auth)
 Route::get('/store/search', [StoreController::class, 'search'])->name('store.search');
@@ -147,6 +171,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
 
     // Hero Settings
     Route::post('/admin/hero-settings', [AdminController::class, 'updateHeroSettings'])->name('admin.hero-settings.update');
+    Route::post('/admin/hero-settings/remove-media', [AdminController::class, 'removeHeroMedia'])->name('admin.hero-settings.remove-media');
 
     // Testimonials
     Route::post('/admin/testimonials', [AdminController::class, 'createTestimonial'])->name('admin.testimonials.create');

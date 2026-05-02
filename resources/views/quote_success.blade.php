@@ -1,8 +1,8 @@
 @extends('layouts.app')
 @section('title', 'Thank You | The Commission Apparel')
 @section('content')
-<div class="max-w-[1200px] mx-auto px-6 pb-24 pt-32 lg:pt-40">
-    <div class="text-center max-w-2xl mx-auto mb-16">
+<div class="max-w-[1200px] mx-auto px-6 pb-16" style="padding-top: clamp(2rem, 10vw, 7rem);">
+    <div class="text-center max-w-2xl mx-auto mb-8">
         <h1 class="text-4xl md:text-5xl font-black uppercase tracking-tight text-slate-900 mb-6">Quote <span class="text-secondary">Requested</span> Successfully!</h1>
         <div class="p-6 bg-green-50 border border-green-200 rounded-xl mb-8">
             <p class="text-green-800 text-lg font-medium leading-relaxed">
@@ -25,14 +25,8 @@
         </div>
     </div>
     
-    <div class="relative max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl border border-slate-200">
-        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent pointer-events-none"></div>
-        <img src="{{ asset('images/coach-admin-preview.png') }}" alt="Coach Dashboard Preview" class="w-full h-auto object-cover">
-        <div class="absolute bottom-6 left-6 right-6">
-            <div class="bg-white/90 backdrop-blur border border-white/20 p-4 rounded-xl shadow-lg inline-block">
-                <p class="text-sm font-bold uppercase tracking-wider text-slate-900">Manage Orders, Inventory, & Sales Data</p>
-            </div>
-        </div>
+    <div class="relative max-w-5xl mx-auto rounded-2xl overflow-hidden shadow-2xl border border-slate-200" style="aspect-ratio: 3.2 / 1;">
+        <img src="{{ asset('images/team-store-background-v2.png') }}" alt="Our Coach Dashboard" class="absolute w-full max-w-none h-auto left-0 -top-[9%] md:-top-[12%] lg:-top-[15%]">
     </div>
 </div>
 @endsection

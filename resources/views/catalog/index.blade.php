@@ -3,7 +3,7 @@
 @section('title', 'Design Catalog | The Commission Apparel')
 
 @section('content')
-<section class="pt-32 pb-16 bg-white border-b border-slate-200">
+<section class="pt-8 md:pt-24 pb-4 md:pb-6 bg-white border-b border-slate-200">
     <div class="max-w-[1500px] mx-auto px-6">
         <div class="max-w-3xl">
             <p class="text-xs font-black uppercase tracking-widest text-secondary mb-3">Design Collections</p>
@@ -15,132 +15,108 @@
     </div>
 </section>
 
-<section class="py-12 bg-slate-50 min-h-[50vh]" x-data="{ previewOpen: false, previewImgs: [], previewIdx: 0, previewAlt: '', touchStartX: 0, touchEndX: 0 }" @keydown.escape.window="previewOpen = false; document.body.style.overflow = 'auto';" @keydown.right.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx + 1) % previewImgs.length" @keydown.left.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx - 1 + previewImgs.length) % previewImgs.length">
+<section class="py-4 md:py-8 bg-slate-50 min-h-[50vh]" x-data="{ previewOpen: false, previewImgs: [], previewIdx: 0, previewAlt: '', touchStartX: 0, touchEndX: 0 }" @keydown.escape.window="previewOpen = false; document.body.style.overflow = 'auto';" @keydown.right.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx + 1) % previewImgs.length" @keydown.left.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx - 1 + previewImgs.length) % previewImgs.length">
     <div class="max-w-[1500px] mx-auto px-6">
-        <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <form method="GET" action="{{ route('catalog.index') }}" class="flex flex-wrap items-center gap-2">
-                <label for="sport" class="text-xs font-black uppercase tracking-wider text-slate-600">Filter by Sport</label>
-                <select id="sport" name="sport" class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none">
-                    <option value="">All Sports</option>
-                    @foreach($availableSports as $sport)
-                        <option value="{{ $sport }}" {{ $selectedSport === $sport ? 'selected' : '' }}>{{ $sport }}</option>
-                    @endforeach
-                </select>
-
-                @php
-                    $typeOptions = [
-                        'accessory' => 'Accessories',
-                        'arm_sleeve' => 'Arm Sleeves',
-                        'backpack' => 'Backpacks',
-                        'headwear' => 'Headwear',
-                        'hoodie' => 'Hoodies & Pullovers',
-                        'jacket' => 'Jackets',
-                        'leggings' => 'Leggings/Tights',
-                        'pants' => 'Pants',
-                        'polo' => 'Polos',
-                        'shirt_short' => 'Shirts (short sleeve)',
-                        'shirt_long' => 'Shirts (long sleeve)',
-                        'shorts' => 'Shorts',
-                        'socks' => 'Socks',
-                        'uniform_top' => 'Uniform (top)',
-                        'uniform_bottom' => 'Uniform (bottom)',
-                        'uniform_set' => 'Uniform Set (top/bottom)',
-                        'uniform_set_2' => 'Uniform Set #2 (top/bottom)',
-                        'warmup_top' => 'Warm-up (top)',
-                        'warmup_bottom' => 'Warm-up (bottom)',
-                        'warmup_set' => 'Warm-up (top/bottom)',
-                        'warmup_set_2' => 'Warm-up Set #2 (top/bottom)',
-                        'uniform_package_gold' => 'Uniform Package (Gold)',
-                        'uniform_package_silver' => 'Uniform Package (Silver)',
-                        'uniform_package_bronze' => 'Uniform Package (Bronze)',
-                        'uniform_package_custom' => 'Uniform Package (Custom)',
-                    ];
-                @endphp
-                <label for="item_type" class="text-xs font-black uppercase tracking-wider text-slate-600 ml-2">Item Type</label>
-                <select id="item_type" name="item_type" class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none">
-                    <option value="">All Types</option>
-                    @foreach($typeOptions as $val => $label)
-                        <option value="{{ $val }}" {{ (isset($selectedType) && $selectedType === $val) ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
-
-                <button type="submit" class="px-3 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors ml-1">
-                    Apply
-                </button>
-                @if(!empty($selectedSport) || !empty($selectedType))
-                    <a href="{{ route('catalog.index') }}" class="px-3 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-100 transition-colors">
-                        Clear
-                    </a>
-                @endif
-            </form>
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Showing {{ $designCatalog->count() }} design{{ $designCatalog->count() === 1 ? '' : 's' }}
-            </p>
-        </div>
-
-        @if($designCatalog->isEmpty())
+        @if($collections->isEmpty() && $orphanedDesigns->isEmpty())
             <div class="bg-white border-2 border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500 font-bold uppercase tracking-widest text-sm">
-                No designs found for this sport yet.
+                No design collections available yet.
             </div>
         @else
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                @foreach($designCatalog as $design)
-                    @php
-                        $imageSrc = null;
-                        if (!empty($design->image_paths)) {
-                            $imageSrc = $design->image_paths[0];
-                        } elseif ($design->image_url) {
-                            $imageSrc = $design->image_url;
-                        }
-                    @endphp
-                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow">
-                        <div class="bg-white border rounded-2xl overflow-hidden shadow-sm flex flex-col group relative transition-all duration-300 border-slate-200 hover:border-secondary/50 hover:shadow-lg h-full">
-                            <div class="aspect-[4/3] bg-[#f0f2f5] relative overflow-hidden group-hover:bg-[#e4e7ec] transition-colors flex items-center justify-center">
-                            @if(!empty($design->image_paths) && count($design->image_paths) > 1)
-                                <div class="w-full h-full relative group/slider" x-data="{ imgIdx: 0, imgs: {{ json_encode($design->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
-                                    <button
-                                        type="button"
-                                        class="w-full h-full block"
-                                        @click="previewOpen = true; previewImgs = imgs; previewIdx = imgIdx; previewAlt = '{{ addslashes($design->name) }}'; document.body.style.overflow = 'hidden';"
-                                    >
-                                        <img :src="imgs[imgIdx]" alt="{{ $design->name }}" class="w-full h-full object-cover object-top transition-opacity duration-300 cursor-zoom-in">
-                                    </button>
-                                    
-                                    <!-- Manual Navigation Arrows -->
-                                    <button type="button" @click.stop="imgIdx = (imgIdx - 1 + imgs.length) % imgs.length; clearInterval(imgInterval)" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-slate-700 flex items-center justify-center shadow hover:bg-white transition-colors lg:opacity-0 lg:group-hover/slider:opacity-100 focus:outline-none">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                                    </button>
-                                    <button type="button" @click.stop="imgIdx = (imgIdx + 1) % imgs.length; clearInterval(imgInterval)" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-slate-700 flex items-center justify-center shadow hover:bg-white transition-colors lg:opacity-0 lg:group-hover/slider:opacity-100 focus:outline-none">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                    </button>
-
-                                    <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
-                                        <template x-for="(img, idx) in imgs" :key="idx">
-                                            <button type="button" @click.stop="imgIdx = idx; clearInterval(imgInterval)" class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm focus:outline-none" :class="idx === imgIdx ? 'bg-secondary' : 'bg-white/60'"></button>
-                                        </template>
-                                    </div>
-                                </div>
-                            @elseif($imageSrc)
-                                <button
-                                    type="button"
-                                    class="w-full h-full block"
-                                    @click="previewOpen = true; previewImgs = ['{{ $imageSrc }}']; previewIdx = 0; previewAlt = '{{ addslashes($design->name) }}'; document.body.style.overflow = 'hidden';"
-                                >
-                                    <img src="{{ $imageSrc }}" alt="{{ $design->name }}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 cursor-zoom-in">
-                                </button>
-                            @else
-                                <div class="text-slate-400 font-medium text-xs">No Image</div>
-                            @endif
+            <!-- Collections Grid -->
+            @if($collections->isNotEmpty())
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 mb-10">
+                    @foreach($collections as $collection)
+                        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col group relative transition-all duration-300 hover:border-secondary/50 hover:shadow-lg">
+                            <div class="aspect-[4/3] bg-[#f0f2f5] relative overflow-hidden group-hover:bg-[#e4e7ec] transition-colors flex items-center justify-center p-4">
+                                @if($collection->image)
+                                    <img src="{{ asset($collection->image) }}" alt="{{ $collection->name }}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500">
+                                @else
+                                    <div class="text-slate-400 font-medium text-xs uppercase tracking-widest">No Cover Image</div>
+                                @endif
                             </div>
-
-                            <div class="p-4 md:p-5 flex flex-col flex-1 bg-white border-t border-slate-100">
-                                <span class="text-[10px] font-black uppercase tracking-widest text-red-600 mb-2">{{ $design->type_label }}</span>
-                                <h2 class="text-base font-black text-slate-900 leading-tight mb-2 truncate" title="{{ $design->name }}">{{ $design->name }}</h2>
+                            <div class="p-3 md:p-4 flex flex-col flex-1 bg-slate-950 border-t border-slate-800 text-center">
+                                <h2 class="text-base md:text-lg font-black text-white leading-tight mb-3" title="{{ $collection->name }}">{{ $collection->name }}</h2>
+                                <div class="mt-auto">
+                                    <a href="{{ route('catalog.show', ['collection' => $collection->name]) }}" class="inline-block px-4 py-2 bg-slate-900 border border-slate-700 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-md hover:bg-slate-800 transition-colors w-full">
+                                        View Collection
+                                    </a>
+                                </div>
                             </div>
                         </div>
+                    @endforeach
+                </div>
+            @endif
+
+            <!-- Orphaned Designs Grid -->
+            @if($orphanedDesigns->isNotEmpty())
+                @if($collections->isNotEmpty())
+                    <div class="mb-8 border-t border-slate-200 pt-12">
+                        <h2 class="text-2xl font-black tracking-tight uppercase text-slate-900 mb-2">Individual Designs</h2>
+                        <p class="text-sm text-slate-500">Additional concepts not part of a specific collection.</p>
                     </div>
-                @endforeach
-            </div>
+                @endif
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+                    @foreach($orphanedDesigns as $design)
+                        @php
+                            $imageSrc = null;
+                            if (!empty($design->image_paths)) {
+                                $imageSrc = $design->image_paths[0];
+                            } elseif ($design->image_url) {
+                                $imageSrc = $design->image_url;
+                            }
+                        @endphp
+                        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow">
+                            <div class="bg-white border rounded-2xl overflow-hidden shadow-sm flex flex-col group relative transition-all duration-300 border-slate-200 hover:border-secondary/50 hover:shadow-lg h-full">
+                                <div class="aspect-[4/3] bg-[#f0f2f5] relative overflow-hidden group-hover:bg-[#e4e7ec] transition-colors flex items-center justify-center">
+                                @if(!empty($design->image_paths) && count($design->image_paths) > 1)
+                                    <div class="w-full h-full relative group/slider" x-data="{ imgIdx: 0, imgs: {{ json_encode($design->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
+                                        <button
+                                            type="button"
+                                            class="w-full h-full block focus:outline-none"
+                                            @click="previewOpen = true; previewImgs = imgs; previewIdx = imgIdx; previewAlt = '{{ addslashes($design->name) }}'; document.body.style.overflow = 'hidden';"
+                                        >
+                                            <img :src="imgs[imgIdx]" alt="{{ $design->name }}" class="w-full h-full object-cover object-top transition-opacity duration-300 cursor-zoom-in">
+                                        </button>
+                                        
+                                        <!-- Manual Navigation Arrows -->
+                                        <button type="button" @click.stop="imgIdx = (imgIdx - 1 + imgs.length) % imgs.length; clearInterval(imgInterval)" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-slate-700 flex items-center justify-center shadow hover:bg-white transition-colors lg:opacity-0 lg:group-hover/slider:opacity-100 focus:outline-none z-20">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                        </button>
+                                        <button type="button" @click.stop="imgIdx = (imgIdx + 1) % imgs.length; clearInterval(imgInterval)" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-slate-700 flex items-center justify-center shadow hover:bg-white transition-colors lg:opacity-0 lg:group-hover/slider:opacity-100 focus:outline-none z-20">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                        </button>
+
+                                        <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
+                                            <template x-for="(img, idx) in imgs" :key="idx">
+                                                <button type="button" @click.stop="imgIdx = idx; clearInterval(imgInterval)" class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm focus:outline-none" :class="idx === imgIdx ? 'bg-secondary' : 'bg-white/60'"></button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                @elseif($imageSrc)
+                                    <button
+                                        type="button"
+                                        class="w-full h-full block focus:outline-none"
+                                        @click="previewOpen = true; previewImgs = ['{{ asset($imageSrc) }}']; previewIdx = 0; previewAlt = '{{ addslashes($design->name) }}'; document.body.style.overflow = 'hidden';"
+                                    >
+                                        <img src="{{ asset($imageSrc) }}" alt="{{ $design->name }}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 cursor-zoom-in">
+                                    </button>
+                                @else
+                                    <div class="text-slate-400 font-medium text-xs uppercase tracking-widest">No Image</div>
+                                @endif
+                                </div>
+
+                                <div class="p-3 flex flex-col flex-1 bg-slate-950 border-t border-slate-800">
+                                    <span class="text-[9px] font-black uppercase tracking-widest text-red-500 mb-1.5">{{ $design->type_label }}</span>
+                                    <h2 class="text-sm md:text-base font-black text-white leading-tight mb-1 truncate" title="{{ $design->name }}">{{ $design->name }}</h2>
+                                    @if($design->sport)
+                                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-auto pt-1.5">{{ $design->sport }}</div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
         @endif
     </div>
 

@@ -10,6 +10,7 @@ class DesignCatalog extends Model
 
     protected $fillable = [
         'name',
+        'collection_name',
         'sport',
         'type',
         'types',

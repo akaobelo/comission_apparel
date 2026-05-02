@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Admin Portal | The Commission Apparel')
 @section('content')
-<div class="max-w-[1600px] mx-auto px-6 pb-8 pt-32 lg:pt-40">
+<div class="max-w-[1600px] mx-auto px-6 pb-8" style="padding-top: clamp(2rem, 10vw, 7rem);">
     @if(session('success'))
         <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 font-bold flex items-center gap-3">
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -80,7 +80,7 @@
         }
     }">
         {{-- Admin Navigation Tabs --}}
-        <div class="flex overflow-x-auto pb-0 mb-8 border-b border-slate-200 gap-8">
+        <div class="flex overflow-x-auto pb-0 mb-8 border-b border-slate-200 gap-8 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-hide">
             <button @click="setTab('stores')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'stores' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Stores & Orders</button>
             <button @click="setTab('coaches')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'coaches' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Coaches</button>
             <button @click="setTab('catalog')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'catalog' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Design Catalog</button>
@@ -267,20 +267,21 @@
                 <div class="p-6 border-b border-slate-200 bg-slate-50">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Coaches Database</h2>
-                        <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2">
-                            <div class="relative">
+                        <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
+                            <div class="relative flex-1 md:w-72">
                                 <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name, email, or org..." class="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none w-72 shadow-sm">
+                                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name, email, or org..." class="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none w-full shadow-sm">
                             </div>
-                            <button type="submit" class="px-4 py-2 bg-secondary text-white text-sm font-bold rounded-lg hover:bg-[#a11825] transition-colors">Search</button>
+                            <button type="submit" class="px-4 py-2 bg-secondary text-white text-sm font-bold rounded-lg hover:bg-[#a11825] transition-colors shrink-0">Search</button>
                             @if(request('search'))
                                 <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors">Clear</a>
                             @endif
                         </form>
                     </div>
                 </div>
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 border-b border-slate-200">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left whitespace-nowrap">
+                        <thead class="bg-slate-50 border-b border-slate-200">
                         <tr class="text-xs font-bold uppercase tracking-wider text-slate-500">
                             <th class="px-5 py-3">ID</th>
                             <th class="px-5 py-3">First Name</th>
@@ -337,6 +338,7 @@
                         @endif
                     </tbody>
                 </table>
+                </div>
                 @if($coaches->hasPages())
                     <div class="p-5 border-t border-slate-200">{{ $coaches->links() }}</div>
                 @endif
@@ -355,6 +357,9 @@
                     <p class="text-xs text-slate-500 mt-1">Configure the main landing page text and background media (image or video).</p>
                 </div>
                 <div class="p-6">
+                    <form id="remove-media-form" action="{{ route('admin.hero-settings.remove-media') }}" method="POST" class="hidden">
+                        @csrf
+                    </form>
                     <form action="{{ route('admin.hero-settings.update') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
                         @csrf
                         <div>
@@ -364,12 +369,26 @@
                         <div>
                             <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Hero Media (Image or Video)</label>
                             @if($heroSettings['media_path'])
-                                <div class="mb-3 rounded-lg overflow-hidden border border-slate-200 inline-block">
-                                    @if($heroSettings['media_type'] === 'video')
-                                        <video src="{{ $heroSettings['media_path'] }}" autoplay loop muted playsinline class="h-32 w-auto object-cover"></video>
-                                    @else
-                                        <img src="{{ $heroSettings['media_path'] }}" class="h-32 w-auto object-cover">
-                                    @endif
+                                <div class="mb-3">
+                                    <div class="rounded-lg overflow-hidden border border-slate-200 inline-block">
+                                        @if($heroSettings['media_type'] === 'video')
+                                            @php
+                                                $ext = strtolower(pathinfo($heroSettings['media_path'], PATHINFO_EXTENSION));
+                                                $mime = 'video/mp4';
+                                                if ($ext === 'mov') $mime = 'video/quicktime';
+                                                elseif ($ext === 'webm') $mime = 'video/webm';
+                                                elseif ($ext === 'ogg') $mime = 'video/ogg';
+                                            @endphp
+                                            <video autoplay loop muted playsinline class="h-32 w-auto object-cover">
+                                                <source src="{{ asset($heroSettings['media_path']) }}" type="{{ $mime }}">
+                                            </video>
+                                        @else
+                                            <img src="{{ asset($heroSettings['media_path']) }}" class="h-32 w-auto object-cover">
+                                        @endif
+                                    </div>
+                                    <div class="mt-1">
+                                        <button type="button" class="text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-700 underline" onclick="if(confirm('Are you sure you want to remove the media?')) document.getElementById('remove-media-form').submit();">Remove Media</button>
+                                    </div>
                                 </div>
                             @endif
                             <input type="file" name="hero_media" accept="image/*,video/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:tracking-wider file:bg-secondary file:text-white hover:file:bg-[#a11825]">
@@ -517,9 +536,37 @@
                     <div class="p-5">
                         <form action="{{ route('admin.design.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                         @csrf
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Design Name</label>
-                            <input type="text" name="name" required placeholder="e.g. Springfield Eagles - Home Jersey" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Design Name</label>
+                                <input type="text" name="name" required placeholder="e.g. Springfield Eagles - Home Jersey" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div x-data="{
+                                open: false,
+                                search: '',
+                                options: {{ json_encode(is_array($availableCollections) ? array_values($availableCollections) : $availableCollections->values()->all()) }},
+                                get filteredOptions() {
+                                    if (this.search === '') return this.options;
+                                    return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
+                                },
+                                selectOption(val) {
+                                    this.search = val;
+                                    this.open = false;
+                                }
+                            }" class="relative">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name (Optional)</label>
+                                <div class="relative">
+                                    <input type="text" name="collection_name" x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Tampa Xpress Track Club Collection" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 pr-10 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
+                                    <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-700 focus:outline-none">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                </div>
+                                <div x-show="open && filteredOptions.length > 0" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                    <template x-for="opt in filteredOptions" :key="opt">
+                                        <div @click="selectOption(opt)" class="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer font-medium" x-text="opt"></div>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
                         <div x-data="{
                             open: false,
@@ -652,6 +699,32 @@
                                             <div>
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Name</label>
                                                 <input type="text" name="name" value="{{ $design->name }}" required class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                            </div>
+                                            <div x-data="{
+                                                open: false,
+                                                search: '{{ addslashes($design->collection_name) }}',
+                                                options: {{ json_encode(is_array($availableCollections) ? array_values($availableCollections) : $availableCollections->values()->all()) }},
+                                                get filteredOptions() {
+                                                    if (this.search === '') return this.options;
+                                                    return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
+                                                },
+                                                selectOption(val) {
+                                                    this.search = val;
+                                                    this.open = false;
+                                                }
+                                            }" class="relative">
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name</label>
+                                                <div class="relative">
+                                                    <input type="text" name="collection_name" x-model="search" @focus="open = true" @click.away="open = false" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 pr-8 text-xs text-slate-900 focus:border-primary focus:outline-none" autocomplete="off">
+                                                    <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-2 text-slate-500 hover:text-slate-700 focus:outline-none">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                                    </button>
+                                                </div>
+                                                <div x-show="open && filteredOptions.length > 0" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                                    <template x-for="opt in filteredOptions" :key="opt">
+                                                        <div @click="selectOption(opt)" class="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer font-medium" x-text="opt"></div>
+                                                    </template>
+                                                </div>
                                             </div>
                                             <div x-data="{
                                                 open: false,
@@ -955,7 +1028,8 @@
                 <div class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                     <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Security Audit Logs</h2>
                 </div>
-                <table class="w-full text-left">
+                <div class="overflow-x-auto">
+                <table class="w-full text-left whitespace-nowrap">
                     <thead class="bg-slate-50 border-b border-slate-200">
                         <tr class="text-xs font-bold uppercase tracking-wider text-slate-500">
                             <th class="px-5 py-3">Date / Time</th>
@@ -985,6 +1059,7 @@
                         @endif
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
 
