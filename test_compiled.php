@@ -1,18 +1,17 @@
-@extends('layouts.app')
-@section('title', 'Coach Portal | The Commission Apparel')
-@section('content')
+<?php $__env->startSection('title', 'Coach Portal | The Commission Apparel'); ?>
+<?php $__env->startSection('content'); ?>
 <div class="max-w-[1400px] mx-auto px-6 pb-8" style="padding-top: clamp(2rem, 10vw, 7rem);">
-    {{-- Header --}}
+    
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div class="flex items-center gap-5">
-            {{-- Profile Logo / Uploader --}}
+            
             <div x-data="{ openLogoModal: false }" class="relative">
                 <button @click="openLogoModal = true" class="w-16 h-16 rounded-full bg-slate-100 border-2 border-slate-200 flex items-center justify-center overflow-hidden hover:border-primary transition-colors group relative shadow-sm">
-                    @if($user->logo_path)
-                        <img src="{{ Str::startsWith($user->logo_path, 'http') ? $user->logo_path : asset('storage/' . $user->logo_path) }}" alt="Logo" class="w-full h-full object-cover">
-                    @else
-                        <span class="text-xl font-black text-slate-400 group-hover:text-primary transition-colors">{{ substr($user->organization ?? $user->name, 0, 1) }}</span>
-                    @endif
+                    <?php if($user->logo_path): ?>
+                        <img src="<?php echo e(Str::startsWith($user->logo_path, 'http') ? $user->logo_path : asset('storage/' . $user->logo_path)); ?>" alt="Logo" class="w-full h-full object-cover">
+                    <?php else: ?>
+                        <span class="text-xl font-black text-slate-400 group-hover:text-primary transition-colors"><?php echo e(substr($user->organization ?? $user->name, 0, 1)); ?></span>
+                    <?php endif; ?>
                     <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center">
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     </div>
@@ -25,8 +24,8 @@
                             <h3 class="text-lg font-black uppercase text-slate-900">Update Organization Logo</h3>
                             <button @click="openLogoModal = false" class="text-slate-400 hover:text-red-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
                         </div>
-                        <form action="{{ route('coach.profile.logo') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
-                            @csrf
+                        <form action="<?php echo e(route('coach.profile.logo')); ?>" method="POST" enctype="multipart/form-data" class="space-y-4">
+                            <?php echo csrf_field(); ?>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Upload New Logo</label>
                                 <input type="file" name="logo" accept="image/jpeg,image/png,image/webp" required class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
@@ -48,35 +47,37 @@
                 <div class="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest rounded-full mb-2">
                     Coach Portal
                 </div>
-                <h1 class="text-3xl font-black uppercase text-slate-900">Welcome, {{ $user->name }}</h1>
-                <p class="text-slate-600 text-sm mt-1">{{ $user->organization }} · {{ $user->sport }}</p>
+                <h1 class="text-3xl font-black uppercase text-slate-900">Welcome, <?php echo e($user->name); ?></h1>
+                <p class="text-slate-600 text-sm mt-1"><?php echo e($user->organization); ?> · <?php echo e($user->sport); ?></p>
             </div>
         </div>
-        <form action="{{ route('logout') }}" method="POST">
-            @csrf
+        <form action="<?php echo e(route('logout')); ?>" method="POST">
+            <?php echo csrf_field(); ?>
             <button type="submit" class="btn btn-outline bg-secondary py-2 px-4 text-xs uppercase tracking-wider text-white">Sign Out</button>
         </form>
     </div>
 
-    {{-- Flash Messages --}}
-    @if(session('success'))
+    
+    <?php if(session('success')): ?>
         <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 font-bold flex items-center gap-3">
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            {{ session('success') }}
+            <?php echo e(session('success')); ?>
+
         </div>
-    @endif
-    @if(session('error'))
+    <?php endif; ?>
+    <?php if(session('error')): ?>
         <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 font-bold flex items-center gap-3">
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            {{ session('error') }}
+            <?php echo e(session('error')); ?>
+
         </div>
-    @endif
+    <?php endif; ?>
 
 
-    {{-- ════ NO STORE YET ════ --}}
-    @if(!$store)
+    
+    <?php if(!$store): ?>
     <div class="max-w-2xl mx-auto">
-        @if($assignedDesigns->isEmpty())
+        <?php if($assignedDesigns->isEmpty()): ?>
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6 flex gap-4">
             <svg class="w-6 h-6 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <div>
@@ -86,7 +87,7 @@
 
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-8 text-center">
             <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-5 border border-primary/20">
@@ -95,12 +96,19 @@
             <h2 class="text-2xl font-black uppercase text-slate-900 mb-2">Request Your Team Store</h2>
             <p class="text-slate-600 text-sm mb-8 max-w-md mx-auto">Submit a store request to The Commission Apparel. Once our team approves it and your designs are finalized, you'll be able to set up your ordering page for parents.</p>
 
-            <form action="{{ route('coach.store.create') }}" method="POST" class="space-y-5 text-left max-w-md mx-auto">
-                @csrf
+            <form action="<?php echo e(route('coach.store.create')); ?>" method="POST" class="space-y-5 text-left max-w-md mx-auto">
+                <?php echo csrf_field(); ?>
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Official Store Name</label>
-                    <input type="text" name="name" required placeholder="e.g. {{ $user->organization }} — Fall 2025 Uniforms" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
-                    @error('name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                    <input type="text" name="name" required placeholder="e.g. <?php echo e($user->organization); ?> — Fall 2025 Uniforms" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                    <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><p class="text-red-500 text-xs mt-1 font-bold"><?php echo e($message); ?></p><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Description (optional)</label>
@@ -115,7 +123,14 @@
                         <option value="package_c">Package C — Full Program (Complete Kit)</option>
                         <option value="individual">Individual Items — Custom Selection</option>
                     </select>
-                    @error('package_type')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                    <?php $__errorArgs = ['package_type'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><p class="text-red-500 text-xs mt-1 font-bold"><?php echo e($message); ?></p><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
                 <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs text-amber-800 font-medium">
                     ⚠ Your store will require admin approval before parents can place orders. Designs must be finalized and approved before the store can go live.
@@ -125,32 +140,32 @@
         </div>
     </div>
 
-    {{-- ════ STORE PENDING ════ --}}
-    @elseif($store->status === 'pending')
+    
+    <?php elseif($store->status === 'pending'): ?>
     <div class="max-w-lg mx-auto bg-white border border-amber-200 rounded-xl shadow-sm p-10 text-center">
         <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-5 border border-amber-200">
             <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
         <h2 class="text-2xl font-black uppercase text-slate-900 mb-3">Store Awaiting Approval</h2>
-        <p class="text-slate-600 text-sm mb-4">Your store <span class="font-bold text-slate-900">{{ $store->name }}</span> has been submitted and is pending review by The Commission Apparel. You'll be notified when it's approved.</p>
+        <p class="text-slate-600 text-sm mb-4">Your store <span class="font-bold text-slate-900"><?php echo e($store->name); ?></span> has been submitted and is pending review by The Commission Apparel. You'll be notified when it's approved.</p>
         <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-600">
             In the meantime, your custom designs are being finalized by Ryan. Once approved, they'll be assigned to your profile and ready to add to your store.
         </div>
     </div>
 
-    {{-- ════ STORE DECLINED ════ --}}
-    @elseif($store->status === 'declined')
+    
+    <?php elseif($store->status === 'declined'): ?>
     <div class="max-w-lg mx-auto bg-white border border-red-200 rounded-xl shadow-sm p-10 text-center">
         <h2 class="text-2xl font-black uppercase text-slate-900 mb-3 text-red-600">Store Request Declined</h2>
         <p class="text-slate-600 text-sm">Your store request was declined. Please contact The Commission Apparel for more information.</p>
     </div>
 
-    {{-- ════ ACTIVE STORE (approved or submitted_to_admin) ════ --}}
-    @else
-    @php
+    
+    <?php else: ?>
+    <?php
         $totalAthletes = $store->parentOrders->count();
         $isLocked = $store->status === 'submitted_to_admin';
-    @endphp
+    ?>
 
     <div x-data="{ activeCoachTab: 'overview' }" class="space-y-6">
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-2 inline-flex gap-2">
@@ -173,15 +188,15 @@
         </div>
 
     <div x-show="activeCoachTab === 'overview'" class="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-8">
-        {{-- LEFT: Main management --}}
+        
         <div class="space-y-6">
 
-            {{-- ════ PRICING REVIEW BANNER ════ --}}
-            @if($store->items->isNotEmpty() && !$store->pricing_approved)
-                @php
+            
+            <?php if($store->items->isNotEmpty() && !$store->pricing_approved): ?>
+                <?php
                     $allPricesSet = $store->items->every(fn($item) => $item->wholesale_price > 0 && $item->retail_price > 0);
-                @endphp
-                @if($allPricesSet)
+                ?>
+                <?php if($allPricesSet): ?>
                 <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 shadow-sm">
                     <div class="flex items-start gap-4">
                         <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
@@ -192,48 +207,48 @@
                             <p class="text-sm text-blue-800 mb-4">The Commission Apparel has set the pricing for your items. Please review your wholesale cost, retail price (which parents will see), and your profit margins below. You must approve this pricing before your storefront can go live.</p>
                             
                             <div class="space-y-2 mb-5 bg-white bg-opacity-60 rounded-lg p-4">
-                                @foreach($store->items as $item)
+                                <?php $__currentLoopData = $store->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <div class="flex justify-between items-center text-sm border-b border-blue-100 pb-2 last:border-0 last:pb-0">
-                                    <span class="font-bold text-blue-900">{{ $item->name }}</span>
+                                    <span class="font-bold text-blue-900"><?php echo e($item->name); ?></span>
                                     <div class="flex gap-4 text-right">
-                                        <div class="w-20"><span class="text-[10px] uppercase text-blue-500 block leading-tight">Your Cost</span><span class="font-medium text-blue-800">${{ number_format($item->wholesale_price, 2) }}</span></div>
-                                        <div class="w-20"><span class="text-[10px] uppercase text-blue-500 block leading-tight">Store Price</span><span class="font-medium text-blue-800">${{ number_format($item->retail_price, 2) }}</span></div>
-                                        <div class="w-20"><span class="text-[10px] uppercase text-green-600 font-bold block leading-tight">Your Profit</span><span class="font-bold text-green-700">${{ number_format($item->retail_price - $item->wholesale_price, 2) }}</span></div>
+                                        <div class="w-20"><span class="text-[10px] uppercase text-blue-500 block leading-tight">Your Cost</span><span class="font-medium text-blue-800">$<?php echo e(number_format($item->wholesale_price, 2)); ?></span></div>
+                                        <div class="w-20"><span class="text-[10px] uppercase text-blue-500 block leading-tight">Store Price</span><span class="font-medium text-blue-800">$<?php echo e(number_format($item->retail_price, 2)); ?></span></div>
+                                        <div class="w-20"><span class="text-[10px] uppercase text-green-600 font-bold block leading-tight">Your Profit</span><span class="font-bold text-green-700">$<?php echo e(number_format($item->retail_price - $item->wholesale_price, 2)); ?></span></div>
                                     </div>
                                 </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
 
-                            <form action="{{ route('coach.store.pricing.approve', $store) }}" method="POST">
-                                @csrf
+                            <form action="<?php echo e(route('coach.store.pricing.approve', $store)); ?>" method="POST">
+                                <?php echo csrf_field(); ?>
                                 <button type="submit" class="bg-secondary hover:bg-[#a11825] text-white px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide transition-colors shadow-sm">I Approve This Pricing</button>
                             </form>
                         </div>
                     </div>
                 </div>
-                @endif
-            @endif
+                <?php endif; ?>
+            <?php endif; ?>
 
-            {{-- Store status bar --}}
+            
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 class="text-xl font-black uppercase text-slate-900">{{ $store->name }}</h2>
+                    <h2 class="text-xl font-black uppercase text-slate-900"><?php echo e($store->name); ?></h2>
                     <div class="flex items-center gap-3 mt-1.5 flex-wrap">
-                        @if($isLocked)
+                        <?php if($isLocked): ?>
                             <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">✓ Submitted to Production</span>
-                        @else
+                        <?php else: ?>
                             <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">● Live & Accepting Orders</span>
-                        @endif
-                        <span class="text-xs text-slate-500">Package: <strong class="text-slate-700 uppercase">{{ str_replace('_', ' ', $store->package_type ?? 'custom') }}</strong></span>
-                        @if($store->order_deadline)
-                            <span class="text-xs text-slate-500">Deadline: <strong class="text-slate-700">{{ $store->order_deadline->format('M d, Y') }}</strong></span>
-                        @endif
+                        <?php endif; ?>
+                        <span class="text-xs text-slate-500">Package: <strong class="text-slate-700 uppercase"><?php echo e(str_replace('_', ' ', $store->package_type ?? 'custom')); ?></strong></span>
+                        <?php if($store->order_deadline): ?>
+                            <span class="text-xs text-slate-500">Deadline: <strong class="text-slate-700"><?php echo e($store->order_deadline->format('M d, Y')); ?></strong></span>
+                        <?php endif; ?>
                     </div>
                 </div>
                     <div class="flex gap-2">
-                        <a href="{{ route('store.show', $store->slug) }}" target="_blank" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase rounded-lg transition-colors">Share Link</a>
-                        <a href="{{ route('coach.store.export', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase rounded-lg transition-colors">Export CSV</a>
-                        @if(!$isLocked && $totalAthletes > 0)
+                        <a href="<?php echo e(route('store.show', $store->slug)); ?>" target="_blank" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase rounded-lg transition-colors">Share Link</a>
+                        <a href="<?php echo e(route('coach.store.export', $store)); ?>" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase rounded-lg transition-colors">Export CSV</a>
+                        <?php if(!$isLocked && $totalAthletes > 0): ?>
                         <div x-data="{ openSubmitModal: false }">
                             <button @click="openSubmitModal = true" type="button" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors">Approve/Submit</button>
                             
@@ -258,110 +273,111 @@
                                     
                                     <div class="flex gap-3">
                                         <button @click="openSubmitModal = false" type="button" class="flex-1 py-3 bg-white border border-slate-300 text-slate-700 font-bold uppercase text-xs tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Review Again</button>
-                                        <form action="{{ route('coach.store.submit', $store) }}" method="POST" class="flex-1">
-                                            @csrf
+                                        <form action="<?php echo e(route('coach.store.submit', $store)); ?>" method="POST" class="flex-1">
+                                            <?php echo csrf_field(); ?>
                                             <button type="submit" class="w-full py-3 bg-secondary text-white font-bold uppercase text-xs tracking-wider rounded-lg hover:bg-[#a11825] transition-colors">Submit Final</button>
                                         </form>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
+                <?php endif; ?>
             </div>
 
-            {{-- Order Progress Tracker --}}
+            
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                     <h3 class="text-base font-black uppercase tracking-tight text-slate-900">Order Progress</h3>
-                    <span class="text-2xl font-black text-primary">{{ $totalAthletes }}</span>
+                    <span class="text-2xl font-black text-primary"><?php echo e($totalAthletes); ?></span>
                 </div>
                 <div class="p-5">
-                    @if($totalAthletes === 0)
+                    <?php if($totalAthletes === 0): ?>
                         <div class="text-center py-6 text-slate-500 text-sm">
                             <svg class="w-10 h-10 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             No orders received yet. Share your store link with your team.
                         </div>
-                    @else
+                    <?php else: ?>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            @foreach($store->parentOrders as $order)
+                            <?php $__currentLoopData = $store->parentOrders; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $order): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center font-black text-primary text-sm">{{ substr($order->athlete_name, 0, 1) }}</div>
+                                    <div class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center font-black text-primary text-sm"><?php echo e(substr($order->athlete_name, 0, 1)); ?></div>
                                     <div>
-                                        <div class="font-bold text-slate-900 text-sm">{{ $order->athlete_name }}</div>
-                                        <div class="text-[10px] text-slate-500 uppercase tracking-wide">{{ count(is_array($order->items_json) ? $order->items_json : []) }} item(s)</div>
+                                        <div class="font-bold text-slate-900 text-sm"><?php echo e($order->athlete_name); ?></div>
+                                        <div class="text-[10px] text-slate-500 uppercase tracking-wide"><?php echo e(count(is_array($order->items_json) ? $order->items_json : [])); ?> item(s)</div>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    @if($order->is_edited)
+                                    <?php if($order->is_edited): ?>
                                         <span class="text-[10px] font-bold text-orange-500 uppercase">Edited</span>
-                                    @endif
-                                    @if(!$isLocked)
-                                        <a href="{{ route('coach.order.edit', $order) }}" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 text-[10px] font-bold uppercase rounded hover:bg-slate-50 transition-colors">Edit</a>
-                                    @endif
+                                    <?php endif; ?>
+                                    <?php if(!$isLocked): ?>
+                                        <a href="<?php echo e(route('coach.order.edit', $order)); ?>" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 text-[10px] font-bold uppercase rounded hover:bg-slate-50 transition-colors">Edit</a>
+                                    <?php endif; ?>
                                     <span class="w-6 h-6 flex items-center justify-center bg-green-100 text-green-600 rounded-full border border-green-200">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                     </span>
                                 </div>
                             </div>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
 
-            {{-- Set Deadline --}}
-            @if(!$isLocked)
+            
+            <?php if(!$isLocked): ?>
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
                 <h3 class="text-sm font-black uppercase tracking-tight text-slate-900 mb-4">Order Deadline</h3>
-                <form action="{{ route('coach.store.deadline', $store) }}" method="POST" class="flex gap-3">
-                    @csrf
-                    <input type="date" name="deadline" value="{{ $store->order_deadline?->format('Y-m-d') }}" class="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-900 focus:border-primary focus:outline-none shadow-sm text-sm">
+                <form action="<?php echo e(route('coach.store.deadline', $store)); ?>" method="POST" class="flex gap-3">
+                    <?php echo csrf_field(); ?>
+                    <input type="date" name="deadline" value="<?php echo e($store->order_deadline?->format('Y-m-d')); ?>" class="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-900 focus:border-primary focus:outline-none shadow-sm text-sm">
                     <button type="submit" class="px-5 py-2.5 bg-secondary text-white text-sm font-bold rounded-lg hover:bg-[#a11825] transition-colors">Set Deadline</button>
                 </form>
             </div>
-            @endif
+            <?php endif; ?>
         </div>
 
-        {{-- RIGHT: Team Builder --}}
+        
         <div class="space-y-5">
-            {{-- Public Link --}}
+            
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
                 <h3 class="text-sm font-black uppercase tracking-tight text-slate-900 mb-3">Parent Order Link</h3>
-                @if(!$store->pricing_approved)
+                <?php if(!$store->pricing_approved): ?>
                     <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 font-medium">
                         ⚠ Store link is locked. You must approve the pricing structure before sharing the link with parents.
                     </div>
-                @else
+                <?php else: ?>
                     <div class="flex gap-2">
-                        <input type="text" readonly value="{{ url('/store/' . $store->slug) }}" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none" id="storeUrl">
+                        <input type="text" readonly value="<?php echo e(url('/store/' . $store->slug)); ?>" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none" id="storeUrl">
                         <button onclick="const input = document.getElementById('storeUrl'); input.select(); if(navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(input.value); } else { document.execCommand('copy'); } this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 2000)" class="px-3 py-2 bg-secondary text-white text-xs font-bold rounded-lg hover:bg-[#a11825] transition-colors">Copy</button>
                     </div>
                     <p class="text-[10px] text-slate-500 mt-2">Share this link with your athletes and parents.</p>
-                @endif
+                <?php endif; ?>
             </div>
 
-            {{-- Branding & Artwork --}}
-            @if(!$isLocked)
+            
+            <?php if(!$isLocked): ?>
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-slate-200 bg-slate-50">
                     <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Branding & Artwork</h3>
                     <p class="text-xs text-slate-500 mt-1">Customize how your store appears to parents.</p>
                 </div>
                 
-                {{-- Organization Logo --}}
+                
                 <div class="p-5 border-b border-slate-100">
                     <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Organization Logo (Circle Display)</h4>
-                    <form action="{{ route('coach.profile.logo') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
+                    <form action="<?php echo e(route('coach.profile.logo')); ?>" method="POST" enctype="multipart/form-data">
+                        <?php echo csrf_field(); ?>
                         <div class="flex items-center gap-4 mb-3">
                             <div class="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                @if($user->logo_path)
-                                    <img src="{{ Str::startsWith($user->logo_path, 'http') ? $user->logo_path : asset('storage/' . $user->logo_path) }}" alt="Logo" class="w-full h-full object-cover">
-                                @else
-                                    <span class="text-lg font-black text-slate-400">{{ substr($user->organization ?? $user->name, 0, 1) }}</span>
-                                @endif
+                                <?php if($user->logo_path): ?>
+                                    <img src="<?php echo e(Str::startsWith($user->logo_path, 'http') ? $user->logo_path : asset('storage/' . $user->logo_path)); ?>" alt="Logo" class="w-full h-full object-cover">
+                                <?php else: ?>
+                                    <span class="text-lg font-black text-slate-400"><?php echo e(substr($user->organization ?? $user->name, 0, 1)); ?></span>
+                                <?php endif; ?>
                             </div>
                             <div class="flex-1 flex gap-2 flex-col sm:flex-row">
                                 <input type="file" name="logo" accept="image/jpeg,image/png,image/webp" required class="flex-1 block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-lg bg-white focus:outline-none">
@@ -369,44 +385,58 @@
                             </div>
                         </div>
                         <p class="text-[10px] text-slate-500">Max 5MB. Square PNG with transparent background recommended.</p>
-                        @error('logo')<p class="text-red-500 text-[10px] mt-1 font-bold">{{ $message }}</p>@enderror
+                        <?php $__errorArgs = ['logo'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><p class="text-red-500 text-[10px] mt-1 font-bold"><?php echo e($message); ?></p><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                     </form>
                 </div>
 
-                {{-- Store Cover --}}
+                
                 <div class="p-5">
                     <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Store Cover Image (Wide Display)</h4>
-                    <form action="{{ route('coach.store.cover', $store) }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        @if($store->cover_image_path)
+                    <form action="<?php echo e(route('coach.store.cover', $store)); ?>" method="POST" enctype="multipart/form-data">
+                        <?php echo csrf_field(); ?>
+                        <?php if($store->cover_image_path): ?>
                             <div class="mb-3 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 aspect-[3/1] relative">
-                                <img src="{{ Storage::url($store->cover_image_path) }}" alt="Cover" class="w-full h-full object-cover">
+                                <img src="<?php echo e(Storage::url($store->cover_image_path)); ?>" alt="Cover" class="w-full h-full object-cover">
                             </div>
-                        @endif
+                        <?php endif; ?>
                         <div class="flex gap-2 flex-col sm:flex-row">
                             <input type="file" name="cover_image" accept="image/*" required class="flex-1 block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-lg bg-white focus:outline-none">
                             <button type="submit" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase rounded-lg hover:bg-[#a11825] transition-colors">Save Cover</button>
                         </div>
                         <p class="text-[10px] text-slate-500 mt-2">Max 5MB. High-resolution landscape image recommended.</p>
-                        @error('cover_image')<p class="text-red-500 text-[10px] mt-1 font-bold">{{ $message }}</p>@enderror
+                        <?php $__errorArgs = ['cover_image'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><p class="text-red-500 text-[10px] mt-1 font-bold"><?php echo e($message); ?></p><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                     </form>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
 
-            {{-- Team Builder: Add Items --}}
-            @if(!$isLocked)
+            
+            <?php if(!$isLocked): ?>
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-slate-200 bg-slate-50">
                     <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Store Builder</h3>
                     <p class="text-xs text-slate-500 mt-1">Add your approved custom designs to the store.</p>
                 </div>
                 <div class="p-5">
-                    @if($globalCatalog->isEmpty())
+                    <?php if($globalCatalog->isEmpty()): ?>
                         <div class="text-center py-6">
                             <p class="text-sm text-slate-500 font-medium">No designs in the catalog yet.</p>
                         </div>
-                    @else
+                    <?php else: ?>
                         <div x-data="{ catalogOpen: false }" class="mb-8">
                             <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-sm">
                                 <div>
@@ -448,16 +478,16 @@
                                     <!-- Grid Container -->
                                     <div class="flex-1 overflow-y-auto p-4 md:p-6">
                                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                                            @forelse($assignedDesigns as $design)
-                                                @php 
+                                            <?php $__empty_1 = true; $__currentLoopData = $assignedDesigns; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $design): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                                <?php 
                                                     $alreadyAdded = $store->items->pluck('design_catalog_id')->contains($design->id); 
-                                                @endphp
-                                                <div class="flex flex-col group {{ $alreadyAdded ? 'opacity-80' : '' }}">
+                                                ?>
+                                                <div class="flex flex-col group <?php echo e($alreadyAdded ? 'opacity-80' : ''); ?>">
                                                     <!-- Image Hero -->
-                                                    <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center {{ $alreadyAdded ? 'ring-2 ring-secondary ring-offset-2' : '' }}">
-                                                        @if(!empty($design->image_paths))
-                                                            @if(count($design->image_paths) > 1)
-                                                                <div class="w-full h-full relative group/slider" x-data="{ imgIdx: 0, imgs: {{ json_encode($design->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
+                                                    <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center <?php echo e($alreadyAdded ? 'ring-2 ring-secondary ring-offset-2' : ''); ?>">
+                                                        <?php if(!empty($design->image_paths)): ?>
+                                                            <?php if(count($design->image_paths) > 1): ?>
+                                                                <div class="w-full h-full relative group/slider" x-data="{ imgIdx: 0, imgs: <?php echo e(json_encode($design->image_paths)); ?>, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
                                                                     <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300">
                                                                     
                                                                     <!-- Manual Navigation Arrows -->
@@ -474,41 +504,41 @@
                                                                         </template>
                                                                     </div>
                                                                 </div>
-                                                            @else
-                                                                <img src="{{ $design->image_paths[0] }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
-                                                            @endif
-                                                        @elseif($design->image_url)
-                                                            <img src="{{ $design->image_url }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
-                                                        @else
+                                                            <?php else: ?>
+                                                                <img src="<?php echo e($design->image_paths[0]); ?>" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
+                                                            <?php endif; ?>
+                                                        <?php elseif($design->image_url): ?>
+                                                            <img src="<?php echo e($design->image_url); ?>" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
+                                                        <?php else: ?>
                                                             <div class="text-slate-400 font-medium text-xs">No Image</div>
-                                                        @endif
+                                                        <?php endif; ?>
                                                     </div>
 
                                                     <!-- Card Content -->
                                                     <div class="pt-4 flex flex-col text-left">
-                                                        <span class="text-base font-medium text-red-600 mb-1">{{ $design->type_label }}</span>
-                                                        <h3 class="text-base font-medium text-slate-900 mb-1 line-clamp-2" title="{{ $design->name }}">{{ $design->name }}</h3>
-                                                        <div class="text-base text-slate-500 mb-3">Base Cost: <span class="text-slate-900 font-medium">${{ number_format($design->wholesale_price, 2) }}</span></div>
+                                                        <span class="text-base font-medium text-red-600 mb-1"><?php echo e($design->type_label); ?></span>
+                                                        <h3 class="text-base font-medium text-slate-900 mb-1 line-clamp-2" title="<?php echo e($design->name); ?>"><?php echo e($design->name); ?></h3>
+                                                        <div class="text-base text-slate-500 mb-3">Base Cost: <span class="text-slate-900 font-medium">$<?php echo e(number_format($design->wholesale_price, 2)); ?></span></div>
                                                         
                                                         <div class="mt-auto">
-                                                            @if($alreadyAdded)
+                                                            <?php if($alreadyAdded): ?>
                                                                 <div class="w-full py-2.5 bg-secondary/10 text-secondary text-[11px] font-black uppercase tracking-widest rounded-xl text-center shadow-sm flex items-center justify-center gap-2">
                                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                                                     Added
                                                                 </div>
-                                                            @else
-                                                                <form action="{{ route('coach.store.item.add', $store) }}" method="POST">
-                                                                    @csrf
-                                                                    <input type="hidden" name="design_catalog_id" value="{{ $design->id }}">
+                                                            <?php else: ?>
+                                                                <form action="<?php echo e(route('coach.store.item.add', $store)); ?>" method="POST">
+                                                                    <?php echo csrf_field(); ?>
+                                                                    <input type="hidden" name="design_catalog_id" value="<?php echo e($design->id); ?>">
                                                                     <button type="submit" class="w-full py-2.5 bg-white border-2 border-slate-200 hover:border-slate-900 hover:bg-slate-900 hover:text-white text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all">
                                                                         Add to Store
                                                                     </button>
                                                                 </form>
-                                                            @endif
+                                                            <?php endif; ?>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            @empty
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                                 <div class="col-span-full py-12 text-center">
                                                     <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200">
                                                         <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -516,38 +546,38 @@
                                                     <h3 class="text-lg font-black text-slate-900 uppercase tracking-tight">No Designs Assigned</h3>
                                                     <p class="text-sm text-slate-500 mt-2 max-w-md mx-auto">You do not currently have any approved designs assigned to your profile. Please contact The Commission Apparel to request designs.</p>
                                                 </div>
-                                            @endforelse
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    @endif
+                    <?php endif; ?>
 
-                    {{-- Current items in store --}}
+                    
                     <h3 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3 border-b border-slate-100 pb-1">Current Store Items</h3>
-                    @if($store->items->isNotEmpty())
+                    <?php if($store->items->isNotEmpty()): ?>
                         <div class="space-y-3">
-                            @foreach($store->items as $item)
+                            <?php $__currentLoopData = $store->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm group hover:border-primary transition-colors">
                                 <div class="flex-1 pr-3">
-                                    <div class="font-bold text-sm text-slate-900">{{ $item->name }}</div>
+                                    <div class="font-bold text-sm text-slate-900"><?php echo e($item->name); ?></div>
                                     <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-1 flex gap-3">
-                                        <span>Type: <span class="text-primary">{{ $item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $item->types ?? [])) }}</span></span>
-                                        <span>Manufacturer's Price: <span class="text-slate-700">${{ number_format($item->wholesale_price, 2) }}</span></span>
-                                        <span>Store Price: <span class="text-green-700">${{ number_format($item->retail_price, 2) }}</span></span>
+                                        <span>Type: <span class="text-primary"><?php echo e($item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $item->types ?? []))); ?></span></span>
+                                        <span>Manufacturer's Price: <span class="text-slate-700">$<?php echo e(number_format($item->wholesale_price, 2)); ?></span></span>
+                                        <span>Store Price: <span class="text-green-700">$<?php echo e(number_format($item->retail_price, 2)); ?></span></span>
                                     </div>
                                     <div class="mt-2">
-                                        <form action="{{ route('coach.store.item.markup', $item) }}" method="POST" class="flex flex-wrap items-end gap-2">
-                                            @csrf
+                                        <form action="<?php echo e(route('coach.store.item.markup', $item)); ?>" method="POST" class="flex flex-wrap items-end gap-2">
+                                            <?php echo csrf_field(); ?>
                                             <div>
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Enter your retail price ($)</label>
                                                 <input
                                                     type="number"
                                                     name="retail_price"
-                                                    min="{{ $item->wholesale_price }}"
+                                                    min="<?php echo e($item->wholesale_price); ?>"
                                                     step="0.01"
-                                                    value="{{ number_format($item->retail_price, 2, '.', '') }}"
+                                                    value="<?php echo e(number_format($item->retail_price, 2, '.', '')); ?>"
                                                     class="w-24 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
                                                 >
                                             </div>
@@ -556,7 +586,7 @@
                                                 <input
                                                     type="number"
                                                     name="sort_order"
-                                                    value="{{ $item->sort_order }}"
+                                                    value="<?php echo e($item->sort_order); ?>"
                                                     class="w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
                                                 >
                                             </div>
@@ -566,27 +596,27 @@
                                         </form>
                                     </div>
                                 </div>
-                                <form action="{{ route('coach.store.item.remove', $item) }}" method="POST" onsubmit="return confirm('Remove this item from your store?')">
-                                    @csrf
+                                <form action="<?php echo e(route('coach.store.item.remove', $item)); ?>" method="POST" onsubmit="return confirm('Remove this item from your store?')">
+                                    <?php echo csrf_field(); ?>
                                     <button class="text-white transition-colors px-3 py-1.5 bg-slate-900 border border-slate-900 rounded-lg hover:bg-black flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                                         Remove
                                     </button>
                                 </form>
                             </div>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </div>
-                    @else
+                    <?php else: ?>
                         <p class="text-xs text-slate-400 text-center py-4">No items added to store yet.</p>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
-            @else
+            <?php else: ?>
             <div class="bg-green-50 border border-green-200 rounded-xl p-5 text-sm text-green-800">
                 <p class="font-bold uppercase text-sm mb-1">✓ Store Submitted for Production</p>
                 <p class="text-xs text-green-700">The master roster has been submitted. No further modifications can be made. Contact The Commission Apparel if corrections are needed.</p>
             </div>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 
@@ -594,27 +624,27 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Total Sales</p>
-                <p class="text-3xl font-black text-green-700">${{ number_format($salesSummary['total_sales'], 2) }}</p>
+                <p class="text-3xl font-black text-green-700">$<?php echo e(number_format($salesSummary['total_sales'], 2)); ?></p>
             </div>
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Orders Submitted</p>
-                <p class="text-3xl font-black text-slate-900">{{ $salesSummary['orders_count'] }}</p>
+                <p class="text-3xl font-black text-slate-900"><?php echo e($salesSummary['orders_count']); ?></p>
             </div>
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Average Order</p>
-                <p class="text-3xl font-black text-primary">${{ number_format($salesSummary['average_order_value'], 2) }}</p>
-                <p class="text-[10px] uppercase tracking-wider text-slate-500 mt-1">Items sold: {{ $salesSummary['total_items_sold'] }}</p>
+                <p class="text-3xl font-black text-primary">$<?php echo e(number_format($salesSummary['average_order_value'], 2)); ?></p>
+                <p class="text-[10px] uppercase tracking-wider text-slate-500 mt-1">Items sold: <?php echo e($salesSummary['total_items_sold']); ?></p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="bg-white border-2 border-slate-200 rounded-xl shadow-sm p-5">
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Due to The Commission Apparel</p>
-                <p class="text-3xl font-black text-red-600">${{ number_format($salesSummary['total_wholesale'] ?? 0, 2) }}</p>
+                <p class="text-3xl font-black text-red-600">$<?php echo e(number_format($salesSummary['total_wholesale'] ?? 0, 2)); ?></p>
             </div>
             <div class="bg-white border-2 border-green-200 rounded-xl shadow-sm p-5">
                 <p class="text-xs font-bold uppercase tracking-wider text-green-600 mb-1">Net Proceeds</p>
-                <p class="text-3xl font-black text-green-700">${{ number_format($salesSummary['net_proceeds'] ?? 0, 2) }}</p>
+                <p class="text-3xl font-black text-green-700">$<?php echo e(number_format($salesSummary['net_proceeds'] ?? 0, 2)); ?></p>
             </div>
         </div>
 
@@ -622,24 +652,26 @@
             <div class="p-5 border-b border-slate-200 bg-slate-50">
                 <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Sales by Parent Order</h3>
             </div>
-            @if(empty($salesSummary['order_rows']))
+            <?php if(empty($salesSummary['order_rows'])): ?>
                 <div class="p-8 text-center text-sm text-slate-500">No parent orders yet. Share your parent order link to start generating sales.</div>
-            @else
+            <?php else: ?>
                 <div class="divide-y divide-slate-100">
-                    @foreach($salesSummary['order_rows'] as $row)
+                    <?php $__currentLoopData = $salesSummary['order_rows']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <div class="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                             <div>
-                                <p class="font-bold text-slate-900 text-sm">{{ $row['athlete_name'] }}</p>
-                                <p class="text-[10px] uppercase tracking-wider text-slate-500">{{ $row['items_count'] }} item(s) · {{ $row['submitted_at']->format('M d, Y') }}</p>
+                                <p class="font-bold text-slate-900 text-sm"><?php echo e($row['athlete_name']); ?></p>
+                                <p class="text-[10px] uppercase tracking-wider text-slate-500"><?php echo e($row['items_count']); ?> item(s) · <?php echo e($row['submitted_at']->format('M d, Y')); ?></p>
                             </div>
-                            <p class="text-base font-black text-green-700">${{ number_format($row['order_total'], 2) }}</p>
+                            <p class="text-base font-black text-green-700">$<?php echo e(number_format($row['order_total'], 2)); ?></p>
                         </div>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
     </div>
-    @endif
+    <?php endif; ?>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>

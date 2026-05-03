@@ -187,7 +187,7 @@
                 {{-- Store Items Grid --}}
                 <div class="mb-8">
                     <h2 class="text-xl font-black uppercase tracking-tight text-slate-900 mb-6 flex items-center justify-between">
-                        <span>Available Designs</span>
+                        <span>Available Merchandise</span>
                         <span class="text-sm font-bold text-slate-500"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Selected</span>
                     </h2>
                     
@@ -203,21 +203,23 @@
                             $typeLabel = $item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $types));
                         @endphp
 
-                        <div class="bg-white border rounded-2xl overflow-hidden shadow-sm flex flex-col group relative transition-all duration-300"
-                             :class="items['{{ $item->id }}'].selected ? 'border-secondary ring-2 ring-secondary/20 shadow-md' : 'border-slate-200 hover:border-secondary/50 hover:shadow-lg'">
+                        <div class="flex flex-col group relative transition-all duration-300"
+                             :class="items['{{ $item->id }}'].selected ? 'opacity-90' : ''">
                             
                             <!-- Hidden Select -->
                             <input type="checkbox" name="items[{{ $item->id }}][selected]" value="1" x-model="items['{{ $item->id }}'].selected" class="hidden">
                             <input type="hidden" name="items[{{ $item->id }}][name]" value="{{ $item->name }}">
 
                             <!-- Selected Badge -->
-                            <div x-show="items['{{ $item->id }}'].selected" x-transition class="absolute top-4 right-4 bg-secondary text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full z-10 flex items-center gap-1 shadow-md">
+                            <div x-show="items['{{ $item->id }}'].selected" x-transition class="absolute top-4 right-4 bg-secondary text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full z-20 flex items-center gap-1 shadow-md">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                 Selected
                             </div>
 
                             <!-- Image Hero -->
-                            <div class="aspect-[4/3] bg-[#f0f2f5] relative overflow-hidden group-hover:bg-[#e4e7ec] transition-colors flex items-center justify-center cursor-pointer" @click="openPanel('{{ $item->id }}')">
+                            <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center cursor-pointer" 
+                                 :class="items['{{ $item->id }}'].selected ? 'ring-2 ring-secondary ring-offset-2' : ''"
+                                 @click="openPanel('{{ $item->id }}')">
                                 @if(!empty($item->image_paths))
                                     @if(count($item->image_paths) > 1)
                                         <div class="w-full h-full relative group/slider" x-data="{ imgIdx: 0, imgs: {{ json_encode($item->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
@@ -248,15 +250,15 @@
                             </div>
 
                             <!-- Card Content -->
-                            <div class="p-4 md:p-5 flex flex-col flex-1 bg-white border-t border-slate-100">
-                                <span class="text-[10px] font-black uppercase tracking-widest text-red-600 mb-2">{{ $typeLabel }}</span>
-                                <h3 class="text-base font-black text-slate-900 leading-tight mb-2">{{ $item->name }}</h3>
-                                <div class="text-sm font-bold text-slate-700">
+                            <div class="pt-4 flex flex-col flex-1 text-left">
+                                <span class="text-base font-medium text-red-600 mb-1">{{ $typeLabel }}</span>
+                                <h3 class="text-base font-medium text-slate-900 mb-1">{{ $item->name }}</h3>
+                                <div class="text-base text-slate-500 mb-3">
                                     Store Price:
-                                    <span class="text-green-700">${{ number_format($item->retail_price, 2) }}</span>
+                                    <span class="text-slate-900 font-medium">${{ number_format($item->retail_price, 2) }}</span>
                                 </div>
                                 
-                                <div class="mt-auto pt-4">
+                                <div class="mt-auto">
                                     <button type="button" @click.prevent="openPanel('{{ $item->id }}')" class="w-full py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all"
                                             :class="items['{{ $item->id }}'].selected ? 'bg-slate-50 border-2 border-slate-300 text-slate-600' : 'bg-secondary text-white hover:bg-[#a11825] shadow-sm hover:shadow-md border-2 border-transparent'"
                                             x-text="items['{{ $item->id }}'].selected ? 'EDIT SIZING' : 'ORDER'">
@@ -357,6 +359,12 @@
                                     <h3 class="text-xl font-black text-slate-900 mb-1">{{ $item->name }}</h3>
                                     <p class="text-[10px] font-bold uppercase tracking-widest text-primary">{{ $item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $types)) }}</p>
                                     <p class="text-xs font-bold text-green-700 mt-2">Store Price: ${{ number_format($item->retail_price, 2) }}</p>
+                                    @if($item->designCatalog?->description)
+                                        <div class="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Product Details</p>
+                                            <p class="text-sm text-slate-700 font-medium whitespace-pre-wrap">{{ $item->designCatalog->description }}</p>
+                                        </div>
+                                    @endif
                                 </div>
                                 
                                 <div class="space-y-5">

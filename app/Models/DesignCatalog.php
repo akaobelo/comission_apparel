@@ -10,7 +10,8 @@ class DesignCatalog extends Model
 
     protected $fillable = [
         'name',
-        'collection_name',
+        'description',
+        'design_collection_id',
         'sport',
         'type',
         'types',
@@ -31,6 +32,11 @@ class DesignCatalog extends Model
         'types' => 'array',
         'image_paths' => 'array',
     ];
+
+    public function designCollection()
+    {
+        return $this->belongsTo(DesignCollection::class);
+    }
 
     // Coaches this design is assigned to
     public function coaches()

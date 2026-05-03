@@ -49,7 +49,7 @@ class AdminController extends Controller
             ->get();
 
         // Design catalog
-        $designCatalog = DesignCatalog::orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
+        $designCatalog = DesignCatalog::orderBy('sort_order', 'desc')->orderBy('created_at', 'desc')->get();
 
         // Production orders (in production status)
         $productionStores = TeamStore::where('status', 'approved')
@@ -71,11 +71,7 @@ class AdminController extends Controller
             ->orderBy('sport')
             ->pluck('sport');
 
-        $availableCollections = DesignCatalog::whereNotNull('collection_name')
-            ->where('collection_name', '!=', '')
-            ->distinct()
-            ->orderBy('collection_name')
-            ->pluck('collection_name');
+        $designCollections = \App\Models\DesignCollection::orderBy('name')->get();
 
         $passwordResetLogs = PasswordResetLog::with('user')->latest()->get();
 
@@ -90,7 +86,7 @@ class AdminController extends Controller
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStores',
             'designCatalog', 'productionStores', 'quoteRequests', 'landingCollections', 'allStores',
-            'availableSports', 'availableCollections', 'passwordResetLogs', 'testimonials', 'heroSettings'
+            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'heroSettings'
         ));
     }
 
@@ -99,7 +95,7 @@ class AdminController extends Controller
     public function editCoach(User $user)
     {
         if ($user->role !== 'coach') abort(404);
-        $designCatalog = DesignCatalog::orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
+        $designCatalog = DesignCatalog::orderBy('sort_order', 'desc')->orderBy('created_at', 'desc')->get();
         $assignedDesignIds = $user->designCatalog()->pluck('design_catalog_id')->toArray();
         return view('admin.coach_edit', compact('user', 'designCatalog', 'assignedDesignIds'));
     }
@@ -154,8 +150,8 @@ class AdminController extends Controller
     public function createDesign(Request $request)
     {
         $validated = $request->validate([
-            'name'             => ['required', 'string', 'max:255'],
-            'collection_name'  => ['nullable', 'string', 'max:255'],
+            'name'                 => ['required', 'string', 'max:255'],
+            'design_collection_id' => ['nullable', 'exists:design_collections,id'],
             'sport'            => ['nullable', 'string', 'max:100'],
             'types'            => ['required', 'array', 'min:1'],
             'types.*'          => ['string', 'in:accessory,arm_sleeve,backpack,headwear,hoodie,jacket,leggings,pants,polo,shirt_short,shirt_long,shorts,socks,uniform_top,uniform_bottom,uniform_set,uniform_set_2,warmup_top,warmup_bottom,warmup_set,warmup_set_2,uniform_package_gold,uniform_package_silver,uniform_package_bronze,uniform_package_custom'],
@@ -165,6 +161,7 @@ class AdminController extends Controller
             'has_name_field'   => ['boolean'],
             'has_number_field' => ['boolean'],
             'notes'            => ['nullable', 'string'],
+            'description'      => ['nullable', 'string'],
             'wholesale_price'  => ['nullable', 'numeric', 'min:0'],
             'sort_order'       => ['nullable', 'integer'],
         ]);
@@ -220,8 +217,8 @@ class AdminController extends Controller
     public function updateDesign(Request $request, DesignCatalog $design)
     {
         $validated = $request->validate([
-            'name'             => ['required', 'string', 'max:255'],
-            'collection_name'  => ['nullable', 'string', 'max:255'],
+            'name'                 => ['required', 'string', 'max:255'],
+            'design_collection_id' => ['nullable', 'exists:design_collections,id'],
             'sport'            => ['nullable', 'string', 'max:100'],
             'types'            => ['required', 'array', 'min:1'],
             'types.*'          => ['string', 'in:accessory,arm_sleeve,backpack,headwear,hoodie,jacket,leggings,pants,polo,shirt_short,shirt_long,shorts,socks,uniform_top,uniform_bottom,uniform_set,uniform_set_2,warmup_top,warmup_bottom,warmup_set,warmup_set_2,uniform_package_gold,uniform_package_silver,uniform_package_bronze,uniform_package_custom'],
@@ -231,6 +228,7 @@ class AdminController extends Controller
             'has_name_field'   => ['boolean'],
             'has_number_field' => ['boolean'],
             'notes'            => ['nullable', 'string'],
+            'description'      => ['nullable', 'string'],
             'wholesale_price'  => ['nullable', 'numeric', 'min:0'],
             'sort_order'       => ['nullable', 'integer'],
         ]);
@@ -245,13 +243,25 @@ class AdminController extends Controller
             $existingPaths[] = $design->image_url;
         }
 
-        // Handle image removals first
+        // Handle explicit reordering from frontend
+        if ($request->has('existing_images') && is_array($request->existing_images)) {
+            // Keep only paths that were originally part of the design to prevent spoofing
+            $reordered = [];
+            foreach ($request->existing_images as $path) {
+                if (in_array($path, $existingPaths)) {
+                    $reordered[] = $path;
+                }
+            }
+            $existingPaths = $reordered;
+        }
+
+        // Handle image removals
         if ($request->has('remove_images') && is_array($request->remove_images)) {
-            foreach ($request->remove_images as $index) {
-                if (isset($existingPaths[$index])) {
-                    $pathToRemove = str_replace('/storage/', '', $existingPaths[$index]);
+            foreach ($request->remove_images as $pathToRemoveRaw) {
+                if (($key = array_search($pathToRemoveRaw, $existingPaths)) !== false) {
+                    $pathToRemove = str_replace('/storage/', '', $pathToRemoveRaw);
                     \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
-                    unset($existingPaths[$index]);
+                    unset($existingPaths[$key]);
                 }
             }
             $existingPaths = array_values($existingPaths); // re-index
@@ -285,7 +295,64 @@ class AdminController extends Controller
         StoreItem::where('design_catalog_id', $design->id)->update($syncData);
 
         return redirect()->route('admin.dashboard')
-            ->with('success', "Design \"{$design->name}\" updated successfully.");
+            ->with('success', "Design \"{$design->name}\" updated.");
+    }
+
+    // ─── DESIGN COLLECTION MANAGEMENT ───────────────────────────────────────────
+
+    public function createDesignCollection(Request $request)
+    {
+        $validated = $request->validate([
+            'name'  => ['required', 'string', 'max:255'],
+            'image' => ['nullable', 'image', 'max:10240'],
+        ]);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('collections', 'public');
+            $validated['image_path'] = '/storage/' . $path;
+        }
+
+        \App\Models\DesignCollection::create($validated);
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Collection \"{$validated['name']}\" added.");
+    }
+
+    public function updateDesignCollection(Request $request, \App\Models\DesignCollection $collection)
+    {
+        $validated = $request->validate([
+            'name'  => ['required', 'string', 'max:255'],
+            'image' => ['nullable', 'image', 'max:10240'],
+        ]);
+
+        if ($request->hasFile('image')) {
+            // Delete old
+            if ($collection->image_path) {
+                $pathToRemove = str_replace('/storage/', '', $collection->image_path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            }
+            $path = $request->file('image')->store('collections', 'public');
+            $validated['image_path'] = '/storage/' . $path;
+        }
+
+        $collection->update($validated);
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Collection \"{$validated['name']}\" updated.");
+    }
+
+    public function deleteDesignCollection(\App\Models\DesignCollection $collection)
+    {
+        if ($collection->image_path) {
+            $pathToRemove = str_replace('/storage/', '', $collection->image_path);
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+        }
+
+        // Associated designs will have their design_collection_id set to null automatically due to nullOnDelete constraint.
+        $collection->delete();
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Collection removed.");
     }
 
     public function assignDesign(Request $request, User $coach)

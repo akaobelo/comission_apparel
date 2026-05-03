@@ -71,50 +71,71 @@
                     </div>
                 </div>
 
-                <div>
-                    <h3 class="text-sm font-black uppercase tracking-wider text-slate-700 mb-4 pb-2 border-b border-slate-200">Order Items</h3>
+                <div x-data="orderItemsEditor()">
+                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-200">
+                        <h3 class="text-sm font-black uppercase tracking-wider text-slate-700">Order Items</h3>
+                        <div class="relative flex items-center">
+                            <select x-model="newItemId" class="bg-white border border-slate-300 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-600 focus:border-primary focus:outline-none shadow-sm appearance-none pr-8">
+                                <option value="">+ Add Store Item</option>
+                                <template x-for="item in availableItems" :key="item.id">
+                                    <option :value="item.id" x-text="item.name"></option>
+                                </template>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-12 flex items-center px-2 text-slate-500">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </div>
+                            <button type="button" @click="addItem()" class="ml-2 px-3 py-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm hover:bg-[#a11825] transition-colors">Add</button>
+                        </div>
+                    </div>
+
                     <div class="space-y-4">
-                        @foreach(is_array($order->items_json) ? $order->items_json : [] as $idx => $item)
-                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                            <div class="flex items-start justify-between gap-4 flex-wrap">
-                                <div>
-                                    <div class="font-bold text-slate-900">{{ $item['name'] ?? 'Unknown Item' }}</div>
-                                    <div class="text-xs font-bold uppercase tracking-wider text-primary mt-0.5">{{ str_replace('_', ' ', $item['type'] ?? '') }}</div>
-                                </div>
-                                <input type="hidden" name="items[{{ $idx }}][id]" value="{{ $item['id'] ?? $idx }}">
-                                <input type="hidden" name="items[{{ $idx }}][name]" value="{{ $item['name'] ?? '' }}">
-                                @if(isset($item['types']) && is_array($item['types']))
-                                    @foreach($item['types'] as $tIdx => $type)
-                                        <input type="hidden" name="items[{{ $idx }}][types][{{ $tIdx }}]" value="{{ $type }}">
-                                    @endforeach
-                                @else
-                                    <input type="hidden" name="items[{{ $idx }}][type]" value="{{ $item['type'] ?? '' }}">
-                                @endif
-                                <div class="flex flex-wrap gap-3">
-                                    @php
-                                        $sizes = $item['sizes'] ?? [];
-                                        if (empty($sizes) && isset($item['size'])) {
-                                            $sizes = ['default' => $item['size']];
-                                        }
-                                    @endphp
-                                    @foreach($sizes as $sizeType => $sizeVal)
-                                        <div>
-                                            <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">{{ $sizeType === 'default' ? 'Size' : str_replace('_', ' ', $sizeType) }}</label>
-                                            <select name="items[{{ $idx }}][sizes][{{ $sizeType }}]" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                                                @foreach($sizeChart as $size)
-                                                    <option value="{{ $size }}" {{ $sizeVal === $size ? 'selected' : '' }}>{{ $size }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    @endforeach
+                        <template x-for="(item, idx) in items" :key="idx">
+                            <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl relative">
+                                <button type="button" @click="removeItem(idx)" class="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Remove item">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                                
+                                <div class="flex items-start justify-between gap-4 flex-wrap pr-8">
                                     <div>
-                                        <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Qty</label>
-                                        <input type="number" name="items[{{ $idx }}][qty]" value="{{ old("items.{$idx}.qty", $item['qty'] ?? 1) }}" min="1" max="10" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm w-16">
+                                        <div class="font-bold text-slate-900" x-text="item.name || 'Unknown Item'"></div>
+                                        <div class="text-xs font-bold uppercase tracking-wider text-primary mt-0.5" x-text="(item.type || '').replace(/_/g, ' ')"></div>
+                                    </div>
+                                    
+                                    <input type="hidden" :name="`items[${idx}][id]`" :value="item.id">
+                                    <input type="hidden" :name="`items[${idx}][name]`" :value="item.name">
+                                    
+                                    <template x-if="item.types && Array.isArray(item.types)">
+                                        <template x-for="(t, tIdx) in item.types" :key="tIdx">
+                                            <input type="hidden" :name="`items[${idx}][types][${tIdx}]`" :value="t">
+                                        </template>
+                                    </template>
+                                    <template x-if="!item.types || !Array.isArray(item.types)">
+                                        <input type="hidden" :name="`items[${idx}][type]`" :value="item.type || ''">
+                                    </template>
+                                    
+                                    <div class="flex flex-wrap gap-3">
+                                        <template x-for="(sizeVal, sizeType) in item.sizes" :key="sizeType">
+                                            <div>
+                                                <label class="block text-[10px] font-black uppercase text-slate-500 mb-1" x-text="sizeType === 'default' ? 'Size' : sizeType.replace(/_/g, ' ')"></label>
+                                                <select :name="`items[${idx}][sizes][${sizeType}]`" x-model="item.sizes[sizeType]" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm min-w-[80px]">
+                                                    @foreach($sizeChart as $size)
+                                                        <option value="{{ $size }}">{{ $size }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </template>
+                                        
+                                        <div>
+                                            <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Qty</label>
+                                            <input type="number" :name="`items[${idx}][qty]`" x-model="item.qty" min="1" max="50" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm w-16">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                        </template>
+                        <div x-show="items.length === 0" class="p-6 text-center text-slate-500 font-bold text-sm uppercase tracking-wider bg-slate-50 border border-slate-200 border-dashed rounded-xl">
+                            No items in order
                         </div>
-                        @endforeach
                     </div>
                 </div>
 
@@ -126,4 +147,55 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('orderItemsEditor', () => ({
+        items: @json(is_array($order->items_json) ? $order->items_json : []),
+        availableItems: @json($availableItems),
+        newItemId: '',
+        
+        init() {
+            // Ensure all existing items have a proper sizes object
+            this.items.forEach(item => {
+                if (!item.sizes && item.size) {
+                    item.sizes = { 'default': item.size };
+                } else if (!item.sizes) {
+                    item.sizes = {};
+                }
+            });
+        },
+        
+        addItem() {
+            if (!this.newItemId) return;
+            const storeItem = this.availableItems.find(i => i.id == this.newItemId);
+            if (!storeItem) return;
+            
+            const sizes = {};
+            if (storeItem.sizedTypes && storeItem.sizedTypes.length > 0) {
+                storeItem.sizedTypes.forEach(t => {
+                    sizes[t] = 'AS'; // default size
+                });
+            } else {
+                sizes['default'] = 'AS'; // fallback
+            }
+            
+            this.items.push({
+                id: storeItem.id,
+                name: storeItem.name,
+                type: storeItem.types[0] || 'Unknown',
+                types: storeItem.types,
+                qty: 1,
+                sizes: sizes
+            });
+            
+            this.newItemId = '';
+        },
+        
+        removeItem(idx) {
+            this.items.splice(idx, 1);
+        }
+    }));
+});
+</script>
 @endsection

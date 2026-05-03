@@ -528,7 +528,31 @@
                 ];
             @endphp
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <!-- ADD NEW COLLECTION -->
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50">
+                        <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Collection</h2>
+                        <p class="text-xs text-slate-500 mt-1">Create collection entities with cover photos.</p>
+                    </div>
+                    <div class="p-5 border-b border-slate-200">
+                        <form action="{{ route('admin.design-collection.create') }}" method="POST" enctype="multipart/form-data" class="flex flex-col md:flex-row gap-4 items-end">
+                            @csrf
+                            <div class="flex-grow w-full">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name</label>
+                                <input type="text" name="name" required placeholder="e.g. Tampa Xpress Track Club Collection" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div class="flex-grow w-full md:w-auto">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Cover Image</label>
+                                <input type="file" name="image" accept="image/*" class="w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer">
+                            </div>
+                            <button type="submit" class="w-full md:w-auto px-6 py-2.5 bg-secondary hover:bg-[#a11825] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors whitespace-nowrap shadow-sm">
+                                Add Collection
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2">
                     <div class="p-5 border-b border-slate-200 bg-slate-50">
                         <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Design</h2>
                         <p class="text-xs text-slate-500 mt-1">Create catalog entries for coaches and stores.</p>
@@ -541,30 +565,18 @@
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Design Name</label>
                                 <input type="text" name="name" required placeholder="e.g. Springfield Eagles - Home Jersey" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
-                            <div x-data="{
-                                open: false,
-                                search: '',
-                                options: {{ json_encode(is_array($availableCollections) ? array_values($availableCollections) : $availableCollections->values()->all()) }},
-                                get filteredOptions() {
-                                    if (this.search === '') return this.options;
-                                    return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
-                                },
-                                selectOption(val) {
-                                    this.search = val;
-                                    this.open = false;
-                                }
-                            }" class="relative">
+                            <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name (Optional)</label>
                                 <div class="relative">
-                                    <input type="text" name="collection_name" x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Tampa Xpress Track Club Collection" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 pr-10 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
-                                    <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-700 focus:outline-none">
+                                    <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
+                                        <option value="">Select a Collection...</option>
+                                        @foreach($designCollections as $collection)
+                                            <option value="{{ $collection->id }}">{{ $collection->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                                    </button>
-                                </div>
-                                <div x-show="open && filteredOptions.length > 0" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                    <template x-for="opt in filteredOptions" :key="opt">
-                                        <div @click="selectOption(opt)" class="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer font-medium" x-text="opt"></div>
-                                    </template>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -615,6 +627,10 @@
                                 </select>
                             </div>
                         </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Product Description (Optional)</label>
+                            <textarea name="description" rows="3" placeholder="Outline the item(s) included, especially for packages..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm"></textarea>
+                        </div>
                         <div class="grid grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Upload Images</label>
@@ -646,7 +662,86 @@
                     </div>
                 </div>
 
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden" x-data="{
+                <!-- UPDATE EXISTING COLLECTIONS -->
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expanded: false }">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expanded = !expanded">
+                        <div>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Update Existing Collections</h2>
+                            <p class="text-xs text-slate-500 mt-1">Edit or remove existing collection entities and their cover images.</p>
+                        </div>
+                        <svg class="w-5 h-5 text-slate-400 transform transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div class="max-h-[900px] overflow-y-auto" x-show="expanded" x-cloak>
+                        @if($designCollections->isEmpty())
+                            <div class="p-8 text-center text-slate-500 font-bold uppercase tracking-widest text-sm">No collections created yet.</div>
+                        @else
+                            @foreach($designCollections as $collection)
+                            <div x-data="{ showModal: false }" class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0">
+                                <div class="flex items-center gap-4 flex-1">
+                                    @if($collection->image_path)
+                                        <div class="w-12 h-12 rounded-lg bg-slate-200 overflow-hidden flex-shrink-0">
+                                            <img src="{{ $collection->image_path }}" class="w-full h-full object-cover">
+                                        </div>
+                                    @else
+                                        <div class="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                            <span class="text-[10px] text-slate-400 font-bold">NONE</span>
+                                        </div>
+                                    @endif
+                                    <div class="text-sm font-bold text-slate-900">{{ $collection->name }}</div>
+                                </div>
+                                
+                                <button @click="showModal = true" class="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-primary flex items-center gap-1 transition-colors">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    Edit
+                                </button>
+
+                                <div x-show="showModal" class="fixed inset-0 z-[100] flex items-center justify-center" x-cloak>
+                                    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" @click="showModal = false" x-transition.opacity></div>
+                                    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" 
+                                         x-transition:enter="transition ease-out duration-300"
+                                         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                                         x-transition:leave="transition ease-in duration-200"
+                                         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                                         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                                        <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+                                            <h3 class="font-black uppercase tracking-tight text-slate-900">Edit Collection</h3>
+                                            <button @click="showModal = false" class="text-slate-400 hover:text-slate-600 transition-colors">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                        </div>
+                                        <div class="p-5">
+                                            <form action="{{ route('admin.design-collection.update', $collection) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                                @csrf
+                                                @method('PUT')
+                                                <div>
+                                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name</label>
+                                                    <input type="text" name="name" value="{{ $collection->name }}" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Update Cover Image</label>
+                                                    <input type="file" name="image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300">
+                                                </div>
+                                                <div class="pt-2">
+                                                    <button type="submit" class="w-full py-2.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-700 transition-colors">Save Changes</button>
+                                                </div>
+                                            </form>
+                                            <form action="{{ route('admin.design-collection.delete', $collection) }}" method="POST" class="mt-4 pt-4 border-t border-slate-100" onsubmit="return confirm('Delete this collection? Designs in this collection will NOT be deleted, but will lose their collection grouping.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="w-full py-2.5 bg-white border border-red-200 text-red-600 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-red-50 transition-colors">Delete Collection</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        @endif
+                    </div>
+                </div>
+
+                <!-- UPDATE EXISTING CATALOG -->
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{
                     search: '',
                     page: 1,
                     perPage: 20,
@@ -700,30 +795,18 @@
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Name</label>
                                                 <input type="text" name="name" value="{{ $design->name }}" required class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">
                                             </div>
-                                            <div x-data="{
-                                                open: false,
-                                                search: '{{ addslashes($design->collection_name) }}',
-                                                options: {{ json_encode(is_array($availableCollections) ? array_values($availableCollections) : $availableCollections->values()->all()) }},
-                                                get filteredOptions() {
-                                                    if (this.search === '') return this.options;
-                                                    return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
-                                                },
-                                                selectOption(val) {
-                                                    this.search = val;
-                                                    this.open = false;
-                                                }
-                                            }" class="relative">
+                                            <div>
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name</label>
                                                 <div class="relative">
-                                                    <input type="text" name="collection_name" x-model="search" @focus="open = true" @click.away="open = false" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 pr-8 text-xs text-slate-900 focus:border-primary focus:outline-none" autocomplete="off">
-                                                    <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-2 text-slate-500 hover:text-slate-700 focus:outline-none">
+                                                    <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none appearance-none">
+                                                        <option value="">No Collection</option>
+                                                        @foreach($designCollections as $collection)
+                                                            <option value="{{ $collection->id }}" {{ $design->design_collection_id == $collection->id ? 'selected' : '' }}>{{ $collection->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
                                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                                                    </button>
-                                                </div>
-                                                <div x-show="open && filteredOptions.length > 0" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                                    <template x-for="opt in filteredOptions" :key="opt">
-                                                        <div @click="selectOption(opt)" class="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer font-medium" x-text="opt"></div>
-                                                    </template>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div x-data="{
@@ -780,6 +863,10 @@
                                                     @endforeach
                                                 </div>
                                             </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Product Description (Optional)</label>
+                                                <textarea name="description" rows="3" placeholder="Outline the item(s) included, especially for packages..." class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">{{ $design->description }}</textarea>
+                                            </div>
                                         @php
                                             $currentImages = is_array($design->image_paths) ? $design->image_paths : [];
                                             if (empty($currentImages) && !empty($design->image_url)) {
@@ -788,17 +875,52 @@
                                         @endphp
                                         @if(!empty($currentImages))
                                             <div>
-                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Current Images (Select to remove)</label>
-                                                <div class="flex flex-wrap gap-2">
-                                                    @foreach($currentImages as $idx => $imgPath)
-                                                        <label x-data="{ checked: false }" class="relative cursor-pointer group rounded-md overflow-hidden border-2 transition-all block w-14 h-14 bg-slate-100" :class="checked ? 'border-red-500' : 'border-transparent hover:border-red-300'">
-                                                            <input type="checkbox" name="remove_images[]" value="{{ $idx }}" x-model="checked" class="sr-only">
-                                                            <img src="{{ $imgPath }}" class="w-full h-full object-cover transition-opacity" :class="checked ? 'opacity-40' : 'opacity-100'">
-                                                            <div class="absolute inset-0 flex items-center justify-center transition-opacity" :class="checked ? 'bg-red-500/20 opacity-100' : 'opacity-0'">
-                                                                <svg class="w-5 h-5 text-red-600 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Current Images (Use arrows to reorder. Click DEL to remove)</label>
+                                                <div x-data="{
+                                                    images: {{ json_encode($currentImages) }},
+                                                    removed: [],
+                                                    moveLeft(idx) {
+                                                        if (idx > 0) {
+                                                            let temp = this.images[idx];
+                                                            this.images[idx] = this.images[idx - 1];
+                                                            this.images[idx - 1] = temp;
+                                                        }
+                                                    },
+                                                    moveRight(idx) {
+                                                        if (idx < this.images.length - 1) {
+                                                            let temp = this.images[idx];
+                                                            this.images[idx] = this.images[idx + 1];
+                                                            this.images[idx + 1] = temp;
+                                                        }
+                                                    },
+                                                    removeImage(idx) {
+                                                        this.removed.push(this.images[idx]);
+                                                        this.images.splice(idx, 1);
+                                                    }
+                                                }" class="flex flex-wrap gap-2">
+                                                    <template x-for="(imgPath, idx) in images" :key="imgPath">
+                                                        <div class="relative group block w-16 h-16 bg-white rounded-md border border-slate-200 shadow-sm">
+                                                            <input type="hidden" name="existing_images[]" :value="imgPath">
+                                                            <img :src="imgPath" class="w-full h-full object-cover rounded-md">
+                                                            
+                                                            <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center rounded-md">
+                                                                <div class="flex gap-1 mb-1">
+                                                                    <button type="button" @click.prevent="moveLeft(idx)" x-show="idx > 0" class="p-1 bg-white hover:bg-slate-200 text-slate-900 rounded-sm" title="Move Left">
+                                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+                                                                    </button>
+                                                                    <button type="button" @click.prevent="moveRight(idx)" x-show="idx < images.length - 1" class="p-1 bg-white hover:bg-slate-200 text-slate-900 rounded-sm" title="Move Right">
+                                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/></svg>
+                                                                    </button>
+                                                                </div>
+                                                                <button type="button" @click.prevent="removeImage(idx)" class="px-2 py-0.5 bg-red-500 hover:bg-red-600 text-white text-[9px] font-bold rounded-sm" title="Remove">
+                                                                    DEL
+                                                                </button>
                                                             </div>
-                                                        </label>
-                                                    @endforeach
+                                                        </div>
+                                                    </template>
+                                                    <template x-for="rm in removed">
+                                                        <input type="hidden" name="remove_images[]" :value="rm">
+                                                    </template>
                                                 </div>
                                             </div>
                                         @endif

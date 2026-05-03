@@ -36,27 +36,16 @@ Route::post('/quote', [QuoteRequestController::class, 'store'])->name('quote.sto
 Route::get('/quote/success', function () { return view('quote_success'); })->name('quote.success');
 Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
 Route::get('/catalog', function () {
-    // Get all distinct collections and their first image
-    $collections = \App\Models\DesignCatalog::whereNotNull('collection_name')
-        ->where('collection_name', '!=', '')
-        ->select('collection_name')
-        ->distinct()
-        ->orderBy('collection_name')
-        ->get()
-        ->map(function ($item) {
-            $firstDesign = \App\Models\DesignCatalog::where('collection_name', $item->collection_name)
-                ->orderBy('sort_order', 'asc')
-                ->first();
-            return (object) [
-                'name' => $item->collection_name,
-                'image' => !empty($firstDesign->image_paths) ? $firstDesign->image_paths[0] : ($firstDesign->image_url ?? null)
-            ];
-        });
+    $collections = \App\Models\DesignCollection::orderBy('name')->get()->map(function($col) {
+        return (object)[
+            'name' => $col->name,
+            'image' => $col->image_path
+        ];
+    });
 
     // Get orphaned designs (no collection)
-    $orphanedDesigns = \App\Models\DesignCatalog::whereNull('collection_name')
-        ->orWhere('collection_name', '')
-        ->orderBy('sort_order', 'asc')
+    $orphanedDesigns = \App\Models\DesignCatalog::whereNull('design_collection_id')
+        ->orderBy('sort_order', 'desc')
         ->orderBy('created_at', 'desc')
         ->get();
 
@@ -64,22 +53,26 @@ Route::get('/catalog', function () {
 })->name('catalog.index');
 
 Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request, $collection) {
+    $collectionModel = \App\Models\DesignCollection::where('name', $collection)->firstOrFail();
+    
     $selectedSport = $request->query('sport');
     
-    $designCatalogQuery = \App\Models\DesignCatalog::where('collection_name', $collection);
+    $designCatalogQuery = \App\Models\DesignCatalog::where('design_collection_id', $collectionModel->id);
     
     if (!empty($selectedSport)) {
         $designCatalogQuery->where('sport', $selectedSport);
     }
     
-    $designCatalog = $designCatalogQuery->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
+    $designCatalog = $designCatalogQuery->orderBy('sort_order', 'desc')->orderBy('created_at', 'desc')->get();
     
-    $availableSports = \App\Models\DesignCatalog::where('collection_name', $collection)
+    $availableSports = \App\Models\DesignCatalog::where('design_collection_id', $collectionModel->id)
         ->whereNotNull('sport')
         ->where('sport', '!=', '')
         ->distinct()
         ->orderBy('sport')
         ->pluck('sport');
+        
+    $collection = $collectionModel->name;
         
     return view('catalog.show', compact('designCatalog', 'availableSports', 'selectedSport', 'collection'));
 })->name('catalog.show');
@@ -120,6 +113,7 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     Route::post('/coach/item/{item}/remove', [CoachController::class, 'removeStoreItem'])->name('coach.store.item.remove');
     Route::post('/coach/item/{item}/markup', [CoachController::class, 'updateItemMarkup'])->name('coach.store.item.markup');
     Route::post('/coach/store/{store}/deadline', [CoachController::class, 'updateDeadline'])->name('coach.store.deadline');
+    Route::get('/coach/store/{store}/export', [CoachController::class, 'exportOrderCSV'])->name('coach.store.export');
     Route::post('/coach/store/{store}/submit', [CoachController::class, 'submitMasterOrder'])->name('coach.store.submit');
     Route::post('/coach/store/{store}/approve-pricing', [CoachController::class, 'approvePricing'])->name('coach.store.pricing.approve');
     Route::post('/coach/store/{store}/cover', [CoachController::class, 'updateCoverImage'])->name('coach.store.cover');
@@ -143,11 +137,17 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     // Design catalog management
     Route::post('/admin/design', [AdminController::class, 'createDesign'])->name('admin.design.create');
     Route::put('/admin/design/{design}', [AdminController::class, 'updateDesign'])->name('admin.design.update');
+    Route::get('/admin/design/{design}', function () { return redirect()->route('admin.dashboard'); });
     Route::delete('/admin/design/{design}', [AdminController::class, 'deleteDesign'])->name('admin.design.delete');
     Route::post('/admin/design/{design}/assign-to-store', [AdminController::class, 'assignToStore'])->name('admin.design.assign-to-store');
     Route::get('/admin/design/{design}/assign-to-store', function () {
         return redirect()->route('admin.dashboard')->with('error', 'Your session expired or you refreshed a form submission. Please try assigning the design again.');
     });
+
+    // Design collections management
+    Route::post('/admin/design-collections', [AdminController::class, 'createDesignCollection'])->name('admin.design-collection.create');
+    Route::put('/admin/design-collections/{collection}', [AdminController::class, 'updateDesignCollection'])->name('admin.design-collection.update');
+    Route::delete('/admin/design-collections/{collection}', [AdminController::class, 'deleteDesignCollection'])->name('admin.design-collection.delete');
 
     // Assign designs to coaches
     Route::post('/admin/coach/{coach}/assign-design', [AdminController::class, 'assignDesign'])->name('admin.coach.assign-design');

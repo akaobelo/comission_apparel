@@ -46,10 +46,12 @@ class CoachController extends Controller
             $priceByItemId = $store->items->keyBy('id');
             $orderRows = [];
             $totalSales = 0;
+            $totalWholesale = 0;
             $totalItemsSold = 0;
 
             foreach ($store->parentOrders as $order) {
                 $orderTotal = 0;
+                $orderWholesaleTotal = 0;
                 $orderItemsCount = 0;
                 $items = is_array($order->items_json) ? $order->items_json : [];
 
@@ -60,10 +62,14 @@ class CoachController extends Controller
 
                     $storeItem = $itemId ? $priceByItemId->get($itemId) : null;
                     $retailPrice = $storeItem ? (float) $storeItem->retail_price : 0;
+                    $wholesalePrice = $storeItem ? (float) $storeItem->wholesale_price : 0;
+                    
                     $orderTotal += ($retailPrice * $qty);
+                    $orderWholesaleTotal += ($wholesalePrice * $qty);
                 }
 
                 $totalSales += $orderTotal;
+                $totalWholesale += $orderWholesaleTotal;
                 $totalItemsSold += $orderItemsCount;
 
                 $orderRows[] = [
@@ -78,6 +84,8 @@ class CoachController extends Controller
             $salesSummary = [
                 'orders_count' => $ordersCount,
                 'total_sales' => $totalSales,
+                'total_wholesale' => $totalWholesale,
+                'net_proceeds' => $totalSales - $totalWholesale,
                 'total_items_sold' => $totalItemsSold,
                 'average_order_value' => $ordersCount > 0 ? $totalSales / $ordersCount : 0,
                 'order_rows' => $orderRows,
@@ -213,8 +221,80 @@ class CoachController extends Controller
         }
 
         $store->update(['status' => 'submitted_to_admin']);
+        
+        \Illuminate\Support\Facades\Notification::send(
+            \App\Models\User::where('role', 'admin')->get(),
+            new \App\Notifications\MasterOrderSubmitted($store)
+        );
+
         return redirect()->route('coach.dashboard')
             ->with('success', 'Master order submitted to The Commission Apparel for production!');
+    }
+
+    public function exportOrderCSV(TeamStore $store)
+    {
+        if ($store->user_id !== request()->user()->id) abort(403);
+
+        $orders = $store->parentOrders;
+
+        $filename = "{$store->slug}-master-order.csv";
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = [
+            'Athlete First Name', 'Athlete Last Name', 'Gender', 
+            'Jersey Name', 'Jersey Number', 'Backpack Name',
+            'Guardian First Name', 'Guardian Last Name', 'Guardian Phone', 'Guardian Email',
+            'Item', 'Types', 'Sizes', 'Qty', 'Special Notes', 'Edited?'
+        ];
+
+        $callback = function() use ($orders, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($orders as $order) {
+                if (is_array($order->items_json)) {
+                    foreach ($order->items_json as $item) {
+                        $typesStr = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
+                        
+                        $sizesArr = [];
+                        if (isset($item['sizes']) && is_array($item['sizes'])) {
+                            foreach ($item['sizes'] as $t => $s) {
+                                $sizesArr[] = "$t: $s";
+                            }
+                        }
+                        $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
+
+                        fputcsv($file, [
+                            $order->athlete_first_name,
+                            $order->athlete_last_name,
+                            $order->gender ?? 'Not Specified',
+                            $order->jersey_name ?? '',
+                            $order->jersey_number ?? '',
+                            $order->backpack_name ?? '',
+                            $order->guardian_first_name ?? '',
+                            $order->guardian_last_name ?? '',
+                            $order->guardian_phone ?? '',
+                            $order->guardian_email ?? '',
+                            $item['name'] ?? 'Unknown Item',
+                            $typesStr,
+                            $sizesStr,
+                            $item['qty'] ?? 1,
+                            $order->special_notes ?? '',
+                            $order->is_edited ? 'Yes' : 'No',
+                        ]);
+                    }
+                }
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     // Edit a parent's order (coach can correct mistakes)
@@ -224,7 +304,19 @@ class CoachController extends Controller
         if ($store->user_id !== $request->user()->id) abort(403);
 
         $sizeChart = DesignCatalog::sizeChart();
-        return view('coach.order_edit', compact('order', 'store', 'sizeChart'));
+        
+        $availableItems = $store->items()->with('designCatalog')->get()->map(function($item) {
+            $types = $item->types ?? [$item->type];
+            $sizedTypes = array_intersect($types, DesignCatalog::sizedTypes());
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'types' => $types,
+                'sizedTypes' => array_values($sizedTypes)
+            ];
+        });
+
+        return view('coach.order_edit', compact('order', 'store', 'sizeChart', 'availableItems'));
     }
 
     public function updateOrder(Request $request, ParentOrder $order)

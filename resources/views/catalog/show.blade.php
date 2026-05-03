@@ -14,7 +14,7 @@
         if (!empty($selectedSport)) {
             $designCatalogQuery->where('sport', $selectedSport);
         }
-        $designCatalog = $designCatalogQuery->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
+        $designCatalog = $designCatalogQuery->orderBy('sort_order', 'desc')->orderBy('created_at', 'desc')->get();
     }
     if (!isset($availableSports)) {
         $availableSports = \App\Models\DesignCatalog::where('collection_name', $collection)
@@ -94,9 +94,8 @@
                             $imageSrc = $design->image_url;
                         }
                     @endphp
-                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow">
-                        <div class="bg-white border rounded-2xl overflow-hidden shadow-sm flex flex-col group relative transition-all duration-300 border-slate-200 hover:border-secondary/50 hover:shadow-lg h-full">
-                            <div class="aspect-[4/3] bg-[#f0f2f5] relative overflow-hidden group-hover:bg-[#e4e7ec] transition-colors flex items-center justify-center">
+                    <div class="flex flex-col group">
+                        <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center">
                             @if(!empty($design->image_paths) && count($design->image_paths) > 1)
                                 <div class="w-full h-full relative group/slider" x-data="{ imgIdx: 0, imgs: {{ json_encode($design->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
                                     <button
@@ -132,15 +131,14 @@
                             @else
                                 <div class="text-slate-400 font-medium text-xs uppercase tracking-widest">No Image</div>
                             @endif
-                            </div>
+                        </div>
 
-                            <div class="p-3 flex flex-col flex-1 bg-slate-950 border-t border-slate-800">
-                                <span class="text-[9px] font-black uppercase tracking-widest text-red-500 mb-1.5">{{ $design->type_label }}</span>
-                                @if($design->sport)
-                                    <div class="text-[10px] font-bold text-slate-400 mb-1">{{ $design->sport }}</div>
-                                @endif
-                                <h2 class="text-sm md:text-base font-black text-white leading-tight mb-1 truncate" title="{{ $design->name }}">{{ $design->name }}</h2>
-                            </div>
+                        <div class="pt-4 flex flex-col text-left">
+                            <span class="text-base font-medium text-red-600 mb-1">{{ $design->type_label }}</span>
+                            <h2 class="text-base font-medium text-slate-900 truncate" title="{{ $design->name }}">{{ $design->name }}</h2>
+                            @if($design->sport)
+                                <div class="text-base text-slate-500 mt-1">{{ $design->sport }}</div>
+                            @endif
                         </div>
                     </div>
                 @endforeach
