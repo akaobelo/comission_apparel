@@ -122,6 +122,12 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     // Coach can edit parent orders
     Route::get('/coach/order/{order}/edit', [CoachController::class, 'editOrder'])->name('coach.order.edit');
     Route::post('/coach/order/{order}/update', [CoachController::class, 'updateOrder'])->name('coach.order.update');
+
+    // Direct Orders (No Team Store)
+    Route::post('/coach/direct-order/submit', [CoachController::class, 'submitDirectOrder'])->name('coach.direct-order.submit');
+    Route::post('/coach/direct-order/finalize', [CoachController::class, 'finalizeDirectOrders'])->name('coach.direct-order.finalize');
+    Route::get('/coach/direct-order/export/{batchId}', [CoachController::class, 'exportDirectOrderBatch'])->name('coach.direct-order.export');
+    Route::post('/coach/direct-order/archive/{batchId}', [CoachController::class, 'archiveDirectOrderBatch'])->name('coach.direct-order.archive');
 });
 
 // ─── Admin Portal ────────────────────────────────────────────────────────────
@@ -154,8 +160,10 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::delete('/admin/coach/{coach}/remove-design/{design}', [AdminController::class, 'removeDesign'])->name('admin.coach.remove-design');
 
     // Store controls
+    Route::post('/admin/stores', [AdminController::class, 'createCampaignStore'])->name('admin.stores.create');
     Route::post('/admin/stores/{store}/approve', [AdminController::class, 'approveStore'])->name('admin.stores.approve');
     Route::post('/admin/stores/{store}/decline', [AdminController::class, 'declineStore'])->name('admin.stores.decline');
+    Route::post('/admin/stores/{store}/archive', [AdminController::class, 'archiveStore'])->name('admin.stores.archive');
     Route::get('/admin/stores/{store}/edit', [AdminController::class, 'editStore'])->name('admin.store.edit');
     Route::post('/admin/stores/{store}/update', [AdminController::class, 'updateStore'])->name('admin.store.update');
     Route::post('/admin/stores/{store}/pricing', [AdminController::class, 'updateStorePricing'])->name('admin.store.pricing.update');

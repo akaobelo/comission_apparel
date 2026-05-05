@@ -84,4 +84,15 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(DesignCatalog::class, 'design_catalog_user', 'user_id', 'design_catalog_id');
     }
+
+    public function parentOrders()
+    {
+        return $this->hasMany(ParentOrder::class);
+    }
+
+    // Admins can have multiple stores
+    public function teamStores()
+    {
+        return $this->hasMany(TeamStore::class);
+    }
 }

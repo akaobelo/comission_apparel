@@ -57,9 +57,9 @@
     <div class="max-w-[1500px] mx-auto px-6">
         <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <form method="GET" action="{{ route('catalog.show', ['collection' => $collection]) }}" class="flex flex-wrap items-center gap-2">
-                <label for="sport" class="text-xs font-black uppercase tracking-wider text-slate-600">Filter by Sport</label>
+                <label for="sport" class="text-xs font-black uppercase tracking-wider text-slate-600">Filter by Apparel Categories</label>
                 <select id="sport" name="sport" class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none">
-                    <option value="">All Sports</option>
+                    <option value="">All Categories</option>
                     @foreach($availableSports as $sport)
                         <option value="{{ $sport }}" {{ $selectedSport === $sport ? 'selected' : '' }}>{{ $sport }}</option>
                     @endforeach
@@ -133,9 +133,9 @@
                             @endif
                         </div>
 
-                        <div class="pt-4 flex flex-col text-left">
+                        <div class="pt-4 flex flex-col text-center items-center">
                             <span class="text-base font-medium text-red-600 mb-1">{{ $design->type_label }}</span>
-                            <h2 class="text-base font-medium text-slate-900 truncate" title="{{ $design->name }}">{{ $design->name }}</h2>
+                            <h2 class="text-lg font-bahnschrift font-semibold text-slate-900 truncate tracking-wide" title="{{ $design->name }}">{{ $design->name }}</h2>
                             @if($design->sport)
                                 <div class="text-base text-slate-500 mt-1">{{ $design->sport }}</div>
                             @endif

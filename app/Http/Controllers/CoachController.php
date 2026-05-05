@@ -23,6 +23,14 @@ class CoachController extends Controller
         // Designs assigned to this coach (for item builder)
         $assignedDesigns = $user->designCatalog()->latest()->get();
 
+        // Direct orders placed by the coach (not attached to a team store)
+        $directOrders = $user->parentOrders()->whereNull('team_store_id')->where('is_archived', false)->latest()->get();
+        $archivedDirectOrders = $user->parentOrders()->whereNull('team_store_id')->where('is_archived', true)->latest()->get();
+        
+        // Group direct orders by batch
+        $directOrderBatches = $directOrders->groupBy('batch_id');
+        $archivedOrderBatches = $archivedDirectOrders->groupBy('batch_id');
+
         // Organize assigned designs by category for package selection
         $packageDesigns = [
             'package_a' => $assignedDesigns->where('category', 'package_a'),
@@ -92,7 +100,7 @@ class CoachController extends Controller
             ];
         }
 
-        return view('coach.dashboard', compact('user', 'store', 'assignedDesigns', 'packageDesigns', 'globalCatalog', 'salesSummary'));
+        return view('coach.dashboard', compact('user', 'store', 'assignedDesigns', 'packageDesigns', 'globalCatalog', 'salesSummary', 'directOrders', 'directOrderBatches', 'archivedOrderBatches'));
     }
 
 
@@ -428,5 +436,180 @@ class CoachController extends Controller
 
         return redirect()->route('coach.dashboard')
             ->with('success', 'Organization logo updated successfully.');
+    }
+
+    public function submitDirectOrder(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'order_type'          => 'required|in:person,item',
+            'athlete_first_name'  => 'nullable|string|max:255',
+            'athlete_last_name'   => 'nullable|string|max:255',
+            'gender'              => 'required|string|max:50',
+            'jersey_name'         => 'nullable|string|max:255',
+            'jersey_number'       => 'nullable|string|max:10',
+            'backpack_name'       => 'nullable|string|max:255',
+            'items'               => 'required|array|min:1',
+        ]);
+
+        $itemsJson = [];
+
+        foreach ($request->items as $designId => $details) {
+            if (!isset($details['selected']) || $details['selected'] != '1') {
+                continue;
+            }
+
+            $design = $user->designCatalog()->find($designId);
+            if (!$design) continue;
+
+            $qty = max(1, intval($details['qty'] ?? 1));
+
+            $types = $design->types ?? [];
+            $entry = [
+                'id'           => $designId,
+                'name'         => $design->name,
+                'types'        => $types,
+                'qty'          => $qty,
+                'sizes'        => [],
+            ];
+
+            // Handle sizes for each sized type
+            $sizedTypes = DesignCatalog::sizedTypes();
+            foreach ($types as $t) {
+                if (in_array($t, $sizedTypes)) {
+                    $entry['sizes'][$t] = $details['sizes'][$t] ?? null;
+                }
+            }
+
+            $itemsJson[] = $entry;
+        }
+
+        if (empty($itemsJson)) {
+            return back()->with('error', 'Please select at least one item before submitting.');
+        }
+
+        // If order by item (bulk), use "Bulk Order" as name
+        $firstName = $request->order_type === 'item' ? 'Bulk' : trim($request->athlete_first_name);
+        $lastName = $request->order_type === 'item' ? 'Order' : trim($request->athlete_last_name);
+
+        ParentOrder::create([
+            'user_id'             => $user->id,
+            'team_store_id'       => null,
+            'athlete_first_name'  => $firstName ?: 'Direct',
+            'athlete_last_name'   => $lastName ?: 'Order',
+            'gender'              => trim($request->gender),
+            'jersey_name'         => $request->jersey_name,
+            'jersey_number'       => $request->jersey_number,
+            'backpack_name'       => $request->backpack_name,
+            'items_json'          => $itemsJson,
+            'status'              => 'Draft',
+            'total_retail_price'  => 0,
+        ]);
+
+        return back()->with('success', 'Order line added to your draft.');
+    }
+
+    public function finalizeDirectOrders(Request $request)
+    {
+        $user = $request->user();
+        
+        $draftOrders = $user->parentOrders()
+            ->whereNull('team_store_id')
+            ->where('status', 'Draft')
+            ->get();
+
+        if ($draftOrders->isEmpty()) {
+            return back()->with('error', 'You have no draft orders to submit.');
+        }
+
+        $batchId = (string) Str::uuid();
+
+        foreach ($draftOrders as $order) {
+            $order->update([
+                'status' => 'Submitted to Admin',
+                'batch_id' => $batchId,
+            ]);
+        }
+
+        // Notify Admin
+        \Illuminate\Support\Facades\Notification::send(
+            \App\Models\User::where('role', 'admin')->get(),
+            new \App\Notifications\MasterOrderSubmitted((object) ['name' => $user->organization . ' Direct Order', 'user' => $user])
+        );
+
+        return back()->with('success', 'Your direct orders have been submitted to The Commission Apparel!');
+    }
+
+    public function exportDirectOrderBatch(Request $request, $batchId)
+    {
+        $user = $request->user();
+        $orders = $user->parentOrders()->where('batch_id', $batchId)->get();
+
+        if ($orders->isEmpty()) abort(404);
+
+        $filename = "direct-order-{$batchId}.csv";
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = [
+            'First Name', 'Last Name', 'Gender', 
+            'Jersey Name', 'Jersey Number', 'Backpack Name',
+            'Item', 'Types', 'Sizes', 'Qty'
+        ];
+
+        $callback = function() use ($orders, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($orders as $order) {
+                if (is_array($order->items_json)) {
+                    foreach ($order->items_json as $item) {
+                        $typesStr = isset($item['types']) ? implode(', ', $item['types']) : 'N/A';
+                        
+                        $sizesArr = [];
+                        if (isset($item['sizes']) && is_array($item['sizes'])) {
+                            foreach ($item['sizes'] as $t => $s) {
+                                $sizesArr[] = "$t: $s";
+                            }
+                        }
+                        $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : 'N/A';
+
+                        fputcsv($file, [
+                            $order->athlete_first_name,
+                            $order->athlete_last_name,
+                            $order->gender ?? 'Not Specified',
+                            $order->jersey_name ?? '',
+                            $order->jersey_number ?? '',
+                            $order->backpack_name ?? '',
+                            $item['name'] ?? 'Unknown Item',
+                            $typesStr,
+                            $sizesStr,
+                            $item['qty'] ?? 1,
+                        ]);
+                    }
+                }
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function archiveDirectOrderBatch(Request $request, $batchId)
+    {
+        $user = $request->user();
+        if ($user->role !== 'coach') abort(403);
+
+        ParentOrder::where('user_id', $user->id)
+            ->where('batch_id', $batchId)
+            ->update(['is_archived' => true]);
+
+        return back()->with('success', 'Batch has been archived successfully.');
     }
 }

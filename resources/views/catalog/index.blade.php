@@ -63,9 +63,9 @@
                                 @endif
                                 <a href="{{ route('catalog.show', ['collection' => $collection->name]) }}" class="absolute inset-0 z-10" aria-label="View {{ $collection->name }}"></a>
                             </div>
-                            <div class="pt-4 flex flex-col text-left">
+                            <div class="pt-4 flex flex-col text-center items-center">
                                 <span class="text-base font-medium text-red-600 mb-1">View Collection</span>
-                                <h2 class="text-base font-medium text-slate-900 group-hover:text-secondary transition-colors" title="{{ $collection->name }}">
+                                <h2 class="text-lg font-bahnschrift font-semibold text-slate-900 group-hover:text-secondary transition-colors tracking-wide" title="{{ $collection->name }}">
                                     <a href="{{ route('catalog.show', ['collection' => $collection->name]) }}">{{ $collection->name }}</a>
                                 </h2>
                             </div>
@@ -131,9 +131,9 @@
                                 @endif
                             </div>
 
-                            <div class="pt-4 flex flex-col text-left">
+                            <div class="pt-4 flex flex-col text-center items-center">
                                 <span class="text-base font-medium text-red-600 mb-1">{{ $design->type_label }}</span>
-                                <h2 class="text-base font-medium text-slate-900 truncate" title="{{ $design->name }}">{{ $design->name }}</h2>
+                                <h2 class="text-lg font-bahnschrift font-semibold text-slate-900 truncate tracking-wide" title="{{ $design->name }}">{{ $design->name }}</h2>
                                 @if($design->sport)
                                     <div class="text-base text-slate-500 mt-1">{{ $design->sport }}</div>
                                 @endif

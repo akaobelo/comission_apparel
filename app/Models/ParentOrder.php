@@ -24,6 +24,9 @@ class ParentOrder extends Model
         'is_edited',
         'edited_by',
         'total_retail_price',
+        'user_id',
+        'batch_id',
+        'is_archived',
     ];
 
     public function getAthleteNameAttribute()
@@ -35,10 +38,16 @@ class ParentOrder extends Model
         'items_json' => 'array',
         'is_edited'  => 'boolean',
         'total_retail_price' => 'decimal:2',
+        'is_archived' => 'boolean',
     ];
 
     public function teamStore()
     {
         return $this->belongsTo(TeamStore::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

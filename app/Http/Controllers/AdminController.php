@@ -44,6 +44,7 @@ class AdminController extends Controller
 
         // Finalized master orders (stores submitted to admin) — aggregate view
         $finalizedStores = TeamStore::where('status', 'submitted_to_admin')
+            ->where('is_archived', false)
             ->with(['user', 'parentOrders.teamStore'])
             ->latest()
             ->get();
@@ -53,6 +54,13 @@ class AdminController extends Controller
 
         // Production orders (in production status)
         $productionStores = TeamStore::where('status', 'approved')
+            ->where('is_archived', false)
+            ->with(['user', 'parentOrders'])
+            ->latest()
+            ->get();
+
+        // Archived stores
+        $archivedStores = TeamStore::where('is_archived', true)
             ->with(['user', 'parentOrders'])
             ->latest()
             ->get();
@@ -83,10 +91,14 @@ class AdminController extends Controller
             'media_type' => \App\Models\SiteSetting::where('key', 'hero_media_type')->value('value') ?? 'image',
         ];
 
+        $campaignStores = TeamStore::whereHas('user', function($q) {
+            $q->where('role', 'admin');
+        })->latest()->get();
+
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStores',
             'designCatalog', 'productionStores', 'quoteRequests', 'landingCollections', 'allStores',
-            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'heroSettings'
+            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'heroSettings', 'campaignStores', 'archivedStores'
         ));
     }
 
@@ -407,6 +419,37 @@ class AdminController extends Controller
         $store->update(['status' => 'declined']);
         return redirect()->route('admin.dashboard')
             ->with('success', "Store \"{$store->name}\" has been declined.");
+    }
+
+    public function createCampaignStore(Request $request)
+    {
+        $request->validate([
+            'name'         => 'required|string|max:255',
+            'description'  => 'nullable|string|max:1000',
+            'order_deadline' => 'nullable|date',
+        ]);
+
+        $user = $request->user();
+
+        $store = TeamStore::create([
+            'user_id'      => $user->id,
+            'name'         => $request->name,
+            'description'  => $request->description,
+            'slug'         => Str::slug($request->name) . '-' . strtolower(Str::random(6)),
+            'package_type' => 'individual', // Admins usually sell individually for campaigns
+            'status'       => 'approved', // Auto-approved since admin created it
+            'pricing_approved' => true,   // Auto-approved
+            'order_deadline' => $request->order_deadline,
+        ]);
+
+        return redirect()->route('admin.store.edit', $store)
+            ->with('success', 'Campaign Store created successfully. You can now assign designs to it.');
+    }
+
+    public function archiveStore(TeamStore $store)
+    {
+        $store->update(['is_archived' => true]);
+        return back()->with('success', "Store \"{$store->name}\" has been archived.");
     }
 
     public function editStore(TeamStore $store)
