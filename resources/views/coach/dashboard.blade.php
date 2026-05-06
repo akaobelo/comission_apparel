@@ -96,7 +96,7 @@
             >
                 Store Overview
             </button>
-            @if($store && $store->status === 'approved')
+            @if($store && in_array($store->status, ['approved', 'submitted_to_admin']))
             <button
                 type="button"
                 @click="activeCoachTab = 'sales'"
@@ -186,59 +186,78 @@
                                 </div>
                             </div>
 
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4 px-2">Select Assigned Items</h3>
-                            <div class="space-y-3">
-                                @forelse($assignedDesigns as $design)
-                                    @php
-                                        $sizedTypes = \App\Models\DesignCatalog::sizedTypes();
-                                        $types = $design->types ?? [];
-                                        $hasSizes = count(array_intersect($types, $sizedTypes)) > 0;
-                                    @endphp
-                                    <div x-data="{ selected: false }" class="border border-slate-200 rounded-xl p-4 transition-colors" :class="selected ? 'bg-primary/5 border-primary' : 'bg-white hover:border-slate-300'">
-                                        <div class="flex items-start gap-4">
-                                            <div class="pt-1">
-                                                <input type="checkbox" name="items[{{ $design->id }}][selected]" value="1" x-model="selected" class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary">
+                            <div x-data="{ search: '', isExpanded: true }" class="mb-6">
+                                <button type="button" @click="isExpanded = !isExpanded" class="w-full flex items-center justify-between px-4 py-3 bg-slate-100 hover:bg-slate-200 transition-colors rounded-t-xl border border-slate-200">
+                                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Select Assigned Items <span class="bg-slate-300 text-slate-800 px-2 py-0.5 rounded-full ml-2">{{ $assignedDesigns->count() }}</span></h3>
+                                    <svg class="w-5 h-5 text-slate-500 transition-transform" :class="isExpanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </button>
+                                
+                                <div x-show="isExpanded" x-collapse class="border-x border-b border-slate-200 rounded-b-xl p-4 bg-white">
+                                    @if($assignedDesigns->count() > 0)
+                                    <div class="mb-4">
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                                             </div>
-                                            <div class="w-16 h-16 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 flex items-center justify-center">
-                                                @if(!empty($design->image_paths))
-                                                    <img src="{{ Str::startsWith($design->image_paths[0], 'http') ? $design->image_paths[0] : asset('storage/' . $design->image_paths[0]) }}" alt="{{ $design->name }}" class="w-full h-full object-cover">
-                                                @else
-                                                    <svg class="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                                @endif
-                                            </div>
-                                            <div class="flex-1">
-                                                <h4 class="font-bold text-slate-900 leading-tight font-heading">{{ $design->name }}</h4>
-                                                <div class="text-xs text-slate-500 mt-1 uppercase tracking-wider">{{ implode(', ', $types) }}</div>
-                                                
-                                                <div x-show="selected" x-collapse class="mt-4 pt-4 border-t border-slate-200/60">
-                                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                        <div>
-                                                            <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Quantity</label>
-                                                            <input type="number" name="items[{{ $design->id }}][qty]" value="1" min="1" class="w-full border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" :required="selected">
-                                                        </div>
-                                                        @foreach($types as $t)
-                                                            @if(in_array($t, $sizedTypes))
-                                                            <div>
-                                                                <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">{{ $t }} Size</label>
-                                                                <select name="items[{{ $design->id }}][sizes][{{ $t }}]" class="w-full border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" :required="selected">
-                                                                    <option value="">Select Size</option>
-                                                                    @foreach(\App\Models\DesignCatalog::sizeChart() as $size)
-                                                                        <option value="{{ $size }}">{{ $size }}</option>
-                                                                    @endforeach
-                                                                </select>
+                                            <input type="text" x-model="search" placeholder="Search assigned items..." class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                                        </div>
+                                    </div>
+                                    @endif
+                                    
+                                    <div class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                                        @forelse($assignedDesigns as $design)
+                                            @php
+                                                $sizedTypes = \App\Models\DesignCatalog::sizedTypes();
+                                                $types = $design->types ?? [];
+                                                $hasSizes = count(array_intersect($types, $sizedTypes)) > 0;
+                                            @endphp
+                                            <div x-data="{ selected: false }" x-show="search === '' || '{{ strtolower(addslashes($design->name)) }}'.includes(search.toLowerCase()) || selected" class="border border-slate-200 rounded-xl p-4 transition-colors" :class="selected ? 'bg-primary/5 border-primary' : 'bg-white hover:border-slate-300'">
+                                                <div class="flex items-start gap-4">
+                                                    <div class="pt-1">
+                                                        <input type="checkbox" name="items[{{ $design->id }}][selected]" value="1" x-model="selected" class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary">
+                                                    </div>
+                                                    <div class="w-16 h-16 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 flex items-center justify-center">
+                                                        @if(!empty($design->image_paths))
+                                                            <img src="{{ Str::startsWith($design->image_paths[0], 'http') ? $design->image_paths[0] : asset('storage/' . $design->image_paths[0]) }}" alt="{{ $design->name }}" class="w-full h-full object-cover">
+                                                        @else
+                                                            <svg class="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                        @endif
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <h4 class="font-bold text-slate-900 leading-tight font-heading">{{ $design->name }}</h4>
+                                                        <div class="text-xs text-slate-500 mt-1 uppercase tracking-wider">{{ implode(', ', $types) }}</div>
+                                                        
+                                                        <div x-show="selected" x-collapse class="mt-4 pt-4 border-t border-slate-200/60">
+                                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                                <div>
+                                                                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Quantity</label>
+                                                                    <input type="number" name="items[{{ $design->id }}][qty]" value="1" min="1" class="w-full border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" :required="selected">
+                                                                </div>
+                                                                @foreach($types as $t)
+                                                                    @if(in_array($t, $sizedTypes))
+                                                                    <div>
+                                                                        <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">{{ $t }} Size</label>
+                                                                        <select name="items[{{ $design->id }}][sizes][{{ $t }}]" class="w-full border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" :required="selected">
+                                                                            <option value="">Select Size</option>
+                                                                            @foreach(\App\Models\DesignCatalog::sizeChart() as $size)
+                                                                                <option value="{{ $size }}">{{ $size }}</option>
+                                                                            @endforeach
+                                                                        </select>
+                                                                    </div>
+                                                                    @endif
+                                                                @endforeach
                                                             </div>
-                                                            @endif
-                                                        @endforeach
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        @empty
+                                            <div class="p-4 bg-slate-50 rounded-lg text-center text-slate-500 text-sm">
+                                                You have no assigned designs yet. Please contact The Commission Apparel.
+                                            </div>
+                                        @endforelse
                                     </div>
-                                @empty
-                                    <div class="p-4 bg-slate-50 rounded-lg text-center text-slate-500 text-sm">
-                                        You have no assigned designs yet. Please contact The Commission Apparel.
-                                    </div>
-                                @endforelse
+                                </div>
                             </div>
                             
                             <div class="mt-8">
@@ -860,7 +879,7 @@
     @endif
 </div>
 
-@if($store && $store->status === 'approved')
+@if($store && in_array($store->status, ['approved', 'submitted_to_admin']))
 <div x-show="activeCoachTab === 'sales'" x-cloak class="space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
