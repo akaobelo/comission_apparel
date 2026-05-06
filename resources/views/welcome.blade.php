@@ -104,9 +104,9 @@
             @forelse($landingCollections ?? [] as $collection)
             <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between h-full">
                 <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
-                <div class="relative overflow-hidden bg-slate-100 w-full" style="aspect-ratio: 406.7 / 305.017;">
+                <a href="{{ route('catalog.index') }}" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
                     <img src="{{ Str::startsWith($collection->image_path, 'http') ? $collection->image_path : $collection->image_path }}" alt="{{ $collection->tab_name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                </div>
+                </a>
                 <div class="p-6">
                     <div class="text-secondary text-xs font-black tracking-widest uppercase mb-2">{{ $collection->tab_name }}</div>
                     <h3 class="text-base font-black uppercase text-slate-900 leading-tight mb-2 truncate" title="{{ $collection->title }}">{{ $collection->title }}</h3>
