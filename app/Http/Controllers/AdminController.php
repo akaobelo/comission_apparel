@@ -412,13 +412,31 @@ class AdminController extends Controller
         $store = TeamStore::findOrFail($request->team_store_id);
         $coach = $store->user;
 
-        if ($coach->designCatalog()->where('design_catalog_id', $design->id)->exists()) {
-            return back()->with('error', "{$design->name} is already available in {$coach->name}'s catalog.");
+        // Ensure coach has access to the design
+        if (!$coach->designCatalog()->where('design_catalog_id', $design->id)->exists()) {
+            $coach->designCatalog()->attach($design->id);
         }
 
-        $coach->designCatalog()->attach($design->id);
+        // Add to store directly
+        if ($store->items()->where('design_catalog_id', $design->id)->exists()) {
+            return back()->with('error', "{$design->name} is already in the store {$store->name}.");
+        }
 
-        return back()->with('success', "{$design->name} was successfully pushed to {$coach->name}'s catalog! They can now review and add it to their store.");
+        $maxSort = $store->items()->max('sort_order') ?? 0;
+
+        $store->items()->create([
+            'design_catalog_id' => $design->id,
+            'name'              => $design->name,
+            'type'              => null,
+            'types'             => $design->types,
+            'image_url'         => null,
+            'image_paths'       => $design->image_paths,
+            'wholesale_price'   => $design->wholesale_price,
+            'retail_price'      => $design->wholesale_price,
+            'sort_order'        => $maxSort + 1,
+        ]);
+
+        return back()->with('success', "{$design->name} was successfully pushed directly to the store {$store->name}!");
     }
 
     // ─── STORE MANAGEMENT ────────────────────────────────────────────────────────

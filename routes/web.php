@@ -64,11 +64,25 @@ Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request,
     $collectionModel = \App\Models\DesignCollection::where('name', $collection)->firstOrFail();
     
     $selectedSport = $request->query('sport');
+    $selectedTypes = $request->query('types', []);
+    if (!is_array($selectedTypes)) {
+        $selectedTypes = explode(',', $selectedTypes);
+    }
+    $selectedTypes = array_filter($selectedTypes);
     
     $designCatalogQuery = \App\Models\DesignCatalog::where('design_collection_id', $collectionModel->id);
     
     if (!empty($selectedSport)) {
         $designCatalogQuery->where('sport', $selectedSport);
+    }
+    
+    if (!empty($selectedTypes)) {
+        $designCatalogQuery->where(function ($query) use ($selectedTypes) {
+            foreach ($selectedTypes as $type) {
+                $query->orWhere('type', $type)
+                      ->orWhereJsonContains('types', $type);
+            }
+        });
     }
     
     $designCatalog = $designCatalogQuery->orderBy('sort_order', 'desc')->orderBy('created_at', 'desc')->get();
@@ -82,7 +96,7 @@ Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request,
         
     $collection = $collectionModel->name;
         
-    return view('catalog.show', compact('designCatalog', 'availableSports', 'selectedSport', 'collection'));
+    return view('catalog.show', compact('designCatalog', 'availableSports', 'selectedSport', 'selectedTypes', 'collection'));
 })->name('catalog.show');
 
 // Public Team Stores (parent-facing, no auth)
