@@ -114,6 +114,8 @@
     <!-- Global Form Submit Loading State -->
     <script>
         document.addEventListener('submit', function(e) {
+            if (e.defaultPrevented) return;
+            
             if (e.target && e.target.nodeName === 'FORM') {
                 const btn = e.target.querySelector('button[type="submit"]') || e.target.querySelector('input[type="submit"]');
                 if (btn && !btn.dataset.loadingIgnored) {

@@ -93,13 +93,20 @@
         {{-- ═══ STORES & ORDERS TAB ═══ --}}
         <div x-show="activeAdminTab === 'stores'" x-cloak class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="space-y-8">
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div class="p-6 border-b border-slate-200 bg-slate-50">
-                        <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Quote Inquiries</h2>
-                        <p class="text-sm text-slate-500 mt-1">Public quote requests submitted from the website.</p>
+                <div x-data="{ expanded: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
+                        <div>
+                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Quote Inquiries</h2>
+                            <p class="text-sm text-slate-500 mt-1">Public quote requests submitted from the website.</p>
+                        </div>
+                        <div class="flex items-center gap-4 text-slate-400">
+                            <span class="text-sm font-bold">{{ $quoteRequests->count() }} Inquiries</span>
+                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
                     </div>
-                    @if($quoteRequests->isEmpty())
-                        <div class="p-8 text-center text-slate-400 text-sm">No quote inquiries yet.</div>
+                    <div x-show="expanded" x-collapse>
+                        @if($quoteRequests->isEmpty())
+                            <div class="p-8 text-center text-slate-400 text-sm">No quote inquiries yet.</div>
                     @else
                         <div class="divide-y divide-slate-100 max-h-[32rem] overflow-y-auto">
                             @foreach($quoteRequests as $quoteRequest)
@@ -141,7 +148,8 @@
                                 </div>
                             @endforeach
                         </div>
-                    @endif
+                        @endif
+                    </div>
                 </div>
 
                 {{-- ═══ PENDING STORE APPROVALS ═══ --}}
@@ -263,6 +271,61 @@
                             @endforeach
                         </div>
                     @endif
+                </div>
+
+                {{-- ═══ FINALIZED DIRECT ORDERS ═══ --}}
+                <div x-data="{ expanded: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
+                    <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
+                        <div>
+                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Direct Orders</h2>
+                            <p class="text-sm text-slate-500 mt-1">Direct order batches submitted by coaches (no storefront).</p>
+                        </div>
+                        <div class="flex items-center gap-4 text-slate-400">
+                            <span class="text-sm font-bold">{{ $finalizedDirectOrderBatches->count() }} Batches</span>
+                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                    <div x-show="expanded" x-collapse>
+                        @if($finalizedDirectOrderBatches->isEmpty())
+                            <div class="p-12 text-center text-slate-400 text-sm">No finalized direct orders.</div>
+                        @else
+                        <div class="divide-y divide-slate-100">
+                            @foreach($finalizedDirectOrderBatches as $batchId => $batchOrders)
+                            @php
+                                $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
+                                $coach = $batchOrders->first()->user;
+                            @endphp
+                            <div class="p-5">
+                                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                    <div>
+                                        <div class="font-black text-slate-900 uppercase text-base">Direct Order Batch</div>
+                                        <div class="text-sm text-slate-500 mt-0.5">
+                                            Coach: {{ $coach->name }} — {{ $coach->organization }}
+                                        </div>
+                                        <div class="mt-3 grid grid-cols-3 gap-4">
+                                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+                                                <div class="text-2xl font-black text-primary">{{ $batchOrders->count() }}</div>
+                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Orders</div>
+                                            </div>
+                                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+                                                <div class="text-2xl font-black text-slate-900">{{ $totalItems }}</div>
+                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
+                                            </div>
+                                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+                                                <div class="text-xs font-bold text-slate-900">{{ $batchOrders->first()->created_at->format('M d') }}</div>
+                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Submitted</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col gap-2 flex-shrink-0">
+                                        <a href="{{ route('coach.direct-order.export', $batchId) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Export CSV</a>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
                 </div>
 
                 {{-- ═══ ARCHIVED STORES ═══ --}}
@@ -508,22 +571,72 @@
                 @if($landingCollections->isNotEmpty())
                 <div class="max-h-80 overflow-y-auto divide-y divide-slate-100">
                     @foreach($landingCollections as $collection)
-                    <div class="flex items-center gap-4 px-4 py-3 hover:bg-slate-50">
-                        @if($collection->image_path)
-                            <img src="{{ $collection->image_path }}" class="w-16 h-12 object-cover rounded shadow-sm border border-slate-200">
-                        @else
-                            <div class="w-16 h-12 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-xs shadow-sm border border-slate-200">No Img</div>
-                        @endif
-                        <div class="flex-1 min-w-0">
-                            <div class="text-sm font-bold text-slate-900 truncate">{{ $collection->title }}</div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">{{ $collection->tab_name }} · Sort: {{ $collection->sort_order }}</div>
+                    <div x-data="{ editModal: false }" class="flex flex-col">
+                        <div class="flex items-center gap-4 px-4 py-3 hover:bg-slate-50">
+                            @if($collection->image_path)
+                                <img src="{{ $collection->image_path }}" class="w-16 h-12 object-cover rounded shadow-sm border border-slate-200">
+                            @else
+                                <div class="w-16 h-12 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-xs shadow-sm border border-slate-200">No Img</div>
+                            @endif
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-bold text-slate-900 truncate">{{ $collection->title }}</div>
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">{{ $collection->tab_name }} · Sort: {{ $collection->sort_order }}</div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="editModal = true" class="text-blue-500 hover:text-blue-700 p-1 transition-colors" title="Edit Collection">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+                                <form action="{{ url('/admin/landing-collections/' . $collection->id) }}" method="POST" onsubmit="return confirm('Remove this collection from the landing page?')">
+                                    @csrf @method('DELETE')
+                                    <button class="text-red-400 hover:text-red-600 transition-colors p-1" title="Delete Collection">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
-                        <form action="{{ url('/admin/landing-collections/' . $collection->id) }}" method="POST" onsubmit="return confirm('Remove this collection from the landing page?')">
-                            @csrf @method('DELETE')
-                            <button class="text-red-400 hover:text-red-600 transition-colors p-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                        </form>
+
+                        <!-- Edit Modal -->
+                        <div x-show="editModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                            <div @click.away="editModal = false" class="bg-white rounded-xl shadow-2xl w-full max-w-xl overflow-hidden animate-fade-in">
+                                <div class="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Edit Collection</h2>
+                                    <button @click="editModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                                </div>
+                                <div class="p-6">
+                                    <form action="{{ url('/admin/landing-collections/' . $collection->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                        @csrf @method('PUT')
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Sport / Tab Name</label>
+                                                <input type="text" name="tab_name" value="{{ $collection->tab_name }}" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Organization Title</label>
+                                                <input type="text" name="title" value="{{ $collection->title }}" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Description</label>
+                                            <textarea name="description" rows="2" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">{{ $collection->description }}</textarea>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-3 items-end">
+                                            <div>
+                                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Replace Image (Optional)</label>
+                                                <input type="file" name="image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Sort Order</label>
+                                                <input type="number" name="sort_order" value="{{ $collection->sort_order }}" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">
+                                            </div>
+                                        </div>
+                                        <div class="pt-2 flex gap-3">
+                                            <button type="submit" class="flex-1 py-2.5 bg-secondary hover:bg-[#a11825] text-white text-sm font-bold uppercase tracking-wider rounded-lg transition-colors">Save Changes</button>
+                                            <button type="button" @click="editModal = false" class="px-6 py-2.5 border border-slate-300 text-slate-700 text-sm font-bold uppercase tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     @endforeach
                 </div>
@@ -1248,7 +1361,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Order Deadline (Optional)</label>
-                                <input type="datetime-local" name="order_deadline" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:border-primary outline-none text-sm">
+                                <input type="date" name="order_deadline" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:border-primary outline-none text-sm">
                             </div>
                             <button type="submit" class="btn btn-primary w-full py-3 uppercase tracking-widest text-xs font-bold shadow-md">Create Campaign Store</button>
                         </form>

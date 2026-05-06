@@ -285,14 +285,14 @@
                         <div class="border-t border-slate-100 pt-5">
                             <form action="{{ route('coach.direct-order.finalize') }}" method="POST" x-data="{ confirming: false }">
                                 @csrf
-                                <button type="button" x-show="!confirming" @click="confirming = true" class="btn bg-green-600 hover:bg-green-700 text-white w-full py-3 text-xs font-bold uppercase tracking-widest shadow-sm">
+                                <button type="button" x-show="!confirming" @click="confirming = true" class="btn bg-secondary hover:bg-[#a11825] text-white w-full py-3 text-xs font-bold uppercase tracking-widest shadow-sm">
                                     Submit Draft To Production
                                 </button>
                                 <div x-show="confirming" x-cloak class="bg-red-50 border border-red-200 p-4 rounded-xl">
                                     <p class="text-xs text-red-800 font-bold mb-3 text-center">Are you sure? This is a final submission and cannot be undone.</p>
                                     <div class="flex gap-2">
                                         <button type="button" @click="confirming = false" class="flex-1 py-2 bg-white border border-slate-300 text-slate-600 rounded-lg text-xs font-bold uppercase">Cancel</button>
-                                        <button type="submit" class="flex-1 py-2 bg-red-600 text-white rounded-lg text-xs font-bold uppercase shadow-sm">Confirm Submit</button>
+                                        <button type="submit" class="flex-1 py-2 bg-secondary text-white rounded-lg text-xs font-bold uppercase shadow-sm">Confirm Submit</button>
                                     </div>
                                 </div>
                             </form>
@@ -300,11 +300,11 @@
                     @endif
                 </div>
 
-                @if($directOrderBatches->except('')->isNotEmpty())
+                @if($directOrderBatches->filter(fn($v, $k) => $k !== '')->isNotEmpty())
                 <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
                     <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 mb-4">Submitted Batches</h2>
                     <div class="space-y-3">
-                        @foreach($directOrderBatches->except('') as $batchId => $batchOrders)
+                        @foreach($directOrderBatches->filter(fn($v, $k) => $k !== '') as $batchId => $batchOrders)
                             <div class="border border-slate-200 rounded-lg p-4">
                                 <div class="flex justify-between items-center mb-2">
                                     <span class="text-xs font-bold uppercase text-slate-500">{{ $batchOrders->first()->created_at->format('M d, Y') }}</span>
@@ -329,14 +329,14 @@
                 </div>
                 @endif
 
-                @if($archivedOrderBatches->except('')->isNotEmpty())
+                @if($archivedOrderBatches->filter(fn($v, $k) => $k !== '')->isNotEmpty())
                 <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 mt-6 opacity-75 hover:opacity-100 transition-opacity">
                     <h2 class="text-base font-black uppercase tracking-tight text-slate-500 mb-4 flex items-center justify-between">
                         Archived Batches
-                        <span class="bg-slate-100 text-slate-600 text-xs py-1 px-2 rounded-md">{{ $archivedOrderBatches->except('')->count() }}</span>
+                        <span class="bg-slate-100 text-slate-600 text-xs py-1 px-2 rounded-md">{{ $archivedOrderBatches->filter(fn($v, $k) => $k !== '')->count() }}</span>
                     </h2>
                     <div class="space-y-3">
-                        @foreach($archivedOrderBatches->except('') as $batchId => $batchOrders)
+                        @foreach($archivedOrderBatches->filter(fn($v, $k) => $k !== '') as $batchId => $batchOrders)
                             <div class="border border-slate-200 bg-slate-50 rounded-lg p-4">
                                 <div class="flex justify-between items-center mb-2">
                                     <span class="text-xs font-bold uppercase text-slate-500">{{ $batchOrders->first()->created_at->format('M d, Y') }}</span>
@@ -511,7 +511,7 @@
                                     <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-sm text-slate-700 mb-6 space-y-3">
                                         <p>Please review your order for accuracy before finalizing.</p>
                                         <p><strong>Instructions:</strong> Use the <strong>Export CSV</strong> option to download and verify all items, sizes, and quantities. Submit once you have confirmed everything is 100% accurate.</p>
-                                        <p class="text-red-600 font-bold text-xs uppercase tracking-widest mt-2">No changes can be made after submission.</p>
+                                        <p class="text-red-600 font-bold text-xs uppercase tracking-widest mt-2">The store will be closed to new orders.</p>
                                     </div>
                                     
                                     <div class="flex gap-3">
@@ -524,6 +524,11 @@
                                 </div>
                             </div>
                         </div>
+                        @elseif($isLocked)
+                        <form action="{{ route('coach.store.reopen', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to re-open the store? Parents will be able to submit orders again.')">
+                            @csrf
+                            <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors">Re-Open Store</button>
+                        </form>
                         @endif
                     </div>
             </div>
@@ -852,8 +857,11 @@
             @endif
         </div>
     </div>
+    @endif
+</div>
 
-    <div x-show="activeCoachTab === 'sales'" x-cloak class="space-y-6">
+@if($store && $store->status === 'approved')
+<div x-show="activeCoachTab === 'sales'" x-cloak class="space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Total Sales</p>
@@ -902,8 +910,7 @@
             @endif
         </div>
     </div>
-    </div>
-    @endif
-    </div>
+@endif
+
 </div>
 @endsection

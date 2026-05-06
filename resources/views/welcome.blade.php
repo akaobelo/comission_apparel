@@ -99,29 +99,59 @@
 
 
 
-        <!-- Gallery Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
-            @forelse($landingCollections ?? [] as $collection)
-            <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between h-full">
-                <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
-                <a href="{{ route('catalog.index') }}" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
-                    <img src="{{ Str::startsWith($collection->image_path, 'http') ? $collection->image_path : $collection->image_path }}" alt="{{ $collection->tab_name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                </a>
-                <div class="p-6">
-                    <div class="text-secondary text-xs font-black tracking-widest uppercase mb-2">{{ $collection->tab_name }}</div>
-                    <h3 class="text-base font-black uppercase text-slate-900 leading-tight mb-2 truncate" title="{{ $collection->title }}">{{ $collection->title }}</h3>
-                    <p class="text-slate-600 text-sm mb-6 font-medium">{{ $collection->description }}</p>
-                    <div class="flex items-center gap-3">
-                    <!-- class="btn btn-primary px-8 py-4 text-base font-black uppercase tracking-wider rounded-md shadow-md transition-all"     -->
-                    <a href="/quote" class="border btn btn-primary border-slate-300  rounded-md bg-secondary  w-full py-2 shadow-sm font-bold text-sm  uppercase text-center">Talk to an Expert</a>
+        <!-- Gallery Carousel -->
+        <div x-data="{ 
+            activePage: 0,
+            itemsPerPage: window.innerWidth < 768 ? 2 : (window.innerWidth < 1024 ? 3 : 5),
+            get totalPages() { return Math.max(1, Math.ceil({{ count($landingCollections ?? []) }} / this.itemsPerPage)) },
+            next() { this.activePage = (this.activePage + 1) % this.totalPages },
+            prev() { this.activePage = (this.activePage - 1 + this.totalPages) % this.totalPages },
+            init() {
+                window.addEventListener('resize', () => {
+                    this.itemsPerPage = window.innerWidth < 768 ? 2 : (window.innerWidth < 1024 ? 3 : 5);
+                    if (this.activePage >= this.totalPages) this.activePage = Math.max(0, this.totalPages - 1);
+                });
+            }
+        }" class="relative w-full">
+            
+            <div class="overflow-hidden relative w-full -mx-2 px-2 pb-4">
+                <div class="flex transition-transform duration-500 ease-out"
+                     :style="'transform: translateX(-' + (activePage * 100) + '%)'">
+                    @forelse($landingCollections ?? [] as $collection)
+                    <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="{{ route('catalog.index') }}" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                <img src="{{ Str::startsWith($collection->image_path, 'http') ? $collection->image_path : $collection->image_path }}" alt="{{ $collection->tab_name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">{{ $collection->tab_name }}</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="{{ $collection->title }}">{{ $collection->title }}</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">{{ $collection->description }}</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors">Talk to an Expert</a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                    @empty
+                    <div class="w-full p-2">
+                        <div class="border-2 border-dashed border-slate-300 p-12 text-center text-slate-500 font-bold uppercase tracking-widest text-sm rounded-lg">
+                            No catalogs active at the moment.
+                        </div>
+                    </div>
+                    @endforelse
                 </div>
             </div>
-            @empty
-            <div class="col-span-1 border-2 border-dashed border-slate-300 p-12 text-center text-slate-500 font-bold uppercase tracking-widest text-sm rounded-lg lg:col-span-3">
-                No catalogs active at the moment.
-            </div>
-            @endforelse
+
+            <!-- Arrows -->
+            <button @click="prev()" x-show="totalPages > 1" x-cloak class="absolute -left-3 md:-left-5 top-[35%] -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-white border border-slate-200 shadow-lg text-slate-700 flex items-center justify-center hover:bg-slate-50 hover:text-secondary transition-colors z-10" aria-label="Previous">
+                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button @click="next()" x-show="totalPages > 1" x-cloak class="absolute -right-3 md:-right-5 top-[35%] -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-white border border-slate-200 shadow-lg text-slate-700 flex items-center justify-center hover:bg-slate-50 hover:text-secondary transition-colors z-10" aria-label="Next">
+                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
         </div>
 
         <!-- Custom CTA Full Width Banner -->

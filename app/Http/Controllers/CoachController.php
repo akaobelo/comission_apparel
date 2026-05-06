@@ -239,6 +239,16 @@ class CoachController extends Controller
             ->with('success', 'Master order submitted to The Commission Apparel for production!');
     }
 
+    public function reopenStore(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $store->update(['status' => 'approved']);
+        
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Store re-opened! Parents can now place orders again.');
+    }
+
     public function exportOrderCSV(TeamStore $store)
     {
         if ($store->user_id !== request()->user()->id) abort(403);
@@ -507,7 +517,7 @@ class CoachController extends Controller
             'total_retail_price'  => 0,
         ]);
 
-        return back()->with('success', 'Order line added to your draft.');
+        return redirect()->route('coach.dashboard')->with('success', 'Order line added to your draft.');
     }
 
     public function finalizeDirectOrders(Request $request)
@@ -520,7 +530,7 @@ class CoachController extends Controller
             ->get();
 
         if ($draftOrders->isEmpty()) {
-            return back()->with('error', 'You have no draft orders to submit.');
+            return redirect()->route('coach.dashboard')->with('error', 'You have no draft orders to submit.');
         }
 
         $batchId = (string) Str::uuid();
@@ -538,7 +548,7 @@ class CoachController extends Controller
             new \App\Notifications\MasterOrderSubmitted((object) ['name' => $user->organization . ' Direct Order', 'user' => $user])
         );
 
-        return back()->with('success', 'Your direct orders have been submitted to The Commission Apparel!');
+        return redirect()->route('coach.dashboard')->with('success', 'Your direct orders have been submitted to The Commission Apparel!');
     }
 
     public function exportDirectOrderBatch(Request $request, $batchId)

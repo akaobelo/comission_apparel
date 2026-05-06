@@ -57,7 +57,7 @@
         </div>
     @endif
 
-    <div class="max-w-6xl mx-auto space-y-16">
+    <div class="max-w-6xl mx-auto space-y-8">
         @if($store->status === 'submitted_to_admin')
             <div class="bg-red-50 border border-red-200 rounded-2xl shadow-sm p-10 text-center">
                 <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5 border border-red-200">
@@ -80,6 +80,14 @@
             <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-12 text-center">
                 <h3 class="text-2xl font-black uppercase tracking-tight text-slate-900 mb-2">Items Coming Soon</h3>
                 <p class="text-slate-600 text-base">The coach hasn't added any items yet. Check back soon once designs are finalized.</p>
+            </div>
+        @elseif($store->order_deadline && $store->order_deadline->isPast())
+            <div class="bg-red-50 border border-red-200 rounded-2xl shadow-sm p-10 text-center">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5 border border-red-200">
+                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <h3 class="text-2xl font-black uppercase tracking-tight text-slate-900 mb-2">Deadline Passed</h3>
+                <p class="text-slate-600 text-base max-w-lg mx-auto">The order deadline has passed. No new orders can be accepted at this time.</p>
             </div>
         @else
             {{-- ═══ NEW ORDER FORM GRID ═══ --}}
@@ -271,7 +279,7 @@
                 </div>
 
                 {{-- Special Notes --}}
-                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8 mb-32">
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8">
                     <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Special Sizing Notes (Optional)</label>
                     <input type="text" name="special_notes" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 transition-all font-medium" placeholder="e.g. Needs extra length on pants...">
                 </div>
@@ -418,12 +426,29 @@
             </form>
         @endif
 
-        {{-- Submitted Roster --}}
-        <div class="mt-24 pt-16 border-t border-slate-200">
-            <h2 class="text-2xl font-black uppercase text-slate-900 tracking-tight text-center mb-2">Submitted Roster</h2>
-            <p class="text-slate-600 text-sm text-center mb-10 max-w-lg mx-auto">Athletes listed below have successfully submitted their order. If your name is not shown, please use the form above.</p>
+        {{-- Submitted Roster Accordion --}}
+        <div x-data="{ rosterOpen: true, search: '' }" class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-24 overflow-hidden">
+            <button type="button" @click="rosterOpen = !rosterOpen" class="w-full flex items-center justify-between p-4 md:p-6 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="rosterOpen ? 'border-slate-100 bg-slate-50/50' : ''">
+                <div>
+                    <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Submitted Roster</h2>
+                    <p class="text-xs font-bold text-slate-500 mt-1">Athletes who have successfully submitted their order.</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="hidden sm:inline-block text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">{{ $store->parentOrders->count() }} Entries</span>
+                    <svg class="w-6 h-6 text-slate-400 transition-transform duration-300" :class="rosterOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+            </button>
             
-            <div class="max-w-4xl mx-auto">
+            <div x-show="rosterOpen" x-transition.opacity class="p-6 md:p-8">
+                <div class="mb-6 flex justify-between items-center gap-4">
+                    <div class="relative flex-1 max-w-md">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+                        <input type="text" x-model="search" placeholder="Search athletes by name..." class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                    </div>
+                </div>
+
                 @if($store->parentOrders->isEmpty())
                     <div class="text-center p-12 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
                         <svg class="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -431,21 +456,73 @@
                         <p class="text-slate-400 text-xs mt-2 font-medium">Be the first to submit your sizing.</p>
                     </div>
                 @else
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         @foreach($store->parentOrders as $order)
-                        <div class="bg-white border border-slate-200 rounded-2xl p-5 flex items-center justify-between shadow-sm hover:border-primary/40 transition-colors">
-                            <div class="flex items-center gap-4">
-                                <div class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center font-black text-primary">{{ substr($order->athlete_name, 0, 1) }}</div>
-                                <div>
-                                    <div class="font-bold text-slate-900 text-sm">{{ $order->athlete_name }}</div>
-                                    <div class="text-[10px] text-slate-500 font-black uppercase tracking-widest">{{ count(is_array($order->items_json) ? $order->items_json : []) }} items</div>
+                        <div x-data="{ viewModal: false, name: '{{ strtolower(addslashes($order->athlete_name)) }}' }" 
+                             x-show="search === '' || name.includes(search.toLowerCase())"
+                             class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between shadow-sm hover:border-primary/40 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center font-black text-primary text-xs flex-shrink-0">{{ substr($order->athlete_name, 0, 1) }}</div>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-slate-900 text-xs truncate max-w-[120px] sm:max-w-[150px]">{{ $order->athlete_name }}</div>
+                                    <div class="text-[9px] text-slate-500 font-black uppercase tracking-widest">{{ count(is_array($order->items_json) ? $order->items_json : []) }} items</div>
                                 </div>
                             </div>
-                            <span class="w-6 h-6 flex items-center justify-center bg-green-100 text-green-600 rounded-full border border-green-200 flex-shrink-0">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                            </span>
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                <button type="button" @click="viewModal = true" class="text-[9px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 px-2 py-1 transition-colors">view order</button>
+                                <span class="w-5 h-5 flex items-center justify-center bg-green-100 text-green-600 rounded-full border border-green-200 flex-shrink-0">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                </span>
+                            </div>
+
+                            <!-- Modal -->
+                            <div x-show="viewModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                                <div @click.away="viewModal = false" class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in relative max-h-[90vh] flex flex-col text-left">
+                                    <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                                        <div>
+                                            <h3 class="font-black uppercase tracking-tight text-slate-900">Order Details</h3>
+                                            <p class="text-xs font-bold text-slate-500">{{ $order->athlete_name }}</p>
+                                        </div>
+                                        <button @click="viewModal = false" class="text-slate-400 hover:text-slate-600 transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </div>
+                                    <div class="p-5 overflow-y-auto flex-1 bg-white">
+                                        @if(is_array($order->items_json) && count($order->items_json) > 0)
+                                            <div class="space-y-4">
+                                                @foreach($order->items_json as $item)
+                                                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50">
+                                                        <div class="font-bold text-slate-900 text-sm mb-1">{{ $item['name'] ?? 'Unknown Item' }}</div>
+                                                        <div class="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Qty: {{ $item['qty'] ?? 1 }}</div>
+                                                        
+                                                        @if(!empty($item['sizes']) && is_array($item['sizes']))
+                                                            <div class="grid grid-cols-2 gap-2 mt-2">
+                                                                @foreach($item['sizes'] as $type => $size)
+                                                                    <div class="bg-white border border-slate-200 rounded text-[11px] px-2 py-1.5 flex justify-between items-center shadow-sm">
+                                                                        <span class="text-slate-500 font-bold uppercase">{{ str_replace('_', ' ', $type) }}:</span>
+                                                                        <span class="text-slate-900 font-black">{{ $size }}</span>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                            <div class="mt-5 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+                                                <svg class="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                                <p class="text-xs font-medium text-amber-800">If you spot an error, please contact your coach to adjust the order before production begins.</p>
+                                            </div>
+                                        @else
+                                            <p class="text-sm text-slate-500 text-center py-4">No items recorded.</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         @endforeach
+                    </div>
+                    <div x-show="search !== '' && !Array.from($el.previousElementSibling.children).some(el => el.style.display !== 'none')" class="text-center p-8 text-slate-500 font-medium text-sm" style="display: none;">
+                        No athletes found matching "<span x-text="search" class="font-bold text-slate-900"></span>"
                     </div>
                 @endif
             </div>

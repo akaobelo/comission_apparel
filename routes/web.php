@@ -36,10 +36,11 @@ Route::post('/quote', [QuoteRequestController::class, 'store'])->name('quote.sto
 Route::get('/quote/success', function () { return view('quote_success'); })->name('quote.success');
 Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
 Route::get('/catalog', function () {
-    $collections = \App\Models\DesignCollection::orderBy('name')->get()->map(function($col) {
+    $collections = \App\Models\DesignCollection::with('designs')->orderBy('name')->get()->map(function($col) {
         return (object)[
             'name' => $col->name,
-            'image' => $col->image_path
+            'image' => $col->image_path,
+            'sports' => $col->designs->pluck('sport')->filter()->unique()->values()->toArray()
         ];
     });
 
@@ -49,7 +50,14 @@ Route::get('/catalog', function () {
         ->orderBy('created_at', 'desc')
         ->get();
 
-    return view('catalog.index', compact('collections', 'orphanedDesigns'));
+    $allSports = \App\Models\DesignCatalog::whereNotNull('sport')
+        ->where('sport', '!=', '')
+        ->distinct()
+        ->pluck('sport')
+        ->sort()
+        ->values();
+
+    return view('catalog.index', compact('collections', 'orphanedDesigns', 'allSports'));
 })->name('catalog.index');
 
 Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request, $collection) {
@@ -115,6 +123,7 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     Route::post('/coach/store/{store}/deadline', [CoachController::class, 'updateDeadline'])->name('coach.store.deadline');
     Route::get('/coach/store/{store}/export', [CoachController::class, 'exportOrderCSV'])->name('coach.store.export');
     Route::post('/coach/store/{store}/submit', [CoachController::class, 'submitMasterOrder'])->name('coach.store.submit');
+    Route::post('/coach/store/{store}/reopen', [CoachController::class, 'reopenStore'])->name('coach.store.reopen');
     Route::post('/coach/store/{store}/approve-pricing', [CoachController::class, 'approvePricing'])->name('coach.store.pricing.approve');
     Route::post('/coach/store/{store}/cover', [CoachController::class, 'updateCoverImage'])->name('coach.store.cover');
     Route::post('/coach/profile/logo', [CoachController::class, 'updateProfileLogo'])->name('coach.profile.logo');
@@ -175,6 +184,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
 
     // Landing Page Collections
     Route::post('/admin/landing-collections', [AdminController::class, 'createCollection'])->name('admin.landing.create');
+    Route::put('/admin/landing-collections/{collection}', [AdminController::class, 'updateCollection'])->name('admin.landing.update');
     Route::delete('/admin/landing-collections/{collection}', [AdminController::class, 'deleteCollection'])->name('admin.landing.delete');
 
     // Hero Settings

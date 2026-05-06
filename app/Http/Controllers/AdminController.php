@@ -65,6 +65,15 @@ class AdminController extends Controller
             ->latest()
             ->get();
 
+        // Finalized direct orders (no team store)
+        $finalizedDirectOrders = ParentOrder::whereNull('team_store_id')
+            ->where('status', 'Submitted to Admin')
+            ->where('is_archived', false)
+            ->with('user')
+            ->latest()
+            ->get();
+        $finalizedDirectOrderBatches = $finalizedDirectOrders->groupBy('batch_id');
+
         $quoteRequests = Schema::hasTable('quote_requests')
             ? QuoteRequest::latest()->get()
             : collect();
@@ -76,8 +85,16 @@ class AdminController extends Controller
         $availableSports = DesignCatalog::whereNotNull('sport')
             ->where('sport', '!=', '')
             ->distinct()
-            ->orderBy('sport')
-            ->pluck('sport');
+            ->pluck('sport')
+            ->merge(
+                LandingCollection::whereNotNull('tab_name')
+                    ->where('tab_name', '!=', '')
+                    ->distinct()
+                    ->pluck('tab_name')
+            )
+            ->unique()
+            ->sort()
+            ->values();
 
         $designCollections = \App\Models\DesignCollection::orderBy('name')->get();
 
@@ -98,7 +115,7 @@ class AdminController extends Controller
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStores',
             'designCatalog', 'productionStores', 'quoteRequests', 'landingCollections', 'allStores',
-            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'heroSettings', 'campaignStores', 'archivedStores'
+            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches'
         ));
     }
 
@@ -654,6 +671,30 @@ class AdminController extends Controller
         ]);
 
         return redirect()->route('admin.dashboard')->with('success', 'Landing collection added successfully.');
+    }
+
+    public function updateCollection(Request $request, LandingCollection $collection)
+    {
+        $validated = $request->validate([
+            'tab_name'    => ['required', 'string', 'max:255'],
+            'title'       => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'sort_order'  => ['required', 'integer'],
+            'image'       => ['nullable', 'image', 'max:10240'],
+        ]);
+
+        if ($request->hasFile('image')) {
+            if ($collection->image_path) {
+                $pathToRemove = str_replace('/storage/', '', $collection->image_path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            }
+            $path = $request->file('image')->store('collections', 'public');
+            $validated['image_path'] = '/storage/' . $path;
+        }
+
+        $collection->update($validated);
+
+        return redirect()->route('admin.dashboard')->with('success', 'Landing collection updated successfully.');
     }
 
     public function deleteCollection(LandingCollection $collection)
