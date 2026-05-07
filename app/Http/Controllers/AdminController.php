@@ -96,7 +96,7 @@ class AdminController extends Controller
             ->sort()
             ->values();
 
-        $designCollections = \App\Models\DesignCollection::orderBy('name')->get();
+        $designCollections = \App\Models\DesignCollection::orderBy('sort_order', 'asc')->orderBy('name', 'asc')->get();
 
         $passwordResetLogs = PasswordResetLog::with('user')->latest()->get();
 
@@ -332,13 +332,18 @@ class AdminController extends Controller
     public function createDesignCollection(Request $request)
     {
         $validated = $request->validate([
-            'name'  => ['required', 'string', 'max:255'],
-            'image' => ['nullable', 'image', 'max:10240'],
+            'name'       => ['required', 'string', 'max:255'],
+            'image'      => ['nullable', 'image', 'max:10240'],
+            'sort_order' => ['nullable', 'integer'],
         ]);
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('collections', 'public');
             $validated['image_path'] = '/storage/' . $path;
+        }
+
+        if (!isset($validated['sort_order'])) {
+            $validated['sort_order'] = \App\Models\DesignCollection::max('sort_order') + 1;
         }
 
         \App\Models\DesignCollection::create($validated);
@@ -350,8 +355,9 @@ class AdminController extends Controller
     public function updateDesignCollection(Request $request, \App\Models\DesignCollection $collection)
     {
         $validated = $request->validate([
-            'name'  => ['required', 'string', 'max:255'],
-            'image' => ['nullable', 'image', 'max:10240'],
+            'name'       => ['required', 'string', 'max:255'],
+            'image'      => ['nullable', 'image', 'max:10240'],
+            'sort_order' => ['required', 'integer'],
         ]);
 
         if ($request->hasFile('image')) {

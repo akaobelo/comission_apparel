@@ -12,6 +12,7 @@ class DesignCollection extends Model
     protected $fillable = [
         'name',
         'image_path',
+        'sort_order',
     ];
 
     public function designs()

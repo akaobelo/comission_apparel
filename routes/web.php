@@ -36,7 +36,11 @@ Route::post('/quote', [QuoteRequestController::class, 'store'])->name('quote.sto
 Route::get('/quote/success', function () { return view('quote_success'); })->name('quote.success');
 Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
 Route::get('/catalog', function () {
-    $collections = \App\Models\DesignCollection::with('designs')->orderBy('name')->get()->map(function($col) {
+    $collections = \App\Models\DesignCollection::with('designs')
+        ->orderBy('sort_order', 'asc')
+        ->orderBy('name', 'asc')
+        ->get()
+        ->map(function ($col) {
         return (object)[
             'name' => $col->name,
             'image' => $col->image_path,
