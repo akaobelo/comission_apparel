@@ -77,7 +77,7 @@
                             </div>
                             <div class="pt-4 flex flex-col text-center items-center">
                                 <span class="text-base font-medium text-red-600 mb-1">View Collection</span>
-                                <h2 class="text-lg font-bahnschrift font-semibold [font-stretch:semi-condensed] text-slate-900 group-hover:text-secondary transition-colors tracking-wide" title="{{ $collection->name }}">
+                                <h2 class="text-lg font-bold group-hover:text-secondary transition-colors" style="font-family: 'Arial Narrow', 'Franklin Gothic Medium', sans-serif; color: #0f172a;" title="{{ $collection->name }}">
                                     <a href="{{ route('catalog.show', ['collection' => $collection->name]) }}">{{ $collection->name }}</a>
                                 </h2>
                             </div>
@@ -145,7 +145,7 @@
 
                             <div class="pt-3 flex flex-col text-center items-center w-full px-1">
                                 <span class="text-xs md:text-sm font-medium text-red-600 mb-0.5 w-full truncate">{{ $design->type_label }}</span>
-                                <h2 class="text-sm md:text-base font-bahnschrift font-semibold [font-stretch:semi-condensed] text-slate-900 truncate tracking-wide w-full" title="{{ $design->name }}">{{ $design->name }}</h2>
+                                <h2 class="text-sm md:text-base font-bold truncate w-full" style="font-family: 'Arial Narrow', 'Franklin Gothic Medium', sans-serif; color: #0f172a;" title="{{ $design->name }}">{{ $design->name }}</h2>
                                 @if($design->sport)
                                     <div class="text-xs md:text-sm text-slate-500 mt-0.5 w-full truncate">{{ $design->sport }}</div>
                                 @endif
