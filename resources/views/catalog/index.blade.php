@@ -143,11 +143,11 @@
                                 @endif
                             </div>
 
-                            <div class="pt-4 flex flex-col text-center items-center">
-                                <span class="text-base font-medium text-red-600 mb-1">{{ $design->type_label }}</span>
-                                <h2 class="text-lg font-bahnschrift font-semibold [font-stretch:semi-condensed] text-slate-900 truncate tracking-wide" title="{{ $design->name }}">{{ $design->name }}</h2>
+                            <div class="pt-3 flex flex-col text-center items-center w-full px-1">
+                                <span class="text-xs md:text-sm font-medium text-red-600 mb-0.5 w-full truncate">{{ $design->type_label }}</span>
+                                <h2 class="text-sm md:text-base font-bahnschrift font-semibold [font-stretch:semi-condensed] text-slate-900 truncate tracking-wide w-full" title="{{ $design->name }}">{{ $design->name }}</h2>
                                 @if($design->sport)
-                                    <div class="text-base text-slate-500 mt-1">{{ $design->sport }}</div>
+                                    <div class="text-xs md:text-sm text-slate-500 mt-0.5 w-full truncate">{{ $design->sport }}</div>
                                 @endif
                             </div>
                         </div>
