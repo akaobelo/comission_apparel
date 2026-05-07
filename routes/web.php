@@ -226,4 +226,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/testimonials', [AdminController::class, 'createTestimonial'])->name('admin.testimonials.create');
     Route::put('/admin/testimonials/{testimonial}', [AdminController::class, 'updateTestimonial'])->name('admin.testimonials.update');
     Route::delete('/admin/testimonials/{testimonial}', [AdminController::class, 'deleteTestimonial'])->name('admin.testimonials.delete');
+
+    // Quotes
+    Route::post('/admin/quote/{quoteRequest}/delete', [AdminController::class, 'deleteQuote'])->name('admin.quote.delete');
 });

@@ -104,9 +104,18 @@
                             <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
-                    <div x-show="expanded" x-collapse>
+                    <div x-show="expanded" x-cloak>
+                        <div class="p-4 border-b border-slate-100 bg-white">
+                            <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md">
+                                <input type="text" name="quote_search" value="{{ request('quote_search') }}" placeholder="Search inquiries..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                                <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
+                                @if(request('quote_search'))
+                                    <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</a>
+                                @endif
+                            </form>
+                        </div>
                         @if($quoteRequests->isEmpty())
-                            <div class="p-8 text-center text-slate-400 text-sm">No quote inquiries yet.</div>
+                            <div class="p-8 text-center text-slate-400 text-sm">No quote inquiries found.</div>
                     @else
                         <div class="divide-y divide-slate-100 max-h-[32rem] overflow-y-auto">
                             @foreach($quoteRequests as $quoteRequest)
@@ -141,13 +150,25 @@
                                                 <p class="text-sm text-slate-600 mt-3">{{ $quoteRequest->design_vision }}</p>
                                             @endif
                                         </div>
-                                        <div class="text-xs text-slate-400 flex-shrink-0">
-                                            {{ $quoteRequest->created_at->diffForHumans() }}
+                                        <div class="text-xs text-slate-400 flex-shrink-0 flex flex-col items-end gap-2">
+                                            <span>{{ $quoteRequest->created_at->diffForHumans() }}</span>
+                                            <form action="{{ route('admin.quote.delete', $quoteRequest) }}" method="POST" onsubmit="return confirm('Mark this quote as addressed and remove it?')">
+                                                @csrf
+                                                <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm mt-2">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                    Mark Addressed
+                                                </button>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
                             @endforeach
                         </div>
+                        @if($quoteRequests instanceof \Illuminate\Pagination\LengthAwarePaginator && $quoteRequests->hasPages())
+                        <div class="p-4 border-t border-slate-100 bg-white">
+                            {{ $quoteRequests->links() }}
+                        </div>
+                        @endif
                         @endif
                     </div>
                 </div>

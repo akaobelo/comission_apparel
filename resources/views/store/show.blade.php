@@ -169,25 +169,6 @@
                             <input type="text" name="backpack_name" placeholder="e.g. Jordan Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                         </div>
                         
-                        <div class="md:col-span-2 mt-4 pt-6 border-t border-slate-100">
-                            <h3 class="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-4">Parent/Guardian Information</h3>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Parent's/Guardian's First Name</label>
-                            <input type="text" name="guardian_first_name" placeholder="First Name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Parent's/Guardian's Last Name</label>
-                            <input type="text" name="guardian_last_name" placeholder="Last Name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Parent's/Guardian's Phone</label>
-                            <input type="tel" name="guardian_phone" placeholder="e.g. (555) 123-4567" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Parent's/Guardian's Email</label>
-                            <input type="email" name="guardian_email" placeholder="e.g. parent@example.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
-                        </div>
                     </div>
                     </div>
                 </div>
@@ -258,15 +239,15 @@
                             </div>
 
                             <!-- Card Content -->
-                            <div class="pt-4 flex flex-col flex-1 text-left">
-                                <span class="text-base font-medium text-red-600 mb-1">{{ $typeLabel }}</span>
-                                <h3 class="text-base font-medium text-slate-900 mb-1">{{ $item->name }}</h3>
-                                <div class="text-base text-slate-500 mb-3">
+                            <div class="pt-3 flex flex-col text-center items-center flex-1 w-full px-1">
+                                <span class="text-xs md:text-sm font-medium text-red-600 mb-0.5 w-full truncate">{{ $typeLabel }}</span>
+                                <h3 class="text-sm md:text-base font-bold truncate w-full" style="font-family: 'Arial Narrow', 'Franklin Gothic Medium', sans-serif; color: #0f172a;" title="{{ $item->name }}">{{ $item->name }}</h3>
+                                <div class="text-xs md:text-sm text-slate-500 mt-0.5 mb-3 w-full truncate">
                                     Store Price:
-                                    <span class="text-slate-900 font-medium">${{ number_format($item->retail_price, 2) }}</span>
+                                    <span class="text-slate-900 font-bold">${{ number_format($item->retail_price, 2) }}</span>
                                 </div>
                                 
-                                <div class="mt-auto">
+                                <div class="mt-auto w-full">
                                     <button type="button" @click.prevent="openPanel('{{ $item->id }}')" class="w-full py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all"
                                             :class="items['{{ $item->id }}'].selected ? 'bg-slate-50 border-2 border-slate-300 text-slate-600' : 'bg-secondary text-white hover:bg-[#a11825] shadow-sm hover:shadow-md border-2 border-transparent'"
                                             x-text="items['{{ $item->id }}'].selected ? 'EDIT SIZING' : 'ORDER'">

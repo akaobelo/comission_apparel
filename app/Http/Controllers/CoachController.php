@@ -265,10 +265,10 @@ class CoachController extends Controller
         ];
 
         $columns = [
+            'Store Name', 'Order ID', 'Submission Date', 
             'Athlete First Name', 'Athlete Last Name', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Guardian First Name', 'Guardian Last Name', 'Guardian Phone', 'Guardian Email',
-            'Item', 'Types', 'Sizes', 'Qty', 'Special Notes', 'Edited?'
+            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price'
         ];
 
         $callback = function() use ($orders, $columns) {
@@ -295,10 +295,6 @@ class CoachController extends Controller
                             $order->jersey_name ?? '',
                             $order->jersey_number ?? '',
                             $order->backpack_name ?? '',
-                            $order->guardian_first_name ?? '',
-                            $order->guardian_last_name ?? '',
-                            $order->guardian_phone ?? '',
-                            $order->guardian_email ?? '',
                             $item['name'] ?? 'Unknown Item',
                             $typesStr,
                             $sizesStr,
@@ -349,10 +345,6 @@ class CoachController extends Controller
             'jersey_name'         => ['nullable', 'string', 'max:255'],
             'jersey_number'       => ['nullable', 'string', 'max:10'],
             'backpack_name'       => ['nullable', 'string', 'max:255'],
-            'guardian_first_name' => ['nullable', 'string', 'max:255'],
-            'guardian_last_name'  => ['nullable', 'string', 'max:255'],
-            'guardian_phone'      => ['nullable', 'string', 'max:255'],
-            'guardian_email'      => ['nullable', 'email', 'max:255'],
             'special_notes'       => ['nullable', 'string'],
             'items'               => ['required', 'array'],
         ]);
@@ -375,10 +367,6 @@ class CoachController extends Controller
             'jersey_name'         => $request->jersey_name,
             'jersey_number'       => $request->jersey_number,
             'backpack_name'       => $request->backpack_name,
-            'guardian_first_name' => $request->guardian_first_name,
-            'guardian_last_name'  => $request->guardian_last_name,
-            'guardian_phone'      => $request->guardian_phone,
-            'guardian_email'      => $request->guardian_email,
             'special_notes'       => $request->special_notes,
             'items_json'          => $itemsJson,
             'is_edited'           => true,

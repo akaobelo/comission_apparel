@@ -74,8 +74,20 @@ class AdminController extends Controller
             ->get();
         $finalizedDirectOrderBatches = $finalizedDirectOrders->groupBy('batch_id');
 
+        $quoteRequestsQuery = \App\Models\QuoteRequest::query();
+
+        if ($request->filled('quote_search')) {
+            $qs = $request->input('quote_search');
+            $quoteRequestsQuery->where(function ($q) use ($qs) {
+                $q->where('organization_name', 'like', "%{$qs}%")
+                  ->orWhere('first_name', 'like', "%{$qs}%")
+                  ->orWhere('last_name', 'like', "%{$qs}%")
+                  ->orWhere('email', 'like', "%{$qs}%");
+            });
+        }
+
         $quoteRequests = Schema::hasTable('quote_requests')
-            ? QuoteRequest::latest()->get()
+            ? $quoteRequestsQuery->latest()->paginate(10, ['*'], 'quote_page')->withQueryString()
             : collect();
 
         $landingCollections = LandingCollection::orderBy('sort_order', 'asc')->get();
@@ -560,10 +572,6 @@ class AdminController extends Controller
             'jersey_name'         => ['nullable', 'string', 'max:255'],
             'jersey_number'       => ['nullable', 'string', 'max:10'],
             'backpack_name'       => ['nullable', 'string', 'max:255'],
-            'guardian_first_name' => ['nullable', 'string', 'max:255'],
-            'guardian_last_name'  => ['nullable', 'string', 'max:255'],
-            'guardian_phone'      => ['nullable', 'string', 'max:255'],
-            'guardian_email'      => ['nullable', 'email', 'max:255'],
             'special_notes'       => ['nullable', 'string'],
             'items'               => ['required', 'array'],
         ]);
@@ -587,10 +595,6 @@ class AdminController extends Controller
             'jersey_name'         => $request->jersey_name,
             'jersey_number'       => $request->jersey_number,
             'backpack_name'       => $request->backpack_name,
-            'guardian_first_name' => $request->guardian_first_name,
-            'guardian_last_name'  => $request->guardian_last_name,
-            'guardian_phone'      => $request->guardian_phone,
-            'guardian_email'      => $request->guardian_email,
             'special_notes'       => $request->special_notes,
             'items_json'          => $itemsJson,
             'is_edited'           => true,
@@ -619,7 +623,6 @@ class AdminController extends Controller
         $columns = [
             'Athlete First Name', 'Athlete Last Name', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Guardian First Name', 'Guardian Last Name', 'Guardian Phone', 'Guardian Email',
             'Item', 'Types', 'Sizes', 'Qty', 'Special Notes', 'Edited?'
         ];
 
@@ -647,10 +650,6 @@ class AdminController extends Controller
                             $order->jersey_name ?? '',
                             $order->jersey_number ?? '',
                             $order->backpack_name ?? '',
-                            $order->guardian_first_name ?? '',
-                            $order->guardian_last_name ?? '',
-                            $order->guardian_phone ?? '',
-                            $order->guardian_email ?? '',
                             $item['name'] ?? 'Unknown Item',
                             $typesStr,
                             $sizesStr,
@@ -859,5 +858,11 @@ class AdminController extends Controller
         }
 
         return redirect()->route('admin.dashboard')->with('success', 'Hero media removed successfully.');
+    }
+
+    public function deleteQuote(\App\Models\QuoteRequest $quoteRequest)
+    {
+        $quoteRequest->delete();
+        return redirect()->back()->with('success', 'Quote inquiry marked as addressed and removed.');
     }
 }

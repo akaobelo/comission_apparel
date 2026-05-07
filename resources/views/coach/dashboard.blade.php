@@ -569,7 +569,7 @@
                                 No orders received yet. Share your store link with your team.
                             </div>
                         @else
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                                 @foreach($store->parentOrders as $order)
                                 <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
                                     <div class="flex items-center gap-3">
@@ -609,6 +609,74 @@
                 </form>
             </div>
             @endif
+
+            {{-- Current Store Items (Moved from Right Column) --}}
+            <div x-data="{ expandedItems: true }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <button type="button" @click="expandedItems = !expandedItems" class="w-full p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between hover:bg-slate-100 transition-colors focus:outline-none">
+                    <div class="flex items-center gap-3">
+                        <h3 class="text-base font-black uppercase tracking-tight text-slate-900">Current Store Items</h3>
+                        <svg class="w-5 h-5 text-slate-400 transition-transform duration-200" :class="expandedItems ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <span class="text-2xl font-black text-primary">{{ $store->items->count() }}</span>
+                </button>
+                <div x-show="expandedItems" x-cloak>
+                    <div class="p-5 bg-slate-50">
+                        @if($store->items->isNotEmpty())
+                            <div class="space-y-3">
+                                @foreach($store->items as $item)
+                                <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm group hover:border-primary transition-colors">
+                                    <div class="flex-1 pr-3">
+                                        <div class="text-base font-bahnschrift font-semibold tracking-wide text-slate-900">{{ $item->name }}</div>
+                                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-1 flex gap-3 flex-wrap">
+                                            <span>Type: <span class="text-primary">{{ $item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $item->types ?? [])) }}</span></span>
+                                            <span>Manufacturer's Price: <span class="text-slate-700">${{ number_format($item->wholesale_price, 2) }}</span></span>
+                                            <span>Store Price: <span class="text-green-700">${{ number_format($item->retail_price, 2) }}</span></span>
+                                        </div>
+                                        <div class="mt-2">
+                                            <form action="{{ route('coach.store.item.markup', $item) }}" method="POST" class="flex flex-wrap items-end gap-2">
+                                                @csrf
+                                                <div>
+                                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Enter your retail price ($)</label>
+                                                    <input
+                                                        type="number"
+                                                        name="retail_price"
+                                                        min="{{ $item->wholesale_price }}"
+                                                        step="0.01"
+                                                        value="{{ number_format($item->retail_price, 2, '.', '') }}"
+                                                        class="w-24 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
+                                                    >
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Sort Order</label>
+                                                    <input
+                                                        type="number"
+                                                        name="sort_order"
+                                                        value="{{ $item->sort_order }}"
+                                                        class="w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
+                                                    >
+                                                </div>
+                                                <button type="submit" class="px-3 py-1.5 bg-secondary text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors">
+                                                    Update
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    <form action="{{ route('coach.store.item.remove', $item) }}" method="POST" onsubmit="return confirm('Remove this item from your store?')">
+                                        @csrf
+                                        <button class="text-white transition-colors px-3 py-1.5 bg-slate-900 border border-slate-900 rounded-lg hover:bg-black flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            Remove
+                                        </button>
+                                    </form>
+                                </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-xs text-slate-400 text-center py-4">No items added to store yet.</p>
+                        @endif
+                    </div>
+                </div>
+            </div>
         </div>
 
         {{-- RIGHT: Team Builder --}}
@@ -811,61 +879,6 @@
                         </div>
                     @endif
 
-                    {{-- Current items in store --}}
-                    <h3 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3 border-b border-slate-100 pb-1">Current Store Items</h3>
-                    @if($store->items->isNotEmpty())
-                        <div class="space-y-3">
-                            @foreach($store->items as $item)
-                            <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm group hover:border-primary transition-colors">
-                                <div class="flex-1 pr-3">
-                                    <div class="text-base font-bahnschrift font-semibold tracking-wide text-slate-900">{{ $item->name }}</div>
-                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-1 flex gap-3">
-                                        <span>Type: <span class="text-primary">{{ $item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $item->types ?? [])) }}</span></span>
-                                        <span>Manufacturer's Price: <span class="text-slate-700">${{ number_format($item->wholesale_price, 2) }}</span></span>
-                                        <span>Store Price: <span class="text-green-700">${{ number_format($item->retail_price, 2) }}</span></span>
-                                    </div>
-                                    <div class="mt-2">
-                                        <form action="{{ route('coach.store.item.markup', $item) }}" method="POST" class="flex flex-wrap items-end gap-2">
-                                            @csrf
-                                            <div>
-                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Enter your retail price ($)</label>
-                                                <input
-                                                    type="number"
-                                                    name="retail_price"
-                                                    min="{{ $item->wholesale_price }}"
-                                                    step="0.01"
-                                                    value="{{ number_format($item->retail_price, 2, '.', '') }}"
-                                                    class="w-24 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
-                                                >
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Sort Order</label>
-                                                <input
-                                                    type="number"
-                                                    name="sort_order"
-                                                    value="{{ $item->sort_order }}"
-                                                    class="w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
-                                                >
-                                            </div>
-                                            <button type="submit" class="px-3 py-1.5 bg-secondary text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors">
-                                                Update
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                                <form action="{{ route('coach.store.item.remove', $item) }}" method="POST" onsubmit="return confirm('Remove this item from your store?')">
-                                    @csrf
-                                    <button class="text-white transition-colors px-3 py-1.5 bg-slate-900 border border-slate-900 rounded-lg hover:bg-black flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                                        Remove
-                                    </button>
-                                </form>
-                            </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <p class="text-xs text-slate-400 text-center py-4">No items added to store yet.</p>
-                    @endif
                 </div>
             </div>
             @else
