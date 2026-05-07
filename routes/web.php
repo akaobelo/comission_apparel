@@ -94,9 +94,22 @@ Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request,
         ->orderBy('sport')
         ->pluck('sport');
         
+    // Extract distinct types available in this collection
+    $allCollectionDesigns = \App\Models\DesignCatalog::where('design_collection_id', $collectionModel->id)->get(['type', 'types']);
+    $availableTypeKeys = [];
+    foreach ($allCollectionDesigns as $d) {
+        if ($d->type) {
+            $availableTypeKeys[] = $d->type;
+        }
+        if (is_array($d->types)) {
+            $availableTypeKeys = array_merge($availableTypeKeys, $d->types);
+        }
+    }
+    $availableTypeKeys = array_unique($availableTypeKeys);
+        
     $collection = $collectionModel->name;
         
-    return view('catalog.show', compact('designCatalog', 'availableSports', 'selectedSport', 'selectedTypes', 'collection'));
+    return view('catalog.show', compact('designCatalog', 'availableSports', 'selectedSport', 'selectedTypes', 'collection', 'availableTypeKeys'));
 })->name('catalog.show');
 
 // Public Team Stores (parent-facing, no auth)

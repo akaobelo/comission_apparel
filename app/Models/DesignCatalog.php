@@ -70,6 +70,10 @@ class DesignCatalog extends Model
                     'warmup_top'     => 'Warm-up (top)',
                     'warmup_bottom'  => 'Warm-up (bottom)',
                     'warmup_set'     => 'Warm-up (top/bottom)',
+                    'uniform_package_gold'   => 'Uniform Package (Gold)',
+                    'uniform_package_silver' => 'Uniform Package (Silver)',
+                    'uniform_package_bronze' => 'Uniform Package (Bronze)',
+                    'uniform_package_custom' => 'Uniform Package (Custom)',
                     default          => ucfirst(str_replace('_', ' ', $t)),
                 };
             }
@@ -97,6 +101,10 @@ class DesignCatalog extends Model
             'warmup_top'     => 'Warm-up (top)',
             'warmup_bottom'  => 'Warm-up (bottom)',
             'warmup_set'     => 'Warm-up (top/bottom)',
+            'uniform_package_gold'   => 'Uniform Package (Gold)',
+            'uniform_package_silver' => 'Uniform Package (Silver)',
+            'uniform_package_bronze' => 'Uniform Package (Bronze)',
+            'uniform_package_custom' => 'Uniform Package (Custom)',
             default          => ucfirst(str_replace('_', ' ', $this->type ?? '')),
         };
     }

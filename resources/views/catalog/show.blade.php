@@ -58,38 +58,33 @@
         <div class="mb-8 flex flex-col gap-4">
             <form method="GET" action="{{ route('catalog.show', ['collection' => $collection]) }}" class="w-full">
                 <div class="flex flex-col gap-6">
-                    <!-- Top Row: Sport filter and actions -->
+                    <!-- Top Row: Filters and actions -->
                     <div class="flex flex-wrap items-center gap-2">
                         <label for="sport" class="text-xs font-black uppercase tracking-wider text-slate-600">Filter by Sport</label>
-                        <select id="sport" name="sport" class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none">
+                        <select id="sport" name="sport" class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none" onchange="this.form.submit()">
                             <option value="">All Sports</option>
                             @foreach($availableSports as $sport)
                                 <option value="{{ $sport }}" {{ $selectedSport === $sport ? 'selected' : '' }}>{{ $sport }}</option>
                             @endforeach
                         </select>
 
-                        <button type="submit" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors ml-1">
-                            Apply
-                        </button>
-                        @if(!empty($selectedSport) || !empty($selectedTypes))
-                            <a href="{{ route('catalog.show', ['collection' => $collection]) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-100 transition-colors">
-                                Clear
-                            </a>
-                        @endif
+                        <div class="h-6 w-px bg-slate-300 mx-1 hidden sm:block"></div>
                         
-                        <div class="ml-auto w-full md:w-auto text-left md:text-right mt-2 md:mt-0">
-                            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 pt-1">
-                                Showing {{ $designCatalog->count() }} design{{ $designCatalog->count() === 1 ? '' : 's' }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Item Types Filter -->
-                    <div>
-                        <p class="text-xs font-black uppercase tracking-wider text-slate-700 mb-3">Item Types (Select all that apply)</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-6">
+                        <label class="text-xs font-black uppercase tracking-wider text-slate-600 hidden sm:block">Item Types</label>
+                        <div x-data="{ open: false }" class="relative">
+                            <button type="button" @click="open = !open" @click.away="open = false" class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none flex items-center justify-between min-w-[140px] shadow-sm">
+                                <span class="truncate">
+                                    @if(count($selectedTypes) > 0)
+                                        <span class="font-bold text-secondary">{{ count($selectedTypes) }} Selected</span>
+                                    @else
+                                        All Item Types
+                                    @endif
+                                </span>
+                                <svg class="w-4 h-4 text-slate-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            
                             @php
-                                $typesList = [
+                                $allTypesList = [
                                     'accessory' => 'Accessories',
                                     'arm_sleeve' => 'Arm Sleeves',
                                     'backpack' => 'Backpacks',
@@ -111,18 +106,53 @@
                                     'warmup_bottom' => 'Warm-up (bottom)',
                                     'warmup_set' => 'Warm-up (top/bottom)',
                                     'warmup_set_2' => 'Warm-up Set #2 (top/bottom)',
-                                    'package_gold' => 'Uniform Package (Gold)',
-                                    'package_silver' => 'Uniform Package (Silver)',
-                                    'package_bronze' => 'Uniform Package (Bronze)',
-                                    'package_custom' => 'Uniform Package (Custom)',
+                                    'uniform_package_gold' => 'Uniform Package (Gold)',
+                                    'uniform_package_silver' => 'Uniform Package (Silver)',
+                                    'uniform_package_bronze' => 'Uniform Package (Bronze)',
+                                    'uniform_package_custom' => 'Uniform Package (Custom)',
                                 ];
+                                
+                                $filteredTypesList = [];
+                                if (isset($availableTypeKeys)) {
+                                    foreach ($allTypesList as $key => $label) {
+                                        if (in_array($key, $availableTypeKeys)) {
+                                            $filteredTypesList[$key] = $label;
+                                        }
+                                    }
+                                } else {
+                                    $filteredTypesList = $allTypesList;
+                                }
                             @endphp
-                            @foreach($typesList as $typeKey => $typeLabel)
-                                <label class="flex items-center gap-2 cursor-pointer group">
-                                    <input type="checkbox" name="types[]" value="{{ $typeKey }}" {{ in_array($typeKey, $selectedTypes ?? []) ? 'checked' : '' }} class="w-4 h-4 rounded border-slate-300 text-secondary focus:ring-secondary cursor-pointer">
-                                    <span class="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">{{ $typeLabel }}</span>
-                                </label>
-                            @endforeach
+
+                            <div x-show="open" x-cloak x-transition.opacity.duration.200ms class="absolute z-50 mt-1 left-0 w-64 bg-white border border-slate-200 rounded-lg shadow-xl max-h-72 overflow-y-auto">
+                                <div class="p-2 space-y-0.5">
+                                    @if(empty($filteredTypesList))
+                                        <div class="px-2 py-2 text-sm text-slate-500 italic">No types available</div>
+                                    @else
+                                        @foreach($filteredTypesList as $typeKey => $typeLabel)
+                                            <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-md transition-colors group">
+                                                <input type="checkbox" name="types[]" value="{{ $typeKey }}" {{ in_array($typeKey, $selectedTypes ?? []) ? 'checked' : '' }} class="w-4 h-4 rounded border-slate-300 text-secondary focus:ring-secondary cursor-pointer" onchange="this.form.submit()">
+                                                <span class="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">{{ $typeLabel }}</span>
+                                            </label>
+                                        @endforeach
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors ml-1 hidden">
+                            Apply
+                        </button>
+                        @if(!empty($selectedSport) || !empty($selectedTypes))
+                            <a href="{{ route('catalog.show', ['collection' => $collection]) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-100 transition-colors ml-1 shadow-sm">
+                                Clear
+                            </a>
+                        @endif
+                        
+                        <div class="ml-auto w-full md:w-auto text-left md:text-right mt-2 md:mt-0">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 pt-1">
+                                Showing {{ $designCatalog->count() }} design{{ $designCatalog->count() === 1 ? '' : 's' }}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -185,7 +215,7 @@
 
                         <div class="pt-4 flex flex-col text-center items-center">
                             <span class="text-base font-medium text-red-600 mb-1">{{ $design->type_label }}</span>
-                            <h2 class="text-lg font-bahnschrift font-semibold text-slate-900 truncate tracking-wide" title="{{ $design->name }}">{{ $design->name }}</h2>
+                            <h2 class="text-lg font-bahnschrift font-semibold [font-stretch:semi-condensed] text-slate-900 truncate tracking-wide" title="{{ $design->name }}">{{ $design->name }}</h2>
                             @if($design->sport)
                                 <div class="text-base text-slate-500 mt-1">{{ $design->sport }}</div>
                             @endif
