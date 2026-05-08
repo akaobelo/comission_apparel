@@ -106,6 +106,56 @@
             </div>
             @endif
 
+            {{-- Package Management --}}
+            @php
+                $packages = $store->items->filter->isPackage();
+            @endphp
+            @if($packages->isNotEmpty())
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Package Configuration</h2>
+                </div>
+                <div class="p-5 space-y-6">
+                    @foreach($packages as $package)
+                    <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                        <div class="font-bold text-slate-900 mb-3">{{ $package->name }}</div>
+                        
+                        @if($package->components->isNotEmpty())
+                            <div class="mb-4 space-y-2">
+                                <label class="block text-[10px] font-black uppercase tracking-wider text-slate-500">Included Items</label>
+                                @foreach($package->components as $component)
+                                    <div class="flex items-center justify-between bg-white border border-slate-200 p-2 rounded">
+                                        <span class="text-sm font-medium text-slate-700">{{ $component->name }}</span>
+                                        <form action="{{ route('admin.store.package.detach', [$store, $package, $component]) }}" method="POST" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-500 hover:text-red-700 text-[10px] font-black uppercase tracking-wider">Remove</button>
+                                        </form>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-sm text-slate-500 mb-4 italic">No items attached to this package yet.</div>
+                        @endif
+
+                        <form action="{{ route('admin.store.package.attach', [$store, $package]) }}" method="POST" class="flex gap-2">
+                            @csrf
+                            <select name="component_id" required class="flex-1 bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <option value="">-- Select an item to add to this package --</option>
+                                @foreach($store->items->where('id', '!=', $package->id) as $potentialComponent)
+                                    @if(!$package->components->contains($potentialComponent->id) && !$potentialComponent->isPackage())
+                                        <option value="{{ $potentialComponent->id }}">{{ $potentialComponent->name }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                            <button type="submit" class="btn btn-primary py-2 px-4 text-xs uppercase tracking-wider">Add Item</button>
+                        </form>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             {{-- Order roster for this store --}}
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">

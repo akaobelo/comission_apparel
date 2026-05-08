@@ -78,7 +78,7 @@
         $isLocked = $store && $store->status === 'submitted_to_admin';
     @endphp
 
-    <div x-data="{ activeCoachTab: '{{ !$store ? 'create_order' : 'overview' }}' }" class="space-y-6">
+    <div x-data="{ activeCoachTab: '{{ session('activeCoachTab', !$store ? 'create_order' : 'overview') }}' }" class="space-y-6">
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-2 inline-flex gap-2">
             <button
                 type="button"
@@ -149,9 +149,9 @@
                                         <input type="text" name="athlete_last_name" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-3 gap-4">
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div>
-                                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Gender</label>
+                                        <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Gender</label>
                                         <select name="gender" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
                                             <option value="Male">Male</option>
                                             <option value="Female">Female</option>
@@ -159,12 +159,16 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Jersey # (Opt)</label>
+                                        <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Jersey # (Opt)</label>
                                         <input type="text" name="jersey_number" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Jersey Name (Opt)</label>
+                                        <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Jersey Name (Opt)</label>
                                         <input type="text" name="jersey_name" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Name on Backpack</label>
+                                        <input type="text" name="backpack_name" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
                                     </div>
                                 </div>
                             </div>
@@ -204,58 +208,77 @@
                                     </div>
                                     @endif
                                     
-                                    <div class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                                        @forelse($assignedDesigns as $design)
-                                            @php
-                                                $sizedTypes = \App\Models\DesignCatalog::sizedTypes();
-                                                $types = $design->types ?? [];
-                                                $hasSizes = count(array_intersect($types, $sizedTypes)) > 0;
-                                            @endphp
-                                            <div x-data="{ selected: false }" x-show="search === '' || '{{ strtolower(addslashes($design->name)) }}'.includes(search.toLowerCase()) || selected" class="border border-slate-200 rounded-xl p-4 transition-colors" :class="selected ? 'bg-primary/5 border-primary' : 'bg-white hover:border-slate-300'">
-                                                <div class="flex items-start gap-4">
-                                                    <div class="pt-1">
-                                                        <input type="checkbox" name="items[{{ $design->id }}][selected]" value="1" x-model="selected" class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary">
-                                                    </div>
-                                                    <div class="w-16 h-16 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 flex items-center justify-center">
-                                                        @if(!empty($design->image_paths))
-                                                            <img src="{{ Str::startsWith($design->image_paths[0], 'http') ? $design->image_paths[0] : asset('storage/' . $design->image_paths[0]) }}" alt="{{ $design->name }}" class="w-full h-full object-cover">
-                                                        @else
-                                                            <svg class="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                                        @endif
-                                                    </div>
-                                                    <div class="flex-1">
-                                                        <h4 class="font-bold text-slate-900 leading-tight font-heading">{{ $design->name }}</h4>
-                                                        <div class="text-xs text-slate-500 mt-1 uppercase tracking-wider">{{ implode(', ', $types) }}</div>
-                                                        
-                                                        <div x-show="selected" x-collapse class="mt-4 pt-4 border-t border-slate-200/60">
-                                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                                <div>
-                                                                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Quantity</label>
-                                                                    <input type="number" name="items[{{ $design->id }}][qty]" value="1" min="1" class="w-full border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" :required="selected">
-                                                                </div>
-                                                                @foreach($types as $t)
-                                                                    @if(in_array($t, $sizedTypes))
-                                                                    <div>
-                                                                        <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">{{ $t }} Size</label>
-                                                                        <select name="items[{{ $design->id }}][sizes][{{ $t }}]" class="w-full border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" :required="selected">
-                                                                            <option value="">Select Size</option>
-                                                                            @foreach(\App\Models\DesignCatalog::sizeChart() as $size)
-                                                                                <option value="{{ $size }}">{{ $size }}</option>
-                                                                            @endforeach
-                                                                        </select>
+                                    <div class="space-y-6 max-h-[500px] overflow-y-auto pr-2">
+                                        @php
+                                            $packageDesigns = $assignedDesigns->filter->isPackage();
+                                            $individualDesigns = $assignedDesigns->reject->isPackage();
+                                        @endphp
+
+                                        @foreach([
+                                            ['title' => 'Packages', 'items' => $packageDesigns],
+                                            ['title' => 'Individual Items', 'items' => $individualDesigns]
+                                        ] as $group)
+                                            @if($group['items']->isNotEmpty())
+                                                <div>
+                                                    <h4 class="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-3 bg-slate-100 p-2 rounded">{{ $group['title'] }}</h4>
+                                                    <div class="space-y-3">
+                                                        @foreach($group['items'] as $design)
+                                                            @php
+                                                                $sizedTypes = \App\Models\DesignCatalog::sizedTypes();
+                                                                $types = $design->types ?? [];
+                                                                $hasSizes = count(array_intersect($types, $sizedTypes)) > 0;
+                                                            @endphp
+                                                            <div x-data="{ selected: false }" x-show="search === '' || '{{ strtolower(addslashes($design->name)) }}'.includes(search.toLowerCase()) || selected" class="border border-slate-200 rounded-xl p-4 transition-colors" :class="selected ? 'bg-primary/5 border-primary' : 'bg-white hover:border-slate-300'">
+                                                                <div class="flex items-start gap-4">
+                                                                    <div class="pt-1">
+                                                                        <input type="checkbox" name="items[{{ $design->id }}][selected]" value="1" x-model="selected" class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary">
                                                                     </div>
-                                                                    @endif
-                                                                @endforeach
+                                                                    <div class="w-16 h-16 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 flex items-center justify-center">
+                                                                        @if(!empty($design->image_paths))
+                                                                            <img src="{{ Str::startsWith($design->image_paths[0], 'http') ? $design->image_paths[0] : asset('storage/' . $design->image_paths[0]) }}" alt="{{ $design->name }}" class="w-full h-full object-cover">
+                                                                        @else
+                                                                            <svg class="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div class="flex-1">
+                                                                        <h4 class="font-bold text-slate-900 leading-tight font-heading">{{ $design->name }}</h4>
+                                                                        <div class="text-xs text-slate-500 mt-1 uppercase tracking-wider">{{ implode(', ', $types) }}</div>
+                                                                        
+                                                                        <div x-show="selected" x-collapse class="mt-4 pt-4 border-t border-slate-200/60">
+                                                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                                                <div>
+                                                                                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Quantity</label>
+                                                                                    <input type="number" name="items[{{ $design->id }}][qty]" value="1" min="1" class="w-full border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" :required="selected">
+                                                                                </div>
+                                                                                @foreach($types as $t)
+                                                                                    @if(in_array($t, $sizedTypes))
+                                                                                    <div>
+                                                                                        <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">{{ $t }} Size</label>
+                                                                                        <select name="items[{{ $design->id }}][sizes][{{ $t }}]" class="w-full border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" :required="selected">
+                                                                                            <option value="">Select Size</option>
+                                                                                            @foreach(\App\Models\DesignCatalog::sizeChart() as $size)
+                                                                                                <option value="{{ $size }}">{{ $size }}</option>
+                                                                                            @endforeach
+                                                                                        </select>
+                                                                                    </div>
+                                                                                    @endif
+                                                                                @endforeach
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                        </div>
+                                                        @endforeach
                                                     </div>
                                                 </div>
-                                            </div>
-                                        @empty
+                                            @endif
+                                        @endforeach
+
+                                        @if($assignedDesigns->isEmpty())
                                             <div class="p-4 bg-slate-50 rounded-lg text-center text-slate-500 text-sm">
                                                 You have no assigned designs yet. Please contact The Commission Apparel.
                                             </div>
-                                        @endforelse
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -291,7 +314,10 @@
                                 <div class="bg-slate-50 rounded-lg p-3 border border-slate-100">
                                     <div class="flex justify-between items-start mb-2">
                                         <div class="font-bold text-sm text-slate-900">{{ $draft->athlete_name }}</div>
-                                        <div class="text-[10px] text-slate-500 uppercase">{{ $draft->gender }}</div>
+                                        <div class="flex items-center gap-2">
+                                            <div class="text-[10px] text-slate-500 uppercase">{{ $draft->gender }}</div>
+                                            <a href="{{ route('coach.order.edit', $draft) }}" class="text-[10px] font-bold text-primary hover:text-secondary uppercase">Edit</a>
+                                        </div>
                                     </div>
                                     <ul class="text-xs text-slate-600 space-y-1">
                                         @foreach($draft->items_json as $item)
@@ -321,7 +347,10 @@
 
                 @if($directOrderBatches->filter(fn($v, $k) => $k !== '')->isNotEmpty())
                 <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-                    <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 mb-4">Submitted Batches</h2>
+                    <div class="mb-4">
+                        <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Submitted Batches</h2>
+                        <p class="text-xs text-slate-500">Includes direct orders and finalized store batches.</p>
+                    </div>
                     <div class="space-y-3">
                         @foreach($directOrderBatches->filter(fn($v, $k) => $k !== '') as $batchId => $batchOrders)
                             <div class="border border-slate-200 rounded-lg p-4">
@@ -466,7 +495,8 @@
                         </div>
                         <div class="flex-1">
                             <h3 class="text-lg font-black uppercase text-blue-900 mb-1">Pricing Ready for Review</h3>
-                            <p class="text-sm text-blue-800 mb-4">The Commission Apparel has set the pricing for your items. Please review your wholesale cost, retail price (which parents will see), and your profit margins below. You must approve this pricing before your storefront can go live.</p>
+                            <p class="text-sm text-blue-800 mb-2">The Commission Apparel has set the pricing for your items. Please review your wholesale cost, retail price (which parents will see), and your profit margins below. You must approve this pricing before your storefront can go live.</p>
+                            <p class="text-sm text-blue-800 mb-4 font-bold">To edit your retail price, scroll down to the "Current Store Items" section and revise prices to your desired amount.</p>
                             
                             <div class="space-y-2 mb-5 bg-white bg-opacity-60 rounded-lg p-4">
                                 @foreach($store->items as $item)
@@ -544,7 +574,7 @@
                             </div>
                         </div>
                         @elseif($isLocked)
-                        <form action="{{ route('coach.store.reopen', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to re-open the store? Parents will be able to submit orders again.')">
+                        <form action="{{ route('coach.store.reopen', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to re-open the store for a NEW batch of orders? WARNING: This will permanently clear all previous parent orders. Ensure you have exported them if needed.')">
                             @csrf
                             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors">Re-Open Store</button>
                         </form>
@@ -928,14 +958,14 @@
             @if(empty($salesSummary['order_rows']))
                 <div class="p-8 text-center text-sm text-slate-500">No parent orders yet. Share your parent order link to start generating sales.</div>
             @else
-                <div class="divide-y divide-slate-100">
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-6 max-h-[500px] overflow-y-auto">
                     @foreach($salesSummary['order_rows'] as $row)
-                        <div class="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div class="flex items-center justify-between gap-4">
                             <div>
                                 <p class="font-bold text-slate-900 text-sm">{{ $row['athlete_name'] }}</p>
-                                <p class="text-[10px] uppercase tracking-wider text-slate-500">{{ $row['items_count'] }} item(s) · {{ $row['submitted_at']->format('M d, Y') }}</p>
+                                <p class="text-[10px] uppercase tracking-wider text-slate-400 mt-0.5">{{ $row['items_count'] }} ITEM(S) · {{ strtoupper($row['submitted_at']->format('M d, Y')) }}</p>
                             </div>
-                            <p class="text-base font-black text-green-700">${{ number_format($row['order_total'], 2) }}</p>
+                            <p class="text-sm font-black text-green-700">${{ number_format($row['order_total'], 2) }}</p>
                         </div>
                     @endforeach
                 </div>

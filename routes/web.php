@@ -162,6 +162,7 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     // Coach can edit parent orders
     Route::get('/coach/order/{order}/edit', [CoachController::class, 'editOrder'])->name('coach.order.edit');
     Route::post('/coach/order/{order}/update', [CoachController::class, 'updateOrder'])->name('coach.order.update');
+    Route::delete('/coach/order/{order}/delete', [CoachController::class, 'deleteOrder'])->name('coach.order.delete');
 
     // Direct Orders (No Team Store)
     Route::post('/coach/direct-order/submit', [CoachController::class, 'submitDirectOrder'])->name('coach.direct-order.submit');
@@ -185,8 +186,8 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::put('/admin/design/{design}', [AdminController::class, 'updateDesign'])->name('admin.design.update');
     Route::get('/admin/design/{design}', function () { return redirect()->route('admin.dashboard'); });
     Route::delete('/admin/design/{design}', [AdminController::class, 'deleteDesign'])->name('admin.design.delete');
-    Route::post('/admin/design/{design}/assign-to-store', [AdminController::class, 'assignToStore'])->name('admin.design.assign-to-store');
-    Route::get('/admin/design/{design}/assign-to-store', function () {
+    Route::post('/admin/design/{design}/assign-to-coach-profile', [AdminController::class, 'assignToCoachProfile'])->name('admin.design.assign-to-coach-profile');
+    Route::get('/admin/design/{design}/assign-to-coach-profile', function () {
         return redirect()->route('admin.dashboard')->with('error', 'Your session expired or you refreshed a form submission. Please try assigning the design again.');
     });
 
@@ -204,14 +205,18 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/stores/{store}/approve', [AdminController::class, 'approveStore'])->name('admin.stores.approve');
     Route::post('/admin/stores/{store}/decline', [AdminController::class, 'declineStore'])->name('admin.stores.decline');
     Route::post('/admin/stores/{store}/archive', [AdminController::class, 'archiveStore'])->name('admin.stores.archive');
+    Route::post('/admin/stores/{store}/unarchive', [AdminController::class, 'unarchiveStore'])->name('admin.stores.unarchive');
     Route::get('/admin/stores/{store}/edit', [AdminController::class, 'editStore'])->name('admin.store.edit');
     Route::post('/admin/stores/{store}/update', [AdminController::class, 'updateStore'])->name('admin.store.update');
     Route::post('/admin/stores/{store}/pricing', [AdminController::class, 'updateStorePricing'])->name('admin.store.pricing.update');
+    Route::post('/admin/stores/{store}/package/{package}/attach', [AdminController::class, 'attachPackageComponent'])->name('admin.store.package.attach');
+    Route::delete('/admin/stores/{store}/package/{package}/detach/{component}', [AdminController::class, 'detachPackageComponent'])->name('admin.store.package.detach');
     Route::get('/admin/stores/{store}/export', [AdminController::class, 'exportOrderCSV'])->name('admin.stores.export');
 
     // Order editing
     Route::get('/admin/order/{order}/edit', [AdminController::class, 'editOrder'])->name('admin.order.edit');
     Route::post('/admin/order/{order}/update', [AdminController::class, 'updateOrder'])->name('admin.order.update');
+    Route::delete('/admin/order/{order}/delete', [AdminController::class, 'deleteOrder'])->name('admin.order.delete');
 
     // Landing Page Collections
     Route::post('/admin/landing-collections', [AdminController::class, 'createCollection'])->name('admin.landing.create');
@@ -228,5 +233,5 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::delete('/admin/testimonials/{testimonial}', [AdminController::class, 'deleteTestimonial'])->name('admin.testimonials.delete');
 
     // Quotes
-    Route::post('/admin/quote/{quoteRequest}/delete', [AdminController::class, 'deleteQuote'])->name('admin.quote.delete');
+    Route::post('/admin/quote/{quoteRequest}/mark-addressed', [AdminController::class, 'markQuoteAddressed'])->name('admin.quote.mark-addressed');
 });

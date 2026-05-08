@@ -96,11 +96,33 @@ class StoreController extends Controller
                 'sizes'        => [],
             ];
 
-            // Handle sizes for each sized type
-            $sizedTypes = DesignCatalog::sizedTypes();
-            foreach ($types as $t) {
-                if (in_array($t, $sizedTypes)) {
-                    $entry['sizes'][$t] = $details['sizes'][$t] ?? null;
+            if ($storeItem->isPackage() && isset($details['components'])) {
+                $componentsData = [];
+                foreach ($storeItem->components as $component) {
+                    if (isset($details['components'][$component->id]['sizes'])) {
+                        $compTypes = $component->types ?? [$component->type];
+                        $compSizedTypes = array_intersect($compTypes, DesignCatalog::sizedTypes());
+                        
+                        $compSizes = [];
+                        foreach ($compSizedTypes as $t) {
+                            $compSizes[$t] = $details['components'][$component->id]['sizes'][$t] ?? null;
+                        }
+                        
+                        $componentsData[] = [
+                            'id' => $component->id,
+                            'name' => $component->name,
+                            'sizes' => $compSizes
+                        ];
+                    }
+                }
+                $entry['components'] = $componentsData;
+            } else {
+                // Handle sizes for each sized type
+                $sizedTypes = DesignCatalog::sizedTypes();
+                foreach ($types as $t) {
+                    if (in_array($t, $sizedTypes)) {
+                        $entry['sizes'][$t] = $details['sizes'][$t] ?? null;
+                    }
                 }
             }
 

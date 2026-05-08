@@ -58,11 +58,15 @@
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-slate-400">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Finalized Orders</p>
-            <div class="text-3xl font-black text-slate-900">{{ $finalizedStores->count() }}</div>
+            <div class="text-3xl font-black text-slate-900">{{ $finalizedStoreBatches->count() }}</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-purple-500">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Finalized Direct Orders</p>
+            <div class="text-3xl font-black text-purple-600">{{ $finalizedDirectOrderBatches->count() }}</div>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-blue-500">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Quote Inquiries</p>
-            <div class="text-3xl font-black text-blue-600">{{ $quoteRequests->count() }}</div>
+            <div class="text-3xl font-black text-blue-600">{{ $newQuoteRequestsCount }}</div>
         </div>
     </div>
 
@@ -100,7 +104,7 @@
                             <p class="text-sm text-slate-500 mt-1">Public quote requests submitted from the website.</p>
                         </div>
                         <div class="flex items-center gap-4 text-slate-400">
-                            <span class="text-sm font-bold">{{ $quoteRequests->count() }} Inquiries</span>
+                            <span class="text-sm font-bold">{{ $quoteRequestsTotal }} Inquiries</span>
                             <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
@@ -152,13 +156,20 @@
                                         </div>
                                         <div class="text-xs text-slate-400 flex-shrink-0 flex flex-col items-end gap-2">
                                             <span>{{ $quoteRequest->created_at->diffForHumans() }}</span>
-                                            <form action="{{ route('admin.quote.delete', $quoteRequest) }}" method="POST" onsubmit="return confirm('Mark this quote as addressed and remove it?')">
+                                            @if($quoteRequest->status === 'new' || !$quoteRequest->status)
+                                            <form action="{{ route('admin.quote.mark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Mark this quote as addressed?')">
                                                 @csrf
                                                 <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm mt-2">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                                     Mark Addressed
                                                 </button>
                                             </form>
+                                            @else
+                                            <div class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-500 border border-slate-200 rounded-md text-[10px] font-bold uppercase tracking-wider mt-2 opacity-75 cursor-default">
+                                                <svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                Addressed
+                                            </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -252,22 +263,25 @@
                         <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Master Orders</h2>
                         <p class="text-sm text-slate-500 mt-1">Aggregate totals per team store that have reached end of registration.</p>
                     </div>
-                    @if($finalizedStores->isEmpty())
-                        <div class="p-12 text-center text-slate-400 text-sm">No finalized orders yet.</div>
+                    @if($finalizedStoreBatches->isEmpty())
+                        <div class="p-12 text-center text-slate-400 text-sm">No finalized store orders yet.</div>
                     @else
                         <div class="divide-y divide-slate-100">
-                            @foreach($finalizedStores as $store)
+                            @foreach($finalizedStoreBatches as $batchId => $batchOrders)
                             @php
-                                $totalAthletes = $store->parentOrders->count();
-                                $totalItems = $store->parentOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
+                                $store = $batchOrders->first()->teamStore;
+                                $coach = $store ? $store->user : null;
+                                $totalAthletes = $batchOrders->count();
+                                $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
                             @endphp
                             <div class="p-5">
                                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
                                     <div>
-                                        <div class="font-black text-slate-900 uppercase text-base">{{ $store->name }}</div>
+                                        <div class="font-black text-slate-900 uppercase text-base">{{ $store ? $store->name : 'Unknown Store' }}</div>
                                         <div class="text-sm text-slate-500 mt-0.5">
-                                            Coach: {{ $store->user->name }} — {{ $store->user->organization }}
+                                            Coach: {{ $coach ? $coach->name : 'Unknown' }} — {{ $coach ? $coach->organization : '—' }}
                                         </div>
+                                        <div class="text-xs text-slate-400 mt-0.5 uppercase tracking-wide font-bold">Batch Submitted: {{ $batchOrders->first()->created_at->format('M d, Y') }}</div>
                                         <div class="mt-3 grid grid-cols-3 gap-4">
                                             <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
                                                 <div class="text-2xl font-black text-primary">{{ $totalAthletes }}</div>
@@ -278,14 +292,17 @@
                                                 <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
                                             </div>
                                             <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
-                                                <div class="text-xs font-bold text-slate-900">{{ $store->order_deadline ? $store->order_deadline->format('M d') : '—' }}</div>
+                                                <div class="text-xs font-bold text-slate-900">{{ $store && $store->order_deadline ? $store->order_deadline->format('M d') : '—' }}</div>
                                                 <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Deadline</div>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="flex flex-col gap-2 flex-shrink-0">
-                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review / Edit</a>
-                                        <a href="{{ route('admin.stores.export', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Export CSV</a>
+                                        @if($store)
+                                            <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review / Edit Store</a>
+                                            <!-- We can reuse direct order export for batches -->
+                                            <a href="{{ route('coach.direct-order.export', $batchId) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Export CSV</a>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -371,7 +388,13 @@
                                     <div class="font-bold text-sm text-slate-700">{{ $store->name }}</div>
                                     <div class="text-xs text-slate-500">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
                                 </div>
-                                <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded hover:bg-slate-200 transition-colors flex-shrink-0">View</a>
+                                <div class="flex items-center gap-2 flex-shrink-0">
+                                    <form action="{{ route('admin.stores.unarchive', $store) }}" method="POST" onsubmit="return confirm('Restore this store back to active production?')">
+                                        @csrf
+                                        <button type="submit" class="px-3 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded hover:bg-slate-200 transition-colors">Unarchive</button>
+                                    </form>
+                                    <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded hover:bg-slate-200 transition-colors">View</a>
+                                </div>
                             </div>
                             @endforeach
                         @endif
@@ -1134,15 +1157,15 @@
                                 </details>
                             </div>
                             <div class="flex items-center gap-3">
-                                <form action="{{ route('admin.design.assign-to-store', $design) }}" method="POST" class="flex items-center gap-1">
+                                <form action="{{ route('admin.design.assign-to-coach-profile', $design) }}" method="POST" class="flex items-center gap-1">
                                     @csrf
-                                    <select name="team_store_id" required class="text-xs bg-white border border-slate-300 rounded px-2 py-1 w-32 focus:border-primary focus:outline-none">
-                                        <option value="">Assign to store...</option>
-                                        @foreach($allStores as $store)
-                                            <option value="{{ $store->id }}">{{ $store->name }} ({{ $store->user->name }})</option>
+                                    <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2 py-1 w-32 focus:border-primary focus:outline-none">
+                                        <option value="">Assign to coach...</option>
+                                        @foreach($allCoaches as $c)
+                                            <option value="{{ $c->id }}">{{ $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
                                         @endforeach
                                     </select>
-                                    <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors" title="Push Design to Store">Push</button>
+                                    <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors" title="Assign Design to Coach">Assign</button>
                                 </form>
                                 <form action="{{ route('admin.design.delete', $design) }}" method="POST" onsubmit="return confirm('Delete this design from the catalog?')">
                                     @csrf @method('DELETE')

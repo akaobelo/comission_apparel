@@ -136,4 +136,16 @@ class DesignCatalog extends Model
     {
         return ['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL', 'AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL'];
     }
+
+    public function isPackage(): bool
+    {
+        if (str_contains((string)$this->type, 'package')) return true;
+        if (str_contains((string)$this->category, 'package')) return true;
+        if (is_array($this->types)) {
+            foreach ($this->types as $t) {
+                if (str_contains((string)$t, 'package')) return true;
+            }
+        }
+        return false;
+    }
 }

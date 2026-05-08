@@ -18,7 +18,7 @@
     <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
         <div class="p-6 border-b border-slate-200 bg-slate-50">
             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Edit Parent Order</h2>
-            <p class="text-sm text-slate-500 mt-1">Store: {{ $store->name }} · Submitted {{ $order->created_at->format('M d, Y') }}</p>
+            <p class="text-sm text-slate-500 mt-1">{{ $store ? 'Store: ' . $store->name : 'Direct Order' }} · Submitted {{ $order->created_at->format('M d, Y') }}</p>
             <p class="text-xs text-orange-600 font-bold mt-2">⚠ You are editing this order on behalf of the parent. Changes are logged.</p>
         </div>
         <div class="p-6">
@@ -129,6 +129,17 @@
                     <a href="{{ route('coach.dashboard') }}" class="btn btn-outline py-3 px-6 text-sm uppercase tracking-wider">Cancel</a>
                 </div>
             </form>
+
+            <div class="mt-8 pt-6 border-t border-slate-200 flex justify-end">
+                <form action="{{ route('coach.order.delete', $order) }}" method="POST" onsubmit="return confirm('Are you sure you want to completely delete this order? This cannot be undone.')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="px-6 py-2.5 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 hover:text-red-700 font-bold uppercase tracking-wider rounded-lg text-xs transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Delete Order
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

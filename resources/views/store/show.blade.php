@@ -180,7 +180,7 @@
                         <span class="text-sm font-bold text-slate-500"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Selected</span>
                     </h2>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                         @foreach($store->items as $item)
                         @php
                             $types = $item->types ?? [$item->type];
@@ -357,23 +357,52 @@
                                 </div>
                                 
                                 <div class="space-y-5">
-                                    @foreach($itemSizedTypes as $t)
-                                    <div>
-                                        <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">{{ str_replace('_', ' ', $t) }} Size <span class="text-red-500">*</span></label>
-                                        <select name="items[{{ $item->id }}][sizes][{{ $t }}]" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium">
-                                            <optgroup label="Youth Sizes">
-                                                @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $s)
-                                                    <option value="{{ $s }}">{{ $s }}</option>
+                                    @if($item->isPackage() && $item->components->isNotEmpty())
+                                        @foreach($item->components as $component)
+                                            @php
+                                                $compTypes = $component->types ?? [$component->type];
+                                                $compSizedTypes = array_intersect($compTypes, \App\Models\DesignCatalog::sizedTypes());
+                                            @endphp
+                                            <div class="pt-4 mt-2 border-t border-slate-200 first:border-0 first:pt-0 first:mt-0">
+                                                <h4 class="text-xs font-black text-slate-800 mb-3 uppercase tracking-wide">{{ $component->name }}</h4>
+                                                @foreach($compSizedTypes as $t)
+                                                    <div class="mb-3">
+                                                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{{ str_replace('_', ' ', $t) }} Size <span class="text-red-500">*</span></label>
+                                                        <select name="items[{{ $item->id }}][components][{{ $component->id }}][sizes][{{ $t }}]" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium">
+                                                            <optgroup label="Youth Sizes">
+                                                                @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $s)
+                                                                    <option value="{{ $s }}">{{ $s }}</option>
+                                                                @endforeach
+                                                            </optgroup>
+                                                            <optgroup label="Adult Sizes">
+                                                                @foreach(['AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL'] as $s)
+                                                                    <option value="{{ $s }}" {{ $s === 'AM' ? 'selected' : '' }}>{{ $s }}</option>
+                                                                @endforeach
+                                                            </optgroup>
+                                                        </select>
+                                                    </div>
                                                 @endforeach
-                                            </optgroup>
-                                            <optgroup label="Adult Sizes">
-                                                @foreach(['AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL'] as $s)
-                                                    <option value="{{ $s }}" {{ $s === 'AM' ? 'selected' : '' }}>{{ $s }}</option>
-                                                @endforeach
-                                            </optgroup>
-                                        </select>
-                                    </div>
-                                    @endforeach
+                                            </div>
+                                        @endforeach
+                                    @else
+                                        @foreach($itemSizedTypes as $t)
+                                        <div>
+                                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">{{ str_replace('_', ' ', $t) }} Size <span class="text-red-500">*</span></label>
+                                            <select name="items[{{ $item->id }}][sizes][{{ $t }}]" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium">
+                                                <optgroup label="Youth Sizes">
+                                                    @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $s)
+                                                        <option value="{{ $s }}">{{ $s }}</option>
+                                                    @endforeach
+                                                </optgroup>
+                                                <optgroup label="Adult Sizes">
+                                                    @foreach(['AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL'] as $s)
+                                                        <option value="{{ $s }}" {{ $s === 'AM' ? 'selected' : '' }}>{{ $s }}</option>
+                                                    @endforeach
+                                                </optgroup>
+                                            </select>
+                                        </div>
+                                        @endforeach
+                                    @endif
 
                                     <div>
                                         <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Quantity</label>

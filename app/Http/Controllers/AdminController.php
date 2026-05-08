@@ -42,12 +42,15 @@ class AdminController extends Controller
             ->latest()
             ->get();
 
-        // Finalized master orders (stores submitted to admin) — aggregate view
-        $finalizedStores = TeamStore::where('status', 'submitted_to_admin')
+        // Finalized store batches (preserves history even if store is re-opened)
+        $finalizedStoreBatches = ParentOrder::whereNotNull('team_store_id')
+            ->whereNotNull('batch_id')
+            ->where('status', 'Submitted to Admin')
             ->where('is_archived', false)
-            ->with(['user', 'parentOrders.teamStore'])
+            ->with(['user', 'teamStore'])
             ->latest()
-            ->get();
+            ->get()
+            ->groupBy('batch_id');
 
         // Design catalog
         $designCatalog = DesignCatalog::orderBy('sort_order', 'desc')->orderBy('created_at', 'desc')->get();
@@ -90,9 +93,13 @@ class AdminController extends Controller
             ? $quoteRequestsQuery->latest()->paginate(10, ['*'], 'quote_page')->withQueryString()
             : collect();
 
+        $quoteRequestsTotal = Schema::hasTable('quote_requests') ? \App\Models\QuoteRequest::count() : 0;
+        $newQuoteRequestsCount = Schema::hasTable('quote_requests') ? \App\Models\QuoteRequest::where('status', 'new')->count() : 0;
+
         $landingCollections = LandingCollection::orderBy('sort_order', 'asc')->get();
 
-        $allStores = TeamStore::with('user')->orderBy('name')->get();
+        $allStores = TeamStore::with('user')->latest()->get();
+        $allCoaches = User::where('role', 'coach')->orderBy('organization')->get();
 
         $availableSports = DesignCatalog::whereNotNull('sport')
             ->where('sport', '!=', '')
@@ -125,8 +132,8 @@ class AdminController extends Controller
         })->latest()->get();
 
         return view('admin.dashboard', compact(
-            'coaches', 'pendingStores', 'finalizedStores',
-            'designCatalog', 'productionStores', 'quoteRequests', 'landingCollections', 'allStores',
+            'coaches', 'pendingStores', 'finalizedStoreBatches',
+            'designCatalog', 'productionStores', 'quoteRequests', 'quoteRequestsTotal', 'newQuoteRequestsCount', 'landingCollections', 'allStores', 'allCoaches',
             'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches'
         ));
     }
@@ -421,40 +428,21 @@ class AdminController extends Controller
             ->with('success', 'Design removed from coach.');
     }
 
-    public function assignToStore(Request $request, DesignCatalog $design)
+    public function assignToCoachProfile(Request $request, DesignCatalog $design)
     {
         $request->validate([
-            'team_store_id' => 'required|exists:team_stores,id'
+            'coach_id' => 'required|exists:users,id'
         ]);
 
-        $store = TeamStore::findOrFail($request->team_store_id);
-        $coach = $store->user;
+        $coach = User::where('role', 'coach')->findOrFail($request->coach_id);
 
         // Ensure coach has access to the design
         if (!$coach->designCatalog()->where('design_catalog_id', $design->id)->exists()) {
             $coach->designCatalog()->attach($design->id);
+            return back()->with('success', "{$design->name} was successfully assigned to {$coach->first_name} {$coach->last_name}'s profile!");
         }
 
-        // Add to store directly
-        if ($store->items()->where('design_catalog_id', $design->id)->exists()) {
-            return back()->with('error', "{$design->name} is already in the store {$store->name}.");
-        }
-
-        $maxSort = $store->items()->max('sort_order') ?? 0;
-
-        $store->items()->create([
-            'design_catalog_id' => $design->id,
-            'name'              => $design->name,
-            'type'              => null,
-            'types'             => $design->types,
-            'image_url'         => null,
-            'image_paths'       => $design->image_paths,
-            'wholesale_price'   => $design->wholesale_price,
-            'retail_price'      => $design->wholesale_price,
-            'sort_order'        => $maxSort + 1,
-        ]);
-
-        return back()->with('success', "{$design->name} was successfully pushed directly to the store {$store->name}!");
+        return back()->with('error', "{$design->name} is already assigned to {$coach->first_name} {$coach->last_name}.");
     }
 
     // ─── STORE MANAGEMENT ────────────────────────────────────────────────────────
@@ -505,6 +493,12 @@ class AdminController extends Controller
         return back()->with('success', "Store \"{$store->name}\" has been archived.");
     }
 
+    public function unarchiveStore(TeamStore $store)
+    {
+        $store->update(['is_archived' => false]);
+        return back()->with('success', "Store \"{$store->name}\" has been unarchived.");
+    }
+
     public function editStore(TeamStore $store)
     {
         $store->load(['user', 'items', 'parentOrders']);
@@ -552,6 +546,42 @@ class AdminController extends Controller
 
         return redirect()->route('admin.store.edit', $store)
             ->with('success', 'Store item pricing updated.');
+    }
+
+    public function attachPackageComponent(Request $request, TeamStore $store, StoreItem $package)
+    {
+        $request->validate([
+            'component_id' => 'required|exists:store_items,id'
+        ]);
+
+        if ($package->team_store_id !== $store->id) {
+            abort(403, 'Package does not belong to this store.');
+        }
+
+        $component = StoreItem::findOrFail($request->component_id);
+        if ($component->team_store_id !== $store->id) {
+            abort(403, 'Component does not belong to this store.');
+        }
+
+        // Check if already attached
+        if (!$package->components()->where('component_id', $component->id)->exists()) {
+            $package->components()->attach($component->id);
+        }
+
+        return redirect()->route('admin.store.edit', $store)
+            ->with('success', "Added component to package.");
+    }
+
+    public function detachPackageComponent(Request $request, TeamStore $store, StoreItem $package, StoreItem $component)
+    {
+        if ($package->team_store_id !== $store->id) {
+            abort(403, 'Package does not belong to this store.');
+        }
+
+        $package->components()->detach($component->id);
+
+        return redirect()->route('admin.store.edit', $store)
+            ->with('success', "Removed component from package.");
     }
 
     // ─── ORDER MANAGEMENT ────────────────────────────────────────────────────────
@@ -605,6 +635,21 @@ class AdminController extends Controller
             ->with('success', 'Order updated successfully.');
     }
 
+    public function deleteOrder(ParentOrder $order)
+    {
+        $store = $order->teamStore;
+        $fullName = trim($order->athlete_first_name . ' ' . $order->athlete_last_name);
+        $order->delete();
+        
+        if ($store) {
+            return redirect()->route('admin.store.edit', $store)
+                ->with('success', "Order for {$fullName} has been deleted.");
+        }
+        
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Order for {$fullName} has been deleted.");
+    }
+
     // ─── CSV EXPORT ──────────────────────────────────────────────────────────────
 
     public function exportOrderCSV(TeamStore $store)
@@ -636,7 +681,15 @@ class AdminController extends Controller
                         $typesStr = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
                         
                         $sizesArr = [];
-                        if (isset($item['sizes']) && is_array($item['sizes'])) {
+                        if (isset($item['components']) && is_array($item['components'])) {
+                            foreach ($item['components'] as $comp) {
+                                if (isset($comp['sizes']) && is_array($comp['sizes'])) {
+                                    foreach ($comp['sizes'] as $t => $s) {
+                                        $sizesArr[] = "{$comp['name']} ($t): $s";
+                                    }
+                                }
+                            }
+                        } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
                             foreach ($item['sizes'] as $t => $s) {
                                 $sizesArr[] = "$t: $s";
                             }
@@ -860,9 +913,9 @@ class AdminController extends Controller
         return redirect()->route('admin.dashboard')->with('success', 'Hero media removed successfully.');
     }
 
-    public function deleteQuote(\App\Models\QuoteRequest $quoteRequest)
+    public function markQuoteAddressed(\App\Models\QuoteRequest $quoteRequest)
     {
-        $quoteRequest->delete();
-        return redirect()->back()->with('success', 'Quote inquiry marked as addressed and removed.');
+        $quoteRequest->update(['status' => 'addressed']);
+        return redirect()->back()->with('success', 'Quote inquiry marked as addressed.');
     }
 }

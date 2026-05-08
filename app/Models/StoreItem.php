@@ -36,4 +36,19 @@ class StoreItem extends Model
         return $this->belongsTo(\App\Models\DesignCatalog::class, 'design_catalog_id');
     }
 
+    public function components()
+    {
+        return $this->belongsToMany(StoreItem::class, 'package_store_items', 'package_id', 'component_id');
+    }
+
+    public function isPackage()
+    {
+        if ($this->type === 'package') return true;
+        if (is_array($this->types)) {
+            foreach ($this->types as $t) {
+                if (str_contains($t, 'package')) return true;
+            }
+        }
+        return false;
+    }
 }

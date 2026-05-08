@@ -18,18 +18,26 @@ class CoachController extends Controller
         // Load store with items and orders
         $store = $user->teamStore()->with(['items' => function($q) {
             $q->orderBy('sort_order', 'asc');
-        }, 'items.designCatalog', 'parentOrders'])->first();
+        }, 'items.designCatalog'])->first();
+
+        // Get unbatched orders for the active store roster
+        if ($store) {
+            $store->setRelation('parentOrders', $store->parentOrders()->whereNull('batch_id')->get());
+        }
 
         // Designs assigned to this coach (for item builder)
         $assignedDesigns = $user->designCatalog()->latest()->get();
 
-        // Direct orders placed by the coach (not attached to a team store)
-        $directOrders = $user->parentOrders()->whereNull('team_store_id')->where('is_archived', false)->latest()->get();
-        $archivedDirectOrders = $user->parentOrders()->whereNull('team_store_id')->where('is_archived', true)->latest()->get();
+        // All batched orders placed by the coach (Direct Orders AND Store Orders)
+        $batchedOrders = $user->parentOrders()->whereNotNull('batch_id')->where('is_archived', false)->latest()->get();
+        $archivedBatchedOrders = $user->parentOrders()->whereNotNull('batch_id')->where('is_archived', true)->latest()->get();
         
-        // Group direct orders by batch
-        $directOrderBatches = $directOrders->groupBy('batch_id');
-        $archivedOrderBatches = $archivedDirectOrders->groupBy('batch_id');
+        // Draft Direct Orders
+        $directOrders = $user->parentOrders()->whereNull('team_store_id')->where('status', 'Draft')->where('is_archived', false)->latest()->get();
+
+        // Group batched orders by batch
+        $directOrderBatches = $batchedOrders->groupBy('batch_id');
+        $archivedOrderBatches = $archivedBatchedOrders->groupBy('batch_id');
 
         // Organize assigned designs by category for package selection
         $packageDesigns = [
@@ -223,10 +231,19 @@ class CoachController extends Controller
     {
         if ($store->user_id !== $request->user()->id) abort(403);
 
-        if ($store->parentOrders()->count() === 0) {
+        $unbatchedOrders = $store->parentOrders()->whereNull('batch_id');
+
+        if ($unbatchedOrders->count() === 0) {
             return redirect()->route('coach.dashboard')
                 ->with('error', 'No orders have been submitted yet. Cannot finalize an empty roster.');
         }
+
+        $batchId = (string) Str::uuid();
+
+        $unbatchedOrders->update([
+            'status' => 'Submitted to Admin',
+            'batch_id' => $batchId
+        ]);
 
         $store->update(['status' => 'submitted_to_admin']);
         
@@ -237,16 +254,6 @@ class CoachController extends Controller
 
         return redirect()->route('coach.dashboard')
             ->with('success', 'Master order submitted to The Commission Apparel for production!');
-    }
-
-    public function reopenStore(Request $request, TeamStore $store)
-    {
-        if ($store->user_id !== $request->user()->id) abort(403);
-
-        $store->update(['status' => 'approved']);
-        
-        return redirect()->route('coach.dashboard')
-            ->with('success', 'Store re-opened! Parents can now place orders again.');
     }
 
     public function exportOrderCSV(TeamStore $store)
@@ -281,7 +288,15 @@ class CoachController extends Controller
                         $typesStr = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
                         
                         $sizesArr = [];
-                        if (isset($item['sizes']) && is_array($item['sizes'])) {
+                        if (isset($item['components']) && is_array($item['components'])) {
+                            foreach ($item['components'] as $comp) {
+                                if (isset($comp['sizes']) && is_array($comp['sizes'])) {
+                                    foreach ($comp['sizes'] as $t => $s) {
+                                        $sizesArr[] = "{$comp['name']} ($t): $s";
+                                    }
+                                }
+                            }
+                        } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
                             foreach ($item['sizes'] as $t => $s) {
                                 $sizesArr[] = "$t: $s";
                             }
@@ -311,32 +326,56 @@ class CoachController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    // Edit a parent's order (coach can correct mistakes)
     public function editOrder(Request $request, ParentOrder $order)
     {
-        $store = $order->teamStore;
-        if ($store->user_id !== $request->user()->id) abort(403);
+        if ($order->team_store_id) {
+            $store = $order->teamStore;
+            if ($store->user_id !== $request->user()->id) abort(403);
 
-        $sizeChart = DesignCatalog::sizeChart();
-        
-        $availableItems = $store->items()->with('designCatalog')->get()->map(function($item) {
-            $types = $item->types ?? [$item->type];
-            $sizedTypes = array_intersect($types, DesignCatalog::sizedTypes());
-            return [
-                'id' => $item->id,
-                'name' => $item->name,
-                'types' => $types,
-                'sizedTypes' => array_values($sizedTypes)
-            ];
-        });
+            $sizeChart = DesignCatalog::sizeChart();
+            
+            $availableItems = $store->items()->with('designCatalog')->get()->map(function($item) {
+                $types = $item->types ?? [$item->type];
+                $sizedTypes = array_intersect($types, DesignCatalog::sizedTypes());
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'types' => $types,
+                    'sizedTypes' => array_values($sizedTypes)
+                ];
+            });
 
-        return view('coach.order_edit', compact('order', 'store', 'sizeChart', 'availableItems'));
+            return view('coach.order_edit', compact('order', 'store', 'sizeChart', 'availableItems'));
+        } else {
+            // Direct Order
+            if ($order->user_id !== $request->user()->id) abort(403);
+
+            $sizeChart = DesignCatalog::sizeChart();
+            
+            $availableItems = $request->user()->designCatalog()->get()->map(function($item) {
+                $types = $item->types ?? [$item->type];
+                $sizedTypes = array_intersect($types, DesignCatalog::sizedTypes());
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'types' => $types,
+                    'sizedTypes' => array_values($sizedTypes)
+                ];
+            });
+
+            $store = null;
+            return view('coach.order_edit', compact('order', 'store', 'sizeChart', 'availableItems'));
+        }
     }
 
     public function updateOrder(Request $request, ParentOrder $order)
     {
-        $store = $order->teamStore;
-        if ($store->user_id !== $request->user()->id) abort(403);
+        if ($order->team_store_id) {
+            $store = $order->teamStore;
+            if ($store->user_id !== $request->user()->id) abort(403);
+        } else {
+            if ($order->user_id !== $request->user()->id) abort(403);
+        }
 
         $request->validate([
             'athlete_first_name'  => ['required', 'string', 'max:255'],
@@ -375,8 +414,32 @@ class CoachController extends Controller
 
         $fullName = trim($request->athlete_first_name . ' ' . $request->athlete_last_name);
 
+        if (!$order->team_store_id) {
+            return redirect()->route('coach.dashboard')
+                ->with('success', "Order for {$fullName} has been updated.")
+                ->with('activeCoachTab', 'create_order');
+        }
+
         return redirect()->route('coach.dashboard')
             ->with('success', "Order for {$fullName} has been updated.");
+    }
+
+    public function deleteOrder(Request $request, ParentOrder $order)
+    {
+        if ($order->team_store_id) {
+            $store = $order->teamStore;
+            if ($store->user_id !== $request->user()->id) abort(403);
+            
+            $fullName = trim($order->athlete_first_name . ' ' . $order->athlete_last_name);
+            $order->delete();
+            return redirect()->route('coach.dashboard')->with('success', "Order for {$fullName} has been deleted.");
+        } else {
+            if ($order->user_id !== $request->user()->id) abort(403);
+            
+            $fullName = trim($order->athlete_first_name . ' ' . $order->athlete_last_name);
+            $order->delete();
+            return redirect()->route('coach.dashboard')->with('success', "Order for {$fullName} has been deleted.")->with('activeCoachTab', 'create_order');
+        }
     }
 
     public function approvePricing(Request $request, TeamStore $store)
@@ -387,6 +450,17 @@ class CoachController extends Controller
 
         return redirect()->route('coach.dashboard')
             ->with('success', 'Pricing approved! The public storefront is now live with the approved pricing.');
+    }
+
+    public function reopenStore(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        // Unlock the store. Previous orders have already been batched.
+        $store->update(['status' => 'approved']);
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Store has been re-opened for new orders! The active roster is now clear for the new batch.');
     }
     public function updateCoverImage(Request $request, TeamStore $store)
     {
@@ -505,7 +579,7 @@ class CoachController extends Controller
             'total_retail_price'  => 0,
         ]);
 
-        return redirect()->route('coach.dashboard')->with('success', 'Order line added to your draft.');
+        return redirect()->route('coach.dashboard')->with('success', 'Order line added to your draft.')->with('activeCoachTab', 'create_order');
     }
 
     public function finalizeDirectOrders(Request $request)
@@ -536,7 +610,7 @@ class CoachController extends Controller
             new \App\Notifications\MasterOrderSubmitted((object) ['name' => $user->organization . ' Direct Order', 'user' => $user])
         );
 
-        return redirect()->route('coach.dashboard')->with('success', 'Your direct orders have been submitted to The Commission Apparel!');
+        return redirect()->route('coach.dashboard')->with('success', 'Your direct orders have been submitted to The Commission Apparel!')->with('activeCoachTab', 'create_order');
     }
 
     public function exportDirectOrderBatch(Request $request, $batchId)
@@ -571,7 +645,15 @@ class CoachController extends Controller
                         $typesStr = isset($item['types']) ? implode(', ', $item['types']) : 'N/A';
                         
                         $sizesArr = [];
-                        if (isset($item['sizes']) && is_array($item['sizes'])) {
+                        if (isset($item['components']) && is_array($item['components'])) {
+                            foreach ($item['components'] as $comp) {
+                                if (isset($comp['sizes']) && is_array($comp['sizes'])) {
+                                    foreach ($comp['sizes'] as $t => $s) {
+                                        $sizesArr[] = "{$comp['name']} ($t): $s";
+                                    }
+                                }
+                            }
+                        } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
                             foreach ($item['sizes'] as $t => $s) {
                                 $sizesArr[] = "$t: $s";
                             }
