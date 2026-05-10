@@ -53,7 +53,7 @@ class AdminController extends Controller
             ->groupBy('batch_id');
 
         // Design catalog
-        $designCatalog = DesignCatalog::orderBy('sort_order', 'desc')->orderBy('created_at', 'desc')->get();
+        $designCatalog = DesignCatalog::latest()->get();
 
         // Production orders (in production status)
         $productionStores = TeamStore::where('status', 'approved')
@@ -143,7 +143,7 @@ class AdminController extends Controller
     public function editCoach(User $user)
     {
         if ($user->role !== 'coach') abort(404);
-        $designCatalog = DesignCatalog::orderBy('sort_order', 'desc')->orderBy('created_at', 'desc')->get();
+        $designCatalog = DesignCatalog::latest()->get();
         $assignedDesignIds = $user->designCatalog()->pluck('design_catalog_id')->toArray();
         return view('admin.coach_edit', compact('user', 'designCatalog', 'assignedDesignIds'));
     }
