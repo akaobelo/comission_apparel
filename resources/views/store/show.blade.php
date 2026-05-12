@@ -58,7 +58,25 @@
     @endif
 
     <div class="max-w-6xl mx-auto space-y-8">
-        @if($store->status === 'submitted_to_admin')
+                @php
+            $isClosed = true;
+            $closedReason = null;
+            if ($store->status === 'submitted_to_admin') {
+                $closedReason = 'submitted_to_admin';
+            } elseif ($store->status !== 'approved' && $store->status !== 'submitted_to_admin') {
+                $closedReason = 'not_active';
+            } elseif (!$store->pricing_approved) {
+                $closedReason = 'pricing_review';
+            } elseif ($store->items->isEmpty()) {
+                $closedReason = 'no_items';
+            } elseif ($store->order_deadline && $store->order_deadline->isPast()) {
+                $closedReason = 'deadline_passed';
+            } else {
+                $isClosed = false;
+            }
+        @endphp
+
+        @if($closedReason === 'submitted_to_admin')
             <div class="bg-red-50 border border-red-200 rounded-2xl shadow-sm p-10 text-center">
                 <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5 border border-red-200">
                     <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
@@ -66,22 +84,22 @@
                 <h3 class="text-2xl font-black uppercase tracking-tight text-slate-900 mb-2">Store Closed — In Production</h3>
                 <p class="text-slate-600 text-base max-w-lg mx-auto">The coach has finalized the order roster. Production is underway. No new orders can be taken at this time.</p>
             </div>
-        @elseif($store->status !== 'approved' && $store->status !== 'submitted_to_admin')
+        @elseif($closedReason === 'not_active')
             <div class="bg-amber-50 border border-amber-200 rounded-2xl p-10 text-center">
                 <h3 class="text-2xl font-black uppercase tracking-tight text-amber-900 mb-2">Store Not Yet Active</h3>
                 <p class="text-slate-600 text-base">This store is awaiting approval. Check back soon.</p>
             </div>
-        @elseif(!$store->pricing_approved)
+        @elseif($closedReason === 'pricing_review')
             <div class="bg-amber-50 border border-amber-200 rounded-2xl p-10 text-center">
                 <h3 class="text-2xl font-black uppercase tracking-tight text-amber-900 mb-2">Pricing In Review</h3>
                 <p class="text-slate-600 text-base">The coach is currently reviewing the finalized pricing. The store will open shortly.</p>
             </div>
-        @elseif($store->items->isEmpty())
+        @elseif($closedReason === 'no_items')
             <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-12 text-center">
                 <h3 class="text-2xl font-black uppercase tracking-tight text-slate-900 mb-2">Items Coming Soon</h3>
                 <p class="text-slate-600 text-base">The coach hasn't added any items yet. Check back soon once designs are finalized.</p>
             </div>
-        @elseif($store->order_deadline && $store->order_deadline->isPast())
+        @elseif($closedReason === 'deadline_passed')
             <div class="bg-red-50 border border-red-200 rounded-2xl shadow-sm p-10 text-center">
                 <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5 border border-red-200">
                     <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -89,8 +107,10 @@
                 <h3 class="text-2xl font-black uppercase tracking-tight text-slate-900 mb-2">Deadline Passed</h3>
                 <p class="text-slate-600 text-base max-w-lg mx-auto">The order deadline has passed. No new orders can be accepted at this time.</p>
             </div>
-        @else
-            {{-- ═══ NEW ORDER FORM GRID ═══ --}}
+                @endif
+
+        @if($closedReason !== 'no_items')
+            {{-- ═══ NEW ORDER FORM GRID (OR ITEMS VIEW) ═══ --}}
             <form action="{{ route('store.order.submit', $store->slug) }}" method="POST" 
                   @invalid.capture="athleteInfoOpen = true; setTimeout(() => document.getElementById('athlete-info-section').scrollIntoView({behavior: 'smooth', block: 'start'}), 100)"
                   x-data="{
@@ -115,6 +135,7 @@
                   }">
                 @csrf
 
+                                @if(!$isClosed)
                 {{-- Athlete Info --}}
                 <div class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-4 overflow-hidden" id="athlete-info-section">
                     <button type="button" @click="athleteInfoOpen = !athleteInfoOpen" class="w-full flex items-center justify-between p-4 md:p-4 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="athleteInfoOpen ? 'border-slate-100 bg-slate-50/50' : ''">
@@ -172,12 +193,13 @@
                     </div>
                     </div>
                 </div>
+                @endif
 
                 {{-- Store Items Grid --}}
                 <div class="mb-8">
                     <h2 class="text-xl font-black uppercase tracking-tight text-slate-900 mb-6 flex items-center justify-between">
                         <span>Available Merchandise</span>
-                        <span class="text-sm font-bold text-slate-500"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Selected</span>
+                        @if(!$isClosed)<span class="text-sm font-bold text-slate-500"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Selected</span>@endif
                     </h2>
                     
                     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
@@ -250,7 +272,7 @@
                                 <div class="mt-auto w-full">
                                     <button type="button" @click.prevent="openPanel('{{ $item->id }}')" class="w-full py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all"
                                             :class="items['{{ $item->id }}'].selected ? 'bg-slate-50 border-2 border-slate-300 text-slate-600' : 'bg-secondary text-white hover:bg-[#a11825] shadow-sm hover:shadow-md border-2 border-transparent'"
-                                            x-text="items['{{ $item->id }}'].selected ? 'EDIT SIZING' : 'ORDER'">
+                                            x-text="items['{{ $item->id }}'].selected ? 'EDIT SIZING' : ( '{{ $isClosed ? 1 : 0 }}' == '1' ? 'VIEW DETAILS' : 'ORDER' )">
                                     </button>
                                 </div>
                             </div>
@@ -259,11 +281,13 @@
                     </div>
                 </div>
 
+                                @if(!$isClosed)
                 {{-- Special Notes --}}
                 <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8">
                     <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Special Sizing Notes (Optional)</label>
                     <input type="text" name="special_notes" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 transition-all font-medium" placeholder="e.g. Needs extra length on pants...">
                 </div>
+                @endif
 
                 {{-- SIZING SLIDE-OVER PANEL --}}
                 <div x-show="slideOpen" x-cloak class="fixed inset-0 z-50 flex justify-end">
@@ -411,9 +435,12 @@
                                 </div>
 
                                 <div class="pt-8 border-t border-slate-100 mt-8">
-                                    <button type="button" @click="items['{{ $item->id }}'].selected = true; closePanel()" class="w-full py-4 bg-slate-900 text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-secondary transition-colors shadow-lg shadow-slate-900/20">Save & Select</button>
-                                    
-                                    <button type="button" @click="items['{{ $item->id }}'].selected = false; closePanel()" x-show="items['{{ $item->id }}'].selected" class="w-full py-3 mt-3 bg-red-50 text-red-600 font-bold uppercase tracking-widest text-xs rounded-xl hover:bg-red-100 transition-colors">Remove Item</button>
+                                                                        @if(!$isClosed)
+                                        <button type="button" @click="items['{{ $item->id }}'].selected = true; closePanel()" class="w-full py-4 bg-slate-900 text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-secondary transition-colors shadow-lg shadow-slate-900/20">Save & Select</button>
+                                        <button type="button" @click="items['{{ $item->id }}'].selected = false; closePanel()" x-show="items['{{ $item->id }}'].selected" class="w-full py-3 mt-3 bg-red-50 text-red-600 font-bold uppercase tracking-widest text-xs rounded-xl hover:bg-red-100 transition-colors">Remove Item</button>
+                                    @else
+                                        <button type="button" @click="closePanel()" class="w-full py-4 bg-slate-900 text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-secondary transition-colors shadow-lg shadow-slate-900/20">Close Details</button>
+                                    @endif
                                 </div>
                             </div>
                             @endforeach
@@ -421,6 +448,7 @@
                     </div>
                 </div>
 
+                                @if(!$isClosed)
                 {{-- STICKY BOTTOM SUBMIT BAR --}}
                 <div class="fixed bottom-0 left-0 right-0 p-3 md:p-4 bg-white/90 backdrop-blur-md border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-40 flex justify-center">
                     <div class="max-w-[1400px] w-full flex items-center justify-between gap-6 px-4">
@@ -433,14 +461,15 @@
                         </button>
                     </div>
                 </div>
+                @endif
             </form>
-        @endif
+        @endif@endif
 
-        {{-- Submitted Roster Accordion --}}
+        {{-- Placed Orders Accordion --}}
         <div x-data="{ rosterOpen: true, search: '' }" class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-24 overflow-hidden">
             <button type="button" @click="rosterOpen = !rosterOpen" class="w-full flex items-center justify-between p-4 md:p-6 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="rosterOpen ? 'border-slate-100 bg-slate-50/50' : ''">
                 <div>
-                    <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Submitted Roster</h2>
+                    <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Placed Orders</h2>
                     <p class="text-xs font-bold text-slate-500 mt-1">Athletes who have successfully submitted their order.</p>
                 </div>
                 <div class="flex items-center gap-4">
