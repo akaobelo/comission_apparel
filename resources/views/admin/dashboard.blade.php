@@ -282,8 +282,6 @@
         $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
     @endphp
     
-    {{-- Your HTML loop content here --}}
-@endforeach
 
                             <div class="p-5">
                                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
