@@ -275,16 +275,15 @@
                                 $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
                             @endphp -->
                             @php
-                                $batchOrders = collect($batchOrders);
+                                $firstOrder = $batchOrders[0] ?? null;
 
-                                $store = $batchOrders->first()?->teamStore;
+                                $store = $firstOrder?->teamStore;
                                 $coach = $store ? $store->user : null;
 
-                                $totalAthletes = $batchOrders->count();
+                                $totalAthletes = count($batchOrders);
 
-                                $totalItems = $batchOrders->sum(
-                                    fn($o) => count(is_array($o->items_json) ? $o->items_json : [])
-                                );
+                                $totalItems = collect($batchOrders)
+                                    ->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
                             @endphp
                             <div class="p-5">
                                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
