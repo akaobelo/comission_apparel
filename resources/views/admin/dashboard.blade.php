@@ -269,7 +269,7 @@
                         <div class="divide-y divide-slate-100">
  @foreach($finalizedStoreBatches as $batchId => $batchOrders)
     @php
-        $orders = collect($batchOrders)->flatten();
+        $orders = collect($batchOrders)->collapse();
 
         $firstOrder = $orders->first();
 
