@@ -278,9 +278,11 @@
 
         $totalAthletes = $orders->count();
 
-        $totalItems = $orders->sum(function ($o) {
-            return count(is_array($o->items_json) ? $o->items_json : []);
-        });
+     $totalItems = $orders
+    ->whereInstanceOf(\App\Models\Order::class)
+    ->sum(function ($o) {
+        return count(is_array($o->items_json) ? $o->items_json : []);
+    });
     @endphp
                             <div class="p-5">
                                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
