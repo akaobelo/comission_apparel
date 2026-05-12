@@ -267,16 +267,18 @@
                         <div class="p-12 text-center text-slate-400 text-sm">No finalized store orders yet.</div>
                     @else
                         <div class="divide-y divide-slate-100">
-                            @foreach($finalizedStoreBatches as $batchId => $batchOrders)
+ @foreach($finalizedStoreBatches as $batchId => $batchOrders)
     @php
-        $firstOrder = reset($batchOrders);
+        $orders = collect($batchOrders)->flatten();
+
+        $firstOrder = $orders->first();
 
         $store = $firstOrder?->teamStore;
-        $coach = $store ? $store->user : null;
+        $coach = $store?->user;
 
-        $totalAthletes = count($batchOrders);
+        $totalAthletes = $orders->count();
 
-        $totalItems = collect($batchOrders)->sum(function ($o) {
+        $totalItems = $orders->sum(function ($o) {
             return count(is_array($o->items_json) ? $o->items_json : []);
         });
     @endphp
