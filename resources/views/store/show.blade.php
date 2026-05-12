@@ -463,7 +463,7 @@
                 </div>
                 @endif
             </form>
-        @endif@endif
+        @endif
 
         {{-- Placed Orders Accordion --}}
         <div x-data="{ rosterOpen: true, search: '' }" class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-24 overflow-hidden">

@@ -47,10 +47,18 @@ class AdminController extends Controller
             ->whereNotNull('batch_id')
             ->where('status', 'Submitted to Admin')
             ->where('is_archived', false)
-            ->with(['user', 'teamStore'])
+            ->with(['user', 'teamStore', 'teamStore.items'])
             ->latest()
             ->get()
-            ->groupBy('batch_id');
+            ->groupBy('batch_id')
+            ->map(function ($orders) {
+                $store = $orders->first()->teamStore;
+                $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, $store);
+                return [
+                    'orders' => $orders,
+                    'financials' => $financials,
+                ];
+            });
 
         // Design catalog
         $designCatalog = DesignCatalog::latest()->get();
@@ -75,7 +83,13 @@ class AdminController extends Controller
             ->with('user')
             ->latest()
             ->get();
-        $finalizedDirectOrderBatches = $finalizedDirectOrders->groupBy('batch_id');
+        $finalizedDirectOrderBatches = $finalizedDirectOrders->groupBy('batch_id')->map(function ($orders) {
+            $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, null);
+            return [
+                'orders' => $orders,
+                'financials' => $financials,
+            ];
+        });
 
         $quoteRequestsQuery = \App\Models\QuoteRequest::query();
 
@@ -502,7 +516,8 @@ class AdminController extends Controller
     public function editStore(TeamStore $store)
     {
         $store->load(['user', 'items', 'parentOrders']);
-        return view('admin.store_edit', compact('store'));
+        $financials = \App\Models\ParentOrder::calculateBatchFinancials($store->parentOrders, $store);
+        return view('admin.store_edit', compact('store', 'financials'));
     }
 
     public function updateStore(Request $request, TeamStore $store)
@@ -584,6 +599,26 @@ class AdminController extends Controller
             ->with('success', "Removed component from package.");
     }
 
+    // ─── DIRECT ORDER BATCH REVIEW ───────────────────────────────────────────────
+
+    public function showDirectBatch($batchId)
+    {
+        $orders = ParentOrder::whereNull('team_store_id')
+            ->where('batch_id', $batchId)
+            ->where('is_archived', false)
+            ->with('user')
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return redirect()->route('admin.dashboard')->with('error', 'Direct Order Batch not found or empty.');
+        }
+
+        $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, null);
+        $firstOrder = $orders->first();
+
+        return view('admin.direct_batch_show', compact('batchId', 'orders', 'financials', 'firstOrder'));
+    }
+
     // ─── ORDER MANAGEMENT ────────────────────────────────────────────────────────
 
     public function editOrder(ParentOrder $order)
@@ -638,6 +673,7 @@ class AdminController extends Controller
     public function deleteOrder(ParentOrder $order)
     {
         $store = $order->teamStore;
+        $batchId = $order->batch_id;
         $fullName = trim($order->athlete_first_name . ' ' . $order->athlete_last_name);
         $order->delete();
         
@@ -646,6 +682,11 @@ class AdminController extends Controller
                 ->with('success', "Order for {$fullName} has been deleted.");
         }
         
+        if ($batchId) {
+            return redirect()->route('admin.direct-batch.show', $batchId)
+                ->with('success', "Order for {$fullName} has been deleted.");
+        }
+
         return redirect()->route('admin.dashboard')
             ->with('success', "Order for {$fullName} has been deleted.");
     }

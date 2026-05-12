@@ -207,6 +207,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/stores/{store}/archive', [AdminController::class, 'archiveStore'])->name('admin.stores.archive');
     Route::post('/admin/stores/{store}/unarchive', [AdminController::class, 'unarchiveStore'])->name('admin.stores.unarchive');
     Route::get('/admin/stores/{store}/edit', [AdminController::class, 'editStore'])->name('admin.store.edit');
+    Route::get('/admin/direct-batch/{batch_id}', [AdminController::class, 'showDirectBatch'])->name('admin.direct-batch.show');
     Route::post('/admin/stores/{store}/update', [AdminController::class, 'updateStore'])->name('admin.store.update');
     Route::post('/admin/stores/{store}/pricing', [AdminController::class, 'updateStorePricing'])->name('admin.store.pricing.update');
     Route::post('/admin/stores/{store}/package/{package}/attach', [AdminController::class, 'attachPackageComponent'])->name('admin.store.package.attach');

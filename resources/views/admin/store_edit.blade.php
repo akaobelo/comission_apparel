@@ -225,10 +225,20 @@
                         @endif
                     </div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Athletes Ordered</span><span class="font-bold text-slate-900">{{ $store->parentOrders->count() }}</span></div>
-                    <div class="flex justify-between text-sm"><span class="text-slate-500">Total Items</span><span class="font-bold text-slate-900">{{ $store->parentOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : [])) }}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Total Items</span><span class="font-bold text-slate-900">{{ $financials['total_items_sold'] ?? $store->parentOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : [])) }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Deadline</span><span class="font-bold text-slate-900">{{ $store->order_deadline?->format('M d, Y') ?? '—' }}</span></div>
-                    <div class="flex justify-between text-sm"><span class="text-slate-500">Public URL</span>
-                        <a href="{{ route('store.show', $store->slug) }}" target="_blank" class="font-bold text-primary hover:underline text-xs truncate max-w-[150px]">View Store</a>
+                    
+                    <div class="pt-3 mt-3 border-t border-slate-200 space-y-3">
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">Total Sales</span><span class="font-bold text-slate-900">${{ number_format($financials['total_sales'] ?? 0, 2) }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">Average Order</span><span class="font-bold text-slate-900">${{ number_format($financials['average_order_value'] ?? 0, 2) }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">Due To TCA</span><span class="font-bold text-secondary">${{ number_format($financials['total_wholesale'] ?? 0, 2) }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">Net Proceeds</span><span class="font-bold text-green-600">${{ number_format($financials['net_proceeds'] ?? 0, 2) }}</span></div>
+                    </div>
+
+                    <div class="pt-3 mt-3 border-t border-slate-200">
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">Public URL</span>
+                            <a href="{{ route('store.show', $store->slug) }}" target="_blank" class="font-bold text-primary hover:underline text-xs truncate max-w-[150px]">View Store</a>
+                        </div>
                     </div>
                 </div>
             </div>

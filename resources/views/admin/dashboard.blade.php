@@ -360,6 +360,7 @@
                                         </div>
                                     </div>
                                     <div class="flex flex-col gap-2 flex-shrink-0">
+                                        <a href="{{ route('admin.direct-batch.show', $batchId) }}" class="px-4 py-2 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-primary/90 transition-colors text-center">Review / Edit Order</a>
                                         <a href="{{ route('coach.direct-order.export', $batchId) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Export CSV</a>
                                     </div>
                                 </div>
@@ -865,45 +866,60 @@
                                 </div>
                             </div>
                         </div>
-                        <div x-data="{
-                            open: false,
-                            search: '',
-                            options: {{ json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) }},
-                            get filteredOptions() {
-                                if (this.search === '') return this.options;
-                                return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
-                            },
-                            selectOption(val) {
-                                this.search = val;
-                                this.open = false;
-                            }
-                        }" class="relative">
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Categories</label>
-                            <div class="relative">
-                                <input type="text" name="sport" x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Football, Basketball" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 pr-10 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
-                                <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-700 focus:outline-none">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                                </button>
-                            </div>
-                            <div x-show="open && filteredOptions.length > 0" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                <template x-for="opt in filteredOptions" :key="opt">
-                                    <div @click="selectOption(opt)" class="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer font-medium" x-text="opt"></div>
-                                </template>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Item Types (Select all that apply)</label>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                                    @foreach($typeOptions as $val => $label)
-                                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                                        <input type="checkbox" name="types[]" value="{{ $val }}" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
-                                        <span class="text-xs">{{ $label }}</span>
-                                    </label>
-                                    @endforeach
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div x-data="{
+                                open: false,
+                                search: '',
+                                options: {{ json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) }},
+                                get filteredOptions() {
+                                    if (this.search === '') return this.options;
+                                    return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
+                                },
+                                selectOption(val) {
+                                    this.search = val;
+                                    this.open = false;
+                                }
+                            }" class="relative">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Categories</label>
+                                <div class="relative">
+                                    <input type="text" name="sport" x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Football, Basketball" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 pr-10 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
+                                    <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-700 focus:outline-none">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                </div>
+                                <div x-show="open && filteredOptions.length > 0" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                    <template x-for="opt in filteredOptions" :key="opt">
+                                        <div @click="selectOption(opt)" class="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer font-medium" x-text="opt"></div>
+                                    </template>
                                 </div>
                             </div>
-                            <input type="hidden" name="category" value="package">
+                            
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Package Category</label>
+                                <div class="relative">
+                                    <select name="category" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
+                                        <option value="">Select Category</option>
+                                        <option value="package_a">Package A - Base Kit</option>
+                                        <option value="package_b">Package B - Standard</option>
+                                        <option value="package_c">Package C - Full Program</option>
+                                        <option value="individual">Individual Item</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Item Types (Select all that apply)</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                @foreach($typeOptions as $val => $label)
+                                <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                                    <input type="checkbox" name="types[]" value="{{ $val }}" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                    <span class="text-xs">{{ $label }}</span>
+                                </label>
+                                @endforeach
+                            </div>
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Product Description (Optional)</label>
@@ -969,45 +985,60 @@
                                 </div>
                             </div>
                         </div>
-                        <div x-data="{
-                            open: false,
-                            search: '',
-                            options: {{ json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) }},
-                            get filteredOptions() {
-                                if (this.search === '') return this.options;
-                                return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
-                            },
-                            selectOption(val) {
-                                this.search = val;
-                                this.open = false;
-                            }
-                        }" class="relative">
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Categories</label>
-                            <div class="relative">
-                                <input type="text" name="sport" x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Football, Basketball" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 pr-10 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
-                                <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-700 focus:outline-none">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                                </button>
-                            </div>
-                            <div x-show="open && filteredOptions.length > 0" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                <template x-for="opt in filteredOptions" :key="opt">
-                                    <div @click="selectOption(opt)" class="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer font-medium" x-text="opt"></div>
-                                </template>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Item Types (Select all that apply)</label>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                                    @foreach($typeOptions as $val => $label)
-                                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                                        <input type="checkbox" name="types[]" value="{{ $val }}" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
-                                        <span class="text-xs">{{ $label }}</span>
-                                    </label>
-                                    @endforeach
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div x-data="{
+                                open: false,
+                                search: '',
+                                options: {{ json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) }},
+                                get filteredOptions() {
+                                    if (this.search === '') return this.options;
+                                    return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
+                                },
+                                selectOption(val) {
+                                    this.search = val;
+                                    this.open = false;
+                                }
+                            }" class="relative">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Categories</label>
+                                <div class="relative">
+                                    <input type="text" name="sport" x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Football, Basketball" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 pr-10 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
+                                    <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-700 focus:outline-none">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                </div>
+                                <div x-show="open && filteredOptions.length > 0" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                    <template x-for="opt in filteredOptions" :key="opt">
+                                        <div @click="selectOption(opt)" class="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer font-medium" x-text="opt"></div>
+                                    </template>
                                 </div>
                             </div>
-                            <input type="hidden" name="category" value="individual">
+                            
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Package Category</label>
+                                <div class="relative">
+                                    <select name="category" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
+                                        <option value="">Select Category</option>
+                                        <option value="package_a">Package A - Base Kit</option>
+                                        <option value="package_b">Package B - Standard</option>
+                                        <option value="package_c">Package C - Full Program</option>
+                                        <option value="individual" selected>Individual Item</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Item Types (Select all that apply)</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                @foreach($typeOptions as $val => $label)
+                                <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                                    <input type="checkbox" name="types[]" value="{{ $val }}" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                    <span class="text-xs">{{ $label }}</span>
+                                </label>
+                                @endforeach
+                            </div>
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Product Description (Optional)</label>
