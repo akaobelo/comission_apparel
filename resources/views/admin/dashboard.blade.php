@@ -269,17 +269,21 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($finalizedStoreBatches as $batchId => $batchOrders)
                        
-                           @php
-    $orders = collect($batchOrders)->flatten();
+                            @php
+    $orders = collect($batchOrders)->collapse();
 
     $store = $orders->first()?->teamStore;
     $coach = $store?->user;
 
     $totalAthletes = $orders->count();
 
-    $totalItems = $orders->sum(
-        fn($o) => count(is_array($o->items_json) ? $o->items_json : [])
-    );
+    $totalItems = $orders->sum(function ($o) {
+        $items = is_array($o->items_json)
+            ? $o->items_json
+            : json_decode($o->items_json, true);
+
+        return count($items ?? []);
+    });
 @endphp
                             <div class="p-5">
                                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
