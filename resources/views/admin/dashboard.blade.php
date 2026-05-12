@@ -267,23 +267,13 @@
                         <div class="p-12 text-center text-slate-400 text-sm">No finalized store orders yet.</div>
                     @else
                         <div class="divide-y divide-slate-100">
-@foreach($finalizedStoreBatches as $batchId => $batchOrdersArray)
-    @php
-        // 1. Convert the array to a collection so collection methods work
-        $batchOrders = collect($batchOrdersArray);
-
-        // 2. Grab the FIRST order in this batch to look up the shared store/coach
-        $firstOrder = $batchOrders->first();
-        $store = $firstOrder ? $firstOrder->teamStore : null;
-        $coach = $store ? $store->user : null;
-
-        // 3. Run calculations across the whole collection
-        $totalAthletes = $batchOrders->count();
-        $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
-    @endphp
-
-    
-
+                            @foreach($finalizedStoreBatches as $batchId => $batchOrders)
+                            @php
+                                $store = $batchOrders->teamStore;
+                                $coach = $store ? $store->user : null;
+                                $totalAthletes = $batchOrders->count();
+                                $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
+                            @endphp
                             <div class="p-5">
                                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
                                     <div>
