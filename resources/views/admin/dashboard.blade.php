@@ -268,12 +268,7 @@
                     @else
                         <div class="divide-y divide-slate-100">
                             @foreach($finalizedStoreBatches as $batchId => $batchOrders)
-                            <!-- @php
-                                $store = $batchOrders->first()->teamStore;
-                                $coach = $store ? $store->user : null;
-                                $totalAthletes = $batchOrders->count();
-                                $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
-                            @endphp -->
+                       
                             @php
                                 $firstOrder = $batchOrders[0] ?? null;
 
