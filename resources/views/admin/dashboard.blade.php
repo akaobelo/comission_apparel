@@ -303,6 +303,10 @@
                                             <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review / Edit Store</a>
                                             <!-- We can reuse direct order export for batches -->
                                             <a href="{{ route('coach.direct-order.export', $batchId) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Export CSV</a>
+                                            <form action="{{ route('admin.store-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
+                                                @csrf
+                                                <button type="submit" class="w-full px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors text-center">Mark Addressed</button>
+                                            </form>
                                             <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this closed store?')" class="w-full">
                                                 @csrf
                                                 <button type="submit" class="w-full px-4 py-2 bg-white border border-slate-300 text-slate-500 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-100 transition-colors text-center">Archive Store</button>
@@ -364,6 +368,10 @@
                                     <div class="flex flex-col gap-2 flex-shrink-0">
                                         <a href="{{ route('admin.direct-batch.show', $batchId) }}" class="px-4 py-2 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-primary/90 transition-colors text-center">Review / Edit Order</a>
                                         <a href="{{ route('coach.direct-order.export', $batchId) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Export CSV</a>
+                                        <form action="{{ route('admin.direct-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
+                                            @csrf
+                                            <button type="submit" class="w-full px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors text-center">Mark Addressed</button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -730,12 +738,15 @@
             @endphp
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <!-- ADD NEW COLLECTION -->
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2">
-                    <div class="p-5 border-b border-slate-200 bg-slate-50">
-                        <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Collection</h2>
-                        <p class="text-xs text-slate-500 mt-1">Create collection entities with cover photos.</p>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddCollection: false }">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expandedAddCollection = !expandedAddCollection">
+                        <div>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Collection</h2>
+                            <p class="text-xs text-slate-500 mt-1">Create collection entities with cover photos.</p>
+                        </div>
+                        <svg class="w-5 h-5 text-slate-400 transform transition-transform" :class="expandedAddCollection ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
-                    <div class="p-5 border-b border-slate-200">
+                    <div class="p-5 border-b border-slate-200" x-show="expandedAddCollection" x-cloak>
                         <form action="{{ route('admin.design-collection.create') }}" method="POST" enctype="multipart/form-data" class="flex flex-col md:flex-row gap-4 items-end">
                             @csrf
                             <div class="flex-grow w-full">
@@ -840,12 +851,15 @@
                 </div>
 
                 <!-- ADD NEW PACKAGE -->
-<div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2">
-                    <div class="p-5 border-b border-slate-200 bg-slate-50">
-                        <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Package</h2>
-                        <p class="text-xs text-slate-500 mt-1">Create catalog entries for coaches and stores.</p>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddPackage: false }">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expandedAddPackage = !expandedAddPackage">
+                        <div>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Package / Design</h2>
+                            <p class="text-xs text-slate-500 mt-1">Create catalog entries for coaches and stores.</p>
+                        </div>
+                        <svg class="w-5 h-5 text-slate-400 transform transition-transform" :class="expandedAddPackage ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
-                    <div class="p-5">
+                    <div class="p-5" x-show="expandedAddPackage" x-cloak>
                         <form action="{{ route('admin.design.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                         @csrf
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1079,6 +1093,7 @@
 
                 <!-- UPDATE EXISTING CATALOG -->
                 <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{
+                    expandedCatalog: false,
                     search: '',
                     page: 1,
                     perPage: 20,
@@ -1100,22 +1115,26 @@
                         this.$watch('search', () => { this.page = 1; });
                     }
                 }">
-                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer" @click="expandedCatalog = !expandedCatalog">
                         <div>
                             <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Update Existing Catalog</h2>
                             <p class="text-xs text-slate-500 mt-1">Edit design details and push items to team stores.</p>
                         </div>
-                        <div class="flex gap-2">
-                            <div class="relative">
-                                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                <input type="text" x-model="search" placeholder="Search designs..." class="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm w-full md:w-64">
+                        <div class="flex gap-4 items-center">
+                            <div class="flex gap-2" @click.stop>
+                                <div class="relative">
+                                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                    <input type="text" x-model="search" placeholder="Search designs..." class="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm w-full md:w-64">
+                                </div>
+                                <button type="button" x-show="search !== ''" @click="search = ''" x-cloak class="px-3 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Clear</button>
                             </div>
-                            <button type="button" x-show="search !== ''" @click="search = ''" x-cloak class="px-3 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Clear</button>
+                            <svg class="w-5 h-5 text-slate-400 transform transition-transform" :class="expandedCatalog ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
-                    @if($designCatalog->isNotEmpty())
-                    <div class="max-h-[900px] overflow-y-auto">
-                        @foreach($designCatalog->sortByDesc('id') as $design)
+                    <div x-show="expandedCatalog" x-cloak>
+                        @if($designCatalog->isNotEmpty())
+                        <div class="max-h-[900px] overflow-y-auto">
+                            @foreach($designCatalog->sortByDesc('id') as $design)
                         <div x-show="paginatedItemIds.includes({{ $design->id }})" x-cloak class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0">
                             <div class="flex-1 pr-4">
                                 <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
@@ -1328,6 +1347,7 @@
                     @else
                     <div class="p-6 text-center text-sm text-slate-400">No designs in catalog yet.</div>
                     @endif
+                    </div> <!-- Closing expandedCatalog wrapper -->
                 </div>
             </div>
         </div>

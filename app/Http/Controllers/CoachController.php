@@ -214,6 +214,32 @@ class CoachController extends Controller
             ->with('success', 'Store price updated successfully.');
     }
 
+    public function updateBulkItemMarkup(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.retail_price' => 'required|numeric',
+            'items.*.sort_order' => 'nullable|integer',
+        ]);
+
+        foreach ($request->items as $itemId => $data) {
+            $item = $store->items()->find($itemId);
+            if ($item) {
+                if ($data['retail_price'] >= $item->wholesale_price) {
+                    $item->update([
+                        'retail_price' => $data['retail_price'],
+                        'sort_order'   => $data['sort_order'] ?? $item->sort_order,
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'All store prices updated successfully.');
+    }
+
     public function updateDeadline(Request $request, TeamStore $store)
     {
         if ($store->user_id !== $request->user()->id) abort(403);

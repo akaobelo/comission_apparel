@@ -14,7 +14,8 @@ class StoreController extends Controller
         $query = TeamStore::query()
             ->with('user')
             ->where('status', 'approved')
-            ->where('pricing_approved', true);
+            ->where('pricing_approved', true)
+            ->where('is_archived', false);
 
         if ($request->filled('q')) {
             $keyword = trim($request->q);

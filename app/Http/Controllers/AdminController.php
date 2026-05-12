@@ -619,6 +619,24 @@ class AdminController extends Controller
         return view('admin.direct_batch_show', compact('batchId', 'orders', 'financials', 'firstOrder'));
     }
 
+    public function markDirectBatchAddressed($batchId)
+    {
+        ParentOrder::whereNull('team_store_id')
+            ->where('batch_id', $batchId)
+            ->update(['status' => 'Processing']);
+            
+        return back()->with('success', 'Direct Order Batch marked as addressed.');
+    }
+
+    public function markStoreBatchAddressed($batchId)
+    {
+        ParentOrder::whereNotNull('team_store_id')
+            ->where('batch_id', $batchId)
+            ->update(['status' => 'Processing']);
+            
+        return back()->with('success', 'Master Order Batch marked as addressed.');
+    }
+
     // ─── ORDER MANAGEMENT ────────────────────────────────────────────────────────
 
     public function editOrder(ParentOrder $order)

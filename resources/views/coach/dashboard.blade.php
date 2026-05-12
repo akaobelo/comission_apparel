@@ -653,6 +653,9 @@
                     <div class="p-5 bg-slate-50">
                         @if($store->items->isNotEmpty())
                             <div class="space-y-3">
+                                <form id="bulk-markup-form" action="{{ route('coach.store.items.bulk-markup', $store) }}" method="POST">
+                                    @csrf
+                                </form>
                                 @foreach($store->items as $item)
                                 <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm group hover:border-primary transition-colors">
                                     <div class="flex-1 pr-3">
@@ -663,13 +666,13 @@
                                             <span>Store Price: <span class="text-green-700">${{ number_format($item->retail_price, 2) }}</span></span>
                                         </div>
                                         <div class="mt-2">
-                                            <form action="{{ route('coach.store.item.markup', $item) }}" method="POST" class="flex flex-wrap items-end gap-2">
-                                                @csrf
+                                            <div class="flex flex-wrap items-end gap-2">
                                                 <div>
                                                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Enter your retail price ($)</label>
                                                     <input
                                                         type="number"
-                                                        name="retail_price"
+                                                        form="bulk-markup-form"
+                                                        name="items[{{ $item->id }}][retail_price]"
                                                         min="{{ $item->wholesale_price }}"
                                                         step="0.01"
                                                         value="{{ number_format($item->retail_price, 2, '.', '') }}"
@@ -680,15 +683,13 @@
                                                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Sort Order</label>
                                                     <input
                                                         type="number"
-                                                        name="sort_order"
+                                                        form="bulk-markup-form"
+                                                        name="items[{{ $item->id }}][sort_order]"
                                                         value="{{ $item->sort_order }}"
                                                         class="w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
                                                     >
                                                 </div>
-                                                <button type="submit" class="px-3 py-1.5 bg-secondary text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors">
-                                                    Update
-                                                </button>
-                                            </form>
+                                            </div>
                                         </div>
                                     </div>
                                     <form action="{{ route('coach.store.item.remove', $item) }}" method="POST" onsubmit="return confirm('Remove this item from your store?')">
@@ -700,6 +701,11 @@
                                     </form>
                                 </div>
                                 @endforeach
+                                <div class="mt-4 flex justify-end">
+                                    <button type="submit" form="bulk-markup-form" class="px-5 py-2.5 bg-secondary text-white text-sm font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors shadow-sm">
+                                        Save All Changes
+                                    </button>
+                                </div>
                             </div>
                         @else
                             <p class="text-xs text-slate-400 text-center py-4">No items added to store yet.</p>
