@@ -267,20 +267,21 @@
                         <div class="p-12 text-center text-slate-400 text-sm">No finalized store orders yet.</div>
                     @else
                         <div class="divide-y divide-slate-100">
-                           @foreach($finalizedStoreBatches as $batchId => $batchOrdersArray)
+@foreach($finalizedStoreBatches as $batchId => $batchOrdersArray)
     @php
-        // 1. Force the array into a Laravel Collection
+        // 1. Convert the array to a collection so collection methods work
         $batchOrders = collect($batchOrdersArray);
 
-        // 2. Safely extract the first order to get the relationship
+        // 2. Grab the FIRST order in this batch to look up the shared store/coach
         $firstOrder = $batchOrders->first();
         $store = $firstOrder ? $firstOrder->teamStore : null;
         $coach = $store ? $store->user : null;
 
-        // 3. Collection methods now work perfectly
+        // 3. Run calculations across the whole collection
         $totalAthletes = $batchOrders->count();
         $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
     @endphp
+
     
 
                             <div class="p-5">
