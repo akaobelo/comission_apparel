@@ -267,23 +267,13 @@
                         <div class="p-12 text-center text-slate-400 text-sm">No finalized store orders yet.</div>
                     @else
                         <div class="divide-y divide-slate-100">
-@foreach($finalizedStoreBatches as $batchId => $batchOrders)
-    @php
-        $orders = collect($batchOrders)->collapse();
-
-        $firstOrder = collect($orders)->first();
-
-        $store = $firstOrder?->teamStore;
-        $coach = $store?->user;
-
-        $totalAthletes = count($orders);
-
-        $totalItems = collect($orders)
-            ->filter(fn($o) => is_object($o))
-            ->sum(function ($o) {
-                return count(is_array($o->items_json) ? $o->items_json : []);
-            });
-    @endphp
+                            @foreach($finalizedStoreBatches as $batchId => $batchOrders)
+                            @php
+                                $store = $batchOrders->teamStore;
+                                $coach = $store ? $store->user : null;
+                                $totalAthletes = $batchOrders->count();
+                                $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
+                            @endphp
                             <div class="p-5">
                                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
                                     <div>
@@ -291,7 +281,7 @@
                                         <div class="text-sm text-slate-500 mt-0.5">
                                             Coach: {{ $coach ? $coach->name : 'Unknown' }} — {{ $coach ? $coach->organization : '—' }}
                                         </div>
-                                        <div class="text-xs text-slate-400 mt-0.5 uppercase tracking-wide font-bold">Batch Submitted: {{ $firstOrder?->created_at?->format('M d, Y') }}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5 uppercase tracking-wide font-bold">Batch Submitted: {{ $batchOrders->first()->created_at->format('M d, Y') }}</div>
                                         <div class="mt-3 grid grid-cols-3 gap-4">
                                             <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
                                                 <div class="text-2xl font-black text-primary">{{ $totalAthletes }}</div>
