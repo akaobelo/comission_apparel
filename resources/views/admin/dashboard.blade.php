@@ -200,7 +200,7 @@
                         <div>
                             <div class="font-bold text-slate-900 uppercase">{{ $store->name }}</div>
                             <div class="text-sm text-slate-500 mt-0.5">
-                                Coach: <span class="font-semibold text-slate-700">{{ $store->user->name }}</span> — 
+                                Coach: <span class="font-semibold text-slate-700">{{ $store->user->name }}</span> —
                                 {{ $store->user->organization }} — Package: <span class="font-bold text-primary uppercase text-xs">{{ str_replace('_', ' ', $store->package_type ?? 'N/A') }}</span>
                             </div>
                             <div class="text-xs text-slate-400 mt-1">Requested {{ $store->created_at->diffForHumans() }}</div>
@@ -267,9 +267,10 @@
                         <div class="p-12 text-center text-slate-400 text-sm">No finalized store orders yet.</div>
                     @else
                         <div class="divide-y divide-slate-100">
-                            @foreach($finalizedStoreBatches as $batchId => $batchOrders)
+                            @foreach($finalizedStoreBatches as $batchId => $batchData)
                             @php
-                                $store = $batchOrders->teamStore;
+                                $batchOrders = $batchData['orders'] ?? collect();
+                                $store = $batchOrders->first()?->teamStore;
                                 $coach = $store ? $store->user : null;
                                 $totalAthletes = $batchOrders->count();
                                 $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
@@ -281,7 +282,7 @@
                                         <div class="text-sm text-slate-500 mt-0.5">
                                             Coach: {{ $coach ? $coach->name : 'Unknown' }} — {{ $coach ? $coach->organization : '—' }}
                                         </div>
-                                        <div class="text-xs text-slate-400 mt-0.5 uppercase tracking-wide font-bold">Batch Submitted: {{ $batchOrders->first()->created_at->format('M d, Y') }}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5 uppercase tracking-wide font-bold">Batch Submitted: {{ $batchOrders->first()?->created_at?->format('M d, Y') ?? 'Unknown' }}</div>
                                         <div class="mt-3 grid grid-cols-3 gap-4">
                                             <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
                                                 <div class="text-2xl font-black text-primary">{{ $totalAthletes }}</div>
@@ -332,17 +333,18 @@
                             <div class="p-12 text-center text-slate-400 text-sm">No finalized direct orders.</div>
                         @else
                         <div class="divide-y divide-slate-100">
-                            @foreach($finalizedDirectOrderBatches as $batchId => $batchOrders)
+                            @foreach($finalizedDirectOrderBatches as $batchId => $batchData)
                             @php
+                                $batchOrders = $batchData['orders'] ?? collect();
                                 $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
-                                $coach = $batchOrders->first()->user;
+                                $coach = $batchOrders->first()?->user;
                             @endphp
                             <div class="p-5">
                                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
                                     <div>
                                         <div class="font-black text-slate-900 uppercase text-base">Direct Order Batch</div>
                                         <div class="text-sm text-slate-500 mt-0.5">
-                                            Coach: {{ $coach->name }} — {{ $coach->organization }}
+                                            Coach: {{ $coach?->name ?? 'Unknown' }} — {{ $coach?->organization ?? '—' }}
                                         </div>
                                         <div class="mt-3 grid grid-cols-3 gap-4">
                                             <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
@@ -354,7 +356,7 @@
                                                 <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
                                             </div>
                                             <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
-                                                <div class="text-xs font-bold text-slate-900">{{ $batchOrders->first()->created_at->format('M d') }}</div>
+                                                <div class="text-xs font-bold text-slate-900">{{ $batchOrders->first()?->created_at?->format('M d') ?? 'Unknown' }}</div>
                                                 <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Submitted</div>
                                             </div>
                                         </div>
@@ -578,7 +580,7 @@
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Sport / Tab Name</label>
                                 <div class="relative">
                                     <input type="text" name="tab_name" required x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Tackle Football" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 pr-10 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
-                                    
+
                                     <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600 focus:outline-none">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                     </button>
@@ -782,7 +784,7 @@
                                     @endif
                                     <div class="text-sm font-bold text-slate-900">{{ $collection->name }}</div>
                                 </div>
-                                
+
                                 <button @click="showModal = true" class="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-primary flex items-center gap-1 transition-colors">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                                     Edit
@@ -790,7 +792,7 @@
 
                                 <div x-show="showModal" class="fixed inset-0 z-[100] flex items-center justify-center" x-cloak>
                                     <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" @click="showModal = false" x-transition.opacity></div>
-                                    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" 
+                                    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
                                          x-transition:enter="transition ease-out duration-300"
                                          x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                                          x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
@@ -893,7 +895,7 @@
                                     </template>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Package Category</label>
                                 <div class="relative">
@@ -1012,7 +1014,7 @@
                                     </template>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Package Category</label>
                                 <div class="relative">
@@ -1237,7 +1239,7 @@
                                                         <div class="relative group block w-16 h-16 bg-white rounded-md border border-slate-200 shadow-sm">
                                                             <input type="hidden" name="existing_images[]" :value="imgPath">
                                                             <img :src="imgPath" class="w-full h-full object-cover rounded-md">
-                                                            
+
                                                             <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center rounded-md">
                                                                 <div class="flex gap-1 mb-1">
                                                                     <button type="button" @click.prevent="moveLeft(idx)" x-show="idx > 0" class="p-1 bg-white hover:bg-slate-200 text-slate-900 rounded-sm" title="Move Left">
@@ -1418,7 +1420,7 @@
                                     <span class="{{ $testimonial->is_active ? 'text-green-500' : 'text-slate-400' }}">{{ $testimonial->is_active ? 'Active' : 'Hidden' }}</span>
                                 </div>
                             </div>
-                            
+
                             <!-- Edit Modal -->
                             <div x-show="editModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
                                 <div @click.away="editModal = false" class="bg-white rounded-xl shadow-2xl w-full max-w-xl overflow-hidden animate-fade-in">
@@ -1553,7 +1555,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="space-y-8">
                 @forelse($campaignStores as $store)
                 <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
