@@ -302,6 +302,10 @@
                                             <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review / Edit Store</a>
                                             <!-- We can reuse direct order export for batches -->
                                             <a href="{{ route('coach.direct-order.export', $batchId) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Export CSV</a>
+                                            <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this closed store?')" class="w-full">
+                                                @csrf
+                                                <button type="submit" class="w-full px-4 py-2 bg-white border border-slate-300 text-slate-500 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-100 transition-colors text-center">Archive Store</button>
+                                            </form>
                                         @endif
                                     </div>
                                 </div>
@@ -367,8 +371,8 @@
                 </div>
 
                 {{-- ═══ ARCHIVED STORES ═══ --}}
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
-                    <div class="p-6 border-b border-slate-200 bg-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-200 transition-colors" x-data="{ expanded: false }" @click="expanded = !expanded">
+                <div x-data="{ expanded: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
+                    <div class="p-6 border-b border-slate-200 bg-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-200 transition-colors" @click="expanded = !expanded">
                         <div>
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-500">Archived Stores & Orders</h2>
                             <p class="text-sm text-slate-400 mt-1">Past orders that have been archived for production auditing.</p>
@@ -378,7 +382,7 @@
                             <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
-                    <div x-data="{ expanded: false }" x-show="$el.previousElementSibling.__x.getUnobservedData().expanded" class="divide-y divide-slate-100">
+                    <div x-show="expanded" x-collapse class="divide-y divide-slate-100">
                         @if($archivedStores->isEmpty())
                             <div class="p-8 text-center text-slate-400 text-sm">No archived stores.</div>
                         @else
@@ -947,7 +951,7 @@
                     search: '',
                     page: 1,
                     perPage: 20,
-                    items: {{ json_encode($designCatalog->map(function($d) { return ['id' => $d->id, 'name' => strtolower($d->name)]; })) }},
+                    items: {{ json_encode($designCatalog->map(function($d) { return ['id' => $d->id, 'name' => strtolower($d->name)]; })) }}.sort((a, b) => b.id - a.id),
                     get filteredItems() {
                         if (this.search === '') return this.items;
                         const lowerSearch = this.search.toLowerCase();
@@ -980,7 +984,7 @@
                     </div>
                     @if($designCatalog->isNotEmpty())
                     <div class="max-h-[900px] overflow-y-auto">
-                        @foreach($designCatalog as $design)
+                        @foreach($designCatalog->sortByDesc('id') as $design)
                         <div x-show="paginatedItemIds.includes({{ $design->id }})" x-cloak class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0">
                             <div class="flex-1 pr-4">
                                 <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>

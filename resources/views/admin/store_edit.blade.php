@@ -74,6 +74,22 @@
                 </div>
             </div>
 
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6">
+                    @if($store->is_archived)
+                        <form action="{{ route('admin.stores.unarchive', $store) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full btn border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 py-3 px-8 text-sm uppercase tracking-wider">Unarchive Store</button>
+                        </form>
+                    @else
+                        <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this store?');">
+                            @csrf
+                            <button type="submit" class="w-full btn border border-slate-300 text-slate-500 bg-slate-100 hover:bg-slate-200 py-3 px-8 text-sm uppercase tracking-wider">Archive Store</button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+
             {{-- Set pricing for store items --}}
             @if($store->items->isNotEmpty())
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">

@@ -222,7 +222,7 @@
                                                 <div>
                                                     <h4 class="text-[10px] font-black uppercase tracking-wider text-white mb-3 bg-black p-2 rounded">{{ $group['title'] }}</h4>
                                                     <div class="space-y-3">
-                                                        @foreach($group['items'] as $design)
+                                                        @foreach($group['items']->sortByDesc('id') as $design)
                                                             @php
                                                                 $sizedTypes = \App\Models\DesignCatalog::sizedTypes();
                                                                 $types = $design->types ?? [];
@@ -787,7 +787,7 @@
                     <p class="text-xs text-slate-500 mt-1">Add your approved custom designs to the store.</p>
                 </div>
                 <div class="p-5">
-                    @if($globalCatalog->isEmpty())
+                    @if($assignedDesigns->isEmpty())
                         <div class="text-center py-6">
                             <p class="text-sm text-slate-500 font-medium">No designs in the catalog yet.</p>
                         </div>
@@ -833,7 +833,7 @@
                                     <!-- Grid Container -->
                                     <div class="flex-1 overflow-y-auto p-4 md:p-6">
                                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                                            @forelse($assignedDesigns as $design)
+                                            @forelse($assignedDesigns->sortByDesc('id') as $design)
                                                 @php 
                                                     $alreadyAdded = $store->items->pluck('design_catalog_id')->contains($design->id); 
                                                 @endphp
