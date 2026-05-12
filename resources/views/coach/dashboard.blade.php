@@ -649,15 +649,24 @@
                     </div>
                     <span class="text-2xl font-black text-primary">{{ $store->items->count() }}</span>
                 </button>
-                <div x-show="expandedItems" x-cloak>
+                <div x-show="expandedItems" x-cloak x-data="{ search: '' }">
                     <div class="p-5 bg-slate-50">
                         @if($store->items->isNotEmpty())
+                            <div class="mb-4">
+                                <div class="relative w-full max-w-md">
+                                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                    <input type="text" x-model="search" placeholder="Search store items..." class="pl-9 pr-10 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm w-full">
+                                    <button type="button" x-show="search !== ''" @click="search = ''" x-cloak class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                            </div>
                             <div class="space-y-3">
                                 <form id="bulk-markup-form" action="{{ route('coach.store.items.bulk-markup', $store) }}" method="POST">
                                     @csrf
                                 </form>
                                 @foreach($store->items as $item)
-                                <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm group hover:border-primary transition-colors">
+                                <div x-data="{ itemName: {{ json_encode(strtolower($item->name)) }} }" x-show="search === '' || itemName.includes(search.toLowerCase())" class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm group hover:border-primary transition-colors">
                                     <div class="flex-1 pr-3">
                                         <div class="text-base font-bahnschrift font-semibold tracking-wide text-slate-900">{{ $item->name }}</div>
                                         <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-1 flex gap-3 flex-wrap">
