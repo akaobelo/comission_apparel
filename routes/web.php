@@ -207,10 +207,12 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/stores/{store}/decline', [AdminController::class, 'declineStore'])->name('admin.stores.decline');
     Route::post('/admin/stores/{store}/archive', [AdminController::class, 'archiveStore'])->name('admin.stores.archive');
     Route::post('/admin/stores/{store}/unarchive', [AdminController::class, 'unarchiveStore'])->name('admin.stores.unarchive');
+    Route::delete('/admin/stores/{store}/delete', [AdminController::class, 'deleteArchivedStore'])->name('admin.stores.delete');
     Route::get('/admin/stores/{store}/edit', [AdminController::class, 'editStore'])->name('admin.store.edit');
     Route::get('/admin/direct-batch/{batch_id}', [AdminController::class, 'showDirectBatch'])->name('admin.direct-batch.show');
     Route::post('/admin/direct-batch/{batch_id}/mark-addressed', [AdminController::class, 'markDirectBatchAddressed'])->name('admin.direct-batch.mark-addressed');
     Route::post('/admin/store-batch/{batch_id}/mark-addressed', [AdminController::class, 'markStoreBatchAddressed'])->name('admin.store-batch.mark-addressed');
+    Route::delete('/admin/archived-orders/{batch_id}', [AdminController::class, 'deleteArchivedOrderBatch'])->name('admin.archived-orders.delete');
     Route::post('/admin/stores/{store}/update', [AdminController::class, 'updateStore'])->name('admin.store.update');
     Route::post('/admin/stores/{store}/pricing', [AdminController::class, 'updateStorePricing'])->name('admin.store.pricing.update');
     Route::post('/admin/stores/{store}/package/{package}/attach', [AdminController::class, 'attachPackageComponent'])->name('admin.store.package.attach');

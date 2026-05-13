@@ -91,6 +91,20 @@ class AdminController extends Controller
             ];
         });
 
+        $archivedOrderBatches = ParentOrder::where('is_archived', true)
+            ->with(['user', 'teamStore'])
+            ->latest()
+            ->get()
+            ->groupBy('batch_id')
+            ->map(function ($orders) {
+                $store = $orders->first()->teamStore;
+                $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, $store);
+                return [
+                    'orders' => $orders,
+                    'financials' => $financials,
+                ];
+            });
+
         $quoteRequestsQuery = \App\Models\QuoteRequest::query();
 
         if ($request->filled('quote_search')) {
@@ -148,7 +162,7 @@ class AdminController extends Controller
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStoreBatches',
             'designCatalog', 'productionStores', 'quoteRequests', 'quoteRequestsTotal', 'newQuoteRequestsCount', 'landingCollections', 'allStores', 'allCoaches',
-            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches'
+            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'archivedOrderBatches'
         ));
     }
 
@@ -513,6 +527,18 @@ class AdminController extends Controller
         return back()->with('success', "Store \"{$store->name}\" has been unarchived.");
     }
 
+    public function deleteArchivedStore(TeamStore $store)
+    {
+        if (! $store->is_archived) {
+            return back()->with('error', 'Only archived stores can be permanently deleted from the archive.');
+        }
+
+        $storeName = $store->name;
+        $store->delete();
+
+        return back()->with('success', "Archived store \"{$storeName}\" has been deleted.");
+    }
+
     public function editStore(TeamStore $store)
     {
         $store->load(['user', 'items', 'parentOrders']);
@@ -623,18 +649,35 @@ class AdminController extends Controller
     {
         ParentOrder::whereNull('team_store_id')
             ->where('batch_id', $batchId)
-            ->update(['status' => 'Processing']);
+            ->update(['status' => 'Processing', 'is_archived' => true]);
             
-        return back()->with('success', 'Direct Order Batch marked as addressed.');
+        return back()->with('success', 'Direct Order Batch marked as addressed and archived.');
     }
 
     public function markStoreBatchAddressed($batchId)
     {
         ParentOrder::whereNotNull('team_store_id')
             ->where('batch_id', $batchId)
-            ->update(['status' => 'Processing']);
+            ->update(['status' => 'Processing', 'is_archived' => true]);
             
-        return back()->with('success', 'Master Order Batch marked as addressed.');
+        return back()->with('success', 'Master Order Batch marked as addressed and archived.');
+    }
+
+    public function deleteArchivedOrderBatch($batchId)
+    {
+        $orders = ParentOrder::where('batch_id', $batchId)
+            ->where('is_archived', true)
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return back()->with('error', 'Archived order batch not found.');
+        }
+
+        ParentOrder::where('batch_id', $batchId)
+            ->where('is_archived', true)
+            ->delete();
+
+        return back()->with('success', 'Archived order batch has been permanently deleted.');
     }
 
     // ─── ORDER MANAGEMENT ────────────────────────────────────────────────────────

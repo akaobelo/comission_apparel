@@ -381,7 +381,7 @@
                     </div>
                 </div>
 
-                {{-- ═══ ARCHIVED STORES ═══ --}}
+                {{-- ═══ ARCHIVED STORES & ORDERS ═══ --}}
                 <div x-data="{ expanded: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
                     <div class="p-6 border-b border-slate-200 bg-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-200 transition-colors" @click="expanded = !expanded">
                         <div>
@@ -390,28 +390,73 @@
                         </div>
                         <div class="flex items-center gap-4 text-slate-400">
                             <span class="text-sm font-bold">{{ $archivedStores->count() }} Stores</span>
+                            <span class="text-sm font-bold">{{ $archivedOrderBatches->count() }} Batches</span>
                             <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
                     <div x-show="expanded" x-collapse class="divide-y divide-slate-100">
-                        @if($archivedStores->isEmpty())
-                            <div class="p-8 text-center text-slate-400 text-sm">No archived stores.</div>
+                        @if($archivedStores->isEmpty() && $archivedOrderBatches->isEmpty())
+                            <div class="p-8 text-center text-slate-400 text-sm">No archived stores or orders.</div>
                         @else
-                            @foreach($archivedStores as $store)
-                            <div class="p-4 flex items-center justify-between gap-4 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
-                                <div>
-                                    <div class="font-bold text-sm text-slate-700">{{ $store->name }}</div>
-                                    <div class="text-xs text-slate-500">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
+                            @if($archivedStores->isNotEmpty())
+                                <div class="p-4 border-b border-slate-100 bg-slate-50">
+                                    <div class="text-sm font-bold uppercase tracking-wide text-slate-500">Archived Stores</div>
                                 </div>
-                                <div class="flex items-center gap-2 flex-shrink-0">
-                                    <form action="{{ route('admin.stores.unarchive', $store) }}" method="POST" onsubmit="return confirm('Restore this store back to active production?')">
-                                        @csrf
-                                        <button type="submit" class="px-3 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded hover:bg-slate-200 transition-colors">Unarchive</button>
-                                    </form>
-                                    <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded hover:bg-slate-200 transition-colors">View</a>
+                                @foreach($archivedStores as $store)
+                                <div class="p-4 flex items-center justify-between gap-4 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
+                                    <div>
+                                        <div class="font-bold text-sm text-slate-700">{{ $store->name }}</div>
+                                        <div class="text-xs text-slate-500">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
+                                    </div>
+                                    <div class="flex items-center gap-2 flex-shrink-0">
+                                        <form action="{{ route('admin.stores.unarchive', $store) }}" method="POST" onsubmit="return confirm('Restore this store back to active production?')">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded hover:bg-slate-200 transition-colors">Unarchive</button>
+                                        </form>
+                                        <form action="{{ route('admin.stores.delete', $store) }}" method="POST" onsubmit="return confirm('Delete this archived store and all related data? This cannot be undone.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-3 py-1 bg-white border border-red-300 text-red-600 text-xs font-bold rounded hover:bg-red-50 transition-colors">Delete</button>
+                                        </form>
+                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded hover:bg-slate-200 transition-colors">View</a>
+                                    </div>
                                 </div>
-                            </div>
-                            @endforeach
+                                @endforeach
+                            @endif
+                            @if($archivedOrderBatches->isNotEmpty())
+                                <div class="p-4 border-b border-slate-100 bg-slate-50">
+                                    <div class="text-sm font-bold uppercase tracking-wide text-slate-500">Archived Order Batches</div>
+                                </div>
+                                @foreach($archivedOrderBatches as $batchId => $batchData)
+                                @php
+                                    $orders = $batchData['orders'];
+                                    $store = $orders->first()->teamStore;
+                                    $coach = $orders->first()->user;
+                                @endphp
+                                <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
+                                    <div>
+                                        <div class="font-bold text-sm text-slate-700">{{ $store ? $store->name : 'Direct Order Batch' }}</div>
+                                        <div class="text-xs text-slate-500">
+                                            {{ $coach?->name ?? 'Unknown Coach' }} · {{ $orders->count() }} orders
+                                            @if($store) · Team Store @endif
+                                        </div>
+                                        <div class="text-xs text-slate-400 mt-1">Batch ID: {{ $batchId }}</div>
+                                    </div>
+                                    <div class="flex items-center gap-2 flex-shrink-0">
+                                        @if($store)
+                                            <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded hover:bg-slate-200 transition-colors">View Store</a>
+                                        @else
+                                            <a href="{{ route('admin.direct-batch.show', $batchId) }}" class="px-3 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded hover:bg-slate-200 transition-colors">View Batch</a>
+                                        @endif
+                                        <form action="{{ route('admin.archived-orders.delete', $batchId) }}" method="POST" onsubmit="return confirm('Permanently delete this archived order batch? This cannot be undone.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-3 py-1 bg-white border border-red-300 text-red-600 text-xs font-bold rounded hover:bg-red-50 transition-colors">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                @endforeach
+                            @endif
                         @endif
                     </div>
                 </div>
