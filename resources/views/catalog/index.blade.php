@@ -51,15 +51,18 @@
             </div>
         @else
             <!-- Filter Categories -->
-            <div class="flex flex-wrap items-center gap-2 mb-8" x-show="categories.length > 1" x-cloak>
-                <template x-for="cat in categories" :key="cat">
-                    <button type="button" 
-                            @click="activeCat = cat"
-                            class="px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all"
-                            :class="activeCat === cat ? 'bg-secondary text-white shadow-md' : 'bg-white border border-slate-200 text-slate-500 hover:border-secondary hover:text-secondary'">
-                        <span x-text="cat"></span>
-                    </button>
-                </template>
+            <div class="mb-8" x-show="categories.length > 1" x-cloak>
+                <h3 class="text-sm font-black text-slate-600 uppercase tracking-wide mb-3">Filter By Categories</h3>
+                <div class="relative w-full max-w-[280px]">
+                    <select x-model="activeCat" class="w-full appearance-none bg-white border border-slate-200 text-slate-900 py-3.5 pl-5 pr-10 rounded-xl text-[13px] font-black uppercase tracking-wide focus:outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer shadow-sm hover:border-slate-300">
+                        <template x-for="cat in categories" :key="cat">
+                            <option :value="cat" x-text="cat === 'All' ? 'All Categories' : cat"></option>
+                        </template>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-800">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+                    </div>
+                </div>
             </div>
 
             <!-- Collections Grid -->

@@ -3,44 +3,43 @@
 @section('title', $store->name . ' | The Commission Apparel')
 
 @section('content')
-{{-- Hero --}}
-<div class="relative w-full min-h-[40vh] flex flex-col pt-32 pb-16 justify-end overflow-hidden">
+{{-- Hero Banner --}}
+<div class="relative w-full h-[25vh] md:h-[35vh] flex flex-col overflow-hidden">
     <div class="absolute inset-0 bg-slate-950"></div>
     @if($store->cover_image_path)
         <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ Storage::url($store->cover_image_path) }}')"></div>
     @else
         <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=2500')] bg-cover bg-center"></div>
     @endif
-    <!-- Light gradient only at the bottom to ensure the white title text is readable -->
-    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+</div>
 
-    <div class="relative z-10 max-w-[1400px] w-full mx-auto px-6 flex flex-col md:flex-row items-end justify-between gap-6">
-        <div class="flex items-end gap-5">
-            @if($store->user->logo_path)
-                <div class="w-20 h-20 rounded-full bg-slate-900 border-2 border-white/20 overflow-hidden flex items-center justify-center shadow-md">
-                    <img src="{{ Str::startsWith($store->user->logo_path, 'http') ? $store->user->logo_path : Storage::url($store->user->logo_path) }}" alt="Team Logo" class="w-full h-full object-cover">
-                </div>
-            @endif
-            <div class="mb-1">
-                <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-widest rounded-full mb-2">
-                    {{ $store->user->sport ?? 'Team Athletics' }}
-                </div>
-                <h1 class="text-4xl md:text-5xl font-black uppercase tracking-tight text-white">{{ $store->name }}</h1>
-                <p class="text-slate-300 text-base mt-1.5">Official Custom Apparel Storefront · Coach {{ $store->user->name }}</p>
-            </div>
-        </div>
-        @if($store->order_deadline)
-            <div class="bg-white/10 backdrop-blur border border-white/20 rounded-xl p-4 text-center flex-shrink-0">
-                <p class="text-white/60 text-[10px] font-bold uppercase tracking-widest mb-1">Order Deadline</p>
-                <div class="text-xl font-black text-white">{{ $store->order_deadline->format('M d, Y') }}</div>
-                @if($store->order_deadline->isPast())
-                    <div class="text-red-400 text-[10px] font-bold uppercase mt-1">Deadline Passed</div>
-                @else
-                    <div class="text-green-400 text-[10px] font-bold uppercase mt-1">{{ $store->order_deadline->diffForHumans() }}</div>
-                @endif
+{{-- Store Header Content --}}
+<div class="max-w-6xl w-full mx-auto px-6 pt-6 pb-4 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+    <div class="flex flex-col md:flex-row items-start md:items-end gap-5">
+        @if($store->user->logo_path)
+            <div class="w-24 h-24 rounded-full bg-white border border-slate-200 overflow-hidden flex items-center justify-center shadow-sm flex-shrink-0">
+                <img src="{{ Str::startsWith($store->user->logo_path, 'http') ? $store->user->logo_path : Storage::url($store->user->logo_path) }}" alt="Team Logo" class="w-full h-full object-cover">
             </div>
         @endif
+        <div class="mb-1 mt-2 md:mt-0">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-widest rounded-full mb-2">
+                {{ $store->user->sport ?? 'Team Athletics' }}
+            </div>
+            <h1 class="text-3xl md:text-5xl font-black uppercase tracking-tight text-slate-900 leading-none">{{ $store->name }}</h1>
+            <p class="text-slate-500 text-sm md:text-base mt-2">Official Custom Apparel Storefront · Coach {{ $store->user->name }}</p>
+        </div>
     </div>
+    @if($store->order_deadline)
+        <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-4 text-center flex-shrink-0 w-full md:w-auto mt-2 md:mt-0">
+            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Order Deadline</p>
+            <div class="text-xl font-black text-slate-900">{{ $store->order_deadline->format('M d, Y') }}</div>
+            @if($store->order_deadline->isPast())
+                <div class="text-red-500 text-[10px] font-bold uppercase mt-1">Deadline Passed</div>
+            @else
+                <div class="text-green-600 text-[10px] font-bold uppercase mt-1">{{ $store->order_deadline->diffForHumans() }}</div>
+            @endif
+        </div>
+    @endif
 </div>
 
 <div class="max-w-[1400px] mx-auto px-6 py-12">
@@ -470,7 +469,7 @@
             <button type="button" @click="rosterOpen = !rosterOpen" class="w-full flex items-center justify-between p-4 md:p-6 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="rosterOpen ? 'border-slate-100 bg-slate-50/50' : ''">
                 <div>
                     <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Placed Orders</h2>
-                    <p class="text-xs font-bold text-slate-500 mt-1">Athletes who have successfully submitted their order.</p>
+                    <p class="text-xs font-bold text-slate-500 mt-1">Please note all submitted orders below. Click "View Order" to review order details.</p>
                 </div>
                 <div class="flex items-center gap-4">
                     <span class="hidden sm:inline-block text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">{{ $store->parentOrders->count() }} Entries</span>
@@ -484,7 +483,7 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         </div>
-                        <input type="text" x-model="search" placeholder="Search athletes by name..." class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                        <input type="text" x-model="search" placeholder="Search by name..." class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                     </div>
                 </div>
 
@@ -561,7 +560,7 @@
                         @endforeach
                     </div>
                     <div x-show="search !== '' && !Array.from($el.previousElementSibling.children).some(el => el.style.display !== 'none')" class="text-center p-8 text-slate-500 font-medium text-sm" style="display: none;">
-                        No athletes found matching "<span x-text="search" class="font-bold text-slate-900"></span>"
+                        No results found matching "<span x-text="search" class="font-bold text-slate-900"></span>"
                     </div>
                 @endif
             </div>

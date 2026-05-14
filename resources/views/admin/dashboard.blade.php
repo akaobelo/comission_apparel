@@ -1018,12 +1018,15 @@
                 </div>
 
                 <!-- ADD NEW DESIGN -->
-<div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2">
-                    <div class="p-5 border-b border-slate-200 bg-slate-50">
-                        <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Design</h2>
-                        <p class="text-xs text-slate-500 mt-1">Create catalog entries for coaches and stores.</p>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddDesign: false }">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expandedAddDesign = !expandedAddDesign">
+                        <div>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Design</h2>
+                            <p class="text-xs text-slate-500 mt-1">Create catalog entries for coaches and stores.</p>
+                        </div>
+                        <svg class="w-5 h-5 text-slate-400 transform transition-transform" :class="expandedAddDesign ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
-                    <div class="p-5">
+                    <div class="p-5" x-show="expandedAddDesign" x-cloak>
                         <form action="{{ route('admin.design.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                         @csrf
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">

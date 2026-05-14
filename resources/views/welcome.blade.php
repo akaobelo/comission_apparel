@@ -20,7 +20,7 @@
 
 <!-- Hero Section -->
 <section class="w-full bg-black" style="padding-top: 85px;">
-    <img src="{{ asset('images/hero-banner.jpg') }}" alt="Elite Custom Apparel" class="w-full h-auto object-cover">
+    <img src="{{ asset('images/hero-banner.jpeg') }}" alt="Elite Custom Apparel" class="w-full h-auto object-cover">
 </section>
 
 <!-- Content Container -->
