@@ -74,6 +74,198 @@
                 </div>
             </div>
 
+            {{-- Branding & Artwork --}}
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50">
+                    <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Branding & Artwork</h3>
+                    <p class="text-xs text-slate-500 mt-1">Upload the organization logo and store cover image.</p>
+                </div>
+                <div class="p-5 space-y-6">
+                    <!-- Logo Upload -->
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Organization Logo</h4>
+                        <div class="flex items-start gap-5">
+                            <div class="w-20 h-20 rounded-full bg-slate-100 border-2 border-slate-200 overflow-hidden flex items-center justify-center flex-shrink-0">
+                                @if($store->user->logo_path)
+                                    <img src="{{ Str::startsWith($store->user->logo_path, 'http') ? $store->user->logo_path : Storage::url($store->user->logo_path) }}" alt="Logo" class="w-full h-full object-cover">
+                                @else
+                                    <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                @endif
+                            </div>
+                            <div class="flex-1">
+                                <form action="{{ route('admin.store.logo', $store) }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
+                                    @csrf
+                                    <input type="file" name="logo" accept="image/jpeg,image/png,image/jpg,image/webp" required class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-colors">
+                                    <button type="submit" class="px-5 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm whitespace-nowrap">Upload Logo</button>
+                                </form>
+                                <p class="text-[10px] text-slate-400 mt-2">Recommended: Square PNG with transparent background. Max 5MB.</p>
+                                @error('logo')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-100">
+
+                    <!-- Cover Image Upload -->
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Store Cover Image</h4>
+                        <div class="space-y-4">
+                            @if($store->cover_image_path)
+                                <div class="w-full h-32 rounded-xl border-2 border-slate-200 overflow-hidden relative group">
+                                    <img src="{{ Storage::url($store->cover_image_path) }}" alt="Cover" class="w-full h-full object-cover">
+                                    <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <span class="text-white text-xs font-bold uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">Current Cover</span>
+                                    </div>
+                                </div>
+                            @endif
+                            <form action="{{ route('admin.store.cover', $store) }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
+                                @csrf
+                                <input type="file" name="cover_image" accept="image/jpeg,image/png,image/jpg,image/webp" required class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-colors">
+                                <button type="submit" class="px-5 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm whitespace-nowrap">Upload Cover</button>
+                            </form>
+                            <p class="text-[10px] text-slate-400">Recommended: Wide 16:9 aspect ratio image. Max 5MB.</p>
+                            @error('cover_image')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Store Builder --}}
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Store Builder</h3>
+                        <p class="text-xs text-slate-500 mt-1">Add items to the store from the catalog.</p>
+                    </div>
+                </div>
+                <div class="p-5">
+                    @if($allDesigns->isEmpty())
+                        <div class="text-center py-6">
+                            <p class="text-sm text-slate-500 font-medium">No designs in the catalog yet.</p>
+                        </div>
+                    @else
+                        <div x-data="{ catalogOpen: false }" class="mb-8">
+                            <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-sm">
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Design Catalog</h4>
+                                    <p class="text-[10px] text-slate-500 mt-1">Browse and add custom designs to this team store.</p>
+                                </div>
+                                <button type="button" @click="catalogOpen = true" class="px-5 py-2.5 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors shadow-sm flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                                    Browse Catalog
+                                </button>
+                            </div>
+
+                            <!-- Catalog Modal -->
+                            <div x-show="catalogOpen" x-cloak class="fixed inset-0 z-50 flex justify-center items-center">
+                                <!-- Backdrop -->
+                                <div x-show="catalogOpen" x-transition.opacity @click="catalogOpen = false" class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"></div>
+
+                                <!-- Modal Content -->
+                                <div x-show="catalogOpen" 
+                                     x-transition:enter="transition ease-out duration-300 transform"
+                                     x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+                                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                     x-transition:leave="transition ease-in duration-200 transform"
+                                     x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                                     x-transition:leave-end="opacity-0 translate-y-8 scale-95"
+                                     class="relative w-full max-w-6xl max-h-[90vh] bg-slate-50 rounded-2xl shadow-2xl flex flex-col mx-4 overflow-hidden">
+                                    
+                                    <!-- Header -->
+                                    <div class="flex items-center justify-between p-6 bg-white border-b border-slate-200">
+                                        <div>
+                                            <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Design Catalog</h2>
+                                            <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-bold">Add designs to the store</p>
+                                        </div>
+                                        <button type="button" @click="catalogOpen = false" class="text-slate-400 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-100 transition-colors">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </div>
+
+                                    <!-- Grid Container -->
+                                    <div class="flex-1 overflow-y-auto p-4 md:p-6">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                            @foreach($allDesigns as $design)
+                                                @php 
+                                                    $alreadyAdded = $store->items->pluck('design_catalog_id')->contains($design->id); 
+                                                @endphp
+                                                <div class="flex flex-col group {{ $alreadyAdded ? 'opacity-80' : '' }}">
+                                                    <!-- Image Hero -->
+                                                    <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center {{ $alreadyAdded ? 'ring-2 ring-secondary ring-offset-2' : '' }}">
+                                                        @if(!empty($design->image_paths))
+                                                            @if(count($design->image_paths) > 1)
+                                                                <div class="w-full h-full relative group/slider" x-data="{ imgIdx: 0, imgs: {{ json_encode($design->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
+                                                                    <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300">
+                                                                </div>
+                                                            @else
+                                                                <img src="{{ $design->image_paths[0] }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
+                                                            @endif
+                                                        @elseif($design->image_url)
+                                                            <img src="{{ $design->image_url }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
+                                                        @else
+                                                            <div class="text-slate-400 font-medium text-xs">No Image</div>
+                                                        @endif
+                                                    </div>
+
+                                                    <!-- Card Content -->
+                                                    <div class="pt-4 flex flex-col text-center items-center">
+                                                        <span class="text-base font-medium text-red-600 mb-1">{{ $design->type_label }}</span>
+                                                        <h3 class="text-lg font-bahnschrift font-semibold tracking-wide text-slate-900 mb-1 line-clamp-2" title="{{ $design->name }}">{{ $design->name }}</h3>
+                                                        <div class="text-base text-slate-500 mb-3">Base Cost: <span class="text-slate-900 font-medium">${{ number_format($design->wholesale_price, 2) }}</span></div>
+                                                        
+                                                        <div class="mt-auto w-full">
+                                                            @if($alreadyAdded)
+                                                                <div class="w-full py-2.5 bg-secondary/10 text-secondary text-[11px] font-black uppercase tracking-widest rounded-xl text-center shadow-sm flex items-center justify-center gap-2">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                                    Added
+                                                                </div>
+                                                            @else
+                                                                <form action="{{ route('admin.store.item.add', $store) }}" method="POST">
+                                                                    @csrf
+                                                                    <input type="hidden" name="design_catalog_id" value="{{ $design->id }}">
+                                                                    <button type="submit" class="w-full py-2.5 bg-white border-2 border-slate-200 hover:border-slate-900 hover:bg-slate-900 hover:text-white text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all">
+                                                                        Add to Store
+                                                                    </button>
+                                                                </form>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($store->items->isNotEmpty())
+                    <div class="space-y-4 border-t border-slate-200 pt-6">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Current Store Items</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            @foreach($store->items as $item)
+                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col">
+                                    <div class="aspect-[4/5] bg-white rounded-lg mb-3 overflow-hidden">
+                                        @if(!empty($item->image_paths))
+                                            <img src="{{ $item->image_paths[0] }}" class="w-full h-full object-cover object-top">
+                                        @elseif($item->image_url)
+                                            <img src="{{ $item->image_url }}" class="w-full h-full object-cover object-top">
+                                        @endif
+                                    </div>
+                                    <div class="text-xs font-bold text-slate-900 truncate mb-1" title="{{ $item->name }}">{{ $item->name }}</div>
+                                    <div class="text-[10px] text-slate-500 font-medium mb-3">Retail: ${{ number_format($item->retail_price, 2) }}</div>
+                                    <form action="{{ route('admin.store.item.remove', ['item' => $item->id]) }}" method="POST" class="mt-auto">
+                                        @csrf
+                                        <button type="submit" class="w-full py-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 text-[10px] font-black uppercase tracking-widest rounded transition-colors" onclick="return confirm('Remove this item from the store?')">Remove</button>
+                                    </form>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-6">
                     @if($store->is_archived)
@@ -175,7 +367,11 @@
             {{-- Order roster for this store --}}
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Order Roster ({{ $store->parentOrders->count() }} athletes)</h2>
+                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Placed Orders ({{ $store->parentOrders->count() }} athletes)</h2>
+                    <a href="{{ route('admin.stores.export', $store->id) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded hover:bg-slate-50 transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                        Export CSV
+                    </a>
                 </div>
                 @if($store->parentOrders->isEmpty())
                     <div class="p-8 text-center text-slate-400 text-sm">No orders submitted yet.</div>

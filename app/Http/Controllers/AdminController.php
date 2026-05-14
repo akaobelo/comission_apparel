@@ -543,7 +543,8 @@ class AdminController extends Controller
     {
         $store->load(['user', 'items', 'parentOrders']);
         $financials = \App\Models\ParentOrder::calculateBatchFinancials($store->parentOrders, $store);
-        return view('admin.store_edit', compact('store', 'financials'));
+        $allDesigns = \App\Models\DesignCatalog::latest()->get();
+        return view('admin.store_edit', compact('store', 'financials', 'allDesigns'));
     }
 
     public function updateStore(Request $request, TeamStore $store)
@@ -623,6 +624,85 @@ class AdminController extends Controller
 
         return redirect()->route('admin.store.edit', $store)
             ->with('success', "Removed component from package.");
+    }
+
+    public function updateCoverImage(Request $request, TeamStore $store)
+    {
+        $request->validate([
+            'cover_image' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+        ]);
+
+        if ($request->hasFile('cover_image')) {
+            if ($store->cover_image_path) {
+                $pathToRemove = str_replace('/storage/', '', $store->cover_image_path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            }
+            $path = $request->file('cover_image')->store('covers', 'public');
+            $store->update(['cover_image_path' => $path]);
+        }
+
+        return redirect()->route('admin.store.edit', $store)
+            ->with('success', 'Store cover image updated successfully.');
+    }
+
+    public function updateStoreLogo(Request $request, TeamStore $store)
+    {
+        $user = $store->user;
+
+        $request->validate([
+            'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+        ]);
+
+        if ($request->hasFile('logo')) {
+            if ($user->logo_path) {
+                $pathToRemove = str_replace('/storage/', '', $user->logo_path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            }
+            $path = $request->file('logo')->store('organization_logos', 'public');
+            $user->update(['logo_path' => $path]);
+        }
+
+        return redirect()->route('admin.store.edit', $store)
+            ->with('success', 'Organization logo updated successfully.');
+    }
+
+    public function addStoreItem(Request $request, TeamStore $store)
+    {
+        $request->validate([
+            'design_catalog_id' => ['required', 'exists:design_catalog,id'],
+        ]);
+
+        $design = \App\Models\DesignCatalog::findOrFail($request->design_catalog_id);
+
+        if ($store->items()->where('design_catalog_id', $design->id)->exists()) {
+            return redirect()->route('admin.store.edit', $store)
+                ->with('error', 'That design is already added to the store.');
+        }
+
+        $maxSort = $store->items()->max('sort_order') ?? 0;
+
+        $store->items()->create([
+            'design_catalog_id' => $design->id,
+            'name'              => $design->name,
+            'type'              => null,
+            'types'             => $design->types,
+            'image_url'         => null,
+            'image_paths'       => $design->image_paths,
+            'wholesale_price'   => $design->wholesale_price,
+            'retail_price'      => $design->wholesale_price,
+            'sort_order'        => $maxSort + 1,
+        ]);
+
+        return redirect()->route('admin.store.edit', $store)
+            ->with('success', "\"{$design->name}\" added to the store.");
+    }
+
+    public function removeStoreItem(Request $request, \App\Models\StoreItem $item)
+    {
+        $store = $item->teamStore;
+        $item->delete();
+        return redirect()->route('admin.store.edit', $store)
+            ->with('success', 'Item removed from store.');
     }
 
     // ─── DIRECT ORDER BATCH REVIEW ───────────────────────────────────────────────

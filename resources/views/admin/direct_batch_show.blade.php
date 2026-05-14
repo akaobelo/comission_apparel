@@ -23,8 +23,14 @@
             <!-- Orders List -->
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                    <h3 class="text-sm font-black uppercase tracking-wider text-slate-900">Orders in Batch</h3>
-                    <div class="text-xs font-bold text-slate-500">{{ $orders->count() }} Orders</div>
+                    <h3 class="text-sm font-black uppercase tracking-wider text-slate-900">Placed Orders</h3>
+                    <div class="flex items-center gap-4">
+                        <div class="text-xs font-bold text-slate-500">{{ $orders->count() }} Orders</div>
+                        <a href="{{ route('coach.direct-order.export', $batchId) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded hover:bg-slate-50 transition-colors flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                            Export CSV
+                        </a>
+                    </div>
                 </div>
                 <div class="divide-y divide-slate-100">
                     @forelse($orders as $order)

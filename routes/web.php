@@ -215,6 +215,10 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::delete('/admin/archived-orders/{batch_id}', [AdminController::class, 'deleteArchivedOrderBatch'])->name('admin.archived-orders.delete');
     Route::post('/admin/stores/{store}/update', [AdminController::class, 'updateStore'])->name('admin.store.update');
     Route::post('/admin/stores/{store}/pricing', [AdminController::class, 'updateStorePricing'])->name('admin.store.pricing.update');
+    Route::post('/admin/stores/{store}/cover', [AdminController::class, 'updateCoverImage'])->name('admin.store.cover');
+    Route::post('/admin/stores/{store}/logo', [AdminController::class, 'updateStoreLogo'])->name('admin.store.logo');
+    Route::post('/admin/stores/{store}/item', [AdminController::class, 'addStoreItem'])->name('admin.store.item.add');
+    Route::post('/admin/stores/item/{item}/remove', [AdminController::class, 'removeStoreItem'])->name('admin.store.item.remove');
     Route::post('/admin/stores/{store}/package/{package}/attach', [AdminController::class, 'attachPackageComponent'])->name('admin.store.package.attach');
     Route::delete('/admin/stores/{store}/package/{package}/detach/{component}', [AdminController::class, 'detachPackageComponent'])->name('admin.store.package.detach');
     Route::get('/admin/stores/{store}/export', [AdminController::class, 'exportOrderCSV'])->name('admin.stores.export');
