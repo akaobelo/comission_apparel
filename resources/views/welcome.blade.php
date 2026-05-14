@@ -93,64 +93,72 @@
     </section>
 
     <!-- Team Store Section -->
-    <section id="team-store" class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative overflow-hidden">
-        <div class="mb-6">
-            <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">TEAM <span class="text-secondary ml-1">STORE</span></h2>
-            <p class="text-slate-500 text-xs font-medium mt-1">Empower your program with a custom online store that eliminates hassle and generates revenue.</p>
-        </div>
+  <section id="team-store" class="py-24 bg-[#0a0a0a] border-y border-slate-900">
+    <div class="max-w-[90rem] mx-auto px-6">
         
         <!-- UI Mockup Image -->
-        <div class="mb-8 rounded-xl overflow-hidden shadow-sm border border-slate-200 relative" style="aspect-ratio: 3.2 / 1;">
-             <img src="/images/team-store-background-v2.png" alt="Team Store UI Previews" class="absolute w-full max-w-none h-auto left-0 -top-[9%] md:-top-[12%] lg:-top-[15%]">
+        <div class="mb-6 md:mb-10 px-4 lg:px-6 max-w-[85rem] mx-auto">
+             <div class="w-full rounded-xl overflow-hidden shadow-2xl relative" style="aspect-ratio: 3.2 / 1;">
+                 <img src="/images/team-store-background-v2.png" alt="Team Store UI Previews" class="absolute w-full max-w-none h-auto left-0 -top-[9%] md:-top-[12%] lg:-top-[15%]">
+             </div>
+        </div>
+
+        <!-- Text Content -->
+        <div class="max-w-4xl mx-auto text-center mb-16">
+            <h2 class="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase text-white mb-6">TEAM <span class="text-secondary ml-1">STORE</span></h2>
+            <p class="text-slate-100 text-lg md:text-xl font-medium tracking-wide">Empower your program with a custom online store that eliminates hassle and generates revenue.</p>
         </div>
 
         <!-- Features Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+        <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12">
+            
             <!-- Feature 1 -->
             <div class="flex gap-4">
-                <div class="shrink-0 mt-0.5">
-                    <span class="w-5 h-5 rounded bg-secondary text-white text-[10px] font-black flex items-center justify-center">✓</span>
+                <div class="shrink-0 mt-1.5">
+                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
                 </div>
                 <div>
-                    <h3 class="text-slate-900 text-xs font-black uppercase tracking-wide mb-1">CUSTOM DESIGNS THAT DRIVE DEMAND</h3>
-                    <p class="text-slate-600 text-xs leading-relaxed font-medium">We create high-quality, exclusive apparel designs tailored to your team—making your store something people actually want to shop from, not just another generic merch page.</p>
+                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">CUSTOM DESIGNS THAT DRIVE DEMAND</h3>
+                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">We create high-quality, exclusive apparel designs tailored to your team—making your store something people actually want to shop from, not just another generic merch page.</p>
                 </div>
             </div>
 
             <!-- Feature 2 -->
             <div class="flex gap-4">
-                <div class="shrink-0 mt-0.5">
-                    <span class="w-5 h-5 rounded bg-secondary text-white text-[10px] font-black flex items-center justify-center">✓</span>
+                <div class="shrink-0 mt-1.5">
+                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
                 </div>
                 <div>
-                    <h3 class="text-slate-900 text-xs font-black uppercase tracking-wide mb-1">PARENTS ORDER DIRECTLY</h3>
-                    <p class="text-slate-600 text-xs leading-relaxed font-medium">Families simply use your team store link to place their own orders, eliminating the need for coaches to collect forms, track sizes, or manage money.</p>
+                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">PARENTS ORDER DIRECTLY</h3>
+                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Families simply use your team store link to place their own orders, eliminating the need for coaches to collect forms, track sizes, or manage money.</p>
                 </div>
             </div>
 
             <!-- Feature 3 -->
             <div class="flex gap-4">
-                <div class="shrink-0 mt-0.5">
-                    <span class="w-5 h-5 rounded bg-secondary text-white text-[10px] font-black flex items-center justify-center">✓</span>
+                <div class="shrink-0 mt-1.5">
+                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
                 </div>
                 <div>
-                    <h3 class="text-slate-900 text-xs font-black uppercase tracking-wide mb-1">TURN YOUR PROGRAM INTO A REVENUE STREAM</h3>
-                    <p class="text-slate-600 text-xs leading-relaxed font-medium">Your custom team store allows you to generate ongoing income from every purchase—helping fund travel, equipment, and program growth without additional fundraising efforts.</p>
+                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">TURN YOUR PROGRAM INTO A REVENUE STREAM</h3>
+                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Your custom team store allows you to generate ongoing income from every purchase—helping fund travel, equipment, and program growth without additional fundraising efforts.</p>
                 </div>
             </div>
 
             <!-- Feature 4 -->
             <div class="flex gap-4">
-                <div class="shrink-0 mt-0.5">
-                    <span class="w-5 h-5 rounded bg-secondary text-white text-[10px] font-black flex items-center justify-center">✓</span>
+                <div class="shrink-0 mt-1.5">
+                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
                 </div>
                 <div>
-                    <h3 class="text-slate-900 text-xs font-black uppercase tracking-wide mb-1">PROFESSIONAL, BRANDED EXPERIENCE</h3>
-                    <p class="text-slate-600 text-xs leading-relaxed font-medium">Your athletes, parents, and supporters get access to a clean, custom-designed online store that reflects your team's identity and elevates your brand.</p>
+                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">PROFESSIONAL, BRANDED EXPERIENCE</h3>
+                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Your athletes, parents, and supporters get access to a clean, custom-designed online store that reflects your team's identity and elevates your brand.</p>
                 </div>
             </div>
+
         </div>
-    </section>
+    </div>
+</section>
 
     <!-- Powerful Features (Team Stores & Dashboard Teaser) -->
     <!-- <section id="system" class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative overflow-hidden">
