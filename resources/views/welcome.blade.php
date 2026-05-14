@@ -153,7 +153,7 @@
     </section>
 
     <!-- Powerful Features (Team Stores & Dashboard Teaser) -->
-    <section id="system" class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative overflow-hidden">
+    <!-- <section id="system" class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative overflow-hidden">
         <div class="mb-6">
             <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">More Than Gear. <span class="text-secondary">A Platform.</span></h2>
             <p class="text-slate-500 text-xs font-medium mt-1">Automated workflow entirely centralized.</p>
@@ -208,7 +208,7 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section> -->
 
     <!-- Testimonials Section -->
     <section id="testimonials" class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative overflow-hidden">
