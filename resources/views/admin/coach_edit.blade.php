@@ -109,7 +109,7 @@
                         <div class="flex-1">
                             <select name="design_catalog_id" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                                 <option value="">Select a design to assign...</option>
-                                @foreach($designCatalog->sortByDesc('id') as $design)
+                                @foreach($designCatalog as $design)
                                     @if(!in_array($design->id, $assignedDesignIds))
                                         <option value="{{ $design->id }}">{{ $design->name }} ({{ $design->type_label }})</option>
                                     @endif

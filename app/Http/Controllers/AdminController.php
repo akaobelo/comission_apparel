@@ -61,7 +61,10 @@ class AdminController extends Controller
             });
 
         // Design catalog
-        $designCatalog = DesignCatalog::latest()->get();
+        $designCatalog = DesignCatalog::orderByDesc('sort_order')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
 
         // Production orders (in production status)
         $productionStores = TeamStore::where('status', 'approved')
@@ -171,7 +174,10 @@ class AdminController extends Controller
     public function editCoach(User $user)
     {
         if ($user->role !== 'coach') abort(404);
-        $designCatalog = DesignCatalog::latest()->get();
+        $designCatalog = DesignCatalog::orderByDesc('sort_order')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
         $assignedDesignIds = $user->designCatalog()->pluck('design_catalog_id')->toArray();
         return view('admin.coach_edit', compact('user', 'designCatalog', 'assignedDesignIds'));
     }

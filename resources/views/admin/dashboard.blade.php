@@ -1145,7 +1145,7 @@
                     search: '',
                     page: 1,
                     perPage: 20,
-                    items: {{ json_encode($designCatalog->map(function($d) { return ['id' => $d->id, 'name' => strtolower($d->name)]; })->values()) }}.sort((a, b) => b.id - a.id),
+                    items: {{ json_encode($designCatalog->map(function($d) { return ['id' => $d->id, 'name' => strtolower($d->name)]; })->values()) }},
                     get filteredItems() {
                         if (this.search === '') return this.items;
                         const lowerSearch = this.search.toLowerCase();
@@ -1182,7 +1182,7 @@
                     <div x-show="expandedCatalog" x-cloak>
                         @if($designCatalog->isNotEmpty())
                         <div class="max-h-[900px] overflow-y-auto">
-                            @foreach($designCatalog->sortByDesc('id') as $design)
+                            @foreach($designCatalog as $design)
                         <div x-show="paginatedItemIds.includes({{ $design->id }})" x-cloak class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0">
                             <div class="flex-1 pr-4">
                                 <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
