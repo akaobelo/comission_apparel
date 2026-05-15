@@ -26,7 +26,7 @@
                 {{ $store->user->sport ?? 'Team Athletics' }}
             </div>
             <h1 class="text-3xl md:text-5xl font-black uppercase tracking-tight text-slate-900 leading-none">{{ $store->name }}</h1>
-            <p class="text-slate-500 text-sm md:text-base mt-2">Official Custom Apparel Storefront · Coach {{ $store->user->name }}</p>
+            <p class="text-slate-500 text-sm md:text-[1rem] mt-2">Official Custom Apparel Storefront · Coach {{ $store->user->name }}</p>
         </div>
     </div>
     @if($store->order_deadline)
