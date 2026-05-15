@@ -110,7 +110,8 @@
 
         @if($closedReason !== 'no_items')
             {{-- ═══ NEW ORDER FORM GRID (OR ITEMS VIEW) ═══ --}}
-            <form action="{{ route('store.order.submit', $store->slug) }}" method="POST" 
+            <form action="{{ route('store.order.submit', $store->slug) }}" method="POST"
+                  class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 md:p-6 relative overflow-hidden"
                   @invalid.capture="athleteInfoOpen = true; setTimeout(() => document.getElementById('athlete-info-section').scrollIntoView({behavior: 'smooth', block: 'start'}), 100)"
                   x-data="{
                       athleteInfoOpen: {{ $errors->any() ? 'true' : 'false' }},
