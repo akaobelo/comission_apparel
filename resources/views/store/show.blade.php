@@ -14,7 +14,7 @@
 </div>
 
 {{-- Store Header Content --}}
-<div class="max-w-6xl w-full mx-auto px-6 pt-6 pb-4 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+<div class="max-w-6xl w-full mx-auto px-6 pt-6 pb-4 flex flex-col md:flex-row items-start md:items-end justify-between gap-6 bg-white border border-slate-200 rounded-xl shadow-sm">
     <div class="flex flex-col md:flex-row items-start md:items-end gap-5">
         @if($store->user->logo_path)
             <div class="w-24 h-24 rounded-full bg-white border border-slate-200 overflow-hidden flex items-center justify-center shadow-sm flex-shrink-0">
