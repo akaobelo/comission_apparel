@@ -841,10 +841,16 @@
                                     <div class="text-sm font-bold text-slate-900">{{ $collection->name }}</div>
                                 </div>
 
-                                <button @click="showModal = true" class="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-primary flex items-center gap-1 transition-colors">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                                    Edit
-                                </button>
+                                <div class="flex items-center gap-3 shrink-0">
+                                    <a href="{{ route('admin.design-collection.manage', $collection) }}" class="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-secondary flex items-center gap-1 transition-colors">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                                        Manage Items
+                                    </a>
+                                    <button @click="showModal = true" class="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-primary flex items-center gap-1 transition-colors">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                        Edit
+                                    </button>
+                                </div>
 
                                 <div x-show="showModal" class="fixed inset-0 z-[100] flex items-center justify-center" x-cloak>
                                     <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" @click="showModal = false" x-transition.opacity></div>

@@ -443,6 +443,72 @@ class AdminController extends Controller
             ->with('success', "Collection removed.");
     }
 
+    public function manageCollection(\App\Models\DesignCollection $collection)
+    {
+        $collection->load(['designs' => function($q) {
+            $q->orderBy('sort_order', 'desc')->orderBy('created_at', 'desc');
+        }]);
+
+        // Get designs that are NOT in this collection to show in the "Add Design" dropdown
+        $availableDesigns = \App\Models\DesignCatalog::where('design_collection_id', '!=', $collection->id)
+            ->orWhereNull('design_collection_id')
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.design_collection_manage', compact('collection', 'availableDesigns'));
+    }
+
+    public function addDesignToCollection(Request $request, \App\Models\DesignCollection $collection)
+    {
+        $request->validate([
+            'design_catalog_id' => ['required', 'exists:design_catalog,id'],
+        ]);
+
+        $design = \App\Models\DesignCatalog::findOrFail($request->design_catalog_id);
+        
+        // Auto sort order logic
+        $maxSort = $collection->designs()->max('sort_order') ?? 0;
+
+        $design->update([
+            'design_collection_id' => $collection->id,
+            'sort_order' => $maxSort + 1,
+        ]);
+
+        return redirect()->route('admin.design-collection.manage', $collection)
+            ->with('success', "Design \"{$design->name}\" added to collection.");
+    }
+
+    public function removeDesignFromCollection(Request $request, \App\Models\DesignCollection $collection, \App\Models\DesignCatalog $design)
+    {
+        if ($design->design_collection_id == $collection->id) {
+            $design->update(['design_collection_id' => null]);
+            return redirect()->route('admin.design-collection.manage', $collection)
+                ->with('success', "Design \"{$design->name}\" removed from collection.");
+        }
+
+        return redirect()->route('admin.design-collection.manage', $collection)
+            ->with('error', "Design does not belong to this collection.");
+    }
+
+    public function updateCollectionDesignsSort(Request $request, \App\Models\DesignCollection $collection)
+    {
+        $request->validate([
+            'designs' => ['required', 'array'],
+            'designs.*.id' => ['required', 'exists:design_catalog,id'],
+            'designs.*.sort_order' => ['required', 'integer'],
+        ]);
+
+        foreach ($request->designs as $designData) {
+            $design = \App\Models\DesignCatalog::find($designData['id']);
+            if ($design && $design->design_collection_id == $collection->id) {
+                $design->update(['sort_order' => $designData['sort_order']]);
+            }
+        }
+
+        return redirect()->route('admin.design-collection.manage', $collection)
+            ->with('success', "Collection sort order updated.");
+    }
+
     public function assignDesign(Request $request, User $coach)
     {
         $request->validate([

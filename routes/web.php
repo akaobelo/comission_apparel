@@ -197,6 +197,12 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::put('/admin/design-collections/{collection}', [AdminController::class, 'updateDesignCollection'])->name('admin.design-collection.update');
     Route::delete('/admin/design-collections/{collection}', [AdminController::class, 'deleteDesignCollection'])->name('admin.design-collection.delete');
 
+    // Collection Items Management
+    Route::get('/admin/design-collections/{collection}/manage', [AdminController::class, 'manageCollection'])->name('admin.design-collection.manage');
+    Route::post('/admin/design-collections/{collection}/add-item', [AdminController::class, 'addDesignToCollection'])->name('admin.design-collection.add-item');
+    Route::post('/admin/design-collections/{collection}/remove-item/{design}', [AdminController::class, 'removeDesignFromCollection'])->name('admin.design-collection.remove-item');
+    Route::post('/admin/design-collections/{collection}/bulk-sort', [AdminController::class, 'updateCollectionDesignsSort'])->name('admin.design-collection.bulk-sort');
+
     // Assign designs to coaches
     Route::post('/admin/coach/{coach}/assign-design', [AdminController::class, 'assignDesign'])->name('admin.coach.assign-design');
     Route::delete('/admin/coach/{coach}/remove-design/{design}', [AdminController::class, 'removeDesign'])->name('admin.coach.remove-design');
