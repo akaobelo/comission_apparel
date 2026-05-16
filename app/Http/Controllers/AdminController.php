@@ -380,6 +380,24 @@ class AdminController extends Controller
             ->with('success', "Design \"{$design->name}\" updated.");
     }
 
+    public function bulkSortDesigns(Request $request)
+    {
+        $request->validate([
+            'designs' => ['required', 'array'],
+            'designs.*.sort_order' => ['required', 'numeric'],
+        ]);
+
+        foreach ($request->designs as $designId => $data) {
+            $design = \App\Models\DesignCatalog::find($designId);
+            if ($design) {
+                $design->update(['sort_order' => $data['sort_order']]);
+            }
+        }
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Design catalog sort orders updated.");
+    }
+
     // ─── DESIGN COLLECTION MANAGEMENT ───────────────────────────────────────────
 
     public function createDesignCollection(Request $request)

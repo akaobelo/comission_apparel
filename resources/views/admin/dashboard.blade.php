@@ -1187,13 +1187,27 @@
                     </div>
                     <div x-show="expandedCatalog" x-cloak>
                         @if($designCatalog->isNotEmpty())
+                        <form id="bulk-sort-form" action="{{ route('admin.design.bulk-sort') }}" method="POST">
+                            @csrf
+                        </form>
+                        <div class="p-3 bg-white border-b border-slate-200 flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Adjust sort orders below and click save</span>
+                            <button type="submit" form="bulk-sort-form" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort Orders</button>
+                        </div>
                         <div class="max-h-[900px] overflow-y-auto">
                             @foreach($designCatalog as $design)
-                        <div x-show="paginatedItemIds.includes({{ $design->id }})" x-cloak class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0">
+                        <div x-show="paginatedItemIds.includes({{ $design->id }})" x-cloak class="flex flex-col sm:flex-row sm:items-start justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 gap-4">
                             <div class="flex-1 pr-4">
                                 <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
                                 <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">
                                     {{ $design->sport ? $design->sport . ' · ' : '' }}{{ $design->type_label }} · {{ $design->category_label }}
+                                </div>
+                                <div class="mt-2">
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Sort Order</label>
+                                    <input type="number" value="{{ $design->sort_order }}" 
+                                           oninput="this.name = 'designs[{{ $design->id }}][sort_order]'" 
+                                           form="bulk-sort-form"
+                                           class="w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                                 </div>
                                 <details class="mt-2">
                                     <summary class="text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer hover:text-primary">Edit design</summary>
@@ -1364,23 +1378,25 @@
                                     </form>
                                 </details>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <form action="{{ route('admin.design.assign-to-coach-profile', $design) }}" method="POST" class="flex items-center gap-1">
-                                    @csrf
-                                    <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2 py-1 w-32 focus:border-primary focus:outline-none">
-                                        <option value="">Assign to coach...</option>
-                                        @foreach($allCoaches as $c)
-                                            <option value="{{ $c->id }}">{{ $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
-                                        @endforeach
-                                    </select>
-                                    <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors" title="Assign Design to Coach">Assign</button>
-                                </form>
-                                <form action="{{ route('admin.design.delete', $design) }}" method="POST" onsubmit="return confirm('Delete this design from the catalog?')">
-                                    @csrf @method('DELETE')
-                                    <button class="text-red-400 hover:text-red-600 transition-colors p-1">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </button>
-                                </form>
+                            <div class="flex flex-col sm:items-end gap-3 shrink-0">
+                                <div class="flex items-center gap-3">
+                                    <form action="{{ route('admin.design.assign-to-coach-profile', $design) }}" method="POST" class="flex items-center gap-1">
+                                        @csrf
+                                        <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2 py-1 w-32 focus:border-primary focus:outline-none">
+                                            <option value="">Assign to coach...</option>
+                                            @foreach($allCoaches as $c)
+                                                <option value="{{ $c->id }}">{{ $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
+                                            @endforeach
+                                        </select>
+                                        <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors" title="Assign Design to Coach">Assign</button>
+                                    </form>
+                                    <form action="{{ route('admin.design.delete', $design) }}" method="POST" onsubmit="return confirm('Delete this design from the catalog?')">
+                                        @csrf @method('DELETE')
+                                        <button class="text-red-400 hover:text-red-600 transition-colors p-1">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                         @endforeach
