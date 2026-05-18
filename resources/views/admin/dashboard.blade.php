@@ -301,8 +301,8 @@
                                     <div class="flex flex-col gap-2 flex-shrink-0">
                                         @if($store)
                                             <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review / Edit Store</a>
-                                            <!-- We can reuse direct order export for batches -->
-                                            <a href="{{ route('coach.direct-order.export', $batchId) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Export CSV</a>
+                                            <!-- We can reuse admin batch export for batches -->
+                                            <a href="{{ route('admin.batch.export', $batchId) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Export CSV</a>
                                             <form action="{{ route('admin.store-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
                                                 @csrf
                                                 <button type="submit" class="w-full px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors text-center">Mark Addressed</button>
@@ -367,7 +367,7 @@
                                     </div>
                                     <div class="flex flex-col gap-2 flex-shrink-0">
                                         <a href="{{ route('admin.direct-batch.show', $batchId) }}" class="px-4 py-2 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-primary/90 transition-colors text-center">Review / Edit Order</a>
-                                        <a href="{{ route('coach.direct-order.export', $batchId) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Export CSV</a>
+                                        <a href="{{ route('admin.batch.export', $batchId) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Export CSV</a>
                                         <form action="{{ route('admin.direct-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
                                             @csrf
                                             <button type="submit" class="w-full px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors text-center">Mark Addressed</button>

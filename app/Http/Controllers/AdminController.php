@@ -991,6 +991,75 @@ class AdminController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    public function exportBatchCSV(Request $request, $batchId)
+    {
+        $orders = ParentOrder::where('batch_id', $batchId)->get();
+
+        if ($orders->isEmpty()) abort(404);
+
+        $filename = "batch-order-{$batchId}.csv";
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = [
+            'First Name', 'Last Name', 'Gender', 
+            'Jersey Name', 'Jersey Number', 'Backpack Name',
+            'Item', 'Types', 'Sizes', 'Qty', 'Special Notes', 'Edited?'
+        ];
+
+        $callback = function() use ($orders, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($orders as $order) {
+                if (is_array($order->items_json)) {
+                    foreach ($order->items_json as $item) {
+                        $typesStr = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
+                        
+                        $sizesArr = [];
+                        if (isset($item['components']) && is_array($item['components'])) {
+                            foreach ($item['components'] as $comp) {
+                                if (isset($comp['sizes']) && is_array($comp['sizes'])) {
+                                    foreach ($comp['sizes'] as $t => $s) {
+                                        $sizesArr[] = "{$comp['name']} ($t): $s";
+                                    }
+                                }
+                            }
+                        } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
+                            foreach ($item['sizes'] as $t => $s) {
+                                $sizesArr[] = "$t: $s";
+                            }
+                        }
+                        $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
+
+                        fputcsv($file, [
+                            $order->athlete_first_name,
+                            $order->athlete_last_name,
+                            $order->gender ?? 'Not Specified',
+                            $order->jersey_name ?? '',
+                            $order->jersey_number ?? '',
+                            $order->backpack_name ?? '',
+                            $item['name'] ?? 'Unknown Item',
+                            $typesStr,
+                            $sizesStr,
+                            $item['qty'] ?? 1,
+                            $order->special_notes ?? '',
+                            $order->is_edited ? 'Yes' : 'No',
+                        ]);
+                    }
+                }
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     // ─── LANDING COLLECTIONS ──────────────────────────────────────────────────────
 
     public function createCollection(Request $request)
