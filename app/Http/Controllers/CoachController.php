@@ -564,23 +564,41 @@ class CoachController extends Controller
             $qty = max(1, intval($details['qty'] ?? 1));
 
             $types = $design->types ?? [];
-            $entry = [
-                'id'           => $designId,
-                'name'         => $design->name,
-                'types'        => $types,
-                'qty'          => $qty,
-                'sizes'        => [],
-            ];
-
-            // Handle sizes for each sized type
             $sizedTypes = DesignCatalog::sizedTypes();
-            foreach ($types as $t) {
-                if (in_array($t, $sizedTypes)) {
-                    $entry['sizes'][$t] = $details['sizes'][$t] ?? null;
-                }
-            }
+            $hasSizes = count(array_intersect($types, $sizedTypes)) > 0;
 
-            $itemsJson[] = $entry;
+            if ($hasSizes && isset($details['sizes']) && is_array($details['sizes'])) {
+                foreach ($details['sizes'] as $size => $qty) {
+                    $qty = intval($qty);
+                    if ($qty > 0) {
+                        $entry = [
+                            'id'           => $designId,
+                            'name'         => $design->name,
+                            'types'        => $types,
+                            'qty'          => $qty,
+                            'sizes'        => [],
+                        ];
+                        // Apply this size to all sized types in the item
+                        foreach ($types as $t) {
+                            if (in_array($t, $sizedTypes)) {
+                                $entry['sizes'][$t] = $size;
+                            }
+                        }
+                        $itemsJson[] = $entry;
+                    }
+                }
+            } else if (!$hasSizes) {
+                // Non-sized item
+                $qty = max(1, intval($details['qty'] ?? 1));
+                $entry = [
+                    'id'           => $designId,
+                    'name'         => $design->name,
+                    'types'        => $types,
+                    'qty'          => $qty,
+                    'sizes'        => [],
+                ];
+                $itemsJson[] = $entry;
+            }
         }
 
         if (empty($itemsJson)) {

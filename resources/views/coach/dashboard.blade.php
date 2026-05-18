@@ -245,25 +245,29 @@
                                                                         <div class="text-xs text-slate-500 mt-1 uppercase tracking-wider">{{ implode(', ', $types) }}</div>
                                                                         
                                                                         <div x-show="selected" x-collapse class="mt-4 pt-4 border-t border-slate-200/60">
-                                                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                                                <div>
-                                                                                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Quantity</label>
-                                                                                    <input type="number" name="items[{{ $design->id }}][qty]" value="1" min="1" class="w-full border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" :required="selected">
+                                                                            @if($hasSizes)
+                                                                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-4 gap-x-8">
+                                                                                    @foreach(\App\Models\DesignCatalog::sizeChart() as $size)
+                                                                                        <div class="flex items-center gap-3">
+                                                                                            <label class="text-[11px] font-bold uppercase text-slate-500 w-10 text-right">{{ $size }}</label>
+                                                                                            <div class="flex items-center gap-1.5">
+                                                                                                <span class="text-[9px] font-bold uppercase text-slate-400 tracking-wide">Qty</span>
+                                                                                                <select name="items[{{ $design->id }}][sizes][{{ $size }}]" class="w-14 border border-slate-300 bg-white rounded-lg px-1.5 py-1 text-xs font-medium text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" :disabled="!selected">
+                                                                                                    <option value="0">0</option>
+                                                                                                    @for($i=1; $i<=100; $i++)
+                                                                                                        <option value="{{ $i }}">{{ $i }}</option>
+                                                                                                    @endfor
+                                                                                                </select>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    @endforeach
                                                                                 </div>
-                                                                                @foreach($types as $t)
-                                                                                    @if(in_array($t, $sizedTypes))
-                                                                                    <div>
-                                                                                        <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">{{ $t }} Size</label>
-                                                                                        <select name="items[{{ $design->id }}][sizes][{{ $t }}]" class="w-full border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" :required="selected">
-                                                                                            <option value="">Select Size</option>
-                                                                                            @foreach(\App\Models\DesignCatalog::sizeChart() as $size)
-                                                                                                <option value="{{ $size }}">{{ $size }}</option>
-                                                                                            @endforeach
-                                                                                        </select>
-                                                                                    </div>
-                                                                                    @endif
-                                                                                @endforeach
-                                                                            </div>
+                                                                            @else
+                                                                                <div class="max-w-[200px]">
+                                                                                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Quantity</label>
+                                                                                    <input type="number" name="items[{{ $design->id }}][qty]" value="1" min="1" class="w-full border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" :required="selected" :disabled="!selected">
+                                                                                </div>
+                                                                            @endif
                                                                         </div>
                                                                     </div>
                                                                 </div>

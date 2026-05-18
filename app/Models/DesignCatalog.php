@@ -127,14 +127,14 @@ class DesignCatalog extends Model
         return [
             'accessory', 'arm_sleeve', 'headwear', 'hoodie', 'jacket', 'leggings', 'pants', 
             'polo', 'shirt_short', 'shirt_long', 'shorts', 'socks', 'uniform_top', 'uniform_bottom', 
-            'uniform_set', 'warmup_top', 'warmup_bottom', 'warmup_set'
+            'uniform_set', 'uniform_set_2', 'warmup_top', 'warmup_bottom', 'warmup_set'
         ];
     }
 
     // Standard size chart used across all garments
     public static function sizeChart(): array
     {
-        return ['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL', 'AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL'];
+        return ['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL', 'AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL', 'A4XL', 'A5XL'];
     }
 
     public function isPackage(): bool
