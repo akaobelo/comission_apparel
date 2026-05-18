@@ -22,15 +22,15 @@
         <div class="lg:w-2/3 space-y-6">
             <!-- Orders List -->
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div>
                         <h3 class="text-sm font-black uppercase tracking-wider text-slate-900">Placed Orders</h3>
                         @if($orders->isNotEmpty())
                             <div class="flex items-center gap-2 mt-2">
-                                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Timeline Tracker:</span>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Timeline Tracker:</span>
                                 <form action="{{ route('admin.batch.status.update', $batchId) }}" method="POST" class="flex gap-2">
                                     @csrf
-                                    <select name="status" class="bg-white border border-slate-300 rounded px-2 py-1 text-xs font-bold text-slate-700 focus:border-primary focus:outline-none shadow-sm" onchange="this.form.submit()">
+                                    <select name="status" class="bg-white border border-slate-300 rounded px-2 py-1 text-[11px] font-bold text-slate-700 focus:border-primary focus:outline-none shadow-sm" onchange="this.form.submit()">
                                         <option value="Submitted to Admin" {{ $firstOrder->status === 'Submitted to Admin' ? 'selected' : '' }}>Submitted to Admin</option>
                                         <option value="Processing" {{ $firstOrder->status === 'Processing' ? 'selected' : '' }}>Processing</option>
                                         <option value="Design Approved" {{ $firstOrder->status === 'Design Approved' ? 'selected' : '' }}>Design Approved</option>
@@ -44,12 +44,12 @@
                     </div>
                     <div class="flex items-center gap-4">
                         <div class="text-xs font-bold text-slate-500">{{ $orders->count() }} Orders</div>
-                        <div class="flex gap-2">
-                            <a href="{{ route('admin.batch.export', $batchId) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm">
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ route('admin.batch.export', $batchId) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
                                 Roster CSV
                             </a>
-                            <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="px-3 py-1.5 bg-slate-900 border border-slate-900 text-white text-xs font-bold uppercase tracking-wide rounded hover:bg-slate-800 transition-colors flex items-center gap-2 shadow-sm">
+                            <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="px-3 py-1.5 bg-slate-900 border border-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-800 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
                                 Aggregate CSV
                             </a>
                         </div>
