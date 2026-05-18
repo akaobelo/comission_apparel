@@ -1060,6 +1060,88 @@ class AdminController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    public function exportBatchAggregationCSV(Request $request, $batchId)
+    {
+        $orders = ParentOrder::where('batch_id', $batchId)->get();
+
+        if ($orders->isEmpty()) abort(404);
+
+        $filename = "batch-aggregate-{$batchId}.csv";
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = ['Item Name', 'Type', 'Size', 'Total Quantity'];
+        
+        $aggregated = [];
+
+        foreach ($orders as $order) {
+            if (is_array($order->items_json)) {
+                foreach ($order->items_json as $item) {
+                    $itemQty = max(1, (int)($item['qty'] ?? 1));
+
+                    if (isset($item['components']) && is_array($item['components'])) {
+                        foreach ($item['components'] as $comp) {
+                            $compQty = $itemQty * max(1, (int)($comp['qty'] ?? 1));
+                            $name = $comp['name'] ?? 'Unknown Component';
+                            
+                            if (isset($comp['sizes']) && is_array($comp['sizes'])) {
+                                foreach ($comp['sizes'] as $type => $size) {
+                                    $key = "{$name}|{$type}|{$size}";
+                                    $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
+                                }
+                            } else {
+                                $type = isset($comp['types']) ? implode(', ', $comp['types']) : ($comp['type'] ?? 'N/A');
+                                $key = "{$name}|{$type}|N/A";
+                                $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
+                            }
+                        }
+                    } else {
+                        $name = $item['name'] ?? 'Unknown Item';
+                        
+                        if (isset($item['sizes']) && is_array($item['sizes'])) {
+                            foreach ($item['sizes'] as $type => $size) {
+                                $key = "{$name}|{$type}|{$size}";
+                                $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
+                            }
+                        } else {
+                            $type = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
+                            $key = "{$name}|{$type}|N/A";
+                            $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
+                        }
+                    }
+                }
+            }
+        }
+
+        $callback = function() use ($aggregated, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+            foreach ($aggregated as $key => $qty) {
+                $parts = explode('|', $key);
+                fputcsv($file, [$parts[0], $parts[1], $parts[2], $qty]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function updateBatchStatus(Request $request, $batchId)
+    {
+        $request->validate([
+            'status' => 'required|string|max:255',
+        ]);
+
+        ParentOrder::where('batch_id', $batchId)->update(['status' => $request->status]);
+
+        return back()->with('success', 'Batch status updated to ' . $request->status . '.');
+    }
+
     // ─── LANDING COLLECTIONS ──────────────────────────────────────────────────────
 
     public function createCollection(Request $request)

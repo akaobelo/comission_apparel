@@ -218,6 +218,8 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::get('/admin/stores/{store}/edit', [AdminController::class, 'editStore'])->name('admin.store.edit');
     Route::get('/admin/direct-batch/{batch_id}', [AdminController::class, 'showDirectBatch'])->name('admin.direct-batch.show');
     Route::get('/admin/batch/{batch_id}/export', [AdminController::class, 'exportBatchCSV'])->name('admin.batch.export');
+    Route::get('/admin/batch/{batch_id}/export-aggregate', [AdminController::class, 'exportBatchAggregationCSV'])->name('admin.batch.export-aggregate');
+    Route::post('/admin/batch/{batch_id}/status', [AdminController::class, 'updateBatchStatus'])->name('admin.batch.status.update');
     Route::post('/admin/direct-batch/{batch_id}/mark-addressed', [AdminController::class, 'markDirectBatchAddressed'])->name('admin.direct-batch.mark-addressed');
     Route::post('/admin/store-batch/{batch_id}/mark-addressed', [AdminController::class, 'markStoreBatchAddressed'])->name('admin.store-batch.mark-addressed');
     Route::delete('/admin/archived-orders/{batch_id}', [AdminController::class, 'deleteArchivedOrderBatch'])->name('admin.archived-orders.delete');
