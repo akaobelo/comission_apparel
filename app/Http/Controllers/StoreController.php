@@ -76,6 +76,7 @@ class StoreController extends Controller
             'jersey_number'       => 'nullable|string|max:10',
             'backpack_name'       => 'nullable|string|max:255',
             'special_notes'       => 'nullable|string|max:1000',
+            'parent_phone'        => 'nullable|string|max:50',
             'items'               => 'required|array|min:1',
         ]);
 

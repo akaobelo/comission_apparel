@@ -214,6 +214,11 @@
                             <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Name on Backpack (if applicable)</label>
                             <input type="text" name="backpack_name" placeholder="e.g. Jordan Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                         </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Parent Phone Number <span class="text-slate-400 lowercase tracking-normal font-medium ml-1">(Optional - for text alerts)</span></label>
+                            <input type="tel" name="parent_phone" placeholder="e.g. 555-123-4567" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
+                            @error('parent_phone')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                        </div>
                         
                     </div>
                     </div>

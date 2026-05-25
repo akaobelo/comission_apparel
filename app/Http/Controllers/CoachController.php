@@ -7,6 +7,7 @@ use App\Models\TeamStore;
 use App\Models\StoreItem;
 use App\Models\ParentOrder;
 use App\Models\DesignCatalog;
+use App\Services\TwilioService;
 use Illuminate\Support\Str;
 
 class CoachController extends Controller
@@ -856,24 +857,38 @@ class CoachController extends Controller
 
         return back()->with('success', "{$added} parents added to the roster from CSV.");
     }
-    public function sendReminderBlast(Request $request, TeamStore $store)
+
+    public function removeRoster(Request $request, TeamStore $store, $rosterId)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $roster = $store->rosters()->findOrFail($rosterId);
+        $roster->delete();
+
+        return back()->with('success', 'Contact removed from the roster successfully.');
+    }
+    public function sendReminderBlast(Request $request, TeamStore $store, TwilioService $twilio)
     {
         if ($store->user_id !== $request->user()->id) abort(403);
 
         $emailsSent = 0;
         $smsSent = 0;
 
-        $twilioSid = env('TWILIO_SID');
-        $twilioToken = env('TWILIO_AUTH_TOKEN');
-        $twilioFrom = env('TWILIO_PHONE_NUMBER');
+        $message = $twilio->generateReminderMessage($store);
         
-        $twilioClient = null;
-        if ($twilioSid && $twilioToken && $twilioFrom) {
-            $twilioClient = new \Twilio\Rest\Client($twilioSid, $twilioToken);
-        }
+        $orderedPhones = $store->parentOrders()->whereNotNull('parent_phone')->pluck('parent_phone')->toArray();
+        $orderedEmails = $store->parentOrders()->whereNotNull('parent_email')->pluck('parent_email')->toArray();
 
         foreach ($store->rosters as $roster) {
-            if (!$roster->has_ordered) {
+            $hasOrdered = false;
+            if ($roster->parent_phone && in_array($roster->parent_phone, $orderedPhones)) {
+                $hasOrdered = true;
+            }
+            if ($roster->parent_email && in_array($roster->parent_email, $orderedEmails)) {
+                $hasOrdered = true;
+            }
+
+            if (!$hasOrdered) {
                 // Send Email
                 if ($roster->parent_email) {
                     try {
@@ -886,20 +901,9 @@ class CoachController extends Controller
                 }
 
                 // Send SMS
-                if ($roster->parent_phone && $twilioClient) {
-                    try {
-                        $message = "REMINDER: Ordering deadline for {$store->name} is approaching on {$store->order_deadline->format('M d, Y')}. Place your order here: " . route('store.show', $store->slug);
-                        $twilioClient->messages->create(
-                            $roster->parent_phone,
-                            [
-                                'from' => $twilioFrom,
-                                'body' => $message
-                            ]
-                        );
-                        $smsSent++;
-                    } catch (\Exception $e) {
-                        \Illuminate\Support\Facades\Log::error("Failed to send blast SMS to {$roster->parent_phone}: " . $e->getMessage());
-                    }
+                if ($roster->parent_phone) {
+                    $twilio->sendSms($roster->parent_phone, $message);
+                    $smsSent++;
                 }
             }
         }

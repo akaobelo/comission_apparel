@@ -646,6 +646,15 @@
                         </div>
                     </div>
                     <div class="flex gap-2">
+                        @if($store->rosters->count() > 0)
+                        <form action="{{ route('coach.store.blast', $store) }}" method="POST" onsubmit="return confirm('Send an SMS blast to all parents who have not ordered yet? Make sure you have their phone numbers loaded.')">
+                            @csrf
+                            <button type="submit" class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors bg-secondary text-white hover:bg-[#a11825] shadow-sm flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                                Send Blast Now
+                            </button>
+                        </form>
+                        @endif
                         <button @click="rosterTab = 'paste'" type="button" class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors" :class="rosterTab === 'paste' ? 'bg-primary text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'">Paste Contacts</button>
                         <button @click="rosterTab = 'csv'" type="button" class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors" :class="rosterTab === 'csv' ? 'bg-primary text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'">CSV Upload</button>
                     </div>
@@ -700,11 +709,21 @@
                                         <span class="text-xs text-slate-500 ml-2">({{ $rosterEntry->athlete_name }})</span>
                                     @endif
                                 </div>
-                                @if($rosterEntry->has_ordered)
-                                    <span class="text-[9px] font-bold uppercase tracking-widest text-green-600 bg-green-100 px-2 py-1 rounded border border-green-200">Ordered</span>
-                                @else
-                                    <span class="text-[9px] font-bold uppercase tracking-widest text-amber-600 bg-amber-100 px-2 py-1 rounded border border-amber-200">Waiting</span>
-                                @endif
+                                <div class="flex items-center gap-2">
+                                    @if($rosterEntry->has_ordered)
+                                        <span class="text-[9px] font-bold uppercase tracking-widest text-green-600 bg-green-100 px-2 py-1 rounded border border-green-200">Ordered</span>
+                                    @else
+                                        <span class="text-[9px] font-bold uppercase tracking-widest text-amber-600 bg-amber-100 px-2 py-1 rounded border border-amber-200">Waiting</span>
+                                    @endif
+                                    
+                                    <form action="{{ route('coach.store.roster.remove', ['store' => $store, 'roster' => $rosterEntry]) }}" method="POST" onsubmit="return confirm('Remove this contact from the reminders list?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-slate-400 hover:text-red-500 transition-colors" title="Remove Contact">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                             @endforeach
                         </div>

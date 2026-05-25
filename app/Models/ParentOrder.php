@@ -11,6 +11,7 @@ class ParentOrder extends Model
         'athlete_first_name',
         'athlete_last_name',
         'parent_email',
+        'parent_phone',
         'gender',
         'jersey_name',
         'jersey_number',
