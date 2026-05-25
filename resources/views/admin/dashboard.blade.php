@@ -225,107 +225,133 @@
             </div>
             <div class="space-y-8">
                 {{-- ═══ ACTIVE STORES IN PRODUCTION ═══ --}}
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div class="p-5 border-b border-slate-200 bg-slate-50">
-                        <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Active Team Stores</h2>
-                    </div>
-                    @if($productionStores->isEmpty())
-                        <div class="p-8 text-center text-slate-400 text-sm">No active stores.</div>
-                    @else
-                        <div class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
-                            @foreach($productionStores as $store)
-                            <div class="p-4 flex items-center justify-between gap-4">
-                                <div>
-                                    <div class="font-bold text-sm text-slate-900">{{ $store->name }}</div>
-                                    <div class="text-xs text-slate-500">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
-                                    @if($store->order_deadline)
-                                        <div class="text-[10px] font-bold text-{{ $store->order_deadline->isPast() ? 'red' : 'slate' }}-500 mt-0.5 uppercase tracking-wide">
-                                            Deadline: {{ $store->order_deadline->format('M d, Y') }}
-                                        </div>
-                                    @endif
-                                </div>
-                                <div class="flex items-center gap-2 flex-shrink-0">
-                                    <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this active store?')">
-                                        @csrf
-                                        <button type="submit" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors">Archive</button>
-                                    </form>
-                                    <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
-                                </div>
-                            </div>
-                            @endforeach
+                <div x-data="{ expanded: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
+                        <div>
+                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Active Team Stores</h2>
                         </div>
-                    @endif
+                        <div class="flex items-center gap-4 text-slate-400">
+                            <span class="text-sm font-bold">{{ $productionStores->count() }} Stores</span>
+                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                    <div x-show="expanded" x-collapse>
+                        @if($productionStores->isEmpty())
+                            <div class="p-8 text-center text-slate-400 text-sm">No active stores.</div>
+                        @else
+                            <div class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                                @foreach($productionStores as $store)
+                                <div class="p-4 flex items-center justify-between gap-4">
+                                    <div>
+                                        <div class="font-bold text-sm text-slate-900">{{ $store->name }}</div>
+                                        <div class="text-xs text-slate-500">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
+                                        @if($store->order_deadline)
+                                            <div class="text-[10px] font-bold text-{{ $store->order_deadline->isPast() ? 'red' : 'slate' }}-500 mt-0.5 uppercase tracking-wide">
+                                                Deadline: {{ $store->order_deadline->format('M d, Y') }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-2 flex-shrink-0">
+                                        <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this active store?')">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors">Archive</button>
+                                        </form>
+                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
                 </div>
 
                 {{-- ═══ FINALIZED MASTER ORDERS ═══ --}}
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div class="p-6 border-b border-slate-200 bg-slate-50">
-                        <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Master Orders</h2>
-                        <p class="text-sm text-slate-500 mt-1">Aggregate totals per team store that have reached end of registration.</p>
+                <div x-data="{ expanded: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
+                    <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
+                        <div>
+                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Master Orders</h2>
+                            <p class="text-sm text-slate-500 mt-1">Aggregate totals per team store that have reached end of registration.</p>
+                        </div>
+                        <div class="flex items-center gap-4 text-slate-400">
+                            <span class="text-sm font-bold">{{ $finalizedStoreBatches->count() }} Batches</span>
+                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
                     </div>
-                    @if($finalizedStoreBatches->isEmpty())
-                        <div class="p-12 text-center text-slate-400 text-sm">No finalized store orders yet.</div>
-                    @else
-                        <div class="divide-y divide-slate-100">
-                            @foreach($finalizedStoreBatches as $batchId => $batchData)
-                            @php
-                                $batchOrders = $batchData['orders'] ?? collect();
-                                $store = $batchOrders->first()?->teamStore;
-                                $coach = $store ? $store->user : null;
-                                $totalAthletes = $batchOrders->count();
-                                $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
-                            @endphp
-                            <div class="p-5">
-                                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                                    <div>
-                                        <div class="font-black text-slate-900 uppercase text-base">{{ $store ? $store->name : 'Unknown Store' }}</div>
-                                        <div class="text-sm text-slate-500 mt-0.5">
-                                            Coach: {{ $coach ? $coach->name : 'Unknown' }} — {{ $coach ? $coach->organization : '—' }}
+                    <div x-show="expanded" x-collapse>
+                        @if($finalizedStoreBatches->isEmpty())
+                            <div class="p-12 text-center text-slate-400 text-sm">No finalized store orders yet.</div>
+                        @else
+                            <div class="divide-y divide-slate-100">
+                                @foreach($finalizedStoreBatches as $batchId => $batchData)
+                                @php
+                                    $batchOrders = $batchData['orders'] ?? collect();
+                                    $store = $batchOrders->first()?->teamStore;
+                                    $coach = $store ? $store->user : null;
+                                    $totalAthletes = $batchOrders->count();
+                                    $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
+                                @endphp
+                                <div class="p-5">
+                                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                        <div>
+                                            <div class="font-black text-slate-900 uppercase text-base">{{ $store ? $store->name : 'Unknown Store' }}</div>
+                                            <div class="text-sm text-slate-500 mt-0.5">
+                                                Coach: {{ $coach ? $coach->name : 'Unknown' }} — {{ $coach ? $coach->organization : '—' }}
+                                            </div>
+                                            <div class="flex items-center gap-2 mt-1">
+                                                <span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md border border-slate-200">
+                                                    Status: {{ $batchOrders->first()?->status ?? 'Submitted' }}
+                                                </span>
+                                                <div class="text-xs text-slate-400 uppercase tracking-wide font-bold">Batch Submitted: {{ $batchOrders->first()?->created_at?->format('M d, Y') ?? 'Unknown' }}</div>
+                                            </div>
+                                            <div class="mt-3 grid grid-cols-3 gap-4">
+                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+                                                    <div class="text-2xl font-black text-primary">{{ $totalAthletes }}</div>
+                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Athletes</div>
+                                                </div>
+                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+                                                    <div class="text-2xl font-black text-slate-900">{{ $totalItems }}</div>
+                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
+                                                </div>
+                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+                                                    <div class="text-xs font-bold text-slate-900">{{ $store && $store->order_deadline ? $store->order_deadline->format('M d') : '—' }}</div>
+                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Deadline</div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="flex items-center gap-2 mt-1">
-                                            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md border border-slate-200">
-                                                Status: {{ $batchOrders->first()?->status ?? 'Submitted' }}
-                                            </span>
-                                            <div class="text-xs text-slate-400 uppercase tracking-wide font-bold">Batch Submitted: {{ $batchOrders->first()?->created_at?->format('M d, Y') ?? 'Unknown' }}</div>
+                                        <div class="flex flex-col gap-2 flex-shrink-0">
+                                            @if($store)
+                                                <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review / Edit Store</a>
+                                                <div class="flex gap-2">
+                                                    <!-- We can reuse admin batch export for batches -->
+                                                    <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Roster CSV</a>
+                                                    <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate CSV</a>
+                                                </div>
+                                                <form action="{{ route('admin.store-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
+                                                    @csrf
+                                                    <button type="submit" class="w-full px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors text-center">Mark Addressed</button>
+                                                </form>
+                                                <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this closed store?')" class="w-full">
+                                                    @csrf
+                                                    <button type="submit" class="w-full px-4 py-2 bg-white border border-slate-300 text-slate-500 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-100 transition-colors text-center">Archive Store</button>
+                                                </form>
+                                                <form action="{{ route('admin.batch.status.update', $batchId) }}" method="POST" class="mt-2 flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2 gap-2 shadow-sm">
+                                                    @csrf
+                                                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Production Status:</span>
+                                                    <select name="status" onchange="this.form.submit()" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full max-w-[130px]">
+                                                        <option value="Submitted to Admin" @if(($batchOrders->first()?->status ?? '') == 'Submitted to Admin') selected @endif>Submitted to Admin</option>
+                                                        <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
+                                                        <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
+                                                        <option value="Shipped" @if(($batchOrders->first()?->status ?? '') == 'Shipped') selected @endif>Shipped</option>
+                                                    </select>
+                                                </form>
+                                            @endif
                                         </div>
-                                        <div class="mt-3 grid grid-cols-3 gap-4">
-                                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
-                                                <div class="text-2xl font-black text-primary">{{ $totalAthletes }}</div>
-                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Athletes</div>
-                                            </div>
-                                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
-                                                <div class="text-2xl font-black text-slate-900">{{ $totalItems }}</div>
-                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
-                                            </div>
-                                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
-                                                <div class="text-xs font-bold text-slate-900">{{ $store && $store->order_deadline ? $store->order_deadline->format('M d') : '—' }}</div>
-                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Deadline</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-col gap-2 flex-shrink-0">
-                                        @if($store)
-                                            <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review / Edit Store</a>
-                                            <div class="flex gap-2">
-                                                <!-- We can reuse admin batch export for batches -->
-                                                <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Roster CSV</a>
-                                                <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate CSV</a>
-                                            </div>
-                                            <form action="{{ route('admin.store-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
-                                                @csrf
-                                                <button type="submit" class="w-full px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors text-center">Mark Addressed</button>
-                                            </form>
-                                            <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this closed store?')" class="w-full">
-                                                @csrf
-                                                <button type="submit" class="w-full px-4 py-2 bg-white border border-slate-300 text-slate-500 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-100 transition-colors text-center">Archive Store</button>
-                                            </form>
-                                        @endif
                                     </div>
                                 </div>
+                                @endforeach
                             </div>
-                            @endforeach
-                        </div>
-                    @endif
+                        @endif
+                    </div>
                 </div>
 
                 {{-- ═══ FINALIZED DIRECT ORDERS ═══ --}}
@@ -387,6 +413,16 @@
                                         <form action="{{ route('admin.direct-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
                                             @csrf
                                             <button type="submit" class="w-full px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors text-center">Mark Addressed</button>
+                                        </form>
+                                        <form action="{{ route('admin.batch.status.update', $batchId) }}" method="POST" class="mt-2 flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2 gap-2 shadow-sm">
+                                            @csrf
+                                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Production Status:</span>
+                                            <select name="status" onchange="this.form.submit()" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full max-w-[130px]">
+                                                <option value="Submitted to Admin" @if(($batchOrders->first()?->status ?? '') == 'Submitted to Admin') selected @endif>Submitted to Admin</option>
+                                                <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
+                                                <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
+                                                <option value="Shipped" @if(($batchOrders->first()?->status ?? '') == 'Shipped') selected @endif>Shipped</option>
+                                            </select>
                                         </form>
                                     </div>
                                 </div>

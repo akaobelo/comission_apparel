@@ -45,7 +45,7 @@ class AdminController extends Controller
         // Finalized store batches (preserves history even if store is re-opened)
         $finalizedStoreBatches = ParentOrder::whereNotNull('team_store_id')
             ->whereNotNull('batch_id')
-            ->where('status', 'Submitted to Admin')
+            ->where('status', '!=', 'Pending')
             ->where('is_archived', false)
             ->with(['user', 'teamStore', 'teamStore.items'])
             ->latest()
@@ -81,7 +81,8 @@ class AdminController extends Controller
 
         // Finalized direct orders (no team store)
         $finalizedDirectOrders = ParentOrder::whereNull('team_store_id')
-            ->where('status', 'Submitted to Admin')
+            ->whereNotNull('batch_id')
+            ->where('status', '!=', 'Pending')
             ->where('is_archived', false)
             ->with('user')
             ->latest()

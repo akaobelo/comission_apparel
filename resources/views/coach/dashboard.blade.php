@@ -106,6 +106,14 @@
                 Sales
             </button>
             @endif
+            <button
+                type="button"
+                @click="activeCoachTab = 'order_status'"
+                class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors"
+                :class="activeCoachTab === 'order_status' ? 'bg-secondary text-white' : 'text-slate-600 hover:bg-[#a11825]'"
+            >
+                Order Status
+            </button>
         </div>
 
         {{-- ════ CREATE AN ORDER TAB ════ --}}
@@ -993,5 +1001,104 @@
     </div>
 @endif
 
+<div x-show="activeCoachTab === 'order_status'" x-cloak class="space-y-6">
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-200 bg-slate-50">
+            <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Order Status Tracker</h2>
+            <p class="text-sm text-slate-600 mt-1">Track the production status of all your submitted master and direct order batches.</p>
+        </div>
+        
+        <div class="p-0">
+            @if($directOrderBatches->isEmpty() && $archivedOrderBatches->isEmpty())
+                <div class="p-12 text-center">
+                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200">
+                        <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    </div>
+                    <h3 class="text-lg font-black text-slate-900 uppercase tracking-tight">No Submitted Orders</h3>
+                    <p class="text-sm text-slate-500 mt-2">When you submit a batch of orders, you will be able to track its production status here.</p>
+                </div>
+            @else
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200">
+                                <th class="py-4 px-6 text-xs font-black uppercase tracking-wider text-slate-500">Order Batch</th>
+                                <th class="py-4 px-6 text-xs font-black uppercase tracking-wider text-slate-500">Type</th>
+                                <th class="py-4 px-6 text-xs font-black uppercase tracking-wider text-slate-500">Items</th>
+                                <th class="py-4 px-6 text-xs font-black uppercase tracking-wider text-slate-500">Date Submitted</th>
+                                <th class="py-4 px-6 text-xs font-black uppercase tracking-wider text-slate-500">Production Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @foreach($directOrderBatches as $batchId => $orders)
+                                @php
+                                    $firstOrder = $orders->first();
+                                    $isMaster = !is_null($firstOrder->team_store_id);
+                                    $totalItems = $orders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
+                                @endphp
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="py-4 px-6">
+                                        <div class="font-bold text-slate-900">{{ $isMaster ? $firstOrder->teamStore->name : 'Direct Order Batch' }}</div>
+                                        <div class="text-xs text-slate-500 mt-0.5">{{ $orders->count() }} Athlete(s)</div>
+                                    </td>
+                                    <td class="py-4 px-6">
+                                        @if($isMaster)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 text-purple-800 uppercase tracking-wider">Master Order</span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-800 uppercase tracking-wider">Direct Order</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-4 px-6 font-bold text-slate-700">{{ $totalItems }}</td>
+                                    <td class="py-4 px-6 text-sm text-slate-600">{{ $firstOrder->created_at->format('M d, Y') }}</td>
+                                    <td class="py-4 px-6">
+                                        @php
+                                            $status = $firstOrder->status ?? 'Submitted to Admin';
+                                            $statusColor = match($status) {
+                                                'Submitted to Admin' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                                                'Processing' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                                'In Production' => 'bg-orange-100 text-orange-800 border-orange-200',
+                                                'Shipped' => 'bg-green-100 text-green-800 border-green-200',
+                                                default => 'bg-slate-100 text-slate-800 border-slate-200'
+                                            };
+                                        @endphp
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border {{ $statusColor }}">
+                                            {{ $status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                            @foreach($archivedOrderBatches as $batchId => $orders)
+                                @php
+                                    $firstOrder = $orders->first();
+                                    $isMaster = !is_null($firstOrder->team_store_id);
+                                    $totalItems = $orders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
+                                @endphp
+                                <tr class="hover:bg-slate-50 transition-colors opacity-75">
+                                    <td class="py-4 px-6">
+                                        <div class="font-bold text-slate-900">{{ $isMaster ? $firstOrder->teamStore->name : 'Direct Order Batch' }}</div>
+                                        <div class="text-xs text-slate-500 mt-0.5">{{ $orders->count() }} Athlete(s)</div>
+                                    </td>
+                                    <td class="py-4 px-6">
+                                        @if($isMaster)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 text-purple-800 uppercase tracking-wider">Master Order</span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-800 uppercase tracking-wider">Direct Order</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-4 px-6 font-bold text-slate-700">{{ $totalItems }}</td>
+                                    <td class="py-4 px-6 text-sm text-slate-600">{{ $firstOrder->created_at->format('M d, Y') }}</td>
+                                    <td class="py-4 px-6">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border bg-slate-100 text-slate-800 border-slate-200">
+                                            Archived
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+    </div>
 </div>
 @endsection
