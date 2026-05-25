@@ -736,4 +736,175 @@ class CoachController extends Controller
 
         return back()->with('success', 'Batch has been archived successfully.');
     }
+
+    public function addRosterPaste(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'emails' => 'required|string',
+        ]);
+
+        $inputs = explode(',', $request->emails);
+        $added = 0;
+
+        foreach ($inputs as $input) {
+            $input = trim($input);
+            $email = null;
+            $phone = null;
+            
+            if (filter_var($input, FILTER_VALIDATE_EMAIL)) {
+                $email = $input;
+            } else {
+                // Remove non-numeric chars to check if it's a valid phone number (at least 10 digits)
+                $numeric = preg_replace('/[^0-9]/', '', $input);
+                if (strlen($numeric) >= 10) {
+                    $phone = $input;
+                }
+            }
+
+            if ($email || $phone) {
+                // Check if already exists
+                $exists = $store->rosters()->where(function ($query) use ($email, $phone) {
+                    if ($email) $query->orWhere('parent_email', $email);
+                    if ($phone) $query->orWhere('parent_phone', $phone);
+                })->exists();
+
+                if (!$exists) {
+                    $store->rosters()->create([
+                        'parent_email' => $email,
+                        'parent_phone' => $phone,
+                    ]);
+                    $added++;
+                }
+            }
+        }
+
+        return back()->with('success', "{$added} parents added to the roster.");
+    }
+
+    public function addRosterUpload(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'roster_csv' => 'required|file|mimes:csv,txt|max:2048',
+        ]);
+
+        $file = $request->file('roster_csv');
+        $handle = fopen($file->path(), "r");
+        
+        $header = fgetcsv($handle);
+        if (!$header) {
+            return back()->with('error', 'CSV file is empty or invalid.');
+        }
+
+        // Find email, phone, and name columns
+        $emailIdx = -1;
+        $phoneIdx = -1;
+        $nameIdx = -1;
+
+        foreach ($header as $idx => $col) {
+            $colName = strtolower(trim($col));
+            if (str_contains($colName, 'email')) {
+                $emailIdx = $idx;
+            } elseif (str_contains($colName, 'phone') || str_contains($colName, 'mobile') || str_contains($colName, 'sms')) {
+                $phoneIdx = $idx;
+            } elseif (str_contains($colName, 'name') || str_contains($colName, 'athlete')) {
+                $nameIdx = $idx;
+            }
+        }
+
+        if ($emailIdx === -1 && $phoneIdx === -1) {
+            return back()->with('error', 'Could not find an "Email" or "Phone" column in the CSV.');
+        }
+
+        $added = 0;
+        while (($row = fgetcsv($handle)) !== false) {
+            $email = ($emailIdx !== -1 && isset($row[$emailIdx])) ? trim($row[$emailIdx]) : null;
+            $phone = ($phoneIdx !== -1 && isset($row[$phoneIdx])) ? trim($row[$phoneIdx]) : null;
+            $name = ($nameIdx !== -1 && isset($row[$nameIdx])) ? trim($row[$nameIdx]) : null;
+
+            if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $email = null;
+            }
+            if ($phone) {
+                $numeric = preg_replace('/[^0-9]/', '', $phone);
+                if (strlen($numeric) < 10) {
+                    $phone = null;
+                }
+            }
+
+            if ($email || $phone) {
+                $exists = $store->rosters()->where(function ($query) use ($email, $phone) {
+                    if ($email) $query->orWhere('parent_email', $email);
+                    if ($phone) $query->orWhere('parent_phone', $phone);
+                })->exists();
+
+                if (!$exists) {
+                    $store->rosters()->create([
+                        'parent_email' => $email,
+                        'parent_phone' => $phone,
+                        'athlete_name' => $name,
+                    ]);
+                    $added++;
+                }
+            }
+        }
+
+        fclose($handle);
+
+        return back()->with('success', "{$added} parents added to the roster from CSV.");
+    }
+    public function sendReminderBlast(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $emailsSent = 0;
+        $smsSent = 0;
+
+        $twilioSid = env('TWILIO_SID');
+        $twilioToken = env('TWILIO_AUTH_TOKEN');
+        $twilioFrom = env('TWILIO_PHONE_NUMBER');
+        
+        $twilioClient = null;
+        if ($twilioSid && $twilioToken && $twilioFrom) {
+            $twilioClient = new \Twilio\Rest\Client($twilioSid, $twilioToken);
+        }
+
+        foreach ($store->rosters as $roster) {
+            if (!$roster->has_ordered) {
+                // Send Email
+                if ($roster->parent_email) {
+                    try {
+                        \Illuminate\Support\Facades\Mail::to($roster->parent_email)
+                            ->send(new \App\Mail\StoreOrderReminder($store));
+                        $emailsSent++;
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error("Failed to send blast email to {$roster->parent_email}: " . $e->getMessage());
+                    }
+                }
+
+                // Send SMS
+                if ($roster->parent_phone && $twilioClient) {
+                    try {
+                        $message = "REMINDER: Ordering deadline for {$store->name} is approaching on {$store->order_deadline->format('M d, Y')}. Place your order here: " . route('store.show', $store->slug);
+                        $twilioClient->messages->create(
+                            $roster->parent_phone,
+                            [
+                                'from' => $twilioFrom,
+                                'body' => $message
+                            ]
+                        );
+                        $smsSent++;
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error("Failed to send blast SMS to {$roster->parent_phone}: " . $e->getMessage());
+                    }
+                }
+            }
+        }
+
+        return back()->with('success', "Reminder blast sent! {$emailsSent} emails and {$smsSent} text messages were dispatched successfully.");
+    }
 }
+

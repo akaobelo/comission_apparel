@@ -69,6 +69,8 @@ class StoreController extends Controller
         $request->validate([
             'athlete_first_name'  => 'required|string|max:255',
             'athlete_last_name'   => 'required|string|max:255',
+            'parent_email'        => 'required|email|max:255',
+            'parent_phone'        => 'required|string|max:50',
             'gender'              => 'required|string|max:50',
             'jersey_name'         => 'nullable|string|max:255',
             'jersey_number'       => 'nullable|string|max:10',
@@ -136,10 +138,12 @@ class StoreController extends Controller
             return back()->with('error', 'Please select at least one item before submitting.');
         }
 
-        ParentOrder::create([
+        $parentOrder = ParentOrder::create([
             'team_store_id'       => $store->id,
             'athlete_first_name'  => trim($request->athlete_first_name),
             'athlete_last_name'   => trim($request->athlete_last_name),
+            'parent_email'        => trim($request->parent_email),
+            'parent_phone'        => trim($request->parent_phone),
             'gender'              => trim($request->gender),
             'jersey_name'         => $request->jersey_name,
             'jersey_number'       => $request->jersey_number,
@@ -149,6 +153,12 @@ class StoreController extends Controller
             'status'              => 'Submitted',
             'total_retail_price'  => 0, // No longer tracked
         ]);
+
+        // If parent email or phone exists in roster, mark as ordered
+        $store->rosters()->where(function($query) use ($request) {
+            $query->where('parent_email', trim($request->parent_email))
+                  ->orWhere('parent_phone', preg_replace('/[^0-9]/', '', $request->parent_phone));
+        })->update(['has_ordered' => true]);
 
         $fullName = trim($request->athlete_first_name . ' ' . $request->athlete_last_name);
 

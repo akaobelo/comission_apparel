@@ -632,6 +632,88 @@
                 </div>
             </div>
 
+            {{-- Store Roster & Reminders --}}
+            @if(!$isLocked)
+            <div x-data="{ rosterTab: 'paste' }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
+                <div class="p-5 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-black uppercase tracking-tight text-slate-900">Store Roster & Reminders</h3>
+                            <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Automated Ordering Alerts for Parents</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click="rosterTab = 'paste'" type="button" class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors" :class="rosterTab === 'paste' ? 'bg-primary text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'">Paste Contacts</button>
+                        <button @click="rosterTab = 'csv'" type="button" class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors" :class="rosterTab === 'csv' ? 'bg-primary text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'">CSV Upload</button>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="mb-5 bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs text-blue-800">
+                        <strong>How it works:</strong> Add parent emails or phone numbers below. Our system will automatically email or text them a reminder to order before the store deadline. Parents who have already placed an order will not receive reminders.
+                    </div>
+                    
+                    {{-- Paste Emails Form --}}
+                    <form x-show="rosterTab === 'paste'" action="{{ route('coach.store.roster.paste', $store) }}" method="POST">
+                        @csrf
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Comma-Separated Emails or Phone Numbers</label>
+                            <textarea name="emails" rows="3" placeholder="parent1@example.com, 555-123-4567, parent2@example.com..." class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm" required></textarea>
+                        </div>
+                        <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold uppercase tracking-widest rounded-lg hover:bg-slate-800 transition-colors">Add to Roster</button>
+                    </form>
+
+                    {{-- CSV Upload Form --}}
+                    <form x-show="rosterTab === 'csv'" x-cloak action="{{ route('coach.store.roster.upload', $store) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Upload CSV File</label>
+                            <input type="file" name="roster_csv" accept=".csv" required class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer mb-2">
+                            <p class="text-[10px] text-slate-500">Your CSV should have at minimum a column named "Email" or "Phone". Optionally, a column named "Name" or "Athlete Name".</p>
+                        </div>
+                        <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold uppercase tracking-widest rounded-lg hover:bg-slate-800 transition-colors">Upload Roster</button>
+                    </form>
+
+                    {{-- Existing Roster Emails --}}
+                    @if($store->rosters->isNotEmpty())
+                    <div class="mt-8 pt-6 border-t border-slate-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-xs font-black uppercase tracking-wider text-slate-700">Current Reminders List ({{ $store->rosters->count() }})</h4>
+                            @if($store->rosters->where('has_ordered', false)->count() > 0)
+                                <form action="{{ route('coach.store.blast', $store) }}" method="POST" onsubmit="return confirm('This will instantly send an Email and Text Message to all {{ $store->rosters->where('has_ordered', false)->count() }} parents on this list who have not ordered yet. Are you sure you want to continue?')">
+                                    @csrf
+                                    <button type="submit" class="bg-secondary text-white hover:bg-[#a11825] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 shadow-sm">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                                        Send Blast Now
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                        <div class="max-h-48 overflow-y-auto pr-2 space-y-2">
+                            @foreach($store->rosters as $rosterEntry)
+                            <div class="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
+                                <div>
+                                    <span class="text-sm font-bold text-slate-900">{{ $rosterEntry->parent_email ?? $rosterEntry->parent_phone }}</span>
+                                    @if($rosterEntry->athlete_name)
+                                        <span class="text-xs text-slate-500 ml-2">({{ $rosterEntry->athlete_name }})</span>
+                                    @endif
+                                </div>
+                                @if($rosterEntry->has_ordered)
+                                    <span class="text-[9px] font-bold uppercase tracking-widest text-green-600 bg-green-100 px-2 py-1 rounded border border-green-200">Ordered</span>
+                                @else
+                                    <span class="text-[9px] font-bold uppercase tracking-widest text-amber-600 bg-amber-100 px-2 py-1 rounded border border-amber-200">Waiting</span>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
+
             {{-- Set Deadline --}}
             @if(!$isLocked)
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">

@@ -38,4 +38,9 @@ class TeamStore extends Model
     {
         return $this->hasMany(ParentOrder::class);
     }
+
+    public function rosters()
+    {
+        return $this->hasMany(StoreRoster::class);
+    }
 }

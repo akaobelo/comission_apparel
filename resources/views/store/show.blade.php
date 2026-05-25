@@ -2,9 +2,22 @@
 
 @section('title', $store->name . ' | The Commission Apparel')
 
+@section('meta')
+    <meta property="og:title" content="{{ $store->name }} | The Commission Apparel">
+    <meta property="og:description" content="Official Custom Apparel Storefront for {{ $store->user->organization ?? 'Team' }}. Order before the deadline!">
+    @if($store->cover_image_path)
+        <meta property="og:image" content="{{ asset(Storage::url($store->cover_image_path)) }}">
+    @else
+        <meta property="og:image" content="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=1200">
+    @endif
+    <meta property="og:url" content="{{ route('store.show', $store->slug) }}">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+@endsection
+
 @section('content')
 {{-- Hero Banner --}}
-<div class="relative w-full h-[25vh] md:h-[35vh] flex flex-col overflow-hidden">
+<div class="relative w-full h-64 md:h-80 lg:h-96 flex flex-col overflow-hidden lg:mt-16">
     <div class="absolute inset-0 bg-slate-950"></div>
     @if($store->cover_image_path)
         <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ Storage::url($store->cover_image_path) }}')"></div>
@@ -42,7 +55,7 @@
     @endif
 </div>
 
-<div class="max-w-[1400px] mx-auto px-6 py-12">
+<div class="max-w-[1400px] mx-auto px-6 pt-4 pb-12">
     @if(session('success'))
         <div class="mb-8 p-5 rounded-xl bg-green-50 border border-green-200 text-green-700 font-bold flex items-center gap-4">
             <svg class="w-7 h-7 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -167,6 +180,18 @@
                             <input type="text" name="athlete_last_name" required placeholder="e.g. Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
                             @error('athlete_last_name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                         </div>
+                        <div class="md:col-span-1">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Parent / Contact Email <span class="text-red-500">*</span></label>
+                            <input type="email" name="parent_email" required placeholder="your.email@example.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
+                            <p class="text-[10px] text-slate-500 mt-1 font-medium">We'll use this to send you a copy of your order.</p>
+                            @error('parent_email')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="md:col-span-1">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Parent / Contact Phone <span class="text-red-500">*</span></label>
+                            <input type="tel" name="parent_phone" required placeholder="e.g. 555-123-4567" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
+                            <p class="text-[10px] text-slate-500 mt-1 font-medium">For text reminders if you haven't ordered.</p>
+                            @error('parent_phone')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                        </div>
                         <div class="md:col-span-2">
                             <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Gender / Pattern Base <span class="text-red-500">*</span></label>
                             <select name="gender" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none transition-all font-medium">
@@ -267,6 +292,26 @@
                                 <div class="text-xs md:text-sm text-slate-500 mt-0.5 mb-3 w-full truncate">
                                     Store Price:
                                     <span class="text-slate-900 font-bold">${{ number_format($item->retail_price, 2) }}</span>
+                                </div>
+                                
+                                
+                                <div class="w-full flex items-center justify-center gap-3 mb-3">
+                                    {{-- Facebook --}}
+                                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(route('store.show', $store->slug)) }}" target="_blank" class="text-slate-400 hover:text-blue-600 transition-colors" title="Share on Facebook">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                    </a>
+                                    {{-- Twitter --}}
+                                    <a href="https://twitter.com/intent/tweet?url={{ urlencode(route('store.show', $store->slug)) }}&text={{ urlencode('Check out ' . $item->name . ' at ' . $store->name) }}" target="_blank" class="text-slate-400 hover:text-sky-500 transition-colors" title="Share on Twitter">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
+                                    </a>
+                                    {{-- WhatsApp --}}
+                                    <a href="https://api.whatsapp.com/send?text={{ urlencode('Check out ' . $item->name . ' at ' . $store->name . ' ' . route('store.show', $store->slug)) }}" target="_blank" class="text-slate-400 hover:text-green-500 transition-colors" title="Share on WhatsApp">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.385 0 12.03c0 2.127.555 4.195 1.613 6.012L.266 23.73l5.85-1.536A11.968 11.968 0 0012.03 24c6.646 0 12.03-5.385 12.03-12.03S18.677 0 12.03 0zM12.03 21.98c-1.802 0-3.565-.484-5.111-1.4l-.367-.217-3.799.997.997-3.702-.239-.38A9.96 9.96 0 012.05 12.03C2.05 6.526 6.527 2.05 12.03 2.05c5.503 0 9.98 4.476 9.98 9.98s-4.477 9.98-9.98 9.98zm5.474-7.48c-.3-.15-1.776-.877-2.051-.977-.275-.1-.476-.15-.675.15s-.777.977-.952 1.176c-.175.2-.35.225-.65.075-.3-.15-1.267-.468-2.414-1.492-.892-.797-1.496-1.782-1.671-2.083-.175-.3-.018-.463.131-.613.135-.135.3-.35.45-.525.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525-.075-.15-.675-1.626-.925-2.226-.242-.581-.487-.502-.675-.512-.175-.01-.375-.01-.575-.01s-.525.075-.8.375c-.275.3-1.051 1.026-1.051 2.502s1.076 2.895 1.226 3.095c.15.2 2.112 3.22 5.112 4.516.714.309 1.272.493 1.706.63.716.228 1.368.196 1.884.119.577-.086 1.776-.726 2.026-1.426.25-.7.25-1.3.175-1.426-.075-.125-.275-.2-.575-.35z"/></svg>
+                                    </a>
+                                    {{-- Instagram --}}
+                                    <a href="#" @click.prevent="navigator.clipboard.writeText('{{ route('store.show', $store->slug) }}'); alert('Link copied for Instagram!')" class="text-slate-400 hover:text-pink-600 transition-colors" title="Copy link for Instagram">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                                    </a>
                                 </div>
                                 
                                 <div class="mt-auto w-full">
