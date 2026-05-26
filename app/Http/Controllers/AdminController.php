@@ -134,19 +134,7 @@ class AdminController extends Controller
         $allStores = TeamStore::with('user')->latest()->get();
         $allCoaches = User::where('role', 'coach')->orderBy('organization')->get();
 
-        $availableSports = DesignCatalog::whereNotNull('sport')
-            ->where('sport', '!=', '')
-            ->distinct()
-            ->pluck('sport')
-            ->merge(
-                LandingCollection::whereNotNull('tab_name')
-                    ->where('tab_name', '!=', '')
-                    ->distinct()
-                    ->pluck('tab_name')
-            )
-            ->unique()
-            ->sort()
-            ->values();
+        $availableSports = config('sports.categories');
 
         $designCollections = \App\Models\DesignCollection::orderBy('sort_order', 'asc')->orderBy('name', 'asc')->get();
 

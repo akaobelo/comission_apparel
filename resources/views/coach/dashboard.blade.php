@@ -357,61 +357,7 @@
                     @endif
                 </div>
 
-                @if($directOrderBatches->filter(fn($v, $k) => $k !== '')->isNotEmpty())
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-                    <div class="mb-4">
-                        <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Submitted Batches</h2>
-                        <p class="text-xs text-slate-500">Includes direct orders and finalized store batches.</p>
-                    </div>
-                    <div class="space-y-3">
-                        @foreach($directOrderBatches->filter(fn($v, $k) => $k !== '') as $batchId => $batchOrders)
-                            <div class="border border-slate-200 rounded-lg p-4">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-xs font-bold uppercase text-slate-500">{{ $batchOrders->first()->created_at->format('M d, Y') }}</span>
-                                    <span class="bg-blue-100 text-blue-800 text-[10px] font-bold uppercase px-2 py-0.5 rounded">Submitted</span>
-                                </div>
-                                <div class="text-sm font-bold text-slate-900 mb-3">{{ $batchOrders->count() }} Orders in Batch</div>
-                                <div class="flex gap-3 items-center">
-                                    <a href="{{ route('coach.direct-order.export', $batchId) }}" class="text-xs font-bold text-primary hover:text-secondary uppercase tracking-wider flex items-center gap-1">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                        Download CSV
-                                    </a>
-                                    <form action="{{ route('coach.direct-order.archive', $batchId) }}" method="POST" onsubmit="return confirm('Archive this batch? You can still view it in the archived section.')">
-                                        @csrf
-                                        <button type="submit" class="text-xs font-bold text-slate-500 hover:text-slate-700 uppercase tracking-wider flex items-center gap-1">
-                                            Archive
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
 
-                @if($archivedOrderBatches->filter(fn($v, $k) => $k !== '')->isNotEmpty())
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 mt-6 opacity-75 hover:opacity-100 transition-opacity">
-                    <h2 class="text-base font-black uppercase tracking-tight text-slate-500 mb-4 flex items-center justify-between">
-                        Archived Batches
-                        <span class="bg-slate-100 text-slate-600 text-xs py-1 px-2 rounded-md">{{ $archivedOrderBatches->filter(fn($v, $k) => $k !== '')->count() }}</span>
-                    </h2>
-                    <div class="space-y-3">
-                        @foreach($archivedOrderBatches->filter(fn($v, $k) => $k !== '') as $batchId => $batchOrders)
-                            <div class="border border-slate-200 bg-slate-50 rounded-lg p-4">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-xs font-bold uppercase text-slate-500">{{ $batchOrders->first()->created_at->format('M d, Y') }}</span>
-                                    <span class="bg-slate-200 text-slate-600 text-[10px] font-bold uppercase px-2 py-0.5 rounded">Archived</span>
-                                </div>
-                                <div class="text-sm font-bold text-slate-700 mb-3">{{ $batchOrders->count() }} Orders in Batch</div>
-                                <a href="{{ route('coach.direct-order.export', $batchId) }}" class="text-xs font-bold text-slate-500 hover:text-slate-800 uppercase tracking-wider flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                    Download CSV
-                                </a>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
             </div>
         </div>
 
@@ -1008,96 +954,179 @@
             <p class="text-sm text-slate-600 mt-1">Track the production status of all your submitted master and direct order batches.</p>
         </div>
         
-        <div class="p-0">
-            @if($directOrderBatches->isEmpty() && $archivedOrderBatches->isEmpty())
-                <div class="p-12 text-center">
-                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200">
-                        <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        <div class="w-full">
+            <div class="grid grid-cols-12 gap-4 px-6 py-3 bg-slate-100 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                <div class="col-span-5 md:col-span-4">Order Batch</div>
+                <div class="hidden md:block md:col-span-2">Type</div>
+                <div class="col-span-2 text-center">Items</div>
+                <div class="col-span-3 md:col-span-2">Date Submitted</div>
+                <div class="col-span-2 md:col-span-2 text-right">Production Status</div>
+            </div>
+            
+            <div class="divide-y divide-slate-100">
+                @php
+                    $allBatches = collect();
+                    foreach ($directOrderBatches->filter(fn($v, $k) => $k !== '') as $batchId => $batchOrders) {
+                        $allBatches->push(['id' => $batchId, 'orders' => $batchOrders, 'archived' => false]);
+                    }
+                    foreach ($archivedOrderBatches->filter(fn($v, $k) => $k !== '') as $batchId => $batchOrders) {
+                        $allBatches->push(['id' => $batchId, 'orders' => $batchOrders, 'archived' => true]);
+                    }
+                    $allBatches = $allBatches->sortByDesc(fn($b) => $b['orders']->first()->created_at);
+                @endphp
+
+                @if($allBatches->isEmpty())
+                    <div class="p-12 text-center">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200">
+                            <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        </div>
+                        <h3 class="text-lg font-black text-slate-900 uppercase tracking-tight">No Submitted Orders</h3>
+                        <p class="text-sm text-slate-500 mt-2">When you submit a batch of orders, you will be able to track its production status here.</p>
                     </div>
-                    <h3 class="text-lg font-black text-slate-900 uppercase tracking-tight">No Submitted Orders</h3>
-                    <p class="text-sm text-slate-500 mt-2">When you submit a batch of orders, you will be able to track its production status here.</p>
-                </div>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 border-b border-slate-200">
-                                <th class="py-4 px-6 text-xs font-black uppercase tracking-wider text-slate-500">Order Batch</th>
-                                <th class="py-4 px-6 text-xs font-black uppercase tracking-wider text-slate-500">Type</th>
-                                <th class="py-4 px-6 text-xs font-black uppercase tracking-wider text-slate-500">Items</th>
-                                <th class="py-4 px-6 text-xs font-black uppercase tracking-wider text-slate-500">Date Submitted</th>
-                                <th class="py-4 px-6 text-xs font-black uppercase tracking-wider text-slate-500">Production Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            @foreach($directOrderBatches as $batchId => $orders)
+                @else
+                    @foreach($allBatches as $batch)
+                        @php
+                            $batchId = $batch['id'];
+                            $batchOrders = $batch['orders'];
+                            $isArchived = $batch['archived'];
+                            $firstOrder = $batchOrders->first();
+                            $status = $firstOrder->status ?? 'Submitted to Admin';
+                            $isMaster = !is_null($firstOrder->team_store_id);
+                            
+                            $statusBadge = $isArchived ? 'ARCHIVED' : ($status === 'Shipped' ? 'SHIPPED' : strtoupper($status));
+                            $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
+                            
+                            $badgeColor = $isArchived ? 'bg-slate-200 text-slate-600' : match($status) {
+                                'Submitted to Admin' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                                'Processing' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                'In Production' => 'bg-orange-100 text-orange-800 border-orange-200',
+                                'Shipped' => 'bg-green-100 text-green-800 border-green-200',
+                                default => 'bg-slate-100 text-slate-800 border-slate-200'
+                            };
+                            
+                            $typeText = $isMaster ? 'MASTER ORDER' : 'DIRECT ORDER';
+                            $typeColor = $isMaster ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800';
+                            $batchTitle = $isMaster ? $firstOrder->teamStore->name : 'Direct Order Batch';
+                        @endphp
+                        <div x-data="{ expanded: false }" class="border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors">
+                            <div @click="expanded = !expanded" class="grid grid-cols-12 gap-4 px-6 py-4 items-center cursor-pointer">
+                                <div class="col-span-5 md:col-span-4 flex items-center gap-3">
+                                    <svg class="w-4 h-4 text-slate-400 transition-transform" :class="expanded ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    <div>
+                                        <div class="font-bold text-slate-900 text-sm">{{ $batchTitle }}</div>
+                                        <div class="text-xs text-slate-500">{{ $batchOrders->count() }} Athlete(s)</div>
+                                    </div>
+                                </div>
+                                <div class="hidden md:flex md:col-span-2">
+                                    <span class="text-[10px] font-bold {{ $typeColor }} px-2.5 py-0.5 rounded-md uppercase tracking-wider">{{ $typeText }}</span>
+                                </div>
+                                <div class="col-span-2 text-center text-sm font-bold text-slate-900">
+                                    {{ $totalItems }}
+                                </div>
+                                <div class="col-span-3 md:col-span-2 text-sm text-slate-600">
+                                    {{ $firstOrder->created_at->format('M d, Y') }}
+                                </div>
+                                <div class="col-span-2 md:col-span-2 text-right">
+                                    <span class="{{ $badgeColor }} text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border">{{ $statusBadge }}</span>
+                                </div>
+                            </div>
+                            
+                            <div x-show="expanded" x-collapse class="px-6 pb-4 bg-slate-50/50 border-t border-slate-200 pt-6">
                                 @php
-                                    $firstOrder = $orders->first();
-                                    $isMaster = !is_null($firstOrder->team_store_id);
-                                    $totalItems = $orders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
+                                    $financials = \App\Models\ParentOrder::calculateBatchFinancials($batchOrders, $isMaster ? $firstOrder->teamStore : null);
                                 @endphp
-                                <tr class="hover:bg-slate-50 transition-colors">
-                                    <td class="py-4 px-6">
-                                        <div class="font-bold text-slate-900">{{ $isMaster ? $firstOrder->teamStore->name : 'Direct Order Batch' }}</div>
-                                        <div class="text-xs text-slate-500 mt-0.5">{{ $orders->count() }} Athlete(s)</div>
-                                    </td>
-                                    <td class="py-4 px-6">
-                                        @if($isMaster)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 text-purple-800 uppercase tracking-wider">Master Order</span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-800 uppercase tracking-wider">Direct Order</span>
-                                        @endif
-                                    </td>
-                                    <td class="py-4 px-6 font-bold text-slate-700">{{ $totalItems }}</td>
-                                    <td class="py-4 px-6 text-sm text-slate-600">{{ $firstOrder->created_at->format('M d, Y') }}</td>
-                                    <td class="py-4 px-6">
-                                        @php
-                                            $status = $firstOrder->status ?? 'Submitted to Admin';
-                                            $statusColor = match($status) {
-                                                'Submitted to Admin' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                                                'Processing' => 'bg-blue-100 text-blue-800 border-blue-200',
-                                                'In Production' => 'bg-orange-100 text-orange-800 border-orange-200',
-                                                'Shipped' => 'bg-green-100 text-green-800 border-green-200',
-                                                default => 'bg-slate-100 text-slate-800 border-slate-200'
-                                            };
-                                        @endphp
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border {{ $statusColor }}">
-                                            {{ $status }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                            @foreach($archivedOrderBatches as $batchId => $orders)
-                                @php
-                                    $firstOrder = $orders->first();
-                                    $isMaster = !is_null($firstOrder->team_store_id);
-                                    $totalItems = $orders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
-                                @endphp
-                                <tr class="hover:bg-slate-50 transition-colors opacity-75">
-                                    <td class="py-4 px-6">
-                                        <div class="font-bold text-slate-900">{{ $isMaster ? $firstOrder->teamStore->name : 'Direct Order Batch' }}</div>
-                                        <div class="text-xs text-slate-500 mt-0.5">{{ $orders->count() }} Athlete(s)</div>
-                                    </td>
-                                    <td class="py-4 px-6">
-                                        @if($isMaster)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 text-purple-800 uppercase tracking-wider">Master Order</span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-800 uppercase tracking-wider">Direct Order</span>
-                                        @endif
-                                    </td>
-                                    <td class="py-4 px-6 font-bold text-slate-700">{{ $totalItems }}</td>
-                                    <td class="py-4 px-6 text-sm text-slate-600">{{ $firstOrder->created_at->format('M d, Y') }}</td>
-                                    <td class="py-4 px-6">
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border bg-slate-100 text-slate-800 border-slate-200">
-                                            Archived
-                                        </span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
+                                <div class="flex flex-col lg:flex-row gap-6">
+                                    <div class="lg:w-2/3 space-y-6">
+                                        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                                            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div>
+                                                    <h3 class="text-sm font-black uppercase tracking-wider text-slate-900">Placed Orders</h3>
+                                                </div>
+                                                <div class="flex items-center gap-4">
+                                                    <div class="text-xs font-bold text-slate-500">{{ $batchOrders->count() }} Orders</div>
+                                                    <div class="flex flex-wrap gap-2">
+                                                        <a href="{{ route('coach.direct-order.export', $batchId) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                                                            Roster CSV
+                                                        </a>
+                                                        @if(!$isArchived)
+                                                        <form action="{{ route('coach.direct-order.archive', $batchId) }}" method="POST" onsubmit="return confirm('Archive this batch? You can still view it in the archived section.')">
+                                                            @csrf
+                                                            <button type="submit" class="px-3 py-1.5 bg-slate-900 border border-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-800 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+                                                                Archive
+                                                            </button>
+                                                        </form>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="divide-y divide-slate-100">
+                                                @foreach($batchOrders as $order)
+                                                    <div class="p-6 hover:bg-slate-50 transition-colors group">
+                                                        <div class="flex flex-wrap md:flex-nowrap justify-between gap-4">
+                                                            <div class="w-full md:w-auto">
+                                                                <div class="font-bold text-slate-900">{{ $order->athlete_first_name }} {{ $order->athlete_last_name }}</div>
+                                                                <div class="text-xs text-slate-500 mt-1 flex gap-3">
+                                                                    @if($order->gender)<span class="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-medium">{{ $order->gender }}</span>@endif
+                                                                </div>
+                                                            </div>
+                                                            <div class="w-full md:w-auto space-y-2 flex-grow">
+                                                                @foreach(is_array($order->items_json) ? $order->items_json : [] as $item)
+                                                                    <div class="text-sm flex justify-between bg-white border border-slate-100 p-2 rounded items-center">
+                                                                        <div class="text-slate-700 font-medium truncate pr-4 max-w-[200px]">{{ $item['name'] ?? 'Item' }}</div>
+                                                                        <div class="text-slate-500 text-right whitespace-nowrap flex items-center">
+                                                                            @if(!empty($item['sizes']))
+                                                                                @foreach($item['sizes'] as $sizeType => $size)
+                                                                                    <span class="mr-2 border-r border-slate-200 pr-2 last:border-0 last:mr-0 last:pr-0">
+                                                                                        {{ $sizeType === 'default' ? '' : str_replace('_', ' ', $sizeType).':' }} <strong>{{ $size }}</strong>
+                                                                                    </span>
+                                                                                @endforeach
+                                                                            @elseif(!empty($item['size']))
+                                                                                <span class="mr-2 border-r border-slate-200 pr-2 last:border-0 last:mr-0 last:pr-0"><strong>{{ $item['size'] }}</strong></span>
+                                                                            @endif
+                                                                            <span class="ml-2 bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-700">Qty: {{ $item['qty'] ?? 1 }}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                @endforeach
+                                                                @if($order->special_notes)
+                                                                    <div class="text-xs text-slate-600 bg-yellow-50 p-2 rounded border border-yellow-100 mt-2">
+                                                                        <strong class="text-yellow-800">Note:</strong> {{ $order->special_notes }}
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                            @if($status === 'Draft' || $status === 'Submitted to Admin')
+                                                            <div class="w-full md:w-auto flex md:flex-col gap-2 items-end justify-start">
+                                                                <a href="{{ route('coach.order.edit', $order) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-primary rounded-lg text-xs font-bold uppercase transition-colors shadow-sm whitespace-nowrap">Edit</a>
+                                                            </div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="lg:w-1/3">
+                                        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden sticky top-6">
+                                            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
+                                                <h3 class="text-sm font-black uppercase tracking-wider text-slate-900">Batch Summary</h3>
+                                            </div>
+                                            <div class="p-6 space-y-4">
+                                                <div class="flex justify-between text-sm"><span class="text-slate-500">Coach</span><span class="font-bold text-slate-900 text-right">{{ $firstOrder->user->first_name ?? 'Unknown' }} {{ $firstOrder->user->last_name ?? '' }}<br><span class="text-xs font-normal text-slate-500">{{ $firstOrder->user->organization ?? '' }}</span></span></div>
+                                                <div class="flex justify-between text-sm"><span class="text-slate-500">Submitted</span><span class="font-bold text-slate-900">{{ $firstOrder->created_at->format('M d, Y') }}</span></div>
+                                                <div class="flex justify-between text-sm"><span class="text-slate-500">Total Items</span><span class="font-bold text-slate-900">{{ $financials['total_items_sold'] ?? 0 }}</span></div>
+                                                <div class="pt-3 mt-3 border-t border-slate-200 space-y-3">
+                                                    <div class="flex justify-between text-sm"><span class="text-slate-500">Total</span><span class="font-bold text-slate-900">${{ number_format($financials['total_sales'] ?? 0, 2) }}</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-slate-500">Due To TCA</span><span class="font-bold text-secondary">${{ number_format($financials['total_wholesale'] ?? 0, 2) }}</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                @endif
+            </div>
         </div>
     </div>
 </div>

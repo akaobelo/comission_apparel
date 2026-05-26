@@ -57,12 +57,7 @@ Route::get('/catalog', function () {
         ->orderBy('created_at', 'desc')
         ->get();
 
-    $allSports = \App\Models\DesignCatalog::whereNotNull('sport')
-        ->where('sport', '!=', '')
-        ->distinct()
-        ->pluck('sport')
-        ->sort()
-        ->values();
+    $allSports = config('sports.categories');
 
     return view('catalog.index', compact('collections', 'orphanedDesigns', 'allSports'));
 })->name('catalog.index');

@@ -67,7 +67,6 @@
                             @foreach($sports as $sportOption)
                                 <option value="{{ $sportOption }}" {{ old('sport') == $sportOption ? 'selected' : '' }}>{{ $sportOption }}</option>
                             @endforeach
-                            <option value="Other">Other</option>
                         </select>
                         @error('sport') <p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p> @enderror
                     </div>

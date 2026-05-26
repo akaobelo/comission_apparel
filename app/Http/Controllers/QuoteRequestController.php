@@ -50,11 +50,6 @@ class QuoteRequestController extends Controller
 
     private function sportOptions(): array
     {
-        return \App\Models\DesignCatalog::whereNotNull('sport')
-            ->where('sport', '!=', '')
-            ->distinct()
-            ->orderBy('sport')
-            ->pluck('sport')
-            ->toArray();
+        return config('sports.categories');
     }
 }

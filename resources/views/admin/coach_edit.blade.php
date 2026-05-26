@@ -52,7 +52,7 @@
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Sport / Activity</label>
                                 <select name="sport" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                                    @foreach(['Football (Tackle)', 'Flag Football', 'Basketball', 'Baseball', 'Softball', 'Soccer', 'Track & Field', 'Cross Country', 'Lacrosse', 'Volleyball', 'Wrestling', 'Swimming', 'Tennis', 'Golf', 'Hockey', 'Cheerleading', 'Dance / Drill Team', 'Marching Band', 'Rugby', 'Bowling', 'Other'] as $sport)
+                                    @foreach(config('sports.categories') as $sport)
                                         <option value="{{ $sport }}" {{ old('sport', $user->sport) === $sport ? 'selected' : '' }}>{{ $sport }}</option>
                                     @endforeach
                                 </select>
