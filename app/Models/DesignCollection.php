@@ -13,6 +13,11 @@ class DesignCollection extends Model
         'name',
         'image_path',
         'sort_order',
+        'sports',
+    ];
+
+    protected $casts = [
+        'sports' => 'array',
     ];
 
     public function designs()

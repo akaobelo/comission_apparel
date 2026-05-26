@@ -44,7 +44,10 @@ Route::get('/catalog', function () {
         return (object)[
             'name' => $col->name,
             'image' => $col->image_path,
-            'sports' => $col->designs->pluck('sport')->filter()->unique()->values()->toArray()
+            'sports' => array_values(array_unique(array_merge(
+                is_array($col->sports) ? $col->sports : [],
+                $col->designs->pluck('sport')->filter()->unique()->toArray()
+            )))
         ];
     });
 
@@ -184,6 +187,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
 
     // Design catalog management
     Route::post('/admin/design/bulk-sort', [AdminController::class, 'bulkSortDesigns'])->name('admin.design.bulk-sort');
+    Route::post('/admin/design/bulk-assign', [AdminController::class, 'bulkAssignDesigns'])->name('admin.design.bulk-assign');
     Route::post('/admin/design', [AdminController::class, 'createDesign'])->name('admin.design.create');
     Route::put('/admin/design/{design}', [AdminController::class, 'updateDesign'])->name('admin.design.update');
     Route::get('/admin/design/{design}', function () { return redirect()->route('admin.dashboard'); });
@@ -195,6 +199,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
 
     // Design collections management
     Route::post('/admin/design-collections', [AdminController::class, 'createDesignCollection'])->name('admin.design-collection.create');
+    Route::post('/admin/design-collections/bulk-update', [AdminController::class, 'bulkUpdateDesignCollections'])->name('admin.design-collection.bulk-update');
     Route::put('/admin/design-collections/{collection}', [AdminController::class, 'updateDesignCollection'])->name('admin.design-collection.update');
     Route::delete('/admin/design-collections/{collection}', [AdminController::class, 'deleteDesignCollection'])->name('admin.design-collection.delete');
 

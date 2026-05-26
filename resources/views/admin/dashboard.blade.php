@@ -97,7 +97,7 @@
         {{-- ═══ STORES & ORDERS TAB ═══ --}}
         <div x-show="activeAdminTab === 'stores'" x-cloak class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="space-y-8">
-                <div x-data="{ expanded: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div x-data="{ expanded: false, init() { const k = 'admin_quote_inquiries'; this.expanded = localStorage.getItem(k) === 'true'; this.$watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                     <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
                         <div>
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Quote Inquiries</h2>
@@ -225,7 +225,7 @@
             </div>
             <div class="space-y-8">
                 {{-- ═══ ACTIVE STORES IN PRODUCTION ═══ --}}
-                <div x-data="{ expanded: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div x-data="{ expanded: false, init() { const k = 'admin_active_team_stores'; this.expanded = localStorage.getItem(k) === 'true'; this.$watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                     <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
                         <div>
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Active Team Stores</h2>
@@ -266,7 +266,7 @@
                 </div>
 
                 {{-- ═══ FINALIZED MASTER ORDERS ═══ --}}
-                <div x-data="{ expanded: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
+                <div x-data="{ expanded: false, init() { const k = 'admin_finalized_master_orders'; this.expanded = localStorage.getItem(k) === 'true'; this.$watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
                     <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
                         <div>
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Master Orders</h2>
@@ -355,7 +355,7 @@
                 </div>
 
                 {{-- ═══ FINALIZED DIRECT ORDERS ═══ --}}
-                <div x-data="{ expanded: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
+                <div x-data="{ expanded: false, init() { const k = 'admin_finalized_direct_orders'; this.expanded = localStorage.getItem(k) === 'true'; this.$watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
                     <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
                         <div>
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Direct Orders</h2>
@@ -434,7 +434,7 @@
                 </div>
 
                 {{-- ═══ ARCHIVED STORES & ORDERS ═══ --}}
-                <div x-data="{ expanded: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
+                <div x-data="{ expanded: false, init() { const k = 'admin_archived_stores'; this.expanded = localStorage.getItem(k) === 'true'; this.$watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
                     <div class="p-6 border-b border-slate-200 bg-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-200 transition-colors" @click="expanded = !expanded">
                         <div>
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-500">Archived Stores & Orders</h2>
@@ -835,7 +835,7 @@
             @endphp
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <!-- ADD NEW COLLECTION -->
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddCollection: false }">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddCollection: false, init() { const k = 'admin_add_new_collection'; this.expandedAddCollection = localStorage.getItem(k) === 'true'; this.$watch('expandedAddCollection', v => localStorage.setItem(k, v)) } }">
                     <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expandedAddCollection = !expandedAddCollection">
                         <div>
                             <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Collection</h2>
@@ -844,29 +844,54 @@
                         <svg class="w-5 h-5 text-slate-400 transform transition-transform" :class="expandedAddCollection ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
                     <div class="p-5 border-b border-slate-200" x-show="expandedAddCollection" x-cloak>
-                        <form action="{{ route('admin.design-collection.create') }}" method="POST" enctype="multipart/form-data" class="flex flex-col md:flex-row gap-4 items-end">
+                        <form action="{{ route('admin.design-collection.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                             @csrf
-                            <div class="flex-grow w-full">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name</label>
-                                <input type="text" name="name" required placeholder="e.g. Tampa Xpress Track Club Collection" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name</label>
+                                    <input type="text" name="name" required placeholder="e.g. Tampa Xpress Track Club Collection" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                </div>
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Sort Order</label>
+                                    <input type="number" name="sort_order" placeholder="0" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                </div>
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Cover Image</label>
+                                    <input type="file" name="image" accept="image/*" class="w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer">
+                                </div>
                             </div>
-                            <div class="flex-grow w-full md:w-auto">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Sort Order</label>
-                                <input type="number" name="sort_order" placeholder="0" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            <div class="w-full">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Categories (Sports)</label>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200 max-h-32 overflow-y-auto">
+                                    @foreach($availableSports as $sport)
+                                        <label class="inline-flex items-center text-xs text-slate-700 font-medium cursor-pointer">
+                                            <input type="checkbox" name="sports[]" value="{{ $sport }}" class="rounded border-slate-300 text-primary focus:ring-primary mr-2">
+                                            {{ $sport }}
+                                        </label>
+                                    @endforeach
+                                </div>
                             </div>
-                            <div class="flex-grow w-full md:w-auto">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Cover Image</label>
-                                <input type="file" name="image" accept="image/*" class="w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer">
+                            <div class="flex justify-end">
+                                <button type="submit" class="w-full md:w-auto px-6 py-2.5 bg-secondary hover:bg-[#a11825] text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap shadow-sm">
+                                    Add Collection
+                                </button>
                             </div>
-                            <button type="submit" class="w-full md:w-auto px-6 py-2.5 bg-secondary hover:bg-[#a11825] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors whitespace-nowrap shadow-sm">
-                                Add Collection
-                            </button>
                         </form>
                     </div>
                 </div>
 
-                <!-- UPDATE EXISTING COLLECTIONS -->
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expanded: false }">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ 
+                    expanded: false,
+                    init() {
+                        const savedExpanded = localStorage.getItem('collectionsExpanded');
+                        if (savedExpanded === 'true') {
+                            this.expanded = true;
+                        }
+                        this.$watch('expanded', value => {
+                            localStorage.setItem('collectionsExpanded', value);
+                        });
+                    }
+                }">
                     <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expanded = !expanded">
                         <div>
                             <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Update Existing Collections</h2>
@@ -878,6 +903,14 @@
                         @if($designCollections->isEmpty())
                             <div class="p-8 text-center text-slate-500 font-bold uppercase tracking-widest text-sm">No collections created yet.</div>
                         @else
+                            <form id="bulk-collections-sort-form" action="{{ route('admin.design-collection.bulk-update') }}" method="POST">
+                                @csrf
+                            </form>
+                            <div class="p-3 bg-white border-b border-slate-200 flex justify-between items-center">
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Adjust sort orders below and click save</span>
+                                <button type="submit" form="bulk-collections-sort-form" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort Orders</button>
+                            </div>
+
                             @foreach($designCollections as $collection)
                             <div x-data="{ showModal: false }" class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0">
                                 <div class="flex items-center gap-4 flex-1">
@@ -890,8 +923,17 @@
                                             <span class="text-[10px] text-slate-400 font-bold">NONE</span>
                                         </div>
                                     @endif
-                                    <div class="text-sm font-bold text-slate-900">{{ $collection->name }}</div>
-                                </div>
+                                    <div class="flex-1">
+                                        <div class="text-sm font-bold text-slate-900">{{ $collection->name }}</div>
+                                        <div class="mt-2">
+                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Sort Order</label>
+                                            <input type="number" 
+                                                   value="{{ $collection->sort_order }}" 
+                                                   oninput="this.name = 'collections[{{ $collection->id }}][sort_order]'" 
+                                                   form="bulk-collections-sort-form"
+                                                   class="w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                        </div>
+                                    </div>
 
                                 <div class="flex items-center gap-3 shrink-0">
                                     <a href="{{ route('admin.design-collection.manage', $collection) }}" class="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-secondary flex items-center gap-1 transition-colors">
@@ -935,6 +977,19 @@
                                                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Update Cover Image</label>
                                                     <input type="file" name="image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300">
                                                 </div>
+                                                <div>
+                                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Categories (Sports)</label>
+                                                    <div class="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200 max-h-32 overflow-y-auto">
+                                                        @foreach($availableSports as $sport)
+                                                            <label class="inline-flex items-center text-xs text-slate-700 font-medium cursor-pointer">
+                                                                <input type="checkbox" name="sports[]" value="{{ $sport }}" 
+                                                                       @if(is_array($collection->sports) && in_array($sport, $collection->sports)) checked @endif
+                                                                       class="rounded border-slate-300 text-primary focus:ring-primary mr-2">
+                                                                {{ $sport }}
+                                                            </label>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
                                                 <div class="pt-2">
                                                     <button type="submit" class="w-full py-2.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-700 transition-colors">Save Changes</button>
                                                 </div>
@@ -954,7 +1009,7 @@
                 </div>
 
                 <!-- ADD NEW PACKAGE -->
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddPackage: false }">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddPackage: false, init() { const k = 'admin_add_new_package'; this.expandedAddPackage = localStorage.getItem(k) === 'true'; this.$watch('expandedAddPackage', v => localStorage.setItem(k, v)) } }">
                     <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expandedAddPackage = !expandedAddPackage">
                         <div>
                             <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Package / Design</h2>
@@ -1076,7 +1131,7 @@
                 </div>
 
                 <!-- ADD NEW DESIGN -->
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddDesign: false }">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddDesign: false, init() { const k = 'admin_add_new_design'; this.expandedAddDesign = localStorage.getItem(k) === 'true'; this.$watch('expandedAddDesign', v => localStorage.setItem(k, v)) } }">
                     <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expandedAddDesign = !expandedAddDesign">
                         <div>
                             <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Design</h2>
@@ -1203,6 +1258,7 @@
                     search: '',
                     page: 1,
                     perPage: 20,
+                    selectedDesigns: [],
                     items: {{ json_encode($designCatalog->map(function($d) { return ['id' => $d->id, 'name' => strtolower($d->name)]; })->values()) }},
                     get filteredItems() {
                         if (this.search === '') return this.items;
@@ -1218,6 +1274,21 @@
                         return this.filteredItems.slice(start, end).map(i => i.id);
                     },
                     init() {
+                        const savedExpanded = localStorage.getItem('catalogExpanded');
+                        if (savedExpanded === 'true') {
+                            this.expandedCatalog = true;
+                        }
+                        this.$watch('expandedCatalog', value => {
+                            localStorage.setItem('catalogExpanded', value);
+                        });
+
+                        const savedPage = localStorage.getItem('catalogActivePage');
+                        if (savedPage) {
+                            this.page = parseInt(savedPage) || 1;
+                        }
+                        this.$watch('page', value => {
+                            localStorage.setItem('catalogActivePage', value);
+                        });
                         this.$watch('search', () => { this.page = 1; });
                     }
                 }">
@@ -1246,11 +1317,39 @@
                             <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Adjust sort orders below and click save</span>
                             <button type="submit" form="bulk-sort-form" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort Orders</button>
                         </div>
+                        <div class="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                            <div class="flex items-center gap-2">
+                                <button type="button" 
+                                        @click="selectedDesigns = (selectedDesigns.length === filteredItems.length) ? [] : filteredItems.map(i => i.id)" 
+                                        class="px-2.5 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-50 transition-colors">
+                                    <span x-text="selectedDesigns.length === filteredItems.length ? 'Deselect All' : 'Select All'"></span>
+                                </button>
+                                <span class="text-xs text-slate-500 font-bold uppercase tracking-wider" x-show="selectedDesigns.length > 0">
+                                    <span x-text="selectedDesigns.length"></span> selected
+                                </span>
+                            </div>
+                            
+                            <form action="{{ route('admin.design.bulk-assign') }}" method="POST" class="flex items-center gap-1.5" @submit="if(selectedDesigns.length === 0) { event.preventDefault(); alert('Please select at least one design to assign.'); }">
+                                @csrf
+                                <template x-for="id in selectedDesigns" :key="id">
+                                    <input type="hidden" name="design_ids[]" :value="id">
+                                </template>
+                                <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2.5 py-1.5 w-48 focus:border-primary focus:outline-none shadow-sm">
+                                    <option value="">Assign selected to...</option>
+                                    @foreach($allCoaches as $c)
+                                        <option value="{{ $c->id }}">{{ $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="text-xs font-bold uppercase px-3 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors">Mass Assign</button>
+                            </form>
+                        </div>
                         <div class="max-h-[900px] overflow-y-auto">
                             @foreach($designCatalog as $design)
                         <div x-show="paginatedItemIds.includes({{ $design->id }})" x-cloak class="flex flex-col sm:flex-row sm:items-start justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 gap-4">
-                            <div class="flex-1 pr-4">
-                                <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
+                            <div class="flex items-start gap-3 flex-1 pr-4">
+                                <input type="checkbox" value="{{ $design->id }}" x-model="selectedDesigns" class="mt-1.5 rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                <div class="flex-1">
+                                    <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
                                 <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">
                                     {{ $design->sport ? $design->sport . ' · ' : '' }}{{ $design->type_label }} · {{ $design->category_label }}
                                 </div>
@@ -1430,6 +1529,7 @@
                                     </form>
                                 </details>
                             </div>
+                        </div>
                             <div class="flex flex-col sm:items-end gap-3 shrink-0">
                                 <div class="flex items-center gap-3">
                                     <form action="{{ route('admin.design.assign-to-coach-profile', $design) }}" method="POST" class="flex items-center gap-1">

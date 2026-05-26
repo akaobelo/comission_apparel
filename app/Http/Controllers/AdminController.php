@@ -399,6 +399,40 @@ class AdminController extends Controller
             ->with('success', "Design catalog sort orders updated.");
     }
 
+    public function bulkAssignDesigns(Request $request)
+    {
+        $request->validate([
+            'coach_id' => ['required', 'exists:users,id'],
+            'design_ids' => ['required', 'array'],
+            'design_ids.*' => ['required', 'exists:design_catalog,id'],
+        ]);
+
+        $coach = User::where('role', 'coach')->findOrFail($request->coach_id);
+
+        $coach->designCatalog()->syncWithoutDetaching($request->design_ids);
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', count($request->design_ids) . " designs successfully assigned to {$coach->first_name} {$coach->last_name}'s profile!");
+    }
+
+    public function bulkUpdateDesignCollections(Request $request)
+    {
+        $request->validate([
+            'collections' => ['required', 'array'],
+            'collections.*.sort_order' => ['required', 'integer'],
+        ]);
+
+        foreach ($request->collections as $collectionId => $data) {
+            $collection = \App\Models\DesignCollection::find($collectionId);
+            if ($collection) {
+                $collection->update(['sort_order' => $data['sort_order']]);
+            }
+        }
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Design collections sort orders updated.");
+    }
+
     // ─── DESIGN COLLECTION MANAGEMENT ───────────────────────────────────────────
 
     public function createDesignCollection(Request $request)
@@ -407,6 +441,8 @@ class AdminController extends Controller
             'name'       => ['required', 'string', 'max:255'],
             'image'      => ['nullable', 'image', 'max:10240'],
             'sort_order' => ['nullable', 'integer'],
+            'sports'     => ['nullable', 'array'],
+            'sports.*'   => ['string'],
         ]);
 
         if ($request->hasFile('image')) {
@@ -417,6 +453,8 @@ class AdminController extends Controller
         if (!isset($validated['sort_order'])) {
             $validated['sort_order'] = \App\Models\DesignCollection::max('sort_order') + 1;
         }
+
+        $validated['sports'] = $request->input('sports', []);
 
         \App\Models\DesignCollection::create($validated);
 
@@ -430,6 +468,8 @@ class AdminController extends Controller
             'name'       => ['required', 'string', 'max:255'],
             'image'      => ['nullable', 'image', 'max:10240'],
             'sort_order' => ['required', 'integer'],
+            'sports'     => ['nullable', 'array'],
+            'sports.*'   => ['string'],
         ]);
 
         if ($request->hasFile('image')) {
@@ -441,6 +481,8 @@ class AdminController extends Controller
             $path = $request->file('image')->store('collections', 'public');
             $validated['image_path'] = '/storage/' . $path;
         }
+
+        $validated['sports'] = $request->input('sports', []);
 
         $collection->update($validated);
 
