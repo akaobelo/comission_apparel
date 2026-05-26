@@ -61,7 +61,8 @@ class AdminController extends Controller
             });
 
         // Design catalog
-        $designCatalog = DesignCatalog::orderByDesc('sort_order')
+        $designCatalog = DesignCatalog::with(['designCollection', 'coaches'])
+            ->orderByDesc('sort_order')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->get();

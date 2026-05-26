@@ -1259,7 +1259,14 @@
                     search: '',
                     page: 1,
                     perPage: 25,
-                    items: {{ json_encode($catalogItems ?? []) }},
+                    items: {{ json_encode($designCatalog->map(function($d) {
+                        return [
+                            'id' => $d->id,
+                            'name' => $d->name,
+                            'collection_name' => $d->designCollection ? $d->designCollection->name : '',
+                            'coach_name' => $d->coaches->map(function($c) { return $c->first_name . ' ' . $c->last_name; })->implode(', ')
+                        ];
+                    })->values()) }},
                     selectedDesigns: [],
                     selectAll: false,
                     bulkCoachId: '',
