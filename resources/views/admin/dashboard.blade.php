@@ -97,7 +97,7 @@
         {{-- ═══ STORES & ORDERS TAB ═══ --}}
         <div x-show="activeAdminTab === 'stores'" x-cloak class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="space-y-8">
-                <div x-data="{ expanded: false, init() { const k = 'admin_quote_inquiries'; this.expanded = localStorage.getItem(k) === 'true'; this.$watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div x-data="{ expanded: false, init() { const k = 'admin_quote_inquiries'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                     <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
                         <div>
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Quote Inquiries</h2>
@@ -225,7 +225,7 @@
             </div>
             <div class="space-y-8">
                 {{-- ═══ ACTIVE STORES IN PRODUCTION ═══ --}}
-                <div x-data="{ expanded: false, init() { const k = 'admin_active_team_stores'; this.expanded = localStorage.getItem(k) === 'true'; this.$watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div x-data="{ expanded: false, init() { const k = 'admin_active_team_stores'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                     <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
                         <div>
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Active Team Stores</h2>
@@ -266,7 +266,7 @@
                 </div>
 
                 {{-- ═══ FINALIZED MASTER ORDERS ═══ --}}
-                <div x-data="{ expanded: false, init() { const k = 'admin_finalized_master_orders'; this.expanded = localStorage.getItem(k) === 'true'; this.$watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
+                <div x-data="{ expanded: false, init() { const k = 'admin_finalized_master_orders'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
                     <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
                         <div>
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Master Orders</h2>
@@ -355,7 +355,7 @@
                 </div>
 
                 {{-- ═══ FINALIZED DIRECT ORDERS ═══ --}}
-                <div x-data="{ expanded: false, init() { const k = 'admin_finalized_direct_orders'; this.expanded = localStorage.getItem(k) === 'true'; this.$watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
+                <div x-data="{ expanded: false, init() { const k = 'admin_finalized_direct_orders'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
                     <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
                         <div>
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Direct Orders</h2>
@@ -434,7 +434,7 @@
                 </div>
 
                 {{-- ═══ ARCHIVED STORES & ORDERS ═══ --}}
-                <div x-data="{ expanded: false, init() { const k = 'admin_archived_stores'; this.expanded = localStorage.getItem(k) === 'true'; this.$watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
+                <div x-data="{ expanded: false, init() { const k = 'admin_archived_stores'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
                     <div class="p-6 border-b border-slate-200 bg-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-200 transition-colors" @click="expanded = !expanded">
                         <div>
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-500">Archived Stores & Orders</h2>
@@ -835,7 +835,7 @@
             @endphp
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <!-- ADD NEW COLLECTION -->
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddCollection: false, init() { const k = 'admin_add_new_collection'; this.expandedAddCollection = localStorage.getItem(k) === 'true'; this.$watch('expandedAddCollection', v => localStorage.setItem(k, v)) } }">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddCollection: false, init() { const k = 'admin_add_new_collection'; this.expandedAddCollection = localStorage.getItem(k) === 'true'; $watch('expandedAddCollection', v => localStorage.setItem(k, v)) } }">
                     <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expandedAddCollection = !expandedAddCollection">
                         <div>
                             <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Collection</h2>
@@ -887,7 +887,7 @@
                         if (savedExpanded === 'true') {
                             this.expanded = true;
                         }
-                        this.$watch('expanded', value => {
+                        $watch('expanded', value => {
                             localStorage.setItem('collectionsExpanded', value);
                         });
                     }
@@ -934,6 +934,7 @@
                                                    class="w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                                         </div>
                                     </div>
+                                </div>
 
                                 <div class="flex items-center gap-3 shrink-0">
                                     <a href="{{ route('admin.design-collection.manage', $collection) }}" class="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-secondary flex items-center gap-1 transition-colors">
@@ -1009,7 +1010,7 @@
                 </div>
 
                 <!-- ADD NEW PACKAGE -->
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddPackage: false, init() { const k = 'admin_add_new_package'; this.expandedAddPackage = localStorage.getItem(k) === 'true'; this.$watch('expandedAddPackage', v => localStorage.setItem(k, v)) } }">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddPackage: false, init() { const k = 'admin_add_new_package'; this.expandedAddPackage = localStorage.getItem(k) === 'true'; $watch('expandedAddPackage', v => localStorage.setItem(k, v)) } }">
                     <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expandedAddPackage = !expandedAddPackage">
                         <div>
                             <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Package / Design</h2>
@@ -1131,7 +1132,7 @@
                 </div>
 
                 <!-- ADD NEW DESIGN -->
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddDesign: false, init() { const k = 'admin_add_new_design'; this.expandedAddDesign = localStorage.getItem(k) === 'true'; this.$watch('expandedAddDesign', v => localStorage.setItem(k, v)) } }">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddDesign: false, init() { const k = 'admin_add_new_design'; this.expandedAddDesign = localStorage.getItem(k) === 'true'; $watch('expandedAddDesign', v => localStorage.setItem(k, v)) } }">
                     <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expandedAddDesign = !expandedAddDesign">
                         <div>
                             <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Design</h2>
@@ -1253,17 +1254,24 @@
                 </div>
 
                 <!-- UPDATE EXISTING CATALOG -->
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ 
                     expandedCatalog: false,
                     search: '',
                     page: 1,
-                    perPage: 20,
+                    perPage: 25,
+                    items: {{ json_encode($catalogItems ?? []) }},
                     selectedDesigns: [],
-                    items: {{ json_encode($designCatalog->map(function($d) { return ['id' => $d->id, 'name' => strtolower($d->name)]; })->values()) }},
+                    selectAll: false,
+                    bulkCoachId: '',
                     get filteredItems() {
                         if (this.search === '') return this.items;
-                        const lowerSearch = this.search.toLowerCase();
-                        return this.items.filter(i => i.name.includes(lowerSearch));
+                        return this.items.filter(i => {
+                            const name = (i.name || '').toLowerCase();
+                            const coll = (i.collection_name || '').toLowerCase();
+                            const coach = (i.coach_name || '').toLowerCase();
+                            const query = this.search.toLowerCase();
+                            return name.includes(query) || coll.includes(query) || coach.includes(query);
+                        });
                     },
                     get totalPages() {
                         return Math.max(1, Math.ceil(this.filteredItems.length / this.perPage));
@@ -1278,7 +1286,7 @@
                         if (savedExpanded === 'true') {
                             this.expandedCatalog = true;
                         }
-                        this.$watch('expandedCatalog', value => {
+                        $watch('expandedCatalog', value => {
                             localStorage.setItem('catalogExpanded', value);
                         });
 
@@ -1286,10 +1294,10 @@
                         if (savedPage) {
                             this.page = parseInt(savedPage) || 1;
                         }
-                        this.$watch('page', value => {
+                        $watch('page', value => {
                             localStorage.setItem('catalogActivePage', value);
                         });
-                        this.$watch('search', () => { this.page = 1; });
+                        $watch('search', () => { this.page = 1; });
                     }
                 }">
                     <div class="p-5 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer" @click="expandedCatalog = !expandedCatalog">

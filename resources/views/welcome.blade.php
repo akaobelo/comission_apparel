@@ -246,7 +246,7 @@
                     if (this.activePage >= this.totalPages) this.activePage = 0;
                 });
                 
-                this.$watch('totalPages', (val) => {
+                $watch('totalPages', (val) => {
                     if (val > 1 && !this.interval) {
                         this.interval = setInterval(() => { this.next() }, 6000);
                     } else if (val <= 1 && this.interval) {
