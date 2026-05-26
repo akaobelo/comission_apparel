@@ -923,15 +923,15 @@
                                             <span class="text-[10px] text-slate-400 font-bold">NONE</span>
                                         </div>
                                     @endif
-                                    <div class="flex-1">
+                                    <div class="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-4">
                                         <div class="text-sm font-bold text-slate-900">{{ $collection->name }}</div>
-                                        <div class="mt-2">
-                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Sort Order</label>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Sort Order:</span>
                                             <input type="number" 
+                                                   name="collections[{{ $collection->id }}][sort_order]"
                                                    value="{{ $collection->sort_order }}" 
-                                                   oninput="this.name = 'collections[{{ $collection->id }}][sort_order]'" 
                                                    form="bulk-collections-sort-form"
-                                                   class="w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                                   class="w-16 bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm text-center">
                                         </div>
                                     </div>
                                 </div>
@@ -1370,10 +1370,11 @@
                                 </div>
                                 <div class="mt-2">
                                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Sort Order</label>
-                                    <input type="number" value="{{ $design->sort_order }}" 
-                                           oninput="this.name = 'designs[{{ $design->id }}][sort_order]'" 
+                                    <input type="number" 
+                                           name="designs[{{ $design->id }}][sort_order]"
+                                           value="{{ $design->sort_order }}" 
                                            form="bulk-sort-form"
-                                           class="w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                           class="w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm text-center">
                                 </div>
                                 <details class="mt-2">
                                     <summary class="text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer hover:text-primary">Edit design</summary>
