@@ -14,5 +14,5 @@ Submit Your Sizing Now
 If you have already submitted your order, you can safely ignore this message.
 
 Thank you,
-The {{ config('app.name') }} Team
+The Commission Apparel Team
 </x-mail::message>
