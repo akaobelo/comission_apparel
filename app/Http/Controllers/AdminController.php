@@ -422,6 +422,42 @@ class AdminController extends Controller
             ->with('success', "Design collections sort orders updated.");
     }
 
+    public function bulkSortLandingCollections(Request $request)
+    {
+        $request->validate([
+            'collections' => ['required', 'array'],
+            'collections.*.sort_order' => ['required', 'integer'],
+        ]);
+
+        foreach ($request->collections as $collectionId => $data) {
+            $collection = \App\Models\LandingCollection::find($collectionId);
+            if ($collection) {
+                $collection->update(['sort_order' => $data['sort_order']]);
+            }
+        }
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Landing collections sort orders updated.");
+    }
+
+    public function bulkSortTestimonials(Request $request)
+    {
+        $request->validate([
+            'testimonials' => ['required', 'array'],
+            'testimonials.*.sort_order' => ['required', 'integer'],
+        ]);
+
+        foreach ($request->testimonials as $testimonialId => $data) {
+            $testimonial = \App\Models\Testimonial::find($testimonialId);
+            if ($testimonial) {
+                $testimonial->update(['sort_order' => $data['sort_order']]);
+            }
+        }
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Testimonials sort orders updated.");
+    }
+
     // ─── DESIGN COLLECTION MANAGEMENT ───────────────────────────────────────────
 
     public function createDesignCollection(Request $request)

@@ -239,6 +239,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::delete('/admin/order/{order}/delete', [AdminController::class, 'deleteOrder'])->name('admin.order.delete');
 
     // Landing Page Collections
+    Route::post('/admin/landing-collections/bulk-sort', [AdminController::class, 'bulkSortLandingCollections'])->name('admin.landing.bulk-sort');
     Route::post('/admin/landing-collections', [AdminController::class, 'createCollection'])->name('admin.landing.create');
     Route::put('/admin/landing-collections/{collection}', [AdminController::class, 'updateCollection'])->name('admin.landing.update');
     Route::delete('/admin/landing-collections/{collection}', [AdminController::class, 'deleteCollection'])->name('admin.landing.delete');
@@ -248,6 +249,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/hero-settings/remove-media', [AdminController::class, 'removeHeroMedia'])->name('admin.hero-settings.remove-media');
 
     // Testimonials
+    Route::post('/admin/testimonials/bulk-sort', [AdminController::class, 'bulkSortTestimonials'])->name('admin.testimonials.bulk-sort');
     Route::post('/admin/testimonials', [AdminController::class, 'createTestimonial'])->name('admin.testimonials.create');
     Route::put('/admin/testimonials/{testimonial}', [AdminController::class, 'updateTestimonial'])->name('admin.testimonials.update');
     Route::delete('/admin/testimonials/{testimonial}', [AdminController::class, 'deleteTestimonial'])->name('admin.testimonials.delete');

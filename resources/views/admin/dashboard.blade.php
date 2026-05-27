@@ -607,12 +607,17 @@
         <div x-show="activeAdminTab === 'landing'" x-cloak class="max-w-4xl">
 
             {{-- ═══ HERO SECTION CONFIGURATION ═══ --}}
-            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-8">
-                <div class="p-5 border-b border-slate-200 bg-slate-50">
-                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Hero Section Setup</h2>
-                    <p class="text-xs text-slate-500 mt-1">Configure the main landing page text and background media (image or video).</p>
+            <div x-data="{ expanded: false, init() { const k = 'admin_hero_settings'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-8">
+                <div @click="expanded = !expanded" class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
+                    <div>
+                        <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Hero Section Setup</h2>
+                        <p class="text-xs text-slate-500 mt-1">Configure the main landing page text and background media (image or video).</p>
+                    </div>
+                    <div class="text-slate-400">
+                        <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
                 </div>
-                <div class="p-6">
+                <div x-show="expanded" x-collapse class="p-6">
                     <form id="remove-media-form" action="{{ url('/admin/hero-settings/remove-media') }}" method="POST" class="hidden">
                         @csrf
                     </form>
@@ -658,14 +663,24 @@
             </div>
 
             {{-- ═══ LANDING PAGE COLLECTIONS ═══ --}}
-            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div class="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+            <div x-data="{ expanded: true, init() { const k = 'admin_landing_collections'; const val = localStorage.getItem(k); this.expanded = val !== null ? val === 'true' : true; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition-colors" @click="expanded = !expanded">
                     <div>
                         <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Landing Page Collections</h2>
                         <p class="text-xs text-slate-500 mt-1">Manage the showcase catalog cards on the public storefront.</p>
                     </div>
+                    <div class="flex items-center gap-4">
+                        <form id="bulk-landing-collections-sort-form" action="{{ route('admin.landing.bulk-sort') }}" method="POST" @click.stop>
+                            @csrf
+                        </form>
+                        <button type="submit" form="bulk-landing-collections-sort-form" @click.stop class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort Orders</button>
+                        <div class="text-slate-400">
+                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
                 </div>
-                <div class="p-5 border-b border-slate-200 bg-slate-50">
+                <div x-show="expanded" x-collapse>
+                    <div class="p-5 border-b border-slate-200 bg-slate-50">
                     <form action="{{ url('/admin/landing-collections') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                         @csrf
                         <div class="grid grid-cols-2 gap-3">
@@ -725,7 +740,7 @@
 
                 {{-- Active Landing Collections --}}
                 @if($landingCollections->isNotEmpty())
-                <div class="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                <div class="max-h-[800px] overflow-y-auto divide-y divide-slate-100">
                     @foreach($landingCollections as $collection)
                     <div x-data="{ editModal: false }" class="flex flex-col">
                         <div class="flex items-center gap-4 px-4 py-3 hover:bg-slate-50">
@@ -736,15 +751,13 @@
                             @endif
                             <div class="flex-1 min-w-0">
                                 <div class="text-sm font-bold text-slate-900 truncate">{{ $collection->title }}</div>
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5 flex items-center gap-1">
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-0.5 flex items-center gap-2">
                                     {{ $collection->tab_name }} · Sort: 
-                                    <form action="{{ url('/admin/landing-collections/' . $collection->id) }}" method="POST" class="inline-block m-0">
-                                        @csrf @method('PUT')
-                                        <input type="hidden" name="tab_name" value="{{ $collection->tab_name }}">
-                                        <input type="hidden" name="title" value="{{ $collection->title }}">
-                                        <input type="hidden" name="description" value="{{ $collection->description }}">
-                                        <input type="number" name="sort_order" value="{{ $collection->sort_order }}" class="w-12 h-5 px-1 py-0 text-[10px] font-bold text-center border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" onchange="this.form.submit()" title="Change sort order">
-                                    </form>
+                                    <input type="number" 
+                                           name="collections[{{ $collection->id }}][sort_order]" 
+                                           value="{{ $collection->sort_order }}" 
+                                           form="bulk-landing-collections-sort-form"
+                                           class="w-16 bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm text-center">
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
@@ -808,6 +821,7 @@
                 @else
                 <div class="p-6 text-center text-sm text-slate-400">No collections configured.</div>
                 @endif
+                </div>
             </div>
         </div>
 
@@ -1649,6 +1663,12 @@
                             <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Manage Testimonials</h2>
                             <p class="text-xs text-slate-500 mt-1">Review and delete active testimonials.</p>
                         </div>
+                        <div>
+                            <form id="bulk-testimonials-sort-form" action="{{ route('admin.testimonials.bulk-sort') }}" method="POST">
+                                @csrf
+                            </form>
+                            <button type="submit" form="bulk-testimonials-sort-form" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort Orders</button>
+                        </div>
                     </div>
                     @if($testimonials->isNotEmpty())
                     <div class="divide-y divide-slate-100 max-h-[800px] overflow-y-auto">
@@ -1683,7 +1703,14 @@
                                 </div>
                                 <p class="text-sm text-slate-600 mt-2 font-medium line-clamp-3">"{{ $testimonial->content }}"</p>
                                 <div class="mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-3">
-                                    <span>Sort Order: {{ $testimonial->sort_order }}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span>Sort Order:</span>
+                                        <input type="number" 
+                                               name="testimonials[{{ $testimonial->id }}][sort_order]" 
+                                               value="{{ $testimonial->sort_order }}" 
+                                               form="bulk-testimonials-sort-form"
+                                               class="w-16 bg-white border border-slate-300 rounded px-2 py-1 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm text-center">
+                                    </div>
                                     <span class="{{ $testimonial->is_active ? 'text-green-500' : 'text-slate-400' }}">{{ $testimonial->is_active ? 'Active' : 'Hidden' }}</span>
                                 </div>
                             </div>
