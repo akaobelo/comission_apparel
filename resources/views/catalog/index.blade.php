@@ -78,9 +78,9 @@
                                 @endif
                                 <a href="{{ route('catalog.show', ['collection' => $collection->name]) }}" class="absolute inset-0 z-10" aria-label="View {{ $collection->name }}"></a>
                             </div>
-                            <div class="pt-4 flex flex-col text-center items-center">
-                                <span class="text-base font-medium text-red-600 mb-1">View Collection</span>
-                                <h2 class="text-lg font-bold group-hover:text-secondary transition-colors" style="font-family: 'Arial Narrow', 'Franklin Gothic Medium', sans-serif; color: #0f172a;" title="{{ $collection->name }}">
+                            <div class="pt-3 flex flex-col text-center items-center w-full px-1">
+                                <span class="text-xs md:text-sm font-medium text-red-600 mb-0.5 w-full truncate">View Collection</span>
+                                <h2 class="text-sm md:text-base font-bold truncate w-full group-hover:text-secondary transition-colors" style="font-family: 'Arial Narrow', 'Franklin Gothic Medium', sans-serif; color: #0f172a;" title="{{ $collection->name }}">
                                     <a href="{{ route('catalog.show', ['collection' => $collection->name]) }}">{{ $collection->name }}</a>
                                 </h2>
                             </div>

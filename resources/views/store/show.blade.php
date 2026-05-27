@@ -117,6 +117,12 @@
                       athleteInfoOpen: {{ $errors->any() ? 'true' : 'false' }},
                       activeItemId: null,
                       slideOpen: false,
+                      previewOpen: false,
+                      previewImgs: [],
+                      previewIdx: 0,
+                      previewAlt: '',
+                      touchStartX: 0,
+                      touchEndX: 0,
                       items: {
                           @foreach($store->items as $item)
                           '{{ $item->id }}': { selected: false, qty: 1 },
@@ -228,13 +234,18 @@
                             </div>
 
                             <!-- Image Hero -->
-                            <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center cursor-pointer" 
-                                 :class="items['{{ $item->id }}'].selected ? 'ring-2 ring-secondary ring-offset-2' : ''"
-                                 @click="openPanel('{{ $item->id }}')">
+                            <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center" 
+                                 :class="items['{{ $item->id }}'].selected ? 'ring-2 ring-secondary ring-offset-2' : ''">
                                 @if(!empty($item->image_paths))
                                     @if(count($item->image_paths) > 1)
                                         <div class="w-full h-full relative group/slider" x-data="{ imgIdx: 0, imgs: {{ json_encode($item->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
-                                            <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300">
+                                            <button
+                                                type="button"
+                                                class="w-full h-full block focus:outline-none"
+                                                @click.prevent="previewOpen = true; previewImgs = imgs; previewIdx = imgIdx; previewAlt = '{{ addslashes($item->name) }}'; document.body.style.overflow = 'hidden';"
+                                            >
+                                                <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300 cursor-zoom-in">
+                                            </button>
                                             
                                             <!-- Manual Navigation Arrows -->
                                             <button type="button" @click.stop="imgIdx = (imgIdx - 1 + imgs.length) % imgs.length; clearInterval(imgInterval)" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-slate-700 flex items-center justify-center shadow hover:bg-white transition-colors lg:opacity-0 lg:group-hover/slider:opacity-100 focus:outline-none">
@@ -251,10 +262,22 @@
                                             </div>
                                         </div>
                                     @else
-                                        <img src="{{ $item->image_paths[0] }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
+                                        <button
+                                            type="button"
+                                            class="w-full h-full block focus:outline-none"
+                                            @click.prevent="previewOpen = true; previewImgs = ['{{ $item->image_paths[0] }}']; previewIdx = 0; previewAlt = '{{ addslashes($item->name) }}'; document.body.style.overflow = 'hidden';"
+                                        >
+                                            <img src="{{ $item->image_paths[0] }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 cursor-zoom-in">
+                                        </button>
                                     @endif
                                 @elseif($item->image_url)
-                                    <img src="{{ $item->image_url }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
+                                    <button
+                                        type="button"
+                                        class="w-full h-full block focus:outline-none"
+                                        @click.prevent="previewOpen = true; previewImgs = ['{{ $item->image_url }}']; previewIdx = 0; previewAlt = '{{ addslashes($item->name) }}'; document.body.style.overflow = 'hidden';"
+                                    >
+                                        <img src="{{ $item->image_url }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 cursor-zoom-in">
+                                    </button>
                                 @else
                                     <div class="text-slate-400 font-medium">No Image</div>
                                 @endif
@@ -462,6 +485,49 @@
                     </div>
                 </div>
                 @endif
+
+                <!-- Image Preview Modal -->
+                <div x-show="previewOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+                     @touchstart.window="if(previewOpen) touchStartX = $event.changedTouches[0].screenX"
+                     @touchend.window="if(previewOpen) { touchEndX = $event.changedTouches[0].screenX; if(touchStartX - touchEndX > 50) { previewIdx = (previewIdx + 1) % previewImgs.length; } else if(touchEndX - touchStartX > 50) { previewIdx = (previewIdx - 1 + previewImgs.length) % previewImgs.length; } }"
+                     @keydown.escape.window="previewOpen = false; document.body.style.overflow = 'auto';" 
+                     @keydown.right.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx + 1) % previewImgs.length" 
+                     @keydown.left.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx - 1 + previewImgs.length) % previewImgs.length">
+                    
+                    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" @click="previewOpen = false; document.body.style.overflow = 'auto';"></div>
+                    
+                    <button
+                        type="button"
+                        class="absolute top-6 left-6 text-white/60 hover:text-white transition-colors z-[60] focus:outline-none"
+                        @click="previewOpen = false; document.body.style.overflow = 'auto';"
+                    >
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+
+                    <template x-if="previewImgs.length > 1">
+                        <button type="button" @click.stop="previewIdx = (previewIdx - 1 + previewImgs.length) % previewImgs.length" class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-[60] p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors focus:outline-none">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                    </template>
+
+                    <template x-if="previewImgs.length > 1">
+                        <button type="button" @click.stop="previewIdx = (previewIdx + 1) % previewImgs.length" class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-[60] p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors focus:outline-none">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                    </template>
+
+                    <template x-if="previewImgs.length > 1">
+                        <div class="absolute bottom-8 left-0 right-0 flex justify-center gap-3 z-[60]">
+                            <template x-for="(img, idx) in previewImgs" :key="idx">
+                                <button type="button" @click.stop="previewIdx = idx" class="w-3 h-3 rounded-full transition-colors shadow-sm focus:outline-none" :class="idx === previewIdx ? 'bg-primary' : 'bg-white/40 hover:bg-white/80'"></button>
+                            </template>
+                        </div>
+                    </template>
+
+                    <div class="relative max-w-6xl w-full max-h-[90vh] flex items-center justify-center pointer-events-none z-[55]">
+                        <img :src="previewImgs[previewIdx]" :alt="previewAlt" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl border border-white/20 select-none pointer-events-auto">
+                    </div>
+                </div>
             </form>
         @endif
 

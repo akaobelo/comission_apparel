@@ -736,7 +736,16 @@
                             @endif
                             <div class="flex-1 min-w-0">
                                 <div class="text-sm font-bold text-slate-900 truncate">{{ $collection->title }}</div>
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">{{ $collection->tab_name }} · Sort: {{ $collection->sort_order }}</div>
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5 flex items-center gap-1">
+                                    {{ $collection->tab_name }} · Sort: 
+                                    <form action="{{ url('/admin/landing-collections/' . $collection->id) }}" method="POST" class="inline-block m-0">
+                                        @csrf @method('PUT')
+                                        <input type="hidden" name="tab_name" value="{{ $collection->tab_name }}">
+                                        <input type="hidden" name="title" value="{{ $collection->title }}">
+                                        <input type="hidden" name="description" value="{{ $collection->description }}">
+                                        <input type="number" name="sort_order" value="{{ $collection->sort_order }}" class="w-12 h-5 px-1 py-0 text-[10px] font-bold text-center border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" onchange="this.form.submit()" title="Change sort order">
+                                    </form>
+                                </div>
                             </div>
                             <div class="flex items-center gap-2">
                                 <button type="button" @click="editModal = true" class="text-blue-500 hover:text-blue-700 p-1 transition-colors" title="Edit Collection">
