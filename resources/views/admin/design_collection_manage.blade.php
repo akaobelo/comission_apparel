@@ -56,7 +56,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Collection Items (Left side - 2 cols) -->
         <div class="lg:col-span-2 space-y-6">
-            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden" x-data="{ search: '' }">
                 <div class="p-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Manage Sort Order</h2>
@@ -77,7 +77,7 @@
                         <p class="text-sm text-slate-500">Add designs from the global catalog using the panel on the right.</p>
                     </div>
                 @else
-                    <form action="{{ route('admin.design-collection.bulk-sort', $collection) }}" method="POST" x-data="{ search: '' }">
+                    <form action="{{ route('admin.design-collection.bulk-sort', $collection) }}" method="POST">
                         @csrf
                         <div id="sortable-list" class="divide-y divide-slate-100 max-h-[800px] overflow-y-auto">
                             @foreach($collection->designs as $index => $design)
