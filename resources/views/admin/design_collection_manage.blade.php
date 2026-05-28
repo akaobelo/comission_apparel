@@ -73,10 +73,13 @@
                 @else
                     <form action="{{ route('admin.design-collection.bulk-sort', $collection) }}" method="POST">
                         @csrf
-                        <div class="divide-y divide-slate-100 max-h-[800px] overflow-y-auto">
+                        <div id="sortable-list" class="divide-y divide-slate-100 max-h-[800px] overflow-y-auto">
                             @foreach($collection->designs as $index => $design)
-                                <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
+                                <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors bg-white">
                                     <div class="flex items-center gap-4 flex-1">
+                                        <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1" title="Drag to reorder">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                                        </div>
                                         <div class="text-slate-400 font-black text-xl opacity-50 w-6 text-center">
                                             {{ $index + 1 }}
                                         </div>
@@ -110,7 +113,7 @@
                                         <div class="flex flex-col">
                                             <label class="text-[10px] font-bold uppercase text-slate-500 mb-1">Sort Order</label>
                                             <input type="hidden" name="designs[{{ $index }}][id]" value="{{ $design->id }}">
-                                            <input type="number" name="designs[{{ $index }}][sort_order]" value="{{ $design->sort_order }}" required class="w-20 bg-white border border-slate-300 rounded px-2 py-1.5 text-sm text-center text-slate-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-sm">
+                                            <input type="number" name="designs[{{ $index }}][sort_order]" value="{{ $design->sort_order }}" required class="sort-order-input w-20 bg-white border border-slate-300 rounded px-2 py-1.5 text-sm text-center text-slate-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-sm">
                                         </div>
                                         <div class="h-10 w-px bg-slate-200 mx-1"></div>
                                         <button type="button" onclick="if(confirm('Remove this design from the collection? (It will not be deleted from the system)')) { document.getElementById('remove-design-{{ $design->id }}').submit(); }" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors mt-4" title="Remove from Collection">
@@ -150,7 +153,7 @@
                         <div x-data="{
                             open: false,
                             search: '',
-                            items: {{ json_encode($availableDesigns->map(function($d) { return ['id' => $d->id, 'name' => $d->name, 'sport' => $d->sport, 'type' => $d->type_label]; })->values()) }},
+                            items: {{ json_encode($availableDesigns->map(function($d) { return ['id' => $d->id, 'name' => $d->name, 'sport' => $d->sport, 'type' => $d->type_label, 'image' => (!empty($d->image_paths) ? asset($d->image_paths[0]) : ($d->image_url ? asset($d->image_url) : ''))]; })->values()) }},
                             selectedId: '',
                             selectedName: '',
                             get filteredItems() {
@@ -180,11 +183,19 @@
                             <div x-show="open" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-64 overflow-y-auto">
                                 <div class="p-1">
                                     <template x-for="item in filteredItems" :key="item.id">
-                                        <div @click="selectItem(item)" class="px-3 py-2 hover:bg-slate-50 rounded cursor-pointer transition-colors border-b border-slate-50 last:border-0">
-                                            <div class="font-bold text-sm text-slate-900" x-text="item.name"></div>
-                                            <div class="text-[10px] uppercase font-bold text-slate-500 mt-0.5">
-                                                <span x-show="item.sport" x-text="item.sport + ' · '"></span>
-                                                <span x-text="item.type"></span>
+                                        <div @click="selectItem(item)" class="px-3 py-2 hover:bg-slate-50 rounded cursor-pointer transition-colors border-b border-slate-50 last:border-0 flex items-center gap-3">
+                                            <div x-show="item.image" class="w-10 h-10 bg-slate-100 rounded border border-slate-200 overflow-hidden flex-shrink-0">
+                                                <img :src="item.image" class="w-full h-full object-cover">
+                                            </div>
+                                            <div x-show="!item.image" class="w-10 h-10 bg-slate-100 rounded border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                                <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-center leading-none">No Img</span>
+                                            </div>
+                                            <div>
+                                                <div class="font-bold text-sm text-slate-900" x-text="item.name"></div>
+                                                <div class="text-[10px] uppercase font-bold text-slate-500 mt-0.5">
+                                                    <span x-show="item.sport" x-text="item.sport + ' · '"></span>
+                                                    <span x-text="item.type"></span>
+                                                </div>
                                             </div>
                                         </div>
                                     </template>
@@ -219,4 +230,32 @@
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const el = document.getElementById('sortable-list');
+        if (el) {
+            new Sortable(el, {
+                animation: 150,
+                handle: '.cursor-move',
+                ghostClass: 'bg-slate-50',
+                onEnd: function () {
+                    // Get all inputs
+                    const inputs = Array.from(el.querySelectorAll('.sort-order-input'));
+                    
+                    // Extract all current values and sort them descending
+                    // (so the highest number stays at the top, lowest at the bottom)
+                    let values = inputs.map(input => parseInt(input.value) || 0)
+                                       .sort((a, b) => b - a);
+                    
+                    // Re-assign the sorted values sequentially top to bottom
+                    inputs.forEach((input, index) => {
+                        input.value = values[index];
+                    });
+                }
+            });
+        }
+    });
+</script>
 @endsection

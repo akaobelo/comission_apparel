@@ -13,6 +13,7 @@ use App\Http\Middleware\CoachMiddleware;
 Route::get('/', function () { 
     $landingCollections = \App\Models\LandingCollection::where('is_active', true)
         ->orderBy('sort_order', 'asc')
+        ->orderBy('created_at', 'desc')
         ->get();
     $testimonials = \App\Models\Testimonial::where('is_active', true)
         ->orderBy('sort_order', 'asc')
@@ -38,7 +39,7 @@ Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
 Route::get('/catalog', function () {
     $collections = \App\Models\DesignCollection::with('designs')
         ->orderBy('sort_order', 'asc')
-        ->orderBy('name', 'asc')
+        ->orderBy('created_at', 'desc')
         ->get()
         ->map(function ($col) {
         return (object)[

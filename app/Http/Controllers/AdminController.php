@@ -129,14 +129,14 @@ class AdminController extends Controller
         $quoteRequestsTotal = Schema::hasTable('quote_requests') ? \App\Models\QuoteRequest::count() : 0;
         $newQuoteRequestsCount = Schema::hasTable('quote_requests') ? \App\Models\QuoteRequest::where('status', 'new')->count() : 0;
 
-        $landingCollections = LandingCollection::orderBy('sort_order', 'asc')->get();
+        $landingCollections = LandingCollection::orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
 
         $allStores = TeamStore::with('user')->latest()->get();
         $allCoaches = User::where('role', 'coach')->orderBy('organization')->get();
 
         $availableSports = config('sports.categories');
 
-        $designCollections = \App\Models\DesignCollection::orderBy('sort_order', 'asc')->orderBy('name', 'asc')->get();
+        $designCollections = \App\Models\DesignCollection::orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
 
         $passwordResetLogs = PasswordResetLog::with('user')->latest()->get();
 
@@ -476,7 +476,7 @@ class AdminController extends Controller
         }
 
         if (!isset($validated['sort_order'])) {
-            $validated['sort_order'] = \App\Models\DesignCollection::max('sort_order') + 1;
+            $validated['sort_order'] = 0;
         }
 
         $validated['sports'] = $request->input('sports', []);
