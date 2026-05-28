@@ -1072,6 +1072,17 @@
     }
 }">
 <div x-show="showItems" x-cloak>
+
+                        <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div class="text-sm font-bold text-slate-700">Collection Items</div>
+                            <div class="flex gap-2 w-full sm:w-auto">
+                                <div class="relative flex-1 sm:flex-none">
+                                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                    <input type="text" x-model="search" placeholder="Search designs..." class="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm w-full md:w-64">
+                                </div>
+                                <button type="button" x-show="search !== ''" @click="search = ''" x-cloak class="px-3 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Clear</button>
+                            </div>
+                        </div>
                         @if($collectionItems->isNotEmpty())
                         <form id="bulk-sort-form-{{ $collection->id }}" action="{{ route('admin.design.bulk-sort') }}" method="POST">
                             @csrf
@@ -1106,7 +1117,7 @@
                                 <button type="submit" class="text-xs font-bold uppercase px-3 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors">Mass Assign</button>
                             </form>
                         </div>
-                        <div id="update-catalog-sortable-list" class="max-h-[900px] overflow-y-auto">
+                        <div id="update-catalog-sortable-list-{{ isset($collection) ? $collection->id : 'unassigned' }}" class="update-catalog-sortable-list max-h-[900px] overflow-y-auto" data-is-collection="{{ isset($collection) ? 'true' : 'false' }}">
                             @foreach($collectionItems as $design)
                         <div x-show="paginatedItemIds.includes({{ $design->id }})" x-cloak class="flex flex-col sm:flex-row sm:items-start justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 gap-4 bg-white">
                             <div class="flex items-start gap-3 flex-1 pr-4">
@@ -1711,7 +1722,7 @@
                                 <button type="submit" class="text-xs font-bold uppercase px-3 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors">Mass Assign</button>
                             </form>
                         </div>
-                        <div id="update-catalog-sortable-list" class="max-h-[900px] overflow-y-auto">
+                        <div id="update-catalog-sortable-list-unassigned" class="update-catalog-sortable-list max-h-[900px] overflow-y-auto" data-is-collection="false">
                             @foreach($designCatalog as $design)
                         <div x-show="paginatedItemIds.includes({{ $design->id }})" x-cloak class="flex flex-col sm:flex-row sm:items-start justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 gap-4 bg-white">
                             <div class="flex items-start gap-3 flex-1 pr-4">
@@ -2262,22 +2273,32 @@
             });
         }
 
-        const updateCatalogList = document.getElementById('update-catalog-sortable-list');
-        if (updateCatalogList) {
-            new Sortable(updateCatalogList, {
+        const updateCatalogLists = document.querySelectorAll('.update-catalog-sortable-list');
+        updateCatalogLists.forEach(listEl => {
+            new Sortable(listEl, {
                 animation: 150,
                 handle: '.cursor-move',
                 ghostClass: 'bg-slate-50',
-                onEnd: function () {
-                    const inputs = Array.from(updateCatalogList.querySelectorAll('.sort-order-input-catalog-col'));
-                    let values = inputs.map(input => parseInt(input.value) || 0).sort((a, b) => a - b); // ascending 0, 1, 2...
+                onEnd: function (evt) {
+                    const inputs = Array.from(listEl.querySelectorAll('.sort-order-input-catalog-col'));
                     
-                    inputs.forEach((input, index) => {
-                        input.value = values[index];
-                    });
+                    // If it is a collection list, re-number them 1, 2, 3...
+                    // Otherwise (global unassigned items), keep existing values and just sort them.
+                    const isCollection = listEl.getAttribute('data-is-collection') === 'true';
+                    
+                    if (isCollection) {
+                        inputs.forEach((input, index) => {
+                            input.value = index + 1;
+                        });
+                    } else {
+                        let values = inputs.map(input => parseInt(input.value) || 0).sort((a, b) => a - b);
+                        inputs.forEach((input, index) => {
+                            input.value = values[index];
+                        });
+                    }
                 }
             });
-        }
+        });
     });
 </script>
 @endsection

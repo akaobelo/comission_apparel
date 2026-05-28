@@ -62,7 +62,7 @@ class AdminController extends Controller
 
         // Design catalog
         $designCatalog = DesignCatalog::with(['designCollection', 'coaches'])
-            ->orderByDesc('sort_order')
+            ->orderBy('sort_order', 'asc')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->get();
@@ -164,7 +164,7 @@ class AdminController extends Controller
     public function editCoach(User $user)
     {
         if ($user->role !== 'coach') abort(404);
-        $designCatalog = DesignCatalog::orderByDesc('sort_order')
+        $designCatalog = DesignCatalog::orderBy('sort_order', 'asc')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->get();
@@ -255,7 +255,11 @@ class AdminController extends Controller
         $validated['image_url'] = null;
         
         if (!isset($validated['sort_order'])) {
-            $validated['sort_order'] = DesignCatalog::max('sort_order') + 1;
+            if (isset($validated['design_collection_id']) && $validated['design_collection_id']) {
+                $validated['sort_order'] = (DesignCatalog::where('design_collection_id', $validated['design_collection_id'])->max('sort_order') ?? 0) + 1;
+            } else {
+                $validated['sort_order'] = (DesignCatalog::whereNull('design_collection_id')->max('sort_order') ?? 0) + 1;
+            }
         }
 
         DesignCatalog::create($validated);
@@ -349,6 +353,15 @@ class AdminController extends Controller
         $validated['image_paths'] = array_values($existingPaths);
         $validated['image_url'] = null;
         $validated['type'] = null;
+
+        // If the collection changed, automatically place it at the end of the new collection's sequence
+        if (array_key_exists('design_collection_id', $validated) && $design->design_collection_id != $validated['design_collection_id']) {
+            if ($validated['design_collection_id']) {
+                $validated['sort_order'] = (DesignCatalog::where('design_collection_id', $validated['design_collection_id'])->max('sort_order') ?? 0) + 1;
+            } else {
+                $validated['sort_order'] = (DesignCatalog::whereNull('design_collection_id')->max('sort_order') ?? 0) + 1;
+            }
+        }
 
         $design->update($validated);
 
@@ -532,7 +545,7 @@ class AdminController extends Controller
     public function manageCollection(\App\Models\DesignCollection $collection)
     {
         $collection->load(['designs' => function($q) {
-            $q->orderBy('sort_order', 'desc')->orderBy('created_at', 'desc');
+            $q->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc');
         }]);
 
         // Get designs that are NOT in this collection to show in the "Add Design" dropdown

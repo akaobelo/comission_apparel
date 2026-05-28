@@ -57,9 +57,15 @@
         <!-- Collection Items (Left side - 2 cols) -->
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                    <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Manage Sort Order</h2>
-                    <p class="text-xs text-slate-500">Higher numbers appear first.</p>
+                <div class="p-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Manage Sort Order</h2>
+                        <p class="text-xs text-slate-500">Lower numbers appear first.</p>
+                    </div>
+                    <div class="relative w-full sm:w-64">
+                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" x-model="search" placeholder="Search collection..." class="pl-9 pr-4 py-2 w-full bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
+                    </div>
                 </div>
                 
                 @if($collection->designs->isEmpty())
@@ -71,17 +77,18 @@
                         <p class="text-sm text-slate-500">Add designs from the global catalog using the panel on the right.</p>
                     </div>
                 @else
-                    <form action="{{ route('admin.design-collection.bulk-sort', $collection) }}" method="POST">
+                    <form action="{{ route('admin.design-collection.bulk-sort', $collection) }}" method="POST" x-data="{ search: '' }">
                         @csrf
                         <div id="sortable-list" class="divide-y divide-slate-100 max-h-[800px] overflow-y-auto">
                             @foreach($collection->designs as $index => $design)
-                                <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors bg-white">
+                                <div x-show="search === '' || '{{ strtolower(addslashes($design->name)) }}'.includes(search.toLowerCase()) || '{{ strtolower(addslashes($design->sport)) }}'.includes(search.toLowerCase())" 
+                                     class="sortable-item p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors bg-white">
                                     <div class="flex items-center gap-4 flex-1">
                                         <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1" title="Drag to reorder">
                                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
                                         </div>
-                                        <div class="text-slate-400 font-black text-xl opacity-50 w-6 text-center">
-                                            {{ $index + 1 }}
+                                        <div class="sort-number-display text-slate-400 font-black text-xl opacity-50 w-6 text-center">
+                                            {{ $design->sort_order }}
                                         </div>
                                         @php
                                             $imageSrc = null;
@@ -241,17 +248,13 @@
                 handle: '.cursor-move',
                 ghostClass: 'bg-slate-50',
                 onEnd: function () {
-                    // Get all inputs
-                    const inputs = Array.from(el.querySelectorAll('.sort-order-input'));
-                    
-                    // Extract all current values and sort them descending
-                    // (so the highest number stays at the top, lowest at the bottom)
-                    let values = inputs.map(input => parseInt(input.value) || 0)
-                                       .sort((a, b) => b - a);
-                    
-                    // Re-assign the sorted values sequentially top to bottom
-                    inputs.forEach((input, index) => {
-                        input.value = values[index];
+                    const items = Array.from(el.querySelectorAll('.sortable-item'));
+                    items.forEach((item, index) => {
+                        const input = item.querySelector('.sort-order-input');
+                        if (input) input.value = index + 1;
+                        
+                        const display = item.querySelector('.sort-number-display');
+                        if (display) display.textContent = index + 1;
                     });
                 }
             });
