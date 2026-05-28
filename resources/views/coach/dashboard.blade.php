@@ -619,12 +619,15 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="space-y-3">
+                            <div id="coach-sortable-list" class="space-y-3">
                                 <form id="bulk-markup-form" action="{{ route('coach.store.items.bulk-markup', $store) }}" method="POST">
                                     @csrf
                                 </form>
                                 @foreach($store->items as $item)
-                                <div x-data="{ itemName: {{ json_encode(strtolower($item->name)) }} }" x-show="search === '' || itemName.includes(search.toLowerCase())" class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm group hover:border-primary transition-colors">
+                                <div x-data="{ itemName: {{ json_encode(strtolower($item->name)) }} }" x-show="search === '' || itemName.includes(search.toLowerCase())" class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm group hover:border-primary transition-colors bg-white">
+                                    <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-2" title="Drag to reorder">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                                    </div>
                                     <div class="flex-1 pr-3">
                                         <div class="text-base font-bahnschrift font-semibold tracking-wide text-slate-900">{{ $item->name }}</div>
                                         <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-1 flex gap-3 flex-wrap">
@@ -653,7 +656,7 @@
                                                         form="bulk-markup-form"
                                                         name="items[{{ $item->id }}][sort_order]"
                                                         value="{{ $item->sort_order }}"
-                                                        class="w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
+                                                        class="coach-sort-order-input w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
                                                     >
                                                 </div>
                                             </div>
@@ -1130,4 +1133,26 @@
         </div>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const el = document.getElementById('coach-sortable-list');
+        if (el) {
+            new Sortable(el, {
+                animation: 150,
+                handle: '.cursor-move',
+                ghostClass: 'bg-slate-50',
+                onEnd: function () {
+                    const inputs = Array.from(el.querySelectorAll('.coach-sort-order-input'));
+                    let values = inputs.map(input => parseInt(input.value) || 0)
+                                       .sort((a, b) => b - a);
+                    
+                    inputs.forEach((input, index) => {
+                        input.value = values[index];
+                    });
+                }
+            });
+        }
+    });
+</script>
 @endsection
