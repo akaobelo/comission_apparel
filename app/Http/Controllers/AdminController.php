@@ -548,6 +548,22 @@ class AdminController extends Controller
             $q->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc');
         }]);
 
+        // Auto-heal sort orders if they are not sequential starting from 1
+        $needsHeal = false;
+        foreach ($collection->designs as $index => $design) {
+            if ($design->sort_order !== $index + 1) {
+                $needsHeal = true;
+                break;
+            }
+        }
+        
+        if ($needsHeal) {
+            foreach ($collection->designs as $index => $design) {
+                $design->update(['sort_order' => $index + 1]);
+                $design->sort_order = $index + 1;
+            }
+        }
+
         // Get designs that are NOT in this collection to show in the "Add Design" dropdown
         $availableDesigns = \App\Models\DesignCatalog::where('design_collection_id', '!=', $collection->id)
             ->orWhereNull('design_collection_id')
