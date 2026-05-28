@@ -625,10 +625,28 @@
                                 </form>
                                 @foreach($store->items as $item)
                                 <div x-data="{ itemName: {{ json_encode(strtolower($item->name)) }} }" x-show="search === '' || itemName.includes(search.toLowerCase())" class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm group hover:border-primary transition-colors bg-white">
-                                    <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-2" title="Drag to reorder">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
-                                    </div>
-                                    <div class="flex-1 pr-3">
+                                    <div class="flex items-center gap-4 flex-1">
+                                        <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1" title="Drag to reorder">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                                        </div>
+                                        @php
+                                            $imageSrc = null;
+                                            if (!empty($item->image_paths)) {
+                                                $imageSrc = $item->image_paths[0];
+                                            } elseif ($item->image_url) {
+                                                $imageSrc = $item->image_url;
+                                            } elseif ($item->designCatalog && !empty($item->designCatalog->image_paths)) {
+                                                $imageSrc = $item->designCatalog->image_paths[0];
+                                            }
+                                        @endphp
+                                        <div class="w-16 h-16 rounded overflow-hidden flex-shrink-0 border border-slate-200 bg-slate-50 flex items-center justify-center">
+                                            @if($imageSrc)
+                                                <img src="{{ Str::startsWith($imageSrc, 'http') || Str::startsWith($imageSrc, '/storage') ? asset($imageSrc) : asset('storage/' . $imageSrc) }}" class="w-full h-full object-cover">
+                                            @else
+                                                <span class="text-[10px] text-slate-400 font-bold uppercase">No Img</span>
+                                            @endif
+                                        </div>
+                                        <div class="flex-1 pr-3">
                                         <div class="text-base font-bahnschrift font-semibold tracking-wide text-slate-900">{{ $item->name }}</div>
                                         <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-1 flex gap-3 flex-wrap">
                                             <span>Type: <span class="text-primary">{{ $item->designCatalog ? $item->designCatalog->type_label : implode(', ', array_map(fn($t) => str_replace('_', ' ', $t), $item->types ?? [])) }}</span></span>
@@ -659,6 +677,7 @@
                                                         class="coach-sort-order-input w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none"
                                                     >
                                                 </div>
+                                            </div>
                                             </div>
                                         </div>
                                     </div>
