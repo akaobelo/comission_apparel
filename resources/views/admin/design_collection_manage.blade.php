@@ -249,13 +249,35 @@
                 ghostClass: 'bg-slate-50',
                 onEnd: function () {
                     const items = Array.from(el.querySelectorAll('.sortable-item'));
+                    const formData = new FormData();
+                    formData.append('_token', document.querySelector('input[name="_token"]').value);
+                    
                     items.forEach((item, index) => {
                         const input = item.querySelector('.sort-order-input');
                         if (input) input.value = index + 1;
                         
                         const display = item.querySelector('.sort-number-display');
                         if (display) display.textContent = index + 1;
+                        
+                        const idInput = item.querySelector('input[name^="designs"][name$="[id]"]');
+                        if (idInput && input) {
+                            formData.append(`designs[${index}][id]`, idInput.value);
+                            formData.append(`designs[${index}][sort_order]`, index + 1);
+                        }
                     });
+
+                    // Auto-save via AJAX
+                    fetch('{{ route('admin.design-collection.bulk-sort', $collection) }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }).then(response => {
+                        if(response.ok) {
+                            console.log('Sort order auto-saved');
+                        }
+                    }).catch(err => console.error('Error auto-saving sort order:', err));
                 }
             });
         }
