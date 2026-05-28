@@ -1386,11 +1386,31 @@
                                 <button type="submit" class="text-xs font-bold uppercase px-3 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors">Mass Assign</button>
                             </form>
                         </div>
-                        <div class="max-h-[900px] overflow-y-auto">
+                        <div id="update-catalog-sortable-list" class="max-h-[900px] overflow-y-auto">
                             @foreach($designCatalog as $design)
-                        <div x-show="paginatedItemIds.includes({{ $design->id }})" x-cloak class="flex flex-col sm:flex-row sm:items-start justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 gap-4">
+                        <div x-show="paginatedItemIds.includes({{ $design->id }})" x-cloak class="flex flex-col sm:flex-row sm:items-start justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 gap-4 bg-white">
                             <div class="flex items-start gap-3 flex-1 pr-4">
+                                <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1 mt-1" title="Drag to reorder">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                                </div>
                                 <input type="checkbox" value="{{ $design->id }}" x-model="selectedDesigns" class="mt-1.5 rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                @php
+                                    $imageSrc = null;
+                                    if (!empty($design->image_paths)) {
+                                        $imageSrc = $design->image_paths[0];
+                                    } elseif ($design->image_url) {
+                                        $imageSrc = $design->image_url;
+                                    }
+                                @endphp
+                                @if($imageSrc)
+                                    <div class="w-12 h-16 rounded overflow-hidden flex-shrink-0 border border-slate-200">
+                                        <img src="{{ asset($imageSrc) }}" class="w-full h-full object-cover">
+                                    </div>
+                                @else
+                                    <div class="w-12 h-16 rounded bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                        <span class="text-[10px] text-slate-400 font-bold uppercase">No Img</span>
+                                    </div>
+                                @endif
                                 <div class="flex-1">
                                     <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
                                 <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">
@@ -1402,7 +1422,7 @@
                                            name="designs[{{ $design->id }}][sort_order]"
                                            value="{{ $design->sort_order }}" 
                                            form="bulk-sort-form"
-                                           class="w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm text-center">
+                                           class="sort-order-input-catalog-col w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm text-center">
                                 </div>
                                 <details class="mt-2">
                                     <summary class="text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer hover:text-primary">Edit design</summary>
@@ -1908,6 +1928,23 @@
                 ghostClass: 'bg-slate-50',
                 onEnd: function () {
                     const inputs = Array.from(updateCollectionsList.querySelectorAll('.sort-order-input-update-col'));
+                    let values = inputs.map(input => parseInt(input.value) || 0).sort((a, b) => a - b); // ascending 0, 1, 2...
+                    
+                    inputs.forEach((input, index) => {
+                        input.value = values[index];
+                    });
+                }
+            });
+        }
+
+        const updateCatalogList = document.getElementById('update-catalog-sortable-list');
+        if (updateCatalogList) {
+            new Sortable(updateCatalogList, {
+                animation: 150,
+                handle: '.cursor-move',
+                ghostClass: 'bg-slate-50',
+                onEnd: function () {
+                    const inputs = Array.from(updateCatalogList.querySelectorAll('.sort-order-input-catalog-col'));
                     let values = inputs.map(input => parseInt(input.value) || 0).sort((a, b) => a - b); // ascending 0, 1, 2...
                     
                     inputs.forEach((input, index) => {
