@@ -1286,7 +1286,7 @@
                     expandedCatalog: false,
                     search: '',
                     page: 1,
-                    perPage: 25,
+                    perPage: 100,
                     items: {{ json_encode($designCatalog->map(function($d) {
                         return [
                             'id' => $d->id,
