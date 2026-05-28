@@ -934,9 +934,13 @@
                                 <button type="submit" form="bulk-collections-sort-form" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort Orders</button>
                             </div>
 
+                            <div id="update-collections-sortable-list">
                             @foreach($designCollections as $collection)
-                            <div x-data="{ showModal: false }" class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0">
+                            <div x-data="{ showModal: false }" class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 bg-white">
                                 <div class="flex items-center gap-4 flex-1">
+                                    <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1" title="Drag to reorder">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                                    </div>
                                     @if($collection->image_path)
                                         <div class="w-12 h-12 rounded-lg bg-slate-200 overflow-hidden flex-shrink-0">
                                             <img src="{{ $collection->image_path }}" class="w-full h-full object-cover">
@@ -954,7 +958,7 @@
                                                    name="collections[{{ $collection->id }}][sort_order]"
                                                    value="{{ $collection->sort_order }}" 
                                                    form="bulk-collections-sort-form"
-                                                   class="w-16 bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm text-center">
+                                                   class="sort-order-input-update-col w-16 bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm text-center">
                                         </div>
                                     </div>
                                 </div>
@@ -1028,6 +1032,7 @@
                                 </div>
                             </div>
                             @endforeach
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -1891,4 +1896,26 @@
 
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const updateCollectionsList = document.getElementById('update-collections-sortable-list');
+        if (updateCollectionsList) {
+            new Sortable(updateCollectionsList, {
+                animation: 150,
+                handle: '.cursor-move',
+                ghostClass: 'bg-slate-50',
+                onEnd: function () {
+                    const inputs = Array.from(updateCollectionsList.querySelectorAll('.sort-order-input-update-col'));
+                    let values = inputs.map(input => parseInt(input.value) || 0).sort((a, b) => a - b); // ascending 0, 1, 2...
+                    
+                    inputs.forEach((input, index) => {
+                        input.value = values[index];
+                    });
+                }
+            });
+        }
+    });
+</script>
 @endsection
