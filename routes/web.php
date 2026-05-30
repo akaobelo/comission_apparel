@@ -32,6 +32,7 @@ Route::get('/testimonials', function () {
         ->get();
     return view('testimonials.index', compact('testimonials'));
 })->name('testimonials.index');
+Route::get('/how-it-works', function () { return view('how-it-works'); })->name('how-it-works');
 Route::get('/quote', [QuoteRequestController::class, 'show'])->name('quote.show');
 Route::post('/quote', [QuoteRequestController::class, 'store'])->name('quote.store');
 Route::get('/quote/success', function () { return view('quote_success'); })->name('quote.success');
