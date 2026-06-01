@@ -78,7 +78,7 @@
         $isLocked = $store && $store->status === 'submitted_to_admin';
     @endphp
 
-    <div x-data="{ activeCoachTab: '{{ session('activeCoachTab', !$store ? 'create_order' : 'overview') }}' }" class="space-y-6">
+    <div x-data="{ activeCoachTab: new URLSearchParams(window.location.search).get('tab') || '{{ session('activeCoachTab', !$store ? 'overview' : 'create_order') }}' }" class="space-y-6">
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-2 inline-flex gap-2">
             <button
                 type="button"
@@ -129,7 +129,7 @@
                             <p class="text-sm text-slate-600 mt-1">Place direct orders for your organization without requiring a public team store.</p>
                         </div>
                     </div>
-                    
+
                     <div class="p-6" x-data="{ orderMode: 'person' }">
                         <div class="flex gap-4 mb-6">
                             <button type="button" @click="orderMode = 'person'" class="flex-1 py-2 px-3 rounded-lg border-2 transition-all font-bold text-xs uppercase tracking-wider text-center" :class="orderMode === 'person' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-500 hover:border-slate-300'">
@@ -143,7 +143,7 @@
                         <form action="{{ route('coach.direct-order.submit') }}" method="POST">
                             @csrf
                             <input type="hidden" name="order_type" x-model="orderMode">
-                            
+
                             {{-- By Person Fields --}}
                             <div x-show="orderMode === 'person'" class="space-y-4 mb-8 p-5 bg-slate-50 rounded-xl border border-slate-200">
                                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Athlete Details</h3>
@@ -203,7 +203,7 @@
                                     <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Select Assigned Items <span class="bg-slate-300 text-slate-800 px-2 py-0.5 rounded-full ml-2">{{ $assignedDesigns->count() }}</span></h3>
                                     <svg class="w-5 h-5 text-slate-500 transition-transform" :class="isExpanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                 </button>
-                                
+
                                 <div x-show="isExpanded" x-collapse class="border-x border-b border-slate-200 rounded-b-xl p-4 bg-white">
                                     @if($assignedDesigns->count() > 0)
                                     <div class="mb-4">
@@ -215,7 +215,7 @@
                                         </div>
                                     </div>
                                     @endif
-                                    
+
                                     <div class="space-y-6 max-h-[500px] overflow-y-auto pr-2">
                                         @php
                                             $packageDesigns = $assignedDesigns->filter->isPackage();
@@ -251,7 +251,7 @@
                                                                     <div class="flex-1">
                                                                         <h4 class="font-bold text-slate-900 leading-tight font-heading">{{ $design->name }}</h4>
                                                                         <div class="text-xs text-slate-500 mt-1 uppercase tracking-wider">{{ implode(', ', $types) }}</div>
-                                                                        
+
                                                                         <div x-show="selected" x-collapse class="mt-4 pt-4 border-t border-slate-200/60">
                                                                             @if($hasSizes)
                                                                                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-4 gap-x-8">
@@ -294,7 +294,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="mt-8">
                                 <button type="submit" class="btn btn-primary w-full py-3 text-xs font-bold uppercase tracking-widest shadow-md">
                                     Add To Draft
@@ -312,7 +312,7 @@
                         Draft Orders
                         <span class="bg-amber-100 text-amber-800 text-xs py-1 px-2 rounded-md">{{ $directOrders->where('status', 'Draft')->count() }}</span>
                     </h2>
-                    
+
                     @if($directOrders->where('status', 'Draft')->isEmpty())
                         <div class="text-center py-8">
                             <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -395,7 +395,7 @@
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Description (optional)</label>
                     <textarea name="description" rows="2" placeholder="Brief description for your athletes and parents..." class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm text-sm"></textarea>
                 </div>
-                <div>
+                {{-- <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Package / Order Type</label>
                     <select name="package_type" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                         <option value="" disabled selected>Select a package type (Optional)...</option>
@@ -405,7 +405,7 @@
                         <option value="individual">Individual Items — Custom Selection</option>
                     </select>
                     @error('package_type')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
-                </div>
+                </div> --}}
                 <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs text-amber-800 font-medium">
                     ⚠ Your store will require admin approval before parents can place orders. Designs must be finalized and approved before the store can go live.
                 </div>
@@ -423,7 +423,11 @@
         <h2 class="text-2xl font-black uppercase text-slate-900 mb-3">Store Awaiting Approval</h2>
         <p class="text-slate-600 text-sm mb-4">Your store <span class="font-bold text-slate-900">{{ $store->name }}</span> has been submitted and is pending review by The Commission Apparel. You'll be notified when it's approved.</p>
         <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-600">
-            In the meantime, your custom designs are being finalized by Ryan. Once approved, they'll be assigned to your profile and ready to add to your store.
+            In the meantime, if you have not already done so, please contact our Design Team to begin the custom design process.
+            <br><br>
+            If you have already submitted a design request, please allow time for our team to complete and assign the designs to your account.
+            <br><br>
+            Once the designs have been added to your profile, you will be able to include them in your store catalog.
         </div>
     </div>
 
@@ -455,7 +459,7 @@
                             <h3 class="text-lg font-black uppercase text-blue-900 mb-1">Pricing Ready for Review</h3>
                             <p class="text-sm text-blue-800 mb-2">The Commission Apparel has set the pricing for your items. Please review your wholesale cost, retail price (which parents will see), and your profit margins below. You must approve this pricing before your storefront can go live.</p>
                             <p class="text-sm text-blue-800 mb-4 font-bold">To edit your retail price, scroll down to the "Current Store Items" section and revise prices to your desired amount.</p>
-                            
+
                             <div class="space-y-2 mb-5 bg-white bg-opacity-60 rounded-lg p-4">
                                 @foreach($store->items as $item)
                                 <div class="flex justify-between items-center text-sm border-b border-blue-100 pb-2 last:border-0 last:pb-0">
@@ -501,26 +505,26 @@
                         @if(!$isLocked && $totalAthletes > 0)
                         <div x-data="{ openSubmitModal: false }">
                             <button @click="openSubmitModal = true" type="button" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors">Approve/Submit</button>
-                            
+
                             <!-- Submit Confirmation Modal -->
                             <div x-show="openSubmitModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" x-cloak>
                                 <div @click.away="openSubmitModal = false" class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-slide-up mx-4 relative">
                                     <button @click="openSubmitModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-red-500">
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>
-                                    
+
                                     <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     </div>
-                                    
+
                                     <h3 class="text-xl font-black uppercase tracking-tight text-slate-900 text-center mb-2">Finalize Master Order</h3>
-                                    
+
                                     <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-sm text-slate-700 mb-6 space-y-3">
                                         <p>Please review your order for accuracy before finalizing.</p>
                                         <p><strong>Instructions:</strong> Use the <strong>Export CSV</strong> option to download and verify all items, sizes, and quantities. Submit once you have confirmed everything is 100% accurate.</p>
                                         <p class="text-red-600 font-bold text-xs uppercase tracking-widest mt-2">The store will be closed to new orders.</p>
                                     </div>
-                                    
+
                                     <div class="flex gap-3">
                                         <button @click="openSubmitModal = false" type="button" class="flex-1 py-3 bg-white border border-slate-300 text-slate-700 font-bold uppercase text-xs tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Review Again</button>
                                         <form action="{{ route('coach.store.submit', $store) }}" method="POST" class="flex-1">
@@ -572,7 +576,7 @@
                                             <span class="text-[10px] font-bold text-orange-500 uppercase">Edited</span>
                                         @endif
                                         @if(!$isLocked)
-                                            <a href="{{ route('coach.order.edit', $order) }}" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 text-[10px] font-bold uppercase rounded hover:bg-slate-50 transition-colors">Edit</a>
+                                            <a href="{{ route('coach.order.edit', $order) }}" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 text-[10px] font-bold uppercase rounded hover:bg-slate-50 transition-colors">View/Edit</a>
                                         @endif
                                         <span class="w-6 h-6 flex items-center justify-center bg-green-100 text-green-600 rounded-full border border-green-200">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
@@ -608,6 +612,7 @@
                     <span class="text-2xl font-black text-primary">{{ $store->items->count() }}</span>
                 </button>
                 <div x-show="expandedItems" x-cloak x-data="{ search: '' }">
+                    <div id="coach-current-store-items-container">
                     <div class="p-5 bg-slate-50">
                         @if($store->items->isNotEmpty())
                             <div class="mb-4">
@@ -681,9 +686,9 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <form action="{{ route('coach.store.item.remove', $item) }}" method="POST" onsubmit="return confirm('Remove this item from your store?')">
+                                    <form action="{{ route('coach.store.item.remove', $item) }}" method="POST" onsubmit="event.preventDefault(); if(confirm('Remove this item from your store?')) { let form = this; let row = form.closest('.flex.items-center.justify-between'); if(row) row.style.opacity = '0.5'; fetch(form.action, { method: 'POST', body: new FormData(form), headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'} }).then(res => { if(res.ok) { window.dispatchEvent(new CustomEvent('item-removed', { detail: { id: {{ $item->design_catalog_id }} } })); fetch(window.location.href).then(r => r.text()).then(html => { const doc = new DOMParser().parseFromString(html, 'text/html'); const list = document.querySelector('#coach-current-store-items-container'); if (list && doc.querySelector('#coach-current-store-items-container')) list.innerHTML = doc.querySelector('#coach-current-store-items-container').innerHTML; }); } else { if(row) row.style.opacity = '1'; } }) }">
                                         @csrf
-                                        <button class="text-white transition-colors px-3 py-1.5 bg-slate-900 border border-slate-900 rounded-lg hover:bg-black flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
+                                        <button type="submit" class="text-white transition-colors px-3 py-1.5 bg-slate-900 border border-slate-900 rounded-lg hover:bg-black flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                                             Remove
                                         </button>
@@ -699,6 +704,7 @@
                         @else
                             <p class="text-xs text-slate-400 text-center py-4">No items added to store yet.</p>
                         @endif
+                    </div>
                     </div>
                 </div>
             </div>
@@ -729,7 +735,7 @@
                     <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Branding & Artwork</h3>
                     <p class="text-xs text-slate-500 mt-1">Customize how your store appears to parents.</p>
                 </div>
-                
+
                 {{-- Organization Logo --}}
                 <div class="p-5 border-b border-slate-100">
                     <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Organization Logo (Circle Display)</h4>
@@ -805,7 +811,7 @@
                                 <div x-show="catalogOpen" x-transition.opacity @click="catalogOpen = false" class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"></div>
 
                                 <!-- Modal Content -->
-                                <div x-show="catalogOpen" 
+                                <div x-show="catalogOpen"
                                      x-transition:enter="transition ease-out duration-300 transform"
                                      x-transition:enter-start="opacity-0 translate-y-8 scale-95"
                                      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
@@ -813,7 +819,7 @@
                                      x-transition:leave-start="opacity-100 translate-y-0 scale-100"
                                      x-transition:leave-end="opacity-0 translate-y-8 scale-95"
                                      class="relative w-full max-w-6xl max-h-[90vh] bg-slate-50 rounded-2xl shadow-2xl flex flex-col mx-4 overflow-hidden">
-                                    
+
                                     <!-- Header -->
                                     <div class="flex items-center justify-between p-6 bg-white border-b border-slate-200">
                                         <div>
@@ -829,17 +835,17 @@
                                     <div class="flex-1 overflow-y-auto p-4 md:p-6">
                                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                             @forelse($assignedDesigns->sortByDesc('id') as $design)
-                                                @php 
-                                                    $alreadyAdded = $store->items->pluck('design_catalog_id')->contains($design->id); 
+                                                @php
+                                                    $alreadyAdded = $store->items->pluck('design_catalog_id')->contains($design->id);
                                                 @endphp
-                                                <div class="flex flex-col group {{ $alreadyAdded ? 'opacity-80' : '' }}">
+                                                <div x-data="{ added: {{ $alreadyAdded ? 'true' : 'false' }}, submitting: false }" @item-removed.window="if($event.detail.id == {{ $design->id }}) added = false" class="flex flex-col group transition-opacity duration-300" :class="added ? 'opacity-80' : ''">
                                                     <!-- Image Hero -->
-                                                    <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center {{ $alreadyAdded ? 'ring-2 ring-secondary ring-offset-2' : '' }}">
+                                                    <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center" :class="added ? 'ring-2 ring-secondary ring-offset-2' : ''">
                                                         @if(!empty($design->image_paths))
                                                             @if(count($design->image_paths) > 1)
                                                                 <div class="w-full h-full relative group/slider" x-data="{ imgIdx: 0, imgs: {{ json_encode($design->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
                                                                     <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300">
-                                                                    
+
                                                                     <!-- Manual Navigation Arrows -->
                                                                     <button type="button" @click.stop="imgIdx = (imgIdx - 1 + imgs.length) % imgs.length; clearInterval(imgInterval)" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-slate-700 flex items-center justify-center shadow hover:bg-white transition-colors lg:opacity-0 lg:group-hover/slider:opacity-100 focus:outline-none">
                                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -869,22 +875,27 @@
                                                         <span class="text-base font-medium text-red-600 mb-1">{{ $design->type_label }}</span>
                                                         <h3 class="text-lg font-bahnschrift font-semibold tracking-wide text-slate-900 mb-1 line-clamp-2" title="{{ $design->name }}">{{ $design->name }}</h3>
                                                         <div class="text-base text-slate-500 mb-3">Base Cost: <span class="text-slate-900 font-medium">${{ number_format($design->wholesale_price, 2) }}</span></div>
-                                                        
-                                                        <div class="mt-auto">
-                                                            @if($alreadyAdded)
+
+                                                        <div class="mt-auto w-full">
+                                                            <template x-if="added">
                                                                 <div class="w-full py-2.5 bg-secondary/10 text-secondary text-[11px] font-black uppercase tracking-widest rounded-xl text-center shadow-sm flex items-center justify-center gap-2">
                                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                                                     Added
                                                                 </div>
-                                                            @else
-                                                                <form action="{{ route('coach.store.item.add', $store) }}" method="POST">
+                                                            </template>
+                                                            <template x-if="!added">
+                                                                <form action="{{ route('coach.store.item.add', $store) }}" method="POST" @submit.prevent="if(!submitting) { submitting = true; fetch($el.action, { method: 'POST', body: new FormData($el), headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'} }).then(res => { if(res.ok) { added = true; fetch(window.location.href).then(r => r.text()).then(html => { const doc = new DOMParser().parseFromString(html, 'text/html'); const list = document.querySelector('#coach-current-store-items-container'); if (list && doc.querySelector('#coach-current-store-items-container')) list.innerHTML = doc.querySelector('#coach-current-store-items-container').innerHTML; }); } else { alert('Error adding item'); } submitting = false; }) }">
                                                                     @csrf
                                                                     <input type="hidden" name="design_catalog_id" value="{{ $design->id }}">
-                                                                    <button type="submit" class="w-full py-2.5 bg-white border-2 border-slate-200 hover:border-slate-900 hover:bg-slate-900 hover:text-white text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all">
+                                                                    <div class="flex items-center justify-center gap-2 mb-3">
+                                                                        <label class="text-sm font-bold text-green-700">Store Price:</label>
+                                                                        <input type="number" name="retail_price" value="{{ number_format($design->wholesale_price, 2, '.', '') }}" min="{{ $design->wholesale_price }}" step="0.01" class="w-20 px-2 py-1 text-sm border-2 border-green-600 rounded focus:outline-none focus:border-green-700 text-slate-900 font-medium text-center">
+                                                                    </div>
+                                                                    <button type="submit" class="w-full py-2.5 bg-white border-2 border-slate-200 hover:border-slate-900 hover:bg-slate-900 hover:text-white text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all" :disabled="submitting" x-text="submitting ? 'Adding...' : 'Add to Store'">
                                                                         Add to Store
                                                                     </button>
                                                                 </form>
-                                                            @endif
+                                                            </template>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -975,7 +986,7 @@
             <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Order Status Tracker</h2>
             <p class="text-sm text-slate-600 mt-1">Track the production status of all your submitted master and direct order batches.</p>
         </div>
-        
+
         <div class="w-full">
             <div class="grid grid-cols-12 gap-4 px-6 py-3 bg-slate-100 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
                 <div class="col-span-5 md:col-span-4">Order Batch</div>
@@ -984,7 +995,7 @@
                 <div class="col-span-3 md:col-span-2">Date Submitted</div>
                 <div class="col-span-2 md:col-span-2 text-right">Production Status</div>
             </div>
-            
+
             <div class="divide-y divide-slate-100">
                 @php
                     $allBatches = collect();
@@ -1014,10 +1025,10 @@
                             $firstOrder = $batchOrders->first();
                             $status = $firstOrder->status ?? 'Submitted to Admin';
                             $isMaster = !is_null($firstOrder->team_store_id);
-                            
+
                             $statusBadge = $isArchived ? 'ARCHIVED' : ($status === 'Shipped' ? 'SHIPPED' : strtoupper($status));
                             $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
-                            
+
                             $badgeColor = $isArchived ? 'bg-slate-200 text-slate-600' : match($status) {
                                 'Submitted to Admin' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
                                 'Processing' => 'bg-blue-100 text-blue-800 border-blue-200',
@@ -1025,7 +1036,7 @@
                                 'Shipped' => 'bg-green-100 text-green-800 border-green-200',
                                 default => 'bg-slate-100 text-slate-800 border-slate-200'
                             };
-                            
+
                             $typeText = $isMaster ? 'MASTER ORDER' : 'DIRECT ORDER';
                             $typeColor = $isMaster ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800';
                             $batchTitle = $isMaster ? $firstOrder->teamStore->name : 'Direct Order Batch';
@@ -1052,7 +1063,7 @@
                                     <span class="{{ $badgeColor }} text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border">{{ $statusBadge }}</span>
                                 </div>
                             </div>
-                            
+
                             <div x-show="expanded" x-collapse class="px-6 pb-4 bg-slate-50/50 border-t border-slate-200 pt-6">
                                 @php
                                     $financials = \App\Models\ParentOrder::calculateBatchFinancials($batchOrders, $isMaster ? $firstOrder->teamStore : null);
@@ -1165,7 +1176,7 @@
                     const inputs = Array.from(el.querySelectorAll('.coach-sort-order-input'));
                     let values = inputs.map(input => parseInt(input.value) || 0)
                                        .sort((a, b) => b - a);
-                    
+
                     inputs.forEach((input, index) => {
                         input.value = values[index];
                     });

@@ -14,14 +14,14 @@
                 <div class="w-16 h-16 mx-auto rounded-xl bg-secondary flex items-center justify-center shadow-md mb-6">
                     <img src="/images/LR.png" alt="LR Logo" class="w-12 h-12 object-contain">
                 </div>
-                <h1 class="text-[28px] font-black uppercase tracking-tight text-slate-900 mb-2">Coach Registration</h1>
-                <p class="text-slate-600 text-sm font-medium">Create your coach account to get started.</p>
+                <h1 class="text-[28px] font-black uppercase tracking-tight text-slate-900 mb-2">User Registration</h1>
+                <p class="text-slate-600 text-sm font-medium">Create your account to get started.</p>
                 <p class="text-secondary text-sm font-black mt-1 tracking-wide">Your account will be active immediately.</p>
             </div>
 
             <form action="{{ route('register') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                 @csrf
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     <div>
                         <label class="block text-xs font-black uppercase tracking-widest text-slate-700 mb-2">First Name</label>
@@ -106,7 +106,7 @@
                 </div>
 
                 <button type="submit" class="w-full py-4 mt-6 bg-[#991b1b] hover:bg-[#7f1d1d] text-white text-[15px] uppercase tracking-widest font-black rounded shadow-md transition-colors">
-                    Create Coach Account
+                    Create My Account
                 </button>
             </form>
         </div>

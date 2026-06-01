@@ -868,6 +868,8 @@ class AdminController extends Controller
 
         $maxSort = $store->items()->max('sort_order') ?? 0;
 
+        $retailPrice = $request->filled('retail_price') ? max($request->retail_price, $design->wholesale_price) : $design->wholesale_price;
+
         $store->items()->create([
             'design_catalog_id' => $design->id,
             'name'              => $design->name,
@@ -876,9 +878,13 @@ class AdminController extends Controller
             'image_url'         => null,
             'image_paths'       => $design->image_paths,
             'wholesale_price'   => $design->wholesale_price,
-            'retail_price'      => $design->wholesale_price,
+            'retail_price'      => $retailPrice,
             'sort_order'        => $maxSort + 1,
         ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => "{$design->name} added to the store."]);
+        }
 
         return redirect()->route('admin.store.edit', $store)
             ->with('success', "\"{$design->name}\" added to the store.");
@@ -888,6 +894,11 @@ class AdminController extends Controller
     {
         $store = $item->teamStore;
         $item->delete();
+        
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Item removed from store.']);
+        }
+        
         return redirect()->route('admin.store.edit', $store)
             ->with('success', 'Item removed from store.');
     }
@@ -1023,6 +1034,7 @@ class AdminController extends Controller
 
     public function exportOrderCSV(TeamStore $store)
     {
+        $store->load('items');
         $orders = $store->parentOrders;
 
         $filename = "{$store->slug}-master-order.csv";
@@ -1035,12 +1047,13 @@ class AdminController extends Controller
         ];
 
         $columns = [
+            'Store Name', 'Order ID', 'Submission Date', 
             'Athlete First Name', 'Athlete Last Name', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Item', 'Types', 'Sizes', 'Qty', 'Special Notes', 'Edited?'
+            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price', 'Special Notes', 'Edited?'
         ];
 
-        $callback = function() use ($orders, $columns) {
+        $callback = function() use ($store, $orders, $columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
@@ -1065,7 +1078,15 @@ class AdminController extends Controller
                         }
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
 
+                        $qty = $item['qty'] ?? 1;
+                        $storeItem = $store->items->firstWhere('id', $item['id'] ?? null);
+                        $itemPrice = $storeItem ? (float) $storeItem->retail_price : 0;
+                        $totalRowPrice = $itemPrice * $qty;
+
                         fputcsv($file, [
+                            $store->name,
+                            $order->id,
+                            $order->created_at->format('Y-m-d'),
                             $order->athlete_first_name,
                             $order->athlete_last_name,
                             $order->gender ?? 'Not Specified',
@@ -1075,7 +1096,9 @@ class AdminController extends Controller
                             $item['name'] ?? 'Unknown Item',
                             $typesStr,
                             $sizesStr,
-                            $item['qty'] ?? 1,
+                            $qty,
+                            number_format($itemPrice, 2, '.', ''),
+                            number_format($totalRowPrice, 2, '.', ''),
                             $order->special_notes ?? '',
                             $order->is_edited ? 'Yes' : 'No',
                         ]);

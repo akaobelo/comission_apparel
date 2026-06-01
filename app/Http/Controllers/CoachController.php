@@ -169,6 +169,8 @@ class CoachController extends Controller
 
         $maxSort = $store->items()->max('sort_order') ?? 0;
 
+        $retailPrice = $request->filled('retail_price') ? max($request->retail_price, $design->wholesale_price) : $design->wholesale_price;
+
         $store->items()->create([
             'design_catalog_id' => $design->id,
             'name'              => $design->name,
@@ -177,9 +179,13 @@ class CoachController extends Controller
             'image_url'         => null, // Deprecated
             'image_paths'       => $design->image_paths,
             'wholesale_price'   => $design->wholesale_price,
-            'retail_price'      => $design->wholesale_price,
+            'retail_price'      => $retailPrice,
             'sort_order'        => $maxSort + 1,
         ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => "{$design->name} added to your store."]);
+        }
 
         return redirect()->route('coach.dashboard')
             ->with('success', "\"{$design->name}\" added to your store.");
@@ -191,6 +197,11 @@ class CoachController extends Controller
         if ($store->user_id !== $request->user()->id) abort(403);
 
         $item->delete();
+        
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Item removed from store.']);
+        }
+        
         return redirect()->route('coach.dashboard')
             ->with('success', 'Item removed from store.');
     }
@@ -286,6 +297,7 @@ class CoachController extends Controller
     {
         if ($store->user_id !== request()->user()->id) abort(403);
 
+        $store->load('items');
         $orders = $store->parentOrders;
 
         $filename = "{$store->slug}-master-order.csv";
@@ -301,10 +313,10 @@ class CoachController extends Controller
             'Store Name', 'Order ID', 'Submission Date', 
             'Athlete First Name', 'Athlete Last Name', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price'
+            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price', 'Special Notes', 'Edited?'
         ];
 
-        $callback = function() use ($orders, $columns) {
+        $callback = function() use ($store, $orders, $columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
@@ -329,7 +341,15 @@ class CoachController extends Controller
                         }
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
 
+                        $qty = $item['qty'] ?? 1;
+                        $storeItem = $store->items->firstWhere('id', $item['id'] ?? null);
+                        $itemPrice = $storeItem ? (float) $storeItem->retail_price : 0;
+                        $totalRowPrice = $itemPrice * $qty;
+
                         fputcsv($file, [
+                            $store->name,
+                            $order->id,
+                            $order->created_at->format('Y-m-d'),
                             $order->athlete_first_name,
                             $order->athlete_last_name,
                             $order->gender ?? 'Not Specified',
@@ -339,7 +359,9 @@ class CoachController extends Controller
                             $item['name'] ?? 'Unknown Item',
                             $typesStr,
                             $sizesStr,
-                            $item['qty'] ?? 1,
+                            $qty,
+                            number_format($itemPrice, 2, '.', ''),
+                            number_format($totalRowPrice, 2, '.', ''),
                             $order->special_notes ?? '',
                             $order->is_edited ? 'Yes' : 'No',
                         ]);
@@ -446,7 +468,7 @@ class CoachController extends Controller
                 ->with('activeCoachTab', 'create_order');
         }
 
-        return redirect()->route('coach.dashboard')
+        return redirect()->route('coach.dashboard', ['tab' => 'overview'])
             ->with('success', "Order for {$fullName} has been updated.");
     }
 
@@ -458,7 +480,7 @@ class CoachController extends Controller
             
             $fullName = trim($order->athlete_first_name . ' ' . $order->athlete_last_name);
             $order->delete();
-            return redirect()->route('coach.dashboard')->with('success', "Order for {$fullName} has been deleted.");
+            return redirect()->route('coach.dashboard', ['tab' => 'overview'])->with('success', "Order for {$fullName} has been deleted.");
         } else {
             if ($order->user_id !== $request->user()->id) abort(403);
             

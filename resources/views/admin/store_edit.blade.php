@@ -189,9 +189,9 @@
                                                 @php 
                                                     $alreadyAdded = $store->items->pluck('design_catalog_id')->contains($design->id); 
                                                 @endphp
-                                                <div class="flex flex-col group {{ $alreadyAdded ? 'opacity-80' : '' }}">
+                                                <div x-data="{ added: {{ $alreadyAdded ? 'true' : 'false' }}, submitting: false }" @item-removed.window="if($event.detail.id == {{ $design->id }}) added = false" class="flex flex-col group transition-opacity duration-300" :class="added ? 'opacity-80' : ''">
                                                     <!-- Image Hero -->
-                                                    <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center {{ $alreadyAdded ? 'ring-2 ring-secondary ring-offset-2' : '' }}">
+                                                    <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center" :class="added ? 'ring-2 ring-secondary ring-offset-2' : ''">
                                                         @if(!empty($design->image_paths))
                                                             @if(count($design->image_paths) > 1)
                                                                 <div class="w-full h-full relative group/slider" x-data="{ imgIdx: 0, imgs: {{ json_encode($design->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
@@ -214,20 +214,25 @@
                                                         <div class="text-base text-slate-500 mb-3">Base Cost: <span class="text-slate-900 font-medium">${{ number_format($design->wholesale_price, 2) }}</span></div>
                                                         
                                                         <div class="mt-auto w-full">
-                                                            @if($alreadyAdded)
+                                                            <template x-if="added">
                                                                 <div class="w-full py-2.5 bg-secondary/10 text-secondary text-[11px] font-black uppercase tracking-widest rounded-xl text-center shadow-sm flex items-center justify-center gap-2">
                                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                                                     Added
                                                                 </div>
-                                                            @else
-                                                                <form action="{{ route('admin.store.item.add', $store) }}" method="POST">
+                                                            </template>
+                                                            <template x-if="!added">
+                                                                <form action="{{ route('admin.store.item.add', $store) }}" method="POST" @submit.prevent="if(!submitting) { submitting = true; fetch($el.action, { method: 'POST', body: new FormData($el), headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'} }).then(res => { if(res.ok) { added = true; fetch(window.location.href).then(r => r.text()).then(html => { const doc = new DOMParser().parseFromString(html, 'text/html'); const list = document.querySelector('#admin-current-store-items-container'); if (list && doc.querySelector('#admin-current-store-items-container')) list.innerHTML = doc.querySelector('#admin-current-store-items-container').innerHTML; }); } else { alert('Error adding item'); } submitting = false; }) }">
                                                                     @csrf
                                                                     <input type="hidden" name="design_catalog_id" value="{{ $design->id }}">
-                                                                    <button type="submit" class="w-full py-2.5 bg-white border-2 border-slate-200 hover:border-slate-900 hover:bg-slate-900 hover:text-white text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all">
+                                                                    <div class="flex items-center justify-center gap-2 mb-3">
+                                                                        <label class="text-sm font-bold text-green-700">Store Price:</label>
+                                                                        <input type="number" name="retail_price" value="{{ number_format($design->wholesale_price, 2, '.', '') }}" min="{{ $design->wholesale_price }}" step="0.01" class="w-20 px-2 py-1 text-sm border-2 border-green-600 rounded focus:outline-none focus:border-green-700 text-slate-900 font-medium text-center">
+                                                                    </div>
+                                                                    <button type="submit" class="w-full py-2.5 bg-white border-2 border-slate-200 hover:border-slate-900 hover:bg-slate-900 hover:text-white text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all" :disabled="submitting" x-text="submitting ? 'Adding...' : 'Add to Store'">
                                                                         Add to Store
                                                                     </button>
                                                                 </form>
-                                                            @endif
+                                                            </template>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -239,6 +244,7 @@
                         </div>
                     @endif
 
+                    <div id="admin-current-store-items-container">
                     @if($store->items->isNotEmpty())
                     <div class="space-y-4 border-t border-slate-200 pt-6">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Current Store Items</h4>
@@ -254,15 +260,16 @@
                                     </div>
                                     <div class="text-xs font-bold text-slate-900 truncate mb-1" title="{{ $item->name }}">{{ $item->name }}</div>
                                     <div class="text-[10px] text-slate-500 font-medium mb-3">Retail: ${{ number_format($item->retail_price, 2) }}</div>
-                                    <form action="{{ route('admin.store.item.remove', ['item' => $item->id]) }}" method="POST" class="mt-auto">
+                                    <form action="{{ route('admin.store.item.remove', ['item' => $item->id]) }}" method="POST" class="mt-auto" onsubmit="event.preventDefault(); if(confirm('Remove this item from the store?')) { let form = this; let row = form.closest('.bg-slate-50'); if(row) row.style.opacity = '0.5'; fetch(form.action, { method: 'POST', body: new FormData(form), headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'} }).then(res => { if(res.ok) { window.dispatchEvent(new CustomEvent('item-removed', { detail: { id: {{ $item->design_catalog_id }} } })); fetch(window.location.href).then(r => r.text()).then(html => { const doc = new DOMParser().parseFromString(html, 'text/html'); const list = document.querySelector('#admin-current-store-items-container'); if (list && doc.querySelector('#admin-current-store-items-container')) list.innerHTML = doc.querySelector('#admin-current-store-items-container').innerHTML; }); } else { if(row) row.style.opacity = '1'; } }) }">
                                         @csrf
-                                        <button type="submit" class="w-full py-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 text-[10px] font-black uppercase tracking-widest rounded transition-colors" onclick="return confirm('Remove this item from the store?')">Remove</button>
+                                        <button type="submit" class="w-full py-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 text-[10px] font-black uppercase tracking-widest rounded transition-colors">Remove</button>
                                     </form>
                                 </div>
                             @endforeach
                         </div>
                     </div>
                     @endif
+                    </div>
                 </div>
             </div>
 
