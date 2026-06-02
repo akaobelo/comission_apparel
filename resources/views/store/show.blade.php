@@ -7,7 +7,7 @@
 <div class="w-full bg-black h-[12px] md:h-[20px] lg:h-[84px]"></div>
 
 {{-- Hero Banner --}}
-<div class="relative w-full aspect-[4/1] flex flex-col overflow-hidden">
+<div class="relative w-full h-[525px] flex flex-col overflow-hidden">
     <div class="absolute inset-0 bg-slate-950"></div>
     @if($store->cover_image_path)
         <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ Storage::url($store->cover_image_path) }}')"></div>

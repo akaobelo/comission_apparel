@@ -760,20 +760,22 @@
                 <div class="p-5">
                     <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Store Cover Image (Wide Display)</h4>
                     <div x-data="imageCropper('{{ route('coach.store.cover', $store) }}', 4 / 1)">
-                        <form x-ref="form" action="{{ route('coach.store.cover', $store) }}" method="POST" enctype="multipart/form-data">
-                            @csrf
-                            @if($store->cover_image_path)
-                                <div class="mb-3 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 aspect-[4/1] relative">
-                                    <img src="{{ Storage::url($store->cover_image_path) }}" alt="Cover" class="w-full h-full object-cover">
-                                </div>
-                            @endif
-                            <div class="flex gap-2 flex-col sm:flex-row">
-                                <input type="file" name="cover_image" x-ref="fileInput" @change="fileSelected" accept="image/jpeg,image/png,image/jpg,image/webp" required class="flex-1 block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-lg bg-white focus:outline-none">
-                                <button type="submit" x-show="!isCropping" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase rounded-lg hover:bg-[#a11825] transition-colors whitespace-nowrap">Save Cover</button>
-                            </div>
-                            <p class="text-[10px] text-slate-500 mt-2">Required: Wide 4:1 aspect ratio image. Max 5MB. You can crop it after selecting.</p>
-                            @error('cover_image')<p class="text-red-500 text-[10px] mt-1 font-bold">{{ $message }}</p>@enderror
-                        </form>
+                                            <div class="w-full h-[525px] rounded-xl border-2 border-slate-200 overflow-hidden relative group">
+                                                <img src="{{ Storage::url($store->cover_image_path) }}" alt="Cover" class="w-full h-full object-cover">
+                                                <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <span class="text-white text-xs font-bold uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">Current Cover</span>
+                                                </div>
+                                            </div>
+                                        @endif
+                                        <div x-data="imageCropper('{{ route('coach.store.cover', $store) }}', NaN)">
+                                            <form x-ref="form" action="{{ route('coach.store.cover', $store) }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
+                                                @csrf
+                                                <input type="file" name="cover_image" x-ref="fileInput" @change="fileSelected" accept="image/jpeg,image/png,image/jpg,image/webp" required class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-colors">
+                                                <button type="submit" x-show="!isCropping" class="px-5 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm whitespace-nowrap">Upload Cover</button>
+                                            </form>
+                                            <p class="text-[10px] text-slate-400 mt-2">Required: High resolution image. Max 5MB. You can crop it after selecting.</p>
+                                            @error('cover_image')<p class="text-red-500 text-[10px] mt-1 font-bold">{{ $message }}</p>@enderror
+                                        </div>
 
                         <!-- Cropper Modal -->
                         <div x-show="isCropping" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4">
