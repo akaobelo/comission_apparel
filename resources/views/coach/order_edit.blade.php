@@ -33,10 +33,7 @@
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Last Name</label>
                         <input type="text" name="athlete_last_name" value="{{ old('athlete_last_name', $order->athlete_last_name) }}" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Gender</label>
-                        <input type="text" name="gender" value="{{ old('gender', $order->gender) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
-                    </div>
+
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Jersey Name</label>
                         <input type="text" name="jersey_name" value="{{ old('jersey_name', $order->jersey_name) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
@@ -111,6 +108,14 @@
                                         </template>
                                         
                                         <div>
+                                            <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Gender</label>
+                                            <select :name="`items[${idx}][gender]`" x-model="item.gender" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm min-w-[100px]">
+                                                <option value="Unisex">Unisex</option>
+                                                <option value="Male">Male</option>
+                                                <option value="Female">Female</option>
+                                            </select>
+                                        </div>
+                                        <div>
                                             <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Qty</label>
                                             <input type="number" :name="`items[${idx}][qty]`" x-model="item.qty" min="1" max="50" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm w-16">
                                         </div>
@@ -159,6 +164,9 @@ document.addEventListener('alpine:init', () => {
                 } else if (!item.sizes) {
                     item.sizes = {};
                 }
+                if (!item.gender) {
+                    item.gender = 'Unisex';
+                }
             });
         },
         
@@ -182,6 +190,7 @@ document.addEventListener('alpine:init', () => {
                 type: storeItem.types[0] || 'Unknown',
                 types: storeItem.types,
                 qty: 1,
+                gender: 'Unisex',
                 sizes: sizes
             });
             

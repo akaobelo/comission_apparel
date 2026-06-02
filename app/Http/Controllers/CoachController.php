@@ -352,7 +352,7 @@ class CoachController extends Controller
                             $order->created_at->format('Y-m-d'),
                             $order->athlete_first_name,
                             $order->athlete_last_name,
-                            $order->gender ?? 'Not Specified',
+                            $item['gender'] ?? $order->gender ?? 'Not Specified',
                             $order->jersey_name ?? '',
                             $order->jersey_number ?? '',
                             $order->backpack_name ?? '',
@@ -444,6 +444,7 @@ class CoachController extends Controller
                 'types'        => $item['types'] ?? [],
                 'sizes'        => $item['sizes'] ?? [],
                 'qty'          => $item['qty'] ?? 1,
+                'gender'       => $item['gender'] ?? 'Unisex',
             ];
         }
 
@@ -566,7 +567,7 @@ class CoachController extends Controller
             'order_type'          => 'required|in:person,item',
             'athlete_first_name'  => 'nullable|string|max:255',
             'athlete_last_name'   => 'nullable|string|max:255',
-            'gender'              => 'required|string|max:50',
+            'gender'              => 'nullable|string|max:50',
             'jersey_name'         => 'nullable|string|max:255',
             'jersey_number'       => 'nullable|string|max:10',
             'backpack_name'       => 'nullable|string|max:255',
@@ -598,6 +599,7 @@ class CoachController extends Controller
                             'name'         => $design->name,
                             'types'        => $types,
                             'qty'          => $qty,
+                            'gender'       => $details['gender'] ?? 'Unisex',
                             'sizes'        => [],
                         ];
                         // Apply this size to all sized types in the item
@@ -617,6 +619,7 @@ class CoachController extends Controller
                     'name'         => $design->name,
                     'types'        => $types,
                     'qty'          => $qty,
+                    'gender'       => $details['gender'] ?? 'Unisex',
                     'sizes'        => [],
                 ];
                 $itemsJson[] = $entry;
@@ -636,7 +639,7 @@ class CoachController extends Controller
             'team_store_id'       => null,
             'athlete_first_name'  => $firstName ?: 'Direct',
             'athlete_last_name'   => $lastName ?: 'Order',
-            'gender'              => trim($request->gender),
+            'gender'              => $request->filled('gender') ? trim($request->gender) : null,
             'jersey_name'         => $request->jersey_name,
             'jersey_number'       => $request->jersey_number,
             'backpack_name'       => $request->backpack_name,
@@ -729,7 +732,7 @@ class CoachController extends Controller
                         fputcsv($file, [
                             $order->athlete_first_name,
                             $order->athlete_last_name,
-                            $order->gender ?? 'Not Specified',
+                            $item['gender'] ?? $order->gender ?? 'Not Specified',
                             $order->jersey_name ?? '',
                             $order->jersey_number ?? '',
                             $order->backpack_name ?? '',

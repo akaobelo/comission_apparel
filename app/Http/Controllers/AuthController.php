@@ -40,7 +40,7 @@ class AuthController extends Controller
                     $request->session()->regenerateToken();
                     return back()->with('error', 'Your account has been declined. Please contact The Commission Apparel for assistance.');
                 }
-                return redirect('/coach/dashboard');
+                return redirect('/coach/dashboard')->with('activeCoachTab', 'overview');
             }
 
             return redirect('/');
@@ -106,7 +106,7 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect('/coach/dashboard')->with('success', 'Welcome to The Commission Apparel! Your coach account is active.');
+        return redirect('/coach/dashboard')->with('success', 'Welcome to The Commission Apparel! Your coach account is active.')->with('activeCoachTab', 'overview');
     }
 
     public function logout(Request $request)

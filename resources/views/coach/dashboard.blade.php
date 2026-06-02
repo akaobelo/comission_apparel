@@ -78,7 +78,7 @@
         $isLocked = $store && $store->status === 'submitted_to_admin';
     @endphp
 
-    <div x-data="{ activeCoachTab: new URLSearchParams(window.location.search).get('tab') || '{{ session('activeCoachTab', !$store ? 'overview' : 'create_order') }}' }" class="space-y-6">
+    <div x-data="{ activeCoachTab: '{{ session('activeCoachTab', '') }}' || new URLSearchParams(window.location.search).get('tab') || localStorage.getItem('coachDashboardTab') || 'overview' }" x-init="$watch('activeCoachTab', val => localStorage.setItem('coachDashboardTab', val))" class="space-y-6">
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-2 inline-flex gap-2">
             <button
                 type="button"
@@ -130,7 +130,7 @@
                         </div>
                     </div>
 
-                    <div class="p-6" x-data="{ orderMode: 'person' }">
+                    <div class="p-6" x-data="{ orderMode: localStorage.getItem('coachOrderMode') || 'person' }" x-init="$watch('orderMode', val => localStorage.setItem('coachOrderMode', val))">
                         <div class="flex gap-4 mb-6">
                             <button type="button" @click="orderMode = 'person'" class="flex-1 py-2 px-3 rounded-lg border-2 transition-all font-bold text-xs uppercase tracking-wider text-center" :class="orderMode === 'person' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-500 hover:border-slate-300'">
                                 Order by Person(s)
@@ -158,14 +158,7 @@
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div>
-                                        <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Gender</label>
-                                        <select name="gender" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
-                                            <option value="Unisex">Unisex</option>
-                                        </select>
-                                    </div>
+
                                     <div>
                                         <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Jersey # (Opt)</label>
                                         <input type="text" name="jersey_number" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
@@ -188,17 +181,10 @@
                                     <p class="font-bold mb-1">Bulk Order Mode</p>
                                     <p>Select the items below and enter the desired quantities and sizes. This will be added to your draft as a bulk entry.</p>
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Gender</label>
-                                    <select name="gender" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
-                                        <option value="Unisex">Unisex</option>
-                                        <option value="Male">Male</option>
-                                        <option value="Female">Female</option>
-                                    </select>
-                                </div>
+
                             </div>
 
-                            <div x-data="{ search: '', isExpanded: true }" class="mb-6">
+                            <div x-data="{ search: '', isExpanded: localStorage.getItem('coachAssignedItemsExpanded') ? localStorage.getItem('coachAssignedItemsExpanded') === 'true' : true }" x-init="$watch('isExpanded', val => localStorage.setItem('coachAssignedItemsExpanded', val))" class="mb-6">
                                 <button type="button" @click="isExpanded = !isExpanded" class="w-full flex items-center justify-between px-4 py-3 bg-slate-100 hover:bg-slate-200 transition-colors rounded-t-xl border border-slate-200">
                                     <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Select Assigned Items <span class="bg-slate-300 text-slate-800 px-2 py-0.5 rounded-full ml-2">{{ $assignedDesigns->count() }}</span></h3>
                                     <svg class="w-5 h-5 text-slate-500 transition-transform" :class="isExpanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -249,8 +235,20 @@
                                                                         @endif
                                                                     </div>
                                                                     <div class="flex-1">
-                                                                        <h4 class="font-bold text-slate-900 leading-tight font-heading">{{ $design->name }}</h4>
-                                                                        <div class="text-xs text-slate-500 mt-1 uppercase tracking-wider">{{ implode(', ', $types) }}</div>
+                                                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                                            <div>
+                                                                                <h4 class="font-bold text-slate-900 leading-tight font-heading">{{ $design->name }}</h4>
+                                                                                <div class="text-xs text-slate-500 mt-1 uppercase tracking-wider">{{ implode(', ', $types) }}</div>
+                                                                            </div>
+                                                                            <div x-show="selected" class="flex items-center gap-3 shrink-0">
+                                                                                <label class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Gender</label>
+                                                                                <select name="items[{{ $design->id }}][gender]" class="border border-slate-300 bg-white rounded-lg px-3 py-1.5 text-sm font-medium focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" required :disabled="!selected">
+                                                                                    <option value="Unisex" selected>Unisex</option>
+                                                                                    <option value="Male">Male</option>
+                                                                                    <option value="Female">Female</option>
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
 
                                                                         <div x-show="selected" x-collapse class="mt-4 pt-4 border-t border-slate-200/60">
                                                                             @if($hasSizes)
@@ -327,13 +325,12 @@
                                     <div class="flex justify-between items-start mb-2">
                                         <div class="font-bold text-sm text-slate-900">{{ $draft->athlete_name }}</div>
                                         <div class="flex items-center gap-2">
-                                            <div class="text-[10px] text-slate-500 uppercase">{{ $draft->gender }}</div>
                                             <a href="{{ route('coach.order.edit', $draft) }}" class="text-[10px] font-bold text-primary hover:text-secondary uppercase">Edit</a>
                                         </div>
                                     </div>
                                     <ul class="text-xs text-slate-600 space-y-1">
                                         @foreach($draft->items_json as $item)
-                                            <li>{{ $item['qty'] }}x {{ $item['name'] }}</li>
+                                            <li>{{ $item['qty'] }}x {{ $item['name'] }} @if(isset($item['gender'])) <span class="text-[10px] text-slate-400 uppercase">({{ $item['gender'] }})</span> @endif</li>
                                         @endforeach
                                     </ul>
                                 </div>
@@ -545,7 +542,7 @@
             </div>
 
             {{-- Order Progress Tracker --}}
-            <div x-data="{ expanded: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div x-data="{ expanded: localStorage.getItem('coachOrderProgressExpanded') === 'true' }" x-init="$watch('expanded', val => localStorage.setItem('coachOrderProgressExpanded', val))" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <button type="button" @click="expanded = !expanded" class="w-full p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between hover:bg-slate-100 transition-colors focus:outline-none">
                     <div class="flex items-center gap-3">
                         <h3 class="text-base font-black uppercase tracking-tight text-slate-900">Order Progress</h3>
@@ -603,7 +600,7 @@
             @endif
 
             {{-- Current Store Items (Moved from Right Column) --}}
-            <div x-data="{ expandedItems: true }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div x-data="{ expandedItems: localStorage.getItem('coachCurrentStoreItemsExpanded') ? localStorage.getItem('coachCurrentStoreItemsExpanded') === 'true' : true }" x-init="$watch('expandedItems', val => localStorage.setItem('coachCurrentStoreItemsExpanded', val))" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <button type="button" @click="expandedItems = !expandedItems" class="w-full p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between hover:bg-slate-100 transition-colors focus:outline-none">
                     <div class="flex items-center gap-3">
                         <h3 class="text-base font-black uppercase tracking-tight text-slate-900">Current Store Items</h3>
@@ -793,7 +790,7 @@
                             <p class="text-sm text-slate-500 font-medium">No designs in the catalog yet.</p>
                         </div>
                     @else
-                        <div x-data="{ catalogOpen: false }" class="mb-8">
+                        <div x-data="{ catalogOpen: localStorage.getItem('coachCatalogOpen') === 'true' }" x-init="$watch('catalogOpen', val => localStorage.setItem('coachCatalogOpen', val))" class="mb-8">
                             <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-sm">
                                 <div>
                                     <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Your Assigned Designs</h4>
@@ -1041,7 +1038,7 @@
                             $typeColor = $isMaster ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800';
                             $batchTitle = $isMaster ? $firstOrder->teamStore->name : 'Direct Order Batch';
                         @endphp
-                        <div x-data="{ expanded: false }" class="border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors">
+                        <div x-data="{ expanded: localStorage.getItem('coachBatchExpanded_{{ $batchId }}') === 'true' }" x-init="$watch('expanded', val => localStorage.setItem('coachBatchExpanded_{{ $batchId }}', val))" class="border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors">
                             <div @click="expanded = !expanded" class="grid grid-cols-12 gap-4 px-6 py-4 items-center cursor-pointer">
                                 <div class="col-span-5 md:col-span-4 flex items-center gap-3">
                                     <svg class="w-4 h-4 text-slate-400 transition-transform" :class="expanded ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -1100,13 +1097,13 @@
                                                             <div class="w-full md:w-auto">
                                                                 <div class="font-bold text-slate-900">{{ $order->athlete_first_name }} {{ $order->athlete_last_name }}</div>
                                                                 <div class="text-xs text-slate-500 mt-1 flex gap-3">
-                                                                    @if($order->gender)<span class="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-medium">{{ $order->gender }}</span>@endif
+
                                                                 </div>
                                                             </div>
                                                             <div class="w-full md:w-auto space-y-2 flex-grow">
                                                                 @foreach(is_array($order->items_json) ? $order->items_json : [] as $item)
                                                                     <div class="text-sm flex justify-between bg-white border border-slate-100 p-2 rounded items-center">
-                                                                        <div class="text-slate-700 font-medium truncate pr-4 max-w-[200px]">{{ $item['name'] ?? 'Item' }}</div>
+                                                                        <div class="text-slate-700 font-medium truncate pr-4 max-w-[200px]">{{ $item['name'] ?? 'Item' }} @if(isset($item['gender'])) <span class="text-[10px] text-slate-400 font-normal ml-1">({{ $item['gender'] }})</span> @endif</div>
                                                                         <div class="text-slate-500 text-right whitespace-nowrap flex items-center">
                                                                             @if(!empty($item['sizes']))
                                                                                 @foreach($item['sizes'] as $sizeType => $size)

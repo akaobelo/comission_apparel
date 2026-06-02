@@ -1089,7 +1089,7 @@ class AdminController extends Controller
                             $order->created_at->format('Y-m-d'),
                             $order->athlete_first_name,
                             $order->athlete_last_name,
-                            $order->gender ?? 'Not Specified',
+                            $item['gender'] ?? $order->gender ?? 'Not Specified',
                             $order->jersey_name ?? '',
                             $order->jersey_number ?? '',
                             $order->backpack_name ?? '',
@@ -1160,7 +1160,7 @@ class AdminController extends Controller
                         fputcsv($file, [
                             $order->athlete_first_name,
                             $order->athlete_last_name,
-                            $order->gender ?? 'Not Specified',
+                            $item['gender'] ?? $order->gender ?? 'Not Specified',
                             $order->jersey_name ?? '',
                             $order->jersey_number ?? '',
                             $order->backpack_name ?? '',
