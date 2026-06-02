@@ -206,7 +206,7 @@
                         @click="activeAccordion = activeAccordion === '{{ Str::slug($question) }}' ? null : '{{ Str::slug($question) }}'"
                         class="w-full flex items-center justify-between p-6 text-left focus:outline-none transition-colors hover:bg-slate-50"
                     >
-                        <span class="font-bold text-lg text-slate-900 bg-yellow-300 px-2 py-0.5 uppercase">{{ $question }}</span>
+                        <span class="font-bold text-lg text-slate-900 uppercase">{{ $question }}</span>
                         <svg class="w-6 h-6 text-slate-400 transform transition-transform duration-300" :class="{ 'rotate-180 text-primary': activeAccordion === '{{ Str::slug($question) }}' }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
