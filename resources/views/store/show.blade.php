@@ -17,19 +17,19 @@
 </div>
 
 {{-- Store Header Content --}}
-<div class="max-w-6xl w-full mx-auto px-6 pt-6 pb-4 flex flex-col md:flex-row items-start md:items-end justify-between gap-6 bg-white border border-slate-200 rounded-xl shadow-sm">
-    <div class="flex flex-col md:flex-row items-start md:items-end gap-5">
+<div class="max-w-6xl w-full mx-auto px-4 md:px-6 py-4 md:py-6 flex flex-col md:flex-row items-start md:items-end justify-between gap-4 md:gap-6 bg-white border border-slate-200 rounded-xl shadow-sm">
+    <div class="flex flex-row items-center md:items-end gap-3 md:gap-5 w-full">
         @if($store->user->logo_path)
-            <div class="w-24 h-24 rounded-full bg-white border border-slate-200 overflow-hidden flex items-center justify-center shadow-sm flex-shrink-0 p-2">
+            <div class="w-16 h-16 md:w-24 md:h-24 rounded-full bg-white border border-slate-200 overflow-hidden flex items-center justify-center shadow-sm flex-shrink-0 p-1.5 md:p-2">
                 <img src="{{ Str::startsWith($store->user->logo_path, 'http') ? $store->user->logo_path : Storage::url($store->user->logo_path) }}" alt="Team Logo" class="w-full h-full object-contain">
             </div>
         @endif
-        <div class="mb-1 mt-2 md:mt-0">
-            <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-widest rounded-full mb-2">
+        <div class="flex-1 min-w-0">
+            <div class="inline-flex items-center gap-1.5 px-2 md:px-3 py-0.5 md:py-1 bg-slate-100 border border-slate-200 text-slate-600 text-[9px] md:text-xs font-bold uppercase tracking-widest rounded-full mb-1 md:mb-2">
                 {{ $store->user->sport ?? 'Team Athletics' }}
             </div>
-            <h1 class="text-3xl md:text-5xl font-black uppercase tracking-tight text-slate-900 leading-none">{{ $store->name }}</h1>
-            <p class="text-slate-500 text-sm md:text-[1rem] mt-2">Official Custom Apparel Storefront · Coach {{ $store->user->name }}</p>
+            <h1 class="text-xl sm:text-2xl md:text-5xl font-black uppercase tracking-tight text-slate-900 leading-tight md:leading-none truncate md:overflow-visible md:whitespace-normal">{{ $store->name }}</h1>
+            <p class="text-slate-500 text-[10px] md:text-[1rem] mt-0.5 md:mt-2 truncate md:overflow-visible md:whitespace-normal">Official Custom Apparel Storefront · Coach {{ $store->user->name }}</p>
         </div>
     </div>
     @if($store->order_deadline)
