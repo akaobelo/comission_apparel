@@ -77,8 +77,19 @@
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                 </button>
                                 
-                                <div class="flex items-start justify-between gap-4 flex-wrap pr-8">
-                                    <div>
+                                <div class="flex items-start gap-4 flex-wrap pr-8">
+                                    <template x-if="item.image_path">
+                                        <div class="w-12 h-12 bg-white rounded border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                            <img :src="item.image_path" :alt="item.name" class="w-full h-full object-cover">
+                                        </div>
+                                    </template>
+                                    <template x-if="!item.image_path">
+                                        <div class="w-12 h-12 bg-white rounded border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                            <svg class="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        </div>
+                                    </template>
+                                    
+                                    <div class="flex-1 min-w-[150px]">
                                         <div class="font-bold text-slate-900" x-text="item.name || 'Unknown Item'"></div>
                                         <div class="text-xs font-bold uppercase tracking-wider text-primary mt-0.5" x-text="(item.type || '').replace(/_/g, ' ')"></div>
                                     </div>
@@ -167,6 +178,10 @@ document.addEventListener('alpine:init', () => {
                 if (!item.gender) {
                     item.gender = 'Unisex';
                 }
+                const match = this.availableItems.find(i => i.id == item.id);
+                if (match && match.image_path) {
+                    item.image_path = match.image_path;
+                }
             });
         },
         
@@ -191,7 +206,8 @@ document.addEventListener('alpine:init', () => {
                 types: storeItem.types,
                 qty: 1,
                 gender: 'Unisex',
-                sizes: sizes
+                sizes: sizes,
+                image_path: storeItem.image_path
             });
             
             this.newItemId = '';

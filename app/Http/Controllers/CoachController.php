@@ -384,12 +384,19 @@ class CoachController extends Controller
             
             $availableItems = $store->items()->with('designCatalog')->get()->map(function($item) {
                 $types = $item->types ?? [$item->type];
-                $sizedTypes = array_intersect($types, DesignCatalog::sizedTypes());
+                $sizedTypes = array_intersect($types, \App\Models\DesignCatalog::sizedTypes());
+                $imagePath = null;
+                $paths = $item->designCatalog->image_paths ?? $item->image_paths ?? null;
+                if (!empty($paths)) {
+                    $path = $paths[0];
+                    $imagePath = \Illuminate\Support\Str::startsWith($path, 'http') || \Illuminate\Support\Str::startsWith($path, '/storage') ? asset($path) : asset('storage/' . $path);
+                }
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
                     'types' => $types,
-                    'sizedTypes' => array_values($sizedTypes)
+                    'sizedTypes' => array_values($sizedTypes),
+                    'image_path' => $imagePath
                 ];
             });
 
@@ -402,12 +409,18 @@ class CoachController extends Controller
             
             $availableItems = $request->user()->designCatalog()->get()->map(function($item) {
                 $types = $item->types ?? [$item->type];
-                $sizedTypes = array_intersect($types, DesignCatalog::sizedTypes());
+                $sizedTypes = array_intersect($types, \App\Models\DesignCatalog::sizedTypes());
+                $imagePath = null;
+                if (!empty($item->image_paths)) {
+                    $path = $item->image_paths[0];
+                    $imagePath = \Illuminate\Support\Str::startsWith($path, 'http') || \Illuminate\Support\Str::startsWith($path, '/storage') ? asset($path) : asset('storage/' . $path);
+                }
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
                     'types' => $types,
-                    'sizedTypes' => array_values($sizedTypes)
+                    'sizedTypes' => array_values($sizedTypes),
+                    'image_path' => $imagePath
                 ];
             });
 
