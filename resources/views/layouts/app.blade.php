@@ -13,6 +13,9 @@
     
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Cropper.js -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <style>
         [x-cloak] { display: none !important; }
     </style>
@@ -139,6 +142,111 @@
                     }
                 }
             }
+        });
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('imageCropper', (actionUrl, aspectRatio) => ({
+                isCropping: false,
+                isSaving: false,
+                cropper: null,
+                actionUrl: actionUrl,
+                aspectRatio: aspectRatio,
+                
+                fileSelected(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    // Only crop images
+                    if (!file.type.startsWith('image/')) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        this.isCropping = true;
+                        
+                        // We must wait for Alpine to show the modal and image element
+                        this.$nextTick(() => {
+                            this.$refs.imageElement.src = event.target.result;
+                            
+                            if (this.cropper) {
+                                this.cropper.destroy();
+                            }
+                            
+                            this.cropper = new Cropper(this.$refs.imageElement, {
+                                aspectRatio: this.aspectRatio,
+                                viewMode: 1,
+                                dragMode: 'move',
+                                autoCropArea: 1,
+                                restore: false,
+                                modal: true,
+                                guides: true,
+                                highlight: true,
+                                cropBoxMovable: true,
+                                cropBoxResizable: true,
+                                toggleDragModeOnDblclick: false,
+                            });
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                },
+                
+                cancelCrop() {
+                    this.isCropping = false;
+                    this.$refs.fileInput.value = '';
+                    if (this.cropper) {
+                        this.cropper.destroy();
+                        this.cropper = null;
+                    }
+                },
+                
+                saveCrop() {
+                    if (!this.cropper) return;
+                    this.isSaving = true;
+                    
+                    this.cropper.getCroppedCanvas({
+                        maxWidth: 2400,
+                        maxHeight: 2400,
+                        fillColor: '#fff',
+                        imageSmoothingEnabled: true,
+                        imageSmoothingQuality: 'high',
+                    }).toBlob((blob) => {
+                        if (!blob) {
+                            alert('Failed to crop image');
+                            this.isSaving = false;
+                            return;
+                        }
+                        
+                        const formData = new FormData(this.$refs.form);
+                        // replace the file input with the cropped blob
+                        // getting the name of the file input
+                        const inputName = this.$refs.fileInput.name;
+                        const originalFile = this.$refs.fileInput.files[0];
+                        const newName = originalFile.name ? originalFile.name.split('.')[0] + '_cropped.jpg' : 'cropped.jpg';
+                        
+                        formData.set(inputName, blob, newName);
+                        
+                        // Submit using fetch
+                        fetch(this.actionUrl, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        }).then(async res => {
+                            if (res.ok || res.redirected) {
+                                window.location.reload();
+                            } else {
+                                const data = await res.json().catch(() => ({}));
+                                alert(data.message || 'Error uploading image');
+                                this.isSaving = false;
+                            }
+                        }).catch(err => {
+                            console.error(err);
+                            alert('Error uploading image');
+                            this.isSaving = false;
+                        });
+                    }, 'image/jpeg', 0.85);
+                }
+            }));
         });
     </script>
 </body>

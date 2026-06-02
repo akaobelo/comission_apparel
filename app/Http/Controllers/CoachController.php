@@ -714,7 +714,7 @@ class CoachController extends Controller
         $columns = [
             'First Name', 'Last Name', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Item', 'Types', 'Sizes', 'Qty'
+            'Item', 'Types', 'Sizes', 'Qty', 'Item Price', 'Total Price'
         ];
 
         $callback = function() use ($orders, $columns) {
@@ -742,6 +742,11 @@ class CoachController extends Controller
                         }
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : 'N/A';
 
+                        $design = \App\Models\DesignCatalog::find($item['id'] ?? null);
+                        $itemPrice = $design ? (float) $design->wholesale_price : 0;
+                        $qty = $item['qty'] ?? 1;
+                        $totalPrice = $itemPrice * $qty;
+
                         fputcsv($file, [
                             $order->athlete_first_name,
                             $order->athlete_last_name,
@@ -752,7 +757,9 @@ class CoachController extends Controller
                             $item['name'] ?? 'Unknown Item',
                             $typesStr,
                             $sizesStr,
-                            $item['qty'] ?? 1,
+                            $qty,
+                            number_format($itemPrice, 2, '.', ''),
+                            number_format($totalPrice, 2, '.', ''),
                         ]);
                     }
                 }

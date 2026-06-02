@@ -759,20 +759,45 @@
                 {{-- Store Cover --}}
                 <div class="p-5">
                     <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Store Cover Image (Wide Display)</h4>
-                    <form action="{{ route('coach.store.cover', $store) }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        @if($store->cover_image_path)
-                            <div class="mb-3 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 aspect-[3/1] relative">
-                                <img src="{{ Storage::url($store->cover_image_path) }}" alt="Cover" class="w-full h-full object-cover">
+                    <div x-data="imageCropper('{{ route('coach.store.cover', $store) }}', 4 / 1)">
+                        <form x-ref="form" action="{{ route('coach.store.cover', $store) }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            @if($store->cover_image_path)
+                                <div class="mb-3 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 aspect-[4/1] relative">
+                                    <img src="{{ Storage::url($store->cover_image_path) }}" alt="Cover" class="w-full h-full object-cover">
+                                </div>
+                            @endif
+                            <div class="flex gap-2 flex-col sm:flex-row">
+                                <input type="file" name="cover_image" x-ref="fileInput" @change="fileSelected" accept="image/jpeg,image/png,image/jpg,image/webp" required class="flex-1 block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-lg bg-white focus:outline-none">
+                                <button type="submit" x-show="!isCropping" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase rounded-lg hover:bg-[#a11825] transition-colors whitespace-nowrap">Save Cover</button>
                             </div>
-                        @endif
-                        <div class="flex gap-2 flex-col sm:flex-row">
-                            <input type="file" name="cover_image" accept="image/*" required class="flex-1 block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-lg bg-white focus:outline-none">
-                            <button type="submit" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase rounded-lg hover:bg-[#a11825] transition-colors">Save Cover</button>
+                            <p class="text-[10px] text-slate-500 mt-2">Required: Wide 4:1 aspect ratio image. Max 5MB. You can crop it after selecting.</p>
+                            @error('cover_image')<p class="text-red-500 text-[10px] mt-1 font-bold">{{ $message }}</p>@enderror
+                        </form>
+
+                        <!-- Cropper Modal -->
+                        <div x-show="isCropping" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" @click="cancelCrop"></div>
+                            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+                                <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                                    <h3 class="font-black uppercase tracking-tight text-slate-900 text-lg">Crop Cover Image</h3>
+                                    <button type="button" @click="cancelCrop" class="text-slate-400 hover:text-slate-900 transition-colors focus:outline-none">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                                <div class="bg-slate-900 flex-1 w-full h-[60vh] relative overflow-hidden flex items-center justify-center">
+                                    <img x-ref="imageElement" class="block max-w-full max-h-full">
+                                </div>
+                                <div class="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+                                    <button type="button" @click="cancelCrop" class="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors focus:outline-none">Cancel</button>
+                                    <button type="button" @click="saveCrop" class="px-6 py-2.5 bg-primary text-white text-sm font-bold uppercase tracking-wider rounded-lg hover:bg-[#a11825] transition-colors shadow-sm focus:outline-none flex items-center gap-2" :disabled="isSaving">
+                                        <svg x-show="isSaving" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        <span x-text="isSaving ? 'Saving...' : 'Apply Crop & Upload'"></span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <p class="text-[10px] text-slate-500 mt-2">Max 5MB. High-resolution landscape image recommended.</p>
-                        @error('cover_image')<p class="text-red-500 text-[10px] mt-1 font-bold">{{ $message }}</p>@enderror
-                    </form>
+                    </div>
                 </div>
             </div>
             @endif

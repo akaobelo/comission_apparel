@@ -1113,7 +1113,7 @@ class AdminController extends Controller
 
     public function exportBatchCSV(Request $request, $batchId)
     {
-        $orders = ParentOrder::where('batch_id', $batchId)->get();
+        $orders = ParentOrder::with(['teamStore.items'])->where('batch_id', $batchId)->get();
 
         if ($orders->isEmpty()) abort(404);
 
@@ -1129,7 +1129,7 @@ class AdminController extends Controller
         $columns = [
             'First Name', 'Last Name', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Item', 'Types', 'Sizes', 'Qty', 'Special Notes', 'Edited?'
+            'Item', 'Types', 'Sizes', 'Qty', 'Item Price', 'Total Price', 'Special Notes', 'Edited?'
         ];
 
         $callback = function() use ($orders, $columns) {
@@ -1157,6 +1157,18 @@ class AdminController extends Controller
                         }
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
 
+                        $itemPrice = 0;
+                        if ($order->teamStore) {
+                            $storeItem = $order->teamStore->items->firstWhere('id', $item['id'] ?? null);
+                            $itemPrice = $storeItem ? (float) $storeItem->retail_price : 0;
+                        } else {
+                            $design = \App\Models\DesignCatalog::find($item['id'] ?? null);
+                            $itemPrice = $design ? (float) $design->wholesale_price : 0;
+                        }
+                        
+                        $qty = $item['qty'] ?? 1;
+                        $totalPrice = $itemPrice * $qty;
+
                         fputcsv($file, [
                             $order->athlete_first_name,
                             $order->athlete_last_name,
@@ -1167,7 +1179,9 @@ class AdminController extends Controller
                             $item['name'] ?? 'Unknown Item',
                             $typesStr,
                             $sizesStr,
-                            $item['qty'] ?? 1,
+                            $qty,
+                            number_format($itemPrice, 2, '.', ''),
+                            number_format($totalPrice, 2, '.', ''),
                             $order->special_notes ?? '',
                             $order->is_edited ? 'Yes' : 'No',
                         ]);
@@ -1182,7 +1196,7 @@ class AdminController extends Controller
 
     public function exportBatchAggregationCSV(Request $request, $batchId)
     {
-        $orders = ParentOrder::where('batch_id', $batchId)->get();
+        $orders = ParentOrder::with(['teamStore.items'])->where('batch_id', $batchId)->get();
 
         if ($orders->isEmpty()) abort(404);
 
@@ -1195,7 +1209,7 @@ class AdminController extends Controller
             "Expires"             => "0"
         ];
 
-        $columns = ['Item Name', 'Type', 'Size', 'Total Quantity'];
+        $columns = ['Item Name', 'Type', 'Size', 'Unit Price', 'Total Quantity', 'Total Price'];
         
         $aggregated = [];
 
@@ -1204,6 +1218,15 @@ class AdminController extends Controller
                 foreach ($order->items_json as $item) {
                     $itemQty = max(1, (int)($item['qty'] ?? 1));
 
+                    $itemPrice = 0;
+                    if ($order->teamStore) {
+                        $storeItem = $order->teamStore->items->firstWhere('id', $item['id'] ?? null);
+                        $itemPrice = $storeItem ? (float) $storeItem->retail_price : 0;
+                    } else {
+                        $design = \App\Models\DesignCatalog::find($item['id'] ?? null);
+                        $itemPrice = $design ? (float) $design->wholesale_price : 0;
+                    }
+
                     if (isset($item['components']) && is_array($item['components'])) {
                         foreach ($item['components'] as $comp) {
                             $compQty = $itemQty * max(1, (int)($comp['qty'] ?? 1));
@@ -1211,12 +1234,12 @@ class AdminController extends Controller
                             
                             if (isset($comp['sizes']) && is_array($comp['sizes'])) {
                                 foreach ($comp['sizes'] as $type => $size) {
-                                    $key = "{$name}|{$type}|{$size}";
+                                    $key = "{$name}|{$type}|{$size}|{$itemPrice}";
                                     $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
                                 }
                             } else {
                                 $type = isset($comp['types']) ? implode(', ', $comp['types']) : ($comp['type'] ?? 'N/A');
-                                $key = "{$name}|{$type}|N/A";
+                                $key = "{$name}|{$type}|N/A|{$itemPrice}";
                                 $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
                             }
                         }
@@ -1225,12 +1248,12 @@ class AdminController extends Controller
                         
                         if (isset($item['sizes']) && is_array($item['sizes'])) {
                             foreach ($item['sizes'] as $type => $size) {
-                                $key = "{$name}|{$type}|{$size}";
+                                $key = "{$name}|{$type}|{$size}|{$itemPrice}";
                                 $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
                             }
                         } else {
                             $type = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
-                            $key = "{$name}|{$type}|N/A";
+                            $key = "{$name}|{$type}|N/A|{$itemPrice}";
                             $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
                         }
                     }
@@ -1243,7 +1266,9 @@ class AdminController extends Controller
             fputcsv($file, $columns);
             foreach ($aggregated as $key => $qty) {
                 $parts = explode('|', $key);
-                fputcsv($file, [$parts[0], $parts[1], $parts[2], $qty]);
+                $unitPrice = (float)($parts[3] ?? 0);
+                $totalPrice = $unitPrice * $qty;
+                fputcsv($file, [$parts[0], $parts[1], $parts[2], number_format($unitPrice, 2, '.', ''), $qty, number_format($totalPrice, 2, '.', '')]);
             }
             fclose($file);
         };
