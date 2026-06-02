@@ -3,6 +3,9 @@
 @section('title', $store->name . ' | The Commission Apparel')
 
 @section('content')
+{{-- Spacer to prevent the fixed header from overlapping the cover image --}}
+<div class="w-full bg-black h-[12px] md:h-[20px] lg:h-[84px]"></div>
+
 {{-- Hero Banner --}}
 <div class="relative w-full aspect-[4/1] flex flex-col overflow-hidden">
     <div class="absolute inset-0 bg-slate-950"></div>

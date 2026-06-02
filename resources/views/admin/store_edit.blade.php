@@ -111,7 +111,7 @@
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Store Cover Image</h4>
                         <div class="space-y-4">
                             @if($store->cover_image_path)
-                                <div class="w-full h-32 rounded-xl border-2 border-slate-200 overflow-hidden relative group">
+                                <div class="w-full aspect-[4/1] rounded-xl border-2 border-slate-200 overflow-hidden relative group">
                                     <img src="{{ Storage::url($store->cover_image_path) }}" alt="Cover" class="w-full h-full object-cover">
                                     <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                         <span class="text-white text-xs font-bold uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">Current Cover</span>
