@@ -29,7 +29,7 @@
                 {{ $store->user->sport ?? 'Team Athletics' }}
             </div>
             <h1 class="text-xl sm:text-2xl md:text-5xl font-black uppercase tracking-tight text-slate-900 leading-tight md:leading-none truncate md:overflow-visible md:whitespace-normal">{{ $store->name }}</h1>
-            <p class="text-slate-500 text-[10px] md:text-[1rem] mt-0.5 md:mt-2 truncate md:overflow-visible md:whitespace-normal">Official Custom Apparel Storefront · Coach {{ $store->user->name }}</p>
+            <p class="text-slate-500 text-[10px] md:text-[1rem] mt-0.5 md:mt-2 truncate md:overflow-visible md:whitespace-normal">Official Custom Apparel Storefront | Coach {{ $store->user->name }} | Email: {{ $store->user->email }}</p>
         </div>
     </div>
     @if($store->order_deadline)
