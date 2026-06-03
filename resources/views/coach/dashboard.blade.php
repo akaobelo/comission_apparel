@@ -516,19 +516,24 @@
 
                                     <h3 class="text-xl font-black uppercase tracking-tight text-slate-900 text-center mb-2">Finalize Master Order</h3>
 
-                                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-sm text-slate-700 mb-6 space-y-3">
-                                        <p>Please review your order for accuracy before finalizing.</p>
-                                        <p><strong>Instructions:</strong> Use the <strong>Export CSV</strong> option to download and verify all items, sizes, and quantities. Submit once you have confirmed everything is 100% accurate.</p>
-                                        <p class="text-red-600 font-bold text-xs uppercase tracking-widest mt-2">The store will be closed to new orders.</p>
-                                    </div>
+                                    <form action="{{ route('coach.store.submit', $store) }}" method="POST">
+                                        @csrf
+                                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-sm text-slate-700 mb-6 space-y-3">
+                                            <p>Please review your order for accuracy before finalizing.</p>
+                                            <p><strong>Instructions:</strong> Use the <strong>Export CSV</strong> option to download and verify all items, sizes, and quantities. Submit once you have confirmed everything is 100% accurate.</p>
+                                            <p class="text-red-600 font-bold text-xs uppercase tracking-widest mt-2">The store will be closed to new orders.</p>
+                                        </div>
+                                        
+                                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-6">
+                                            <label class="block text-sm text-slate-700 mb-3 font-medium">Please enter your shipping address exactly as it should appear on the label:</label>
+                                            <textarea name="shipping_address" required rows="3" class="w-full bg-slate-100 border border-slate-200 rounded-lg p-3 text-sm focus:bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-inner text-slate-900" placeholder="Street Address&#10;City, State ZIP"></textarea>
+                                        </div>
 
-                                    <div class="flex gap-3">
-                                        <button @click="openSubmitModal = false" type="button" class="flex-1 py-3 bg-white border border-slate-300 text-slate-700 font-bold uppercase text-xs tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Review Again</button>
-                                        <form action="{{ route('coach.store.submit', $store) }}" method="POST" class="flex-1">
-                                            @csrf
-                                            <button type="submit" class="w-full py-3 bg-secondary text-white font-bold uppercase text-xs tracking-wider rounded-lg hover:bg-[#a11825] transition-colors">Submit Final</button>
-                                        </form>
-                                    </div>
+                                        <div class="flex gap-3">
+                                            <button @click="openSubmitModal = false" type="button" class="flex-1 py-3 bg-white border border-slate-300 text-slate-700 font-bold uppercase text-xs tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Review Again</button>
+                                            <button type="submit" class="flex-1 py-3 bg-secondary text-white font-bold uppercase text-xs tracking-wider rounded-lg hover:bg-[#a11825] transition-colors">Submit Final</button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
                         </div>

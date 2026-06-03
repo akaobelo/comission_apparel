@@ -17,6 +17,7 @@ class TeamStore extends Model
         'package_type',
         'pricing_approved',
         'is_archived',
+        'shipping_address',
     ];
 
     protected $casts = [

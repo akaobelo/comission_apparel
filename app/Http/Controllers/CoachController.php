@@ -268,6 +268,10 @@ class CoachController extends Controller
     {
         if ($store->user_id !== $request->user()->id) abort(403);
 
+        $request->validate([
+            'shipping_address' => 'required|string|max:1000',
+        ]);
+
         $unbatchedOrders = $store->parentOrders()->whereNull('batch_id');
 
         if ($unbatchedOrders->count() === 0) {
@@ -282,7 +286,10 @@ class CoachController extends Controller
             'batch_id' => $batchId
         ]);
 
-        $store->update(['status' => 'submitted_to_admin']);
+        $store->update([
+            'status' => 'submitted_to_admin',
+            'shipping_address' => $request->shipping_address
+        ]);
         
         \Illuminate\Support\Facades\Notification::send(
             \App\Models\User::where('role', 'admin')->get(),

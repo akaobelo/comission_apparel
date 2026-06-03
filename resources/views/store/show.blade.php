@@ -30,7 +30,7 @@
             </div>
             <h1 class="text-xl sm:text-2xl md:text-5xl font-black uppercase tracking-tight text-slate-900 leading-tight md:leading-none truncate md:overflow-visible md:whitespace-normal">{{ $store->name }}</h1>
             <p class="text-slate-500 text-[10px] md:text-[1rem] mt-0.5 md:mt-2 truncate md:overflow-visible md:whitespace-normal">
-                Official Custom Apparel Storefront <span class="mx-1 md:mx-4 text-slate-300">|</span> Coach {{ $store->user->name }} <span class="mx-1 md:mx-4 text-slate-300">|</span> Email: {{ $store->user->email }}
+                Official Custom Apparel Storefront <span class="mx-1 md:mx-4 text-slate-300">|</span> Coach {{ $store->user->name }} <span class="mx-1 md:mx-4 text-slate-300">
             </p>
         </div>
     </div>
@@ -159,7 +159,7 @@
                             <svg class="w-6 h-6 text-slate-400 transition-transform duration-300" :class="athleteInfoOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </button>
-                    
+
                     <div x-show="athleteInfoOpen" x-transition.opacity class="px-6 md:px-8 pb-6 md:pb-8 pt-6">
                         <div class="mb-6 text-sm text-slate-600 space-y-3 border-l-4 border-secondary pl-4 py-1">
                         <p class="font-bold text-slate-900 uppercase">Athlete Information</p>
@@ -200,7 +200,7 @@
                             <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Name on Backpack (if applicable)</label>
                             <input type="text" name="backpack_name" placeholder="e.g. Jordan Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                         </div>
-                        
+
                     </div>
                     </div>
                 </div>
@@ -212,7 +212,7 @@
                         <span>Available Merchandise</span>
                         @if(!$isClosed)<span class="text-sm font-bold text-slate-500"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Selected</span>@endif
                     </h2>
-                    
+
                     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                         @foreach($store->items as $item)
                         @php
@@ -227,7 +227,7 @@
 
                         <div class="flex flex-col group relative transition-all duration-300"
                              :class="items['{{ $item->id }}'].selected ? 'opacity-90' : ''">
-                            
+
                             <!-- Hidden Select -->
                             <input type="checkbox" name="items[{{ $item->id }}][selected]" value="1" x-model="items['{{ $item->id }}'].selected" class="hidden">
                             <input type="hidden" name="items[{{ $item->id }}][name]" value="{{ $item->name }}">
@@ -239,7 +239,7 @@
                             </div>
 
                             <!-- Image Hero -->
-                            <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center" 
+                            <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center"
                                  :class="items['{{ $item->id }}'].selected ? 'ring-2 ring-secondary ring-offset-2' : ''">
                                 @if(!empty($item->image_paths))
                                     @if(count($item->image_paths) > 1)
@@ -251,7 +251,7 @@
                                             >
                                                 <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300 cursor-zoom-in">
                                             </button>
-                                            
+
                                             <!-- Manual Navigation Arrows -->
                                             <button type="button" @click.stop="imgIdx = (imgIdx - 1 + imgs.length) % imgs.length; clearInterval(imgInterval)" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-slate-700 flex items-center justify-center shadow hover:bg-white transition-colors lg:opacity-0 lg:group-hover/slider:opacity-100 focus:outline-none">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -296,7 +296,7 @@
                                     Store Price:
                                     <span class="text-slate-900 font-bold">${{ number_format($item->retail_price, 2) }}</span>
                                 </div>
-                                
+
                                 <div class="mt-auto w-full">
                                     <button type="button" @click.prevent="openPanel('{{ $item->id }}')" class="w-full py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all"
                                             :class="items['{{ $item->id }}'].selected ? 'bg-slate-50 border-2 border-slate-300 text-slate-600' : 'bg-secondary text-white hover:bg-[#a11825] shadow-sm hover:shadow-md border-2 border-transparent'"
@@ -324,7 +324,7 @@
                         <button type="button" class="absolute top-6 left-6 text-white/50 hover:text-white transition-colors z-10" @click="closePanel()">
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
-                        
+
                         <!-- Image Viewer -->
                         <div class="w-full h-full flex items-center justify-center relative pointer-events-none" @click.stop>
                             @foreach($store->items as $item)
@@ -335,7 +335,7 @@
                                              @touchend.window="if(activeItemId === '{{ $item->id }}') { touchEndX = $event.changedTouches[0].screenX; if(touchStartX - touchEndX > 50) { imgIdx = (imgIdx + 1) % imgs.length; } else if(touchEndX - touchStartX > 50) { imgIdx = (imgIdx - 1 + imgs.length) % imgs.length; } }"
                                              @keydown.right.window="if(activeItemId === '{{ $item->id }}' && slideOpen && imgs.length > 1) imgIdx = (imgIdx + 1) % imgs.length"
                                              @keydown.left.window="if(activeItemId === '{{ $item->id }}' && slideOpen && imgs.length > 1) imgIdx = (imgIdx - 1 + imgs.length) % imgs.length">
-                                            
+
                                             <template x-if="imgs.length > 1">
                                                 <button type="button" @click.stop="imgIdx = (imgIdx - 1 + imgs.length) % imgs.length" class="absolute left-4 z-10 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors pointer-events-auto">
                                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -343,7 +343,7 @@
                                             </template>
 
                                             <img :src="imgs[imgIdx]" class="max-w-full max-h-full object-contain drop-shadow-2xl pointer-events-auto rounded-lg select-none">
-                                            
+
                                             <template x-if="imgs.length > 1">
                                                 <button type="button" @click.stop="imgIdx = (imgIdx + 1) % imgs.length" class="absolute right-4 md:right-12 z-10 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors pointer-events-auto">
                                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -365,9 +365,9 @@
                             @endforeach
                         </div>
                     </div>
-                    
+
                     <!-- Panel -->
-                    <div x-show="slideOpen" 
+                    <div x-show="slideOpen"
                          @click.stop
                          x-transition:enter="transition ease-out duration-300 transform"
                          x-transition:enter-start="translate-x-full"
@@ -376,14 +376,14 @@
                          x-transition:leave-start="translate-x-0"
                          x-transition:leave-end="translate-x-full"
                          class="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
-                        
+
                         <div class="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50">
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Select Sizes</h2>
                             <button type="button" @click="closePanel()" class="text-slate-400 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-200 transition-colors">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         </div>
-                        
+
                         <div class="flex-1 overflow-y-auto p-6">
                             @foreach($store->items as $item)
                             @php
@@ -394,7 +394,7 @@
                                 $hasNumber  = $item->designCatalog?->has_number_field ?? false;
                                 $hasNameField = $item->designCatalog?->has_name_field ?? false;
                             @endphp
-                            
+
                             <div x-show="activeItemId === '{{ $item->id }}'" class="space-y-6">
                                 <div>
                                     <h3 class="text-xl font-black text-slate-900 mb-1">{{ $item->name }}</h3>
@@ -407,7 +407,7 @@
                                         </div>
                                     @endif
                                 </div>
-                                
+
                                 <div class="space-y-5">
                                     @if($item->isPackage() && $item->components->isNotEmpty())
                                         @foreach($item->components as $component)
@@ -495,12 +495,12 @@
                 <div x-show="previewOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
                      @touchstart.window="if(previewOpen) touchStartX = $event.changedTouches[0].screenX"
                      @touchend.window="if(previewOpen) { touchEndX = $event.changedTouches[0].screenX; if(touchStartX - touchEndX > 50) { previewIdx = (previewIdx + 1) % previewImgs.length; } else if(touchEndX - touchStartX > 50) { previewIdx = (previewIdx - 1 + previewImgs.length) % previewImgs.length; } }"
-                     @keydown.escape.window="previewOpen = false; document.body.style.overflow = 'auto';" 
-                     @keydown.right.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx + 1) % previewImgs.length" 
+                     @keydown.escape.window="previewOpen = false; document.body.style.overflow = 'auto';"
+                     @keydown.right.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx + 1) % previewImgs.length"
                      @keydown.left.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx - 1 + previewImgs.length) % previewImgs.length">
-                    
+
                     <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" @click="previewOpen = false; document.body.style.overflow = 'auto';"></div>
-                    
+
                     <button
                         type="button"
                         class="absolute top-6 left-6 text-white/60 hover:text-white transition-colors z-[60] focus:outline-none"
@@ -548,7 +548,7 @@
                     <svg class="w-6 h-6 text-slate-400 transition-transform duration-300" :class="rosterOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </div>
             </button>
-            
+
             <div x-show="rosterOpen" x-transition.opacity class="p-6 md:p-8">
                 <div class="mb-6 flex justify-between items-center gap-4">
                     <div class="relative flex-1 max-w-md">
@@ -568,7 +568,7 @@
                 @else
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         @foreach($store->parentOrders as $order)
-                        <div x-data="{ viewModal: false, name: '{{ strtolower(addslashes($order->athlete_name)) }}' }" 
+                        <div x-data="{ viewModal: false, name: '{{ strtolower(addslashes($order->athlete_name)) }}' }"
                              x-show="search === '' || name.includes(search.toLowerCase())"
                              class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between shadow-sm hover:border-primary/40 transition-colors">
                             <div class="flex items-center gap-3">
@@ -604,7 +604,7 @@
                                                     <div class="p-4 rounded-xl border border-slate-200 bg-slate-50">
                                                         <div class="font-bold text-slate-900 text-sm mb-1">{{ $item['name'] ?? 'Unknown Item' }}</div>
                                                         <div class="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Qty: {{ $item['qty'] ?? 1 }}</div>
-                                                        
+
                                                         @if(!empty($item['sizes']) && is_array($item['sizes']))
                                                             <div class="grid grid-cols-2 gap-2 mt-2">
                                                                 @foreach($item['sizes'] as $type => $size)
