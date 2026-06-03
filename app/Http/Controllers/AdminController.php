@@ -761,7 +761,7 @@ class AdminController extends Controller
     {
         $store->load(['user', 'items', 'parentOrders']);
         $financials = \App\Models\ParentOrder::calculateBatchFinancials($store->parentOrders, $store);
-        $allDesigns = \App\Models\DesignCatalog::latest()->get();
+        $allDesigns = \App\Models\DesignCatalog::orderBy('sort_order', 'asc')->get();
         return view('admin.store_edit', compact('store', 'financials', 'allDesigns'));
     }
 

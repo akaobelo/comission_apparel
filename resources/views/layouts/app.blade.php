@@ -17,6 +17,10 @@
     <style>
         [x-cloak] { display: none !important; }
     </style>
+    
+    <!-- Cropper.js -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -135,6 +139,84 @@
                     }
                 }
             }
+        });
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('imageCropper', (uploadUrl, aspectRatio) => ({
+                isCropping: false,
+                isSaving: false,
+                cropper: null,
+                uploadUrl: uploadUrl,
+                aspectRatio: aspectRatio,
+
+                fileSelected(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.$refs.imageElement.src = e.target.result;
+                        this.isCropping = true;
+                        
+                        this.$nextTick(() => {
+                            if (this.cropper) {
+                                this.cropper.destroy();
+                            }
+                            this.cropper = new Cropper(this.$refs.imageElement, {
+                                aspectRatio: this.aspectRatio,
+                                viewMode: 1,
+                                autoCropArea: 1,
+                            });
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                },
+
+                cancelCrop() {
+                    this.isCropping = false;
+                    if (this.cropper) {
+                        this.cropper.destroy();
+                        this.cropper = null;
+                    }
+                    this.$refs.fileInput.value = '';
+                },
+
+                saveCrop() {
+                    if (!this.cropper) return;
+                    this.isSaving = true;
+
+                    this.cropper.getCroppedCanvas().toBlob((blob) => {
+                        const formData = new FormData();
+                        formData.append('cover_image', blob, 'cover.jpg');
+                        // Add method spoofing if needed, but the form uses POST anyway
+                        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+                        if (tokenMeta) {
+                            formData.append('_token', tokenMeta.content);
+                        }
+
+                        fetch(this.uploadUrl, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                window.location.reload();
+                            } else {
+                                alert('Failed to upload image');
+                                this.isSaving = false;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('An error occurred while uploading.');
+                            this.isSaving = false;
+                        });
+                    }, 'image/jpeg', 0.9);
+                }
+            }));
         });
     </script>
 </body>
