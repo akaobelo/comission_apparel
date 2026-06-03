@@ -169,7 +169,7 @@
                             <p class="text-sm text-slate-500 font-medium">No designs in the catalog yet.</p>
                         </div>
                     @else
-                        <div x-data="{ catalogOpen: false }" class="mb-8">
+                        <div x-data="{ catalogOpen: false, searchQuery: '' }" class="mb-8">
                             <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-sm">
                                 <div>
                                     <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Design Catalog</h4>
@@ -197,14 +197,20 @@
                                      class="relative w-full max-w-6xl max-h-[90vh] bg-slate-50 rounded-2xl shadow-2xl flex flex-col mx-4 overflow-hidden">
                                     
                                     <!-- Header -->
-                                    <div class="flex items-center justify-between p-6 bg-white border-b border-slate-200">
+                                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 bg-white border-b border-slate-200 gap-4">
                                         <div>
                                             <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Design Catalog</h2>
                                             <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-bold">Add designs to the store</p>
                                         </div>
-                                        <button type="button" @click="catalogOpen = false" class="text-slate-400 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-100 transition-colors">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                        </button>
+                                        <div class="flex items-center gap-4 w-full sm:w-auto">
+                                            <div class="relative w-full sm:w-64">
+                                                <input type="text" x-model="searchQuery" placeholder="Search by name..." class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                            </div>
+                                            <button type="button" @click="catalogOpen = false" class="text-slate-400 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-100 transition-colors flex-shrink-0">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <!-- Grid Container -->
@@ -214,7 +220,7 @@
                                                 @php 
                                                     $alreadyAdded = $store->items->pluck('design_catalog_id')->contains($design->id); 
                                                 @endphp
-                                                <div x-data="{ added: {{ $alreadyAdded ? 'true' : 'false' }}, submitting: false }" @item-removed.window="if($event.detail.id == {{ $design->id }}) added = false" class="flex flex-col group transition-opacity duration-300" :class="added ? 'opacity-80' : ''">
+                                                <div x-data="{ added: {{ $alreadyAdded ? 'true' : 'false' }}, submitting: false }" x-show="searchQuery === '' || '{{ addslashes(strtolower($design->name)) }}'.includes(searchQuery.toLowerCase())" @item-removed.window="if($event.detail.id == {{ $design->id }}) added = false" class="flex flex-col group transition-opacity duration-300" :class="added ? 'opacity-80' : ''">
                                                     <!-- Image Hero -->
                                                     <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center" :class="added ? 'ring-2 ring-secondary ring-offset-2' : ''">
                                                         @if(!empty($design->image_paths))
