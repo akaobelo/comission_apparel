@@ -115,6 +115,7 @@
         {{-- Admin Navigation Tabs --}}
         <div class="flex overflow-x-auto pb-0 mb-8 border-b border-slate-200 gap-8 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-hide">
             <button @click="setTab('stores')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'stores' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Stores & Orders</button>
+            <button @click="setTab('total_sales')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'total_sales' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Total Sales</button>
             <button @click="setTab('coaches')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'coaches' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Coaches</button>
             <button @click="setTab('catalog')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'catalog' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Design Catalog</button>
             <button @click="setTab('landing')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'landing' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Landing Page Settings</button>
@@ -122,6 +123,36 @@
             <button @click="setTab('sizing_charts')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'sizing_charts' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Sizing Charts</button>
             <button @click="setTab('campaigns')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'campaigns' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Campaign Stores</button>
             <button @click="setTab('security')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'security' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Security Logs</button>
+        </div>
+
+        {{-- ═══ TOTAL SALES TAB ═══ --}}
+        <div x-show="activeAdminTab === 'total_sales'" x-cloak class="space-y-8">
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Global Sales Summary
+                    </h2>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Including: In Production, Shipped, Delivered</p>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                            <h3 class="text-xs font-black uppercase tracking-wider text-slate-500 mb-1">Total Sales Collected</h3>
+                            <p class="text-3xl font-black text-slate-900">${{ number_format($globalSalesSummary['total_sales'], 2) }}</p>
+                            <p class="text-xs text-slate-500 mt-2 font-medium">{{ $globalSalesSummary['orders_count'] }} orders / {{ $globalSalesSummary['total_items_sold'] }} items</p>
+                        </div>
+                        <div class="bg-emerald-50 rounded-xl p-5 border border-emerald-200">
+                            <h3 class="text-xs font-black uppercase tracking-wider text-emerald-600 mb-1">Due to TCA (Wholesale)</h3>
+                            <p class="text-3xl font-black text-emerald-700">${{ number_format($globalSalesSummary['total_wholesale'], 2) }}</p>
+                        </div>
+                        <div class="bg-blue-50 rounded-xl p-5 border border-blue-200">
+                            <h3 class="text-xs font-black uppercase tracking-wider text-blue-600 mb-1">Proceeds to Clubs</h3>
+                            <p class="text-3xl font-black text-blue-700">${{ number_format($globalSalesSummary['net_proceeds'], 2) }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         {{-- ═══ STORES & ORDERS TAB ═══ --}}

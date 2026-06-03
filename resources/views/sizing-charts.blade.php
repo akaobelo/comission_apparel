@@ -10,18 +10,21 @@
             <p class="text-slate-600 text-lg max-w-2xl mx-auto">Review our sizing charts below to ensure the perfect fit for your custom apparel.</p>
         </div>
 
-        <div class="space-y-16">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 mb-10">
             @forelse($sizingCharts as $chart)
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-6 bg-slate-900 border-b border-slate-800">
-                    <h2 class="text-2xl font-black uppercase tracking-wide text-white">{{ $chart->title }}</h2>
+            <div class="flex flex-col group cursor-pointer" @click="activeImage = '{{ $chart->image_path }}'">
+                <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center border border-slate-200">
+                    <img src="{{ $chart->image_path }}" alt="{{ $chart->title }}" class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105">
                 </div>
-                <div class="p-6 flex justify-center bg-white">
-                    <img src="{{ $chart->image_path }}" alt="{{ $chart->title }}" class="max-w-full h-auto rounded-lg cursor-pointer transition-transform hover:scale-[1.02]" @click="activeImage = '{{ $chart->image_path }}'">
+                <div class="pt-3 flex flex-col text-center items-center w-full px-1">
+                    <span class="text-xs md:text-sm font-medium text-red-600 mb-0.5 w-full truncate">View Size Chart</span>
+                    <h2 class="text-sm md:text-base font-bold truncate w-full group-hover:text-secondary transition-colors" style="font-family: 'Arial Narrow', 'Franklin Gothic Medium', sans-serif; color: #0f172a;" title="{{ $chart->title }}">
+                        {{ $chart->title }}
+                    </h2>
                 </div>
             </div>
             @empty
-            <div class="text-center text-slate-500 py-12">
+            <div class="col-span-full text-center text-slate-500 py-12">
                 <p>Sizing charts are coming soon. Please check back later!</p>
             </div>
             @endforelse

@@ -155,10 +155,60 @@ class AdminController extends Controller
             $q->where('role', 'admin');
         })->latest()->get();
 
+        $globalOrders = \App\Models\ParentOrder::whereIn('status', ['In Production', 'Shipped', 'Delivered'])->get();
+        $storeIds = $globalOrders->pluck('team_store_id')->filter()->unique();
+        $storesMap = TeamStore::whereIn('id', $storeIds)->with('items')->get()->keyBy('id');
+        
+        $globalSalesSummary = [
+            'orders_count' => 0,
+            'total_sales' => 0,
+            'total_wholesale' => 0,
+            'net_proceeds' => 0,
+            'total_items_sold' => 0,
+        ];
+        
+        $designCatalogById = \App\Models\DesignCatalog::all()->keyBy('id');
+
+        foreach ($globalOrders as $order) {
+            $store = $order->team_store_id ? $storesMap->get($order->team_store_id) : null;
+            $priceByItemId = $store ? $store->items->keyBy('id') : collect();
+            
+            $orderTotal = 0;
+            $orderWholesaleTotal = 0;
+            $orderItemsCount = 0;
+            $items = is_array($order->items_json) ? $order->items_json : [];
+
+            foreach ($items as $orderedItem) {
+                $itemId = isset($orderedItem['id']) ? (int) $orderedItem['id'] : null;
+                $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
+                $orderItemsCount += $qty;
+
+                if ($store) {
+                    $storeItem = $itemId ? $priceByItemId->get($itemId) : null;
+                    $retailPrice = $storeItem ? (float) $storeItem->retail_price : 0;
+                    $wholesalePrice = $storeItem ? (float) $storeItem->wholesale_price : 0;
+                } else {
+                    $design = $itemId ? $designCatalogById->get($itemId) : null;
+                    $wholesalePrice = $design ? (float) $design->wholesale_price : 0;
+                    $retailPrice = $wholesalePrice;
+                }
+                
+                $orderTotal += ($retailPrice * $qty);
+                $orderWholesaleTotal += ($wholesalePrice * $qty);
+            }
+            
+            $globalSalesSummary['total_sales'] += $orderTotal;
+            $globalSalesSummary['total_wholesale'] += $orderWholesaleTotal;
+            $globalSalesSummary['total_items_sold'] += $orderItemsCount;
+            $globalSalesSummary['orders_count']++;
+        }
+        
+        $globalSalesSummary['net_proceeds'] = $globalSalesSummary['total_sales'] - $globalSalesSummary['total_wholesale'];
+
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStoreBatches',
             'designCatalog', 'productionStores', 'quoteRequests', 'quoteRequestsTotal', 'newQuoteRequestsCount', 'landingCollections', 'allStores', 'allCoaches',
-            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'archivedOrderBatches'
+            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'archivedOrderBatches', 'globalSalesSummary'
         ));
     }
 
