@@ -781,7 +781,6 @@
                                             </form>
                                             <p class="text-[10px] text-slate-400 mt-2">Required: Wide 4:1 aspect ratio image. Max 5MB. You can crop it after selecting.</p>
                                             @error('cover_image')<p class="text-red-500 text-[10px] mt-1 font-bold">{{ $message }}</p>@enderror
-                                        </div>
 
                         <!-- Cropper Modal -->
                         <div x-show="isCropping" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -1192,7 +1191,7 @@
             </div>
         </div>
     </div>
-</div>
+    </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
