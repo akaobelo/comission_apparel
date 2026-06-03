@@ -711,6 +711,7 @@
                 </div>
             </div>
         </div>
+        </div> <!-- Close left column -->
 
         {{-- RIGHT: Team Builder --}}
         <div class="space-y-5">
@@ -1191,6 +1192,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
