@@ -759,15 +759,15 @@
                 {{-- Store Cover --}}
                 <div class="p-5">
                     <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Store Cover Image (Wide Display)</h4>
+                    @if($store->cover_image_path)
+                        <div class="w-full aspect-[4/1] rounded-xl border-2 border-slate-200 overflow-hidden relative group mb-4">
+                            <img src="{{ Storage::url($store->cover_image_path) }}" alt="Cover" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <span class="text-white text-xs font-bold uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">Current Cover</span>
+                            </div>
+                        </div>
+                    @endif
                     <div x-data="imageCropper('{{ route('coach.store.cover', $store) }}', 4 / 1)">
-                                            <div class="w-full aspect-[4/1] rounded-xl border-2 border-slate-200 overflow-hidden relative group">
-                                                <img src="{{ Storage::url($store->cover_image_path) }}" alt="Cover" class="w-full h-full object-cover">
-                                                <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                    <span class="text-white text-xs font-bold uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">Current Cover</span>
-                                                </div>
-                                            </div>
-                                        @endif
-                                        <div x-data="imageCropper('{{ route('coach.store.cover', $store) }}', 4 / 1)">
                                             <form x-ref="form" action="{{ route('coach.store.cover', $store) }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
                                                 @csrf
                                                 <input type="file" name="cover_image" x-ref="fileInput" @change="fileSelected" accept="image/jpeg,image/png,image/jpg,image/webp" required class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-colors">

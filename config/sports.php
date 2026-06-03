@@ -16,6 +16,7 @@ return [
         'Hockey',
         'Junkanoo',
         'Lacrosse',
+        'Physical Education (P.E.)',
         'Rugby',
         'Soccer',
         'Softball',

@@ -371,6 +371,7 @@
                                                         <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
                                                         <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
                                                         <option value="Shipped" @if(($batchOrders->first()?->status ?? '') == 'Shipped') selected @endif>Shipped</option>
+                                                        <option value="Delivered" @if(($batchOrders->first()?->status ?? '') == 'Delivered') selected @endif>Delivered</option>
                                                     </select>
                                                 </form>
                                             @endif
@@ -451,6 +452,7 @@
                                                 <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
                                                 <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
                                                 <option value="Shipped" @if(($batchOrders->first()?->status ?? '') == 'Shipped') selected @endif>Shipped</option>
+                                                <option value="Delivered" @if(($batchOrders->first()?->status ?? '') == 'Delivered') selected @endif>Delivered</option>
                                             </select>
                                         </form>
                                     </div>
@@ -551,7 +553,10 @@
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-6 border-b border-slate-200 bg-slate-50">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Coaches Database</h2>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Coaches Database</h2>
+                            <a href="{{ route('admin.coaches.export') }}" class="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm whitespace-nowrap">Export CSV</a>
+                        </div>
                         <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
                             <div class="relative flex-1 md:w-72">
                                 <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>

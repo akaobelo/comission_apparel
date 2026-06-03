@@ -217,6 +217,37 @@ class AdminController extends Controller
             ->with('success', "Coach {$name} has been removed from the system.");
     }
 
+    public function exportCoaches()
+    {
+        $coaches = User::where('role', 'coach')->get();
+        $filename = "coaches_export_" . date('Y-m-d_H-i') . ".csv";
+        $handle = fopen('php://output', 'w');
+        
+        ob_start();
+        fputcsv($handle, ['ID', 'First Name', 'Last Name', 'Email', 'Organization', 'Sport', 'Status', 'Phone', 'Created At']);
+        
+        foreach ($coaches as $coach) {
+            fputcsv($handle, [
+                $coach->id,
+                $coach->first_name,
+                $coach->last_name,
+                $coach->email,
+                $coach->organization,
+                $coach->sport,
+                $coach->status,
+                $coach->phone,
+                $coach->created_at->format('Y-m-d H:i:s')
+            ]);
+        }
+        fclose($handle);
+        
+        $csv = ob_get_clean();
+        
+        return response($csv)
+            ->header('Content-Type', 'text/csv')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
     // ─── DESIGN CATALOG MANAGEMENT ───────────────────────────────────────────────
 
     public function createDesign(Request $request)

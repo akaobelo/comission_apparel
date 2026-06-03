@@ -177,6 +177,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
     // Coach CRUD
+    Route::get('/admin/coaches/export', [AdminController::class, 'exportCoaches'])->name('admin.coaches.export');
     Route::get('/admin/coach/{user}/edit', [AdminController::class, 'editCoach'])->name('admin.coach.edit');
     Route::post('/admin/coach/{user}/update', [AdminController::class, 'updateCoach'])->name('admin.coach.update');
     Route::post('/admin/coach/{user}/reset-password', [AdminController::class, 'resetCoachPassword'])->name('admin.coach.reset-password');
