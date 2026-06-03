@@ -12,6 +12,7 @@ use App\Models\QuoteRequest;
 use App\Models\StoreItem;
 use App\Models\PasswordResetLog;
 use App\Models\Testimonial;
+use App\Models\SizingChart;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
 
@@ -142,6 +143,8 @@ class AdminController extends Controller
 
         $testimonials = Testimonial::orderBy('sort_order', 'asc')->get();
 
+        $sizingCharts = SizingChart::orderBy('sort_order', 'asc')->get();
+
         $heroSettings = [
             'subtitle'   => \App\Models\SiteSetting::where('key', 'hero_subtitle')->value('value') ?? 'Premium armor tailored for programs that demand greatness. Built for the modern athlete, delivered with lightning speed.',
             'media_path' => \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value'),
@@ -155,7 +158,7 @@ class AdminController extends Controller
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStoreBatches',
             'designCatalog', 'productionStores', 'quoteRequests', 'quoteRequestsTotal', 'newQuoteRequestsCount', 'landingCollections', 'allStores', 'allCoaches',
-            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'archivedOrderBatches'
+            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'archivedOrderBatches'
         ));
     }
 
@@ -1380,6 +1383,79 @@ class AdminController extends Controller
         }
         $collection->delete();
         return redirect()->route('admin.dashboard')->with('success', 'Landing collection removed.');
+    }
+
+    // ─── SIZING CHARTS ────────────────────────────────────────────────────────────
+
+    public function createSizingChart(Request $request)
+    {
+        $validated = $request->validate([
+            'title'       => ['required', 'string', 'max:255'],
+            'sort_order'  => ['required', 'integer'],
+            'image'       => ['required', 'image', 'max:10240'], // 10MB max
+        ]);
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('sizing_charts', 'public');
+            $imagePath = '/storage/' . $path;
+        }
+
+        SizingChart::create([
+            'title'       => $validated['title'],
+            'sort_order'  => $validated['sort_order'],
+            'image_path'  => $imagePath,
+            'is_active'   => true,
+        ]);
+
+        return redirect()->route('admin.dashboard')->with('success', 'Sizing chart added successfully.');
+    }
+
+    public function updateSizingChart(Request $request, SizingChart $chart)
+    {
+        $validated = $request->validate([
+            'title'       => ['required', 'string', 'max:255'],
+            'sort_order'  => ['required', 'integer'],
+            'image'       => ['nullable', 'image', 'max:10240'],
+        ]);
+
+        if ($request->hasFile('image')) {
+            if ($chart->image_path) {
+                $pathToRemove = str_replace('/storage/', '', $chart->image_path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            }
+            $path = $request->file('image')->store('sizing_charts', 'public');
+            $validated['image_path'] = '/storage/' . $path;
+        }
+
+        $chart->update($validated);
+
+        return redirect()->route('admin.dashboard')->with('success', 'Sizing chart updated successfully.');
+    }
+
+    public function deleteSizingChart(SizingChart $chart)
+    {
+        if ($chart->image_path) {
+            $pathToRemove = str_replace('/storage/', '', $chart->image_path);
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+        }
+        $chart->delete();
+        return redirect()->route('admin.dashboard')->with('success', 'Sizing chart removed.');
+    }
+
+    public function updateSizingChartOrder(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.id' => 'required|exists:sizing_charts,id',
+            'items.*.order' => 'required|integer',
+        ]);
+
+        foreach ($request->items as $item) {
+            SizingChart::where('id', $item['id'])->update(['sort_order' => $item['order']]);
+        }
+
+        return response()->json(['success' => true]);
     }
 
     // ─── TESTIMONIALS ────────────────────────────────────────────────────────────

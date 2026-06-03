@@ -36,6 +36,7 @@
                                         <option value="Design Approved" {{ $firstOrder->status === 'Design Approved' ? 'selected' : '' }}>Design Approved</option>
                                         <option value="In Production" {{ $firstOrder->status === 'In Production' ? 'selected' : '' }}>In Production</option>
                                         <option value="Shipped" {{ $firstOrder->status === 'Shipped' ? 'selected' : '' }}>Shipped</option>
+                                        <option value="Delivered" {{ $firstOrder->status === 'Delivered' ? 'selected' : '' }}>Delivered</option>
                                         <option value="Completed" {{ $firstOrder->status === 'Completed' ? 'selected' : '' }}>Completed</option>
                                     </select>
                                 </form>

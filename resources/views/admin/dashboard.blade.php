@@ -119,6 +119,7 @@
             <button @click="setTab('catalog')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'catalog' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Design Catalog</button>
             <button @click="setTab('landing')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'landing' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Landing Page Settings</button>
             <button @click="setTab('testimonials')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'testimonials' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Testimonials</button>
+            <button @click="setTab('sizing_charts')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'sizing_charts' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Sizing Charts</button>
             <button @click="setTab('campaigns')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'campaigns' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Campaign Stores</button>
             <button @click="setTab('security')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'security' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Security Logs</button>
         </div>
@@ -369,9 +370,11 @@
                                                     <select name="status" onchange="this.form.submit()" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full max-w-[130px]">
                                                         <option value="Submitted to Admin" @if(($batchOrders->first()?->status ?? '') == 'Submitted to Admin') selected @endif>Submitted to Admin</option>
                                                         <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
+                                                        <option value="Design Approved" @if(($batchOrders->first()?->status ?? '') == 'Design Approved') selected @endif>Design Approved</option>
                                                         <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
                                                         <option value="Shipped" @if(($batchOrders->first()?->status ?? '') == 'Shipped') selected @endif>Shipped</option>
                                                         <option value="Delivered" @if(($batchOrders->first()?->status ?? '') == 'Delivered') selected @endif>Delivered</option>
+                                                        <option value="Completed" @if(($batchOrders->first()?->status ?? '') == 'Completed') selected @endif>Completed</option>
                                                     </select>
                                                 </form>
                                             @endif
@@ -450,9 +453,11 @@
                                             <select name="status" onchange="this.form.submit()" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full max-w-[130px]">
                                                 <option value="Submitted to Admin" @if(($batchOrders->first()?->status ?? '') == 'Submitted to Admin') selected @endif>Submitted to Admin</option>
                                                 <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
+                                                <option value="Design Approved" @if(($batchOrders->first()?->status ?? '') == 'Design Approved') selected @endif>Design Approved</option>
                                                 <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
                                                 <option value="Shipped" @if(($batchOrders->first()?->status ?? '') == 'Shipped') selected @endif>Shipped</option>
                                                 <option value="Delivered" @if(($batchOrders->first()?->status ?? '') == 'Delivered') selected @endif>Delivered</option>
+                                                <option value="Completed" @if(($batchOrders->first()?->status ?? '') == 'Completed') selected @endif>Completed</option>
                                             </select>
                                         </form>
                                     </div>
@@ -2136,6 +2141,98 @@
                     </div>
                     @else
                     <div class="p-8 text-center text-slate-400 text-sm">No testimonials added yet.</div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        {{-- ═══ SIZING CHARTS TAB ═══ --}}
+        <div x-show="activeAdminTab === 'sizing_charts'" x-cloak class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Add New Sizing Chart -->
+            <div class="space-y-8">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50">
+                        <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Sizing Chart</h2>
+                        <p class="text-xs text-slate-500 mt-1">Upload a new sizing chart image.</p>
+                    </div>
+                    <div class="p-6">
+                        <form action="{{ route('admin.sizing-charts.create') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
+                            @csrf
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Chart Title *</label>
+                                <input type="text" name="title" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" placeholder="e.g. Volleyball: Female Tops">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Sort Order *</label>
+                                    <input type="number" name="sort_order" value="0" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Chart Image *</label>
+                                    <input type="file" name="image" accept="image/*" required class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:tracking-wider file:bg-secondary file:text-white hover:file:bg-[#a11825]">
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full py-2.5 bg-secondary hover:bg-[#a11825] text-white text-sm font-bold uppercase tracking-wider rounded-lg transition-colors">
+                                Add Sizing Chart
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Existing Sizing Charts -->
+            <div class="space-y-8">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Manage Sizing Charts</h2>
+                            <p class="text-xs text-slate-500 mt-1">Review, reorder, and delete charts.</p>
+                        </div>
+                        <div>
+                            <form id="bulk-sizing-charts-sort-form" action="{{ route('admin.sizing-charts.bulk-sort') }}" method="POST">
+                                @csrf
+                            </form>
+                            <button type="submit" form="bulk-sizing-charts-sort-form" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort</button>
+                        </div>
+                    </div>
+                    @if($sizingCharts->isNotEmpty())
+                    <div class="divide-y divide-slate-100 max-h-[800px] overflow-y-auto">
+                        @foreach($sizingCharts as $chart)
+                        <div class="p-5 hover:bg-slate-50 flex gap-4 transition-colors">
+                            @if($chart->image_path)
+                                <img src="{{ $chart->image_path }}" alt="Sizing Chart" class="w-16 h-16 rounded object-cover shrink-0 border border-slate-200">
+                            @endif
+                            <div class="flex-1">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <h3 class="text-sm font-bold text-slate-900">{{ $chart->title }}</h3>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <form action="{{ route('admin.sizing-charts.delete', $chart->id) }}" method="POST" onsubmit="return confirm('Delete this sizing chart permanently?')">
+                                            @csrf @method('DELETE')
+                                            <button class="text-red-400 hover:text-red-600 p-1 transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span>Sort Order:</span>
+                                        <input type="number" 
+                                               name="items[{{ $loop->index }}][order]" 
+                                               value="{{ $chart->sort_order }}" 
+                                               form="bulk-sizing-charts-sort-form"
+                                               class="w-16 bg-white border border-slate-300 rounded px-2 py-1 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm text-center">
+                                        <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $chart->id }}" form="bulk-sizing-charts-sort-form">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <div class="p-8 text-center text-slate-400 text-sm">No sizing charts added yet.</div>
                     @endif
                 </div>
             </div>

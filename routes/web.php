@@ -33,6 +33,10 @@ Route::get('/testimonials', function () {
     return view('testimonials.index', compact('testimonials'));
 })->name('testimonials.index');
 Route::get('/how-it-works', function () { return view('how-it-works'); })->name('how-it-works');
+Route::get('/sizing-charts', function () { 
+    $sizingCharts = \App\Models\SizingChart::where('is_active', true)->orderBy('sort_order', 'asc')->get();
+    return view('sizing-charts', compact('sizingCharts')); 
+})->name('sizing-charts');
 Route::get('/quote', [QuoteRequestController::class, 'show'])->name('quote.show');
 Route::post('/quote', [QuoteRequestController::class, 'store'])->name('quote.store');
 Route::get('/quote/success', function () { return view('quote_success'); })->name('quote.success');
@@ -246,6 +250,12 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/landing-collections', [AdminController::class, 'createCollection'])->name('admin.landing.create');
     Route::put('/admin/landing-collections/{collection}', [AdminController::class, 'updateCollection'])->name('admin.landing.update');
     Route::delete('/admin/landing-collections/{collection}', [AdminController::class, 'deleteCollection'])->name('admin.landing.delete');
+
+    // Sizing Charts Management
+    Route::post('/admin/sizing-charts/bulk-sort', [AdminController::class, 'updateSizingChartOrder'])->name('admin.sizing-charts.bulk-sort');
+    Route::post('/admin/sizing-charts', [AdminController::class, 'createSizingChart'])->name('admin.sizing-charts.create');
+    Route::put('/admin/sizing-charts/{chart}', [AdminController::class, 'updateSizingChart'])->name('admin.sizing-charts.update');
+    Route::delete('/admin/sizing-charts/{chart}', [AdminController::class, 'deleteSizingChart'])->name('admin.sizing-charts.delete');
 
     // Hero Settings
     Route::post('/admin/hero-settings', [AdminController::class, 'updateHeroSettings'])->name('admin.hero-settings.update');
