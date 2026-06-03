@@ -126,6 +126,44 @@
         {{-- ═══ STORES & ORDERS TAB ═══ --}}
         <div x-show="activeAdminTab === 'stores'" x-cloak class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="space-y-8">
+                {{-- ═══ PENDING STORE APPROVALS ═══ --}}
+            @if($pendingStores->isNotEmpty())
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-200 bg-orange-50 flex items-center justify-between">
+                    <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Pending Store Approvals
+                        <span class="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-500 text-white text-[10px] font-black">{{ $pendingStores->count() }}</span>
+                    </h2>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    @foreach($pendingStores as $store)
+                    <div class="p-5 flex flex-col md:flex-row md:items-center gap-4 justify-between">
+                        <div>
+                            <div class="font-bold text-slate-900 uppercase">{{ $store->name }}</div>
+                            <div class="text-sm text-slate-500 mt-0.5">
+                                Coach: <span class="font-semibold text-slate-700">{{ $store->user->name }}</span> —
+                                {{ $store->user->organization }} — Package: <span class="font-bold text-primary uppercase text-xs">{{ str_replace('_', ' ', $store->package_type ?? 'N/A') }}</span>
+                            </div>
+                            <div class="text-xs text-slate-400 mt-1">Requested {{ $store->created_at->diffForHumans() }}</div>
+                        </div>
+                        <div class="flex gap-2 flex-shrink-0">
+                            <form action="{{ route('admin.stores.approve', $store) }}" method="POST">
+                                @csrf
+                                <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Approve</button>
+                            </form>
+                            <form action="{{ route('admin.stores.decline', $store) }}" method="POST">
+                                @csrf
+                                <button class="px-4 py-2 bg-white border border-red-300 text-red-600 hover:bg-red-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Decline</button>
+                            </form>
+                            <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Edit</a>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
                 <div x-data="{ expanded: false, init() { const k = 'admin_quote_inquiries'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                     <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
                         <div>
@@ -212,44 +250,6 @@
                         @endif
                     </div>
                 </div>
-
-                {{-- ═══ PENDING STORE APPROVALS ═══ --}}
-            @if($pendingStores->isNotEmpty())
-            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div class="p-6 border-b border-slate-200 bg-orange-50 flex items-center justify-between">
-                    <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        Pending Store Approvals
-                        <span class="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-500 text-white text-[10px] font-black">{{ $pendingStores->count() }}</span>
-                    </h2>
-                </div>
-                <div class="divide-y divide-slate-100">
-                    @foreach($pendingStores as $store)
-                    <div class="p-5 flex flex-col md:flex-row md:items-center gap-4 justify-between">
-                        <div>
-                            <div class="font-bold text-slate-900 uppercase">{{ $store->name }}</div>
-                            <div class="text-sm text-slate-500 mt-0.5">
-                                Coach: <span class="font-semibold text-slate-700">{{ $store->user->name }}</span> —
-                                {{ $store->user->organization }} — Package: <span class="font-bold text-primary uppercase text-xs">{{ str_replace('_', ' ', $store->package_type ?? 'N/A') }}</span>
-                            </div>
-                            <div class="text-xs text-slate-400 mt-1">Requested {{ $store->created_at->diffForHumans() }}</div>
-                        </div>
-                        <div class="flex gap-2 flex-shrink-0">
-                            <form action="{{ route('admin.stores.approve', $store) }}" method="POST">
-                                @csrf
-                                <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Approve</button>
-                            </form>
-                            <form action="{{ route('admin.stores.decline', $store) }}" method="POST">
-                                @csrf
-                                <button class="px-4 py-2 bg-white border border-red-300 text-red-600 hover:bg-red-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Decline</button>
-                            </form>
-                            <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Edit</a>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-            @endif
 
             </div>
             <div class="space-y-8">
