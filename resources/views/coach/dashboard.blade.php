@@ -698,10 +698,10 @@
                                     </button>
                                 </div>
                             </div>
+                            </form>
                         @else
                             <p class="text-xs text-slate-400 text-center py-4">No items added to store yet.</p>
                         @endif
-                    </div>
                     </div>
                 </div>
             </div>
