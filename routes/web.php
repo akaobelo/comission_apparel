@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -157,6 +157,8 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     Route::post('/coach/item/{item}/markup', [CoachController::class, 'updateItemMarkup'])->name('coach.store.item.markup');
     Route::post('/coach/store/{store}/items/bulk-markup', [CoachController::class, 'updateBulkItemMarkup'])->name('coach.store.items.bulk-markup');
     Route::post('/coach/store/{store}/deadline', [CoachController::class, 'updateDeadline'])->name('coach.store.deadline');
+    Route::post('/coach/store/{store}/roster/paste', [CoachController::class, 'addRosterPaste'])->name('coach.store.roster.paste');
+    Route::post('/coach/store/{store}/roster/upload', [CoachController::class, 'addRosterUpload'])->name('coach.store.roster.upload');
     Route::get('/coach/store/{store}/export', [CoachController::class, 'exportOrderCSV'])->name('coach.store.export');
     Route::post('/coach/store/{store}/submit', [CoachController::class, 'submitMasterOrder'])->name('coach.store.submit');
     Route::post('/coach/store/{store}/reopen', [CoachController::class, 'reopenStore'])->name('coach.store.reopen');
@@ -270,3 +272,5 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     // Quotes
     Route::post('/admin/quote/{quoteRequest}/mark-addressed', [AdminController::class, 'markQuoteAddressed'])->name('admin.quote.mark-addressed');
 });
+Route::post('/coach/store/{store}/blast', [App\Http\Controllers\CoachController::class, 'sendReminderBlast'])->name('coach.store.blast')->middleware(['auth', \App\Http\Middleware\CoachMiddleware::class]);
+Route::delete('/coach/store/{store}/roster/{roster}', [App\Http\Controllers\CoachController::class, 'removeRoster'])->name('coach.store.roster.remove')->middleware(['auth', \App\Http\Middleware\CoachMiddleware::class]);
