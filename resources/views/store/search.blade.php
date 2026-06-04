@@ -13,7 +13,12 @@
 </div>
 
 <div class="max-w-7xl mx-auto px-6 py-10 md:py-14">
-    <form action="{{ route('store.search') }}" method="GET" class="mb-10">
+    <form action="{{ route('store.search') }}" method="GET" class="mb-10"
+          hx-get="{{ route('store.search') }}"
+          hx-target="#store-search-results"
+          hx-select="#store-search-results"
+          hx-trigger="input from:input[name='q'] delay:300ms, submit"
+          hx-push-url="true">
         <div class="flex flex-col md:flex-row gap-3">
             <input
                 type="text"
@@ -25,6 +30,8 @@
             <button type="submit" class="btn btn-primary py-3 px-7 text-xs uppercase tracking-wider font-bold">Search</button>
         </div>
     </form>
+
+    <div id="store-search-results">
 
     @if($stores->isEmpty())
         <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-12 text-center">
@@ -66,9 +73,10 @@
             @endforeach
         </div>
 
-        <div class="mt-10">
+        <div class="mt-10" hx-boost="true" hx-target="#store-search-results" hx-select="#store-search-results">
             {{ $stores->links() }}
         </div>
     @endif
+    </div>
 </div>
 @endsection

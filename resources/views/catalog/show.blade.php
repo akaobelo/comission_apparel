@@ -56,7 +56,12 @@
 <section class="py-4 md:py-8 bg-slate-50 min-h-[50vh]" x-data="{ previewOpen: false, previewImgs: [], previewIdx: 0, previewAlt: '', touchStartX: 0, touchEndX: 0 }" @keydown.escape.window="previewOpen = false; document.body.style.overflow = 'auto';" @keydown.right.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx + 1) % previewImgs.length" @keydown.left.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx - 1 + previewImgs.length) % previewImgs.length">
     <div class="max-w-[1500px] mx-auto px-6">
         <div class="mb-8 flex flex-col gap-4">
-            <form method="GET" action="{{ route('catalog.show', ['collection' => $collection]) }}" class="w-full">
+            <form method="GET" action="{{ route('catalog.show', ['collection' => $collection]) }}" class="w-full"
+                  hx-get="{{ route('catalog.show', ['collection' => $collection]) }}"
+                  hx-target="#catalog-results"
+                  hx-select="#catalog-results"
+                  hx-trigger="change from:select, change from:input[type='checkbox'] delay:200ms"
+                  hx-push-url="true">
                 <div class="flex flex-col gap-6">
                     <!-- Filters Layout -->
                     <div class="flex flex-col gap-3">
@@ -70,7 +75,7 @@
 
                         <!-- Row 2: Controls -->
                         <div class="flex flex-row items-center gap-2">
-                            <select id="sport" name="sport" class="flex-1 bg-white border border-slate-300 rounded-lg px-2 sm:px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none min-w-0" onchange="this.form.submit()">
+                            <select id="sport" name="sport" class="flex-1 bg-white border border-slate-300 rounded-lg px-2 sm:px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none min-w-0">
                                 <option value="">All Sports</option>
                                 @foreach($availableSports as $sport)
                                     <option value="{{ $sport }}" {{ $selectedSport === $sport ? 'selected' : '' }}>{{ $sport }}</option>
@@ -137,7 +142,7 @@
                                         @else
                                             @foreach($filteredTypesList as $typeKey => $typeLabel)
                                                 <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-md transition-colors group">
-                                                    <input type="checkbox" name="types[]" value="{{ $typeKey }}" {{ in_array($typeKey, $selectedTypes ?? []) ? 'checked' : '' }} class="w-4 h-4 rounded border-slate-300 text-secondary focus:ring-secondary cursor-pointer" onchange="this.form.submit()">
+                                                    <input type="checkbox" name="types[]" value="{{ $typeKey }}" {{ in_array($typeKey, $selectedTypes ?? []) ? 'checked' : '' }} class="w-4 h-4 rounded border-slate-300 text-secondary focus:ring-secondary cursor-pointer">
                                                     <span class="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">{{ $typeLabel }}</span>
                                                 </label>
                                             @endforeach
@@ -160,6 +165,7 @@
             </form>
         </div>
 
+        <div id="catalog-results">
         @if($designCatalog->isEmpty())
             <div class="bg-white border-2 border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500 font-bold uppercase tracking-widest text-sm">
                 No designs found for this collection yet.
@@ -225,6 +231,7 @@
                 @endforeach
             </div>
         @endif
+        </div>
     </div>
 
     <!-- Image Preview Modal -->

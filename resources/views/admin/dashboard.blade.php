@@ -209,7 +209,12 @@
                     </div>
                     <div x-show="expanded" x-cloak>
                         <div class="p-4 border-b border-slate-100 bg-white">
-                            <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md">
+                            <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md"
+                                  hx-get="{{ route('admin.dashboard') }}"
+                                  hx-target="#quote-inquiries-results"
+                                  hx-select="#quote-inquiries-results"
+                                  hx-trigger="input from:input[name='quote_search'] delay:300ms, submit"
+                                  hx-push-url="true">
                                 <input type="text" name="quote_search" value="{{ request('quote_search') }}" placeholder="Search inquiries..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
                                 <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
                                 @if(request('quote_search'))
@@ -217,6 +222,7 @@
                                 @endif
                             </form>
                         </div>
+                        <div id="quote-inquiries-results">
                         @if($quoteRequests->isEmpty())
                             <div class="p-8 text-center text-slate-400 text-sm">No quote inquiries found.</div>
                     @else
@@ -275,7 +281,7 @@
                             @endforeach
                         </div>
                         @if($quoteRequests instanceof \Illuminate\Pagination\LengthAwarePaginator && $quoteRequests->hasPages())
-                        <div class="p-4 border-t border-slate-100 bg-white">
+                        <div class="mt-4 p-4 border-t border-slate-100" hx-boost="true" hx-target="#quote-inquiries-results" hx-select="#quote-inquiries-results">
                             {{ $quoteRequests->links() }}
                         </div>
                         @endif
@@ -298,7 +304,12 @@
                     </div>
                     <div x-show="expanded" x-collapse>
                         <div class="p-4 border-b border-slate-100 bg-white">
-                            <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md">
+                            <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md"
+                                  hx-get="{{ route('admin.dashboard') }}"
+                                  hx-target="#active-stores-results"
+                                  hx-select="#active-stores-results"
+                                  hx-trigger="input from:input[name='active_store_search'] delay:300ms, submit"
+                                  hx-push-url="true">
                                 <input type="text" name="active_store_search" value="{{ request('active_store_search') }}" placeholder="Search active stores..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
                                 <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
                                 @if(request('active_store_search'))
@@ -306,6 +317,7 @@
                                 @endif
                             </form>
                         </div>
+                        <div id="active-stores-results">
                         @if($productionStores->isEmpty())
                             <div class="p-8 text-center text-slate-400 text-sm">No active stores.</div>
                         @else
@@ -333,10 +345,11 @@
                             </div>
                         @endif
                         @if($productionStores instanceof \Illuminate\Pagination\LengthAwarePaginator && $productionStores->hasPages())
-                            <div class="p-4 border-t border-slate-100 bg-white">
+                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#active-stores-results" hx-select="#active-stores-results">
                                 {{ $productionStores->links() }}
                             </div>
                         @endif
+                        </div>
                     </div>
                 </div>
 
@@ -529,7 +542,12 @@
                     </div>
                     <div x-show="expanded" x-collapse>
                         <div class="p-4 border-b border-slate-100 bg-white">
-                            <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md">
+                            <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md"
+                                  hx-get="{{ route('admin.dashboard') }}"
+                                  hx-target="#archive-results"
+                                  hx-select="#archive-results"
+                                  hx-trigger="input from:input[name='archive_search'] delay:300ms, submit"
+                                  hx-push-url="true">
                                 <input type="text" name="archive_search" value="{{ request('archive_search') }}" placeholder="Search archived stores and batches..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
                                 <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
                                 @if(request('archive_search'))
@@ -537,6 +555,7 @@
                                 @endif
                             </form>
                         </div>
+                        <div id="archive-results">
                         <div class="divide-y divide-slate-100">
                         @if($archivedStores->isEmpty() && $archivedOrderBatches->isEmpty())
                             <div class="p-8 text-center text-slate-400 text-sm">No archived stores or orders.</div>
@@ -603,15 +622,16 @@
                         @endif
                         </div>
                         @if($archivedStores instanceof \Illuminate\Pagination\LengthAwarePaginator && $archivedStores->hasPages())
-                            <div class="p-4 border-t border-slate-100 bg-white">
+                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#archive-results" hx-select="#archive-results">
                                 {{ $archivedStores->links() }}
                             </div>
                         @endif
                         @if($archivedBatchesPaginator instanceof \Illuminate\Pagination\LengthAwarePaginator && $archivedBatchesPaginator->hasPages())
-                            <div class="p-4 border-t border-slate-100 bg-white">
+                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#archive-results" hx-select="#archive-results">
                                 {{ $archivedBatchesPaginator->links() }}
                             </div>
                         @endif
+                        </div>
                     </div>
                 </div>
 
@@ -628,7 +648,12 @@
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Coaches Database</h2>
                             <a href="{{ route('admin.coaches.export') }}" class="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm whitespace-nowrap">Export CSV</a>
                         </div>
-                        <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
+                        <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 w-full md:w-auto mt-2 md:mt-0"
+                              hx-get="{{ route('admin.dashboard') }}"
+                              hx-target="#coach-profiles-results"
+                              hx-select="#coach-profiles-results"
+                              hx-trigger="input from:input[name='search'] delay:300ms, submit"
+                              hx-push-url="true">
                             <div class="relative flex-1 md:w-72">
                                 <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name, email, or org..." class="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none w-full shadow-sm">
@@ -640,6 +665,7 @@
                         </form>
                     </div>
                 </div>
+                <div id="coach-profiles-results">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left whitespace-nowrap">
                         <thead class="bg-slate-50 border-b border-slate-200">
@@ -701,8 +727,9 @@
                 </table>
                 </div>
                 @if($coaches->hasPages())
-                    <div class="p-5 border-t border-slate-200">{{ $coaches->links() }}</div>
+                    <div class="p-5 border-t border-slate-200" hx-boost="true" hx-target="#coach-profiles-results" hx-select="#coach-profiles-results">{{ $coaches->links() }}</div>
                 @endif
+                </div>
             </div>
 
         </div>
