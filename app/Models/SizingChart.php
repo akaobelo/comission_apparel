@@ -12,7 +12,12 @@ class SizingChart extends Model
     protected $fillable = [
         'title',
         'image_path',
+        'image_paths',
         'sort_order',
         'is_active',
+    ];
+    
+    protected $casts = [
+        'image_paths' => 'array',
     ];
 }

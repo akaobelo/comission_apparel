@@ -3,7 +3,7 @@
 @section('title', 'Sizing Charts | The Commission Apparel')
 
 @section('content')
-<div class="bg-slate-50 min-h-screen pt-32 pb-24" x-data="{ activeImage: null }">
+<div class="bg-slate-50 min-h-screen pt-32 pb-24" x-data="{ activeImages: [], activeIndex: 0, openLightbox(images) { this.activeImages = images; this.activeIndex = 0; }, closeLightbox() { this.activeImages = []; } }">
     <div class="max-w-[1200px] mx-auto px-6">
         <div class="text-center mb-12">
             <h1 class="text-4xl md:text-5xl font-black uppercase tracking-tight text-slate-900 mb-4">Sizing Charts</h1>
@@ -12,9 +12,18 @@
 
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 mb-10">
             @forelse($sizingCharts as $chart)
-            <div class="flex flex-col group cursor-pointer" @click="activeImage = '{{ $chart->image_path }}'">
+            @php
+                $chartImages = $chart->image_paths && count($chart->image_paths) > 0 ? json_encode($chart->image_paths) : ($chart->image_path ? json_encode([$chart->image_path]) : json_encode([]));
+                $firstImage = $chart->image_paths && count($chart->image_paths) > 0 ? $chart->image_paths[0] : $chart->image_path;
+            @endphp
+            <div class="flex flex-col group cursor-pointer" @click="openLightbox({{ $chartImages }})">
                 <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center border border-slate-200">
-                    <img src="{{ $chart->image_path }}" alt="{{ $chart->title }}" class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105">
+                    <img src="{{ $firstImage }}" alt="{{ $chart->title }}" class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105">
+                    @if($chart->image_paths && count($chart->image_paths) > 1)
+                        <div class="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md font-bold z-10 backdrop-blur-sm">
+                            +{{ count($chart->image_paths) - 1 }}
+                        </div>
+                    @endif
                 </div>
                 <div class="pt-3 flex flex-col text-center items-center w-full px-1">
                     <span class="text-xs md:text-sm font-medium text-red-600 mb-0.5 w-full truncate">View Size Chart</span>
@@ -30,11 +39,23 @@
             @endforelse
         </div>
         <!-- Lightbox Modal -->
-        <div x-show="activeImage" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm" @click.self="activeImage = null" @keydown.escape.window="activeImage = null">
-            <button @click="activeImage = null" class="absolute top-6 right-6 text-white/70 hover:text-white transition-colors">
+        <div x-show="activeImages.length > 0" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm" @click.self="closeLightbox()" @keydown.escape.window="closeLightbox()">
+            <button @click="closeLightbox()" class="absolute top-6 right-6 text-white/70 hover:text-white transition-colors">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
-            <img :src="activeImage" alt="Expanded View" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl">
+            
+            <button x-show="activeImages.length > 1" @click.stop="activeIndex = (activeIndex === 0) ? activeImages.length - 1 : activeIndex - 1" class="absolute left-6 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-2">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <button x-show="activeImages.length > 1" @click.stop="activeIndex = (activeIndex === activeImages.length - 1) ? 0 : activeIndex + 1" class="absolute right-6 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-2">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+
+            <img :src="activeImages[activeIndex]" alt="Expanded View" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl">
+            
+            <div x-show="activeImages.length > 1" class="absolute bottom-6 left-1/2 -translate-x-1/2 text-white text-sm font-bold bg-black/50 backdrop-blur-sm px-4 py-1.5 rounded-full">
+                <span x-text="activeIndex + 1"></span> / <span x-text="activeImages.length"></span>
+            </div>
         </div>
     </div>
 </div>

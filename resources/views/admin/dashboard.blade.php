@@ -133,7 +133,7 @@
                         <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Global Sales Summary
                     </h2>
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Including: In Production, Shipped, Delivered</p>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Including: In Production, Processing, Shipped, Delivered, Completed</p>
                 </div>
                 <div class="p-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -292,15 +292,24 @@
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Active Team Stores</h2>
                         </div>
                         <div class="flex items-center gap-4 text-slate-400">
-                            <span class="text-sm font-bold">{{ $productionStores->count() }} Stores</span>
+                            <span class="text-sm font-bold">{{ $productionStores->total() }} Stores</span>
                             <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
                     <div x-show="expanded" x-collapse>
+                        <div class="p-4 border-b border-slate-100 bg-white">
+                            <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md">
+                                <input type="text" name="active_store_search" value="{{ request('active_store_search') }}" placeholder="Search active stores..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                                <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
+                                @if(request('active_store_search'))
+                                    <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</a>
+                                @endif
+                            </form>
+                        </div>
                         @if($productionStores->isEmpty())
                             <div class="p-8 text-center text-slate-400 text-sm">No active stores.</div>
                         @else
-                            <div class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                            <div class="divide-y divide-slate-100">
                                 @foreach($productionStores as $store)
                                 <div class="p-4 flex items-center justify-between gap-4">
                                     <div>
@@ -321,6 +330,11 @@
                                     </div>
                                 </div>
                                 @endforeach
+                            </div>
+                        @endif
+                        @if($productionStores instanceof \Illuminate\Pagination\LengthAwarePaginator && $productionStores->hasPages())
+                            <div class="p-4 border-t border-slate-100 bg-white">
+                                {{ $productionStores->links() }}
                             </div>
                         @endif
                     </div>
@@ -513,7 +527,17 @@
                             <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
-                    <div x-show="expanded" x-collapse class="divide-y divide-slate-100">
+                    <div x-show="expanded" x-collapse>
+                        <div class="p-4 border-b border-slate-100 bg-white">
+                            <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md">
+                                <input type="text" name="archive_search" value="{{ request('archive_search') }}" placeholder="Search archived stores and batches..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                                <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
+                                @if(request('archive_search'))
+                                    <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</a>
+                                @endif
+                            </form>
+                        </div>
+                        <div class="divide-y divide-slate-100">
                         @if($archivedStores->isEmpty() && $archivedOrderBatches->isEmpty())
                             <div class="p-8 text-center text-slate-400 text-sm">No archived stores or orders.</div>
                         @else
@@ -576,6 +600,17 @@
                                 </div>
                                 @endforeach
                             @endif
+                        @endif
+                        </div>
+                        @if($archivedStores instanceof \Illuminate\Pagination\LengthAwarePaginator && $archivedStores->hasPages())
+                            <div class="p-4 border-t border-slate-100 bg-white">
+                                {{ $archivedStores->links() }}
+                            </div>
+                        @endif
+                        @if($archivedBatchesPaginator instanceof \Illuminate\Pagination\LengthAwarePaginator && $archivedBatchesPaginator->hasPages())
+                            <div class="p-4 border-t border-slate-100 bg-white">
+                                {{ $archivedBatchesPaginator->links() }}
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -2199,8 +2234,8 @@
                                     <input type="number" name="sort_order" value="0" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Chart Image *</label>
-                                    <input type="file" name="image" accept="image/*" required class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:tracking-wider file:bg-secondary file:text-white hover:file:bg-[#a11825]">
+                                    <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Chart Images *</label>
+                                    <input type="file" name="images[]" multiple accept="image/*" required class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:tracking-wider file:bg-secondary file:text-white hover:file:bg-[#a11825]">
                                 </div>
                             </div>
                             <button type="submit" class="w-full py-2.5 bg-secondary hover:bg-[#a11825] text-white text-sm font-bold uppercase tracking-wider rounded-lg transition-colors">
@@ -2230,7 +2265,9 @@
                     <div class="divide-y divide-slate-100 max-h-[800px] overflow-y-auto">
                         @foreach($sizingCharts as $chart)
                         <div class="p-5 hover:bg-slate-50 flex gap-4 transition-colors">
-                            @if($chart->image_path)
+                            @if($chart->image_paths && count($chart->image_paths) > 0)
+                                <img src="{{ $chart->image_paths[0] }}" alt="Sizing Chart" class="w-16 h-16 rounded object-cover shrink-0 border border-slate-200">
+                            @elseif($chart->image_path)
                                 <img src="{{ $chart->image_path }}" alt="Sizing Chart" class="w-16 h-16 rounded object-cover shrink-0 border border-slate-200">
                             @endif
                             <div class="flex-1">

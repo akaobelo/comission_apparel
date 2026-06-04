@@ -69,17 +69,22 @@ class AdminController extends Controller
             ->get();
 
         // Production orders (in production status)
-        $productionStores = TeamStore::where('status', 'approved')
+        $activeStoresQuery = TeamStore::where('status', 'approved')
             ->where('is_archived', false)
-            ->with(['user', 'parentOrders'])
-            ->latest()
-            ->get();
+            ->with(['user', 'parentOrders']);
 
-        // Archived stores
-        $archivedStores = TeamStore::where('is_archived', true)
-            ->with(['user', 'parentOrders'])
-            ->latest()
-            ->get();
+        if ($request->filled('active_store_search')) {
+            $search = $request->active_store_search;
+            $activeStoresQuery->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($q2) use ($search) {
+                      $q2->where('first_name', 'like', "%{$search}%")
+                         ->orWhere('last_name', 'like', "%{$search}%")
+                         ->orWhere('organization', 'like', "%{$search}%");
+                  });
+            });
+        }
+        $productionStores = $activeStoresQuery->latest()->paginate(10, ['*'], 'active_store_page')->withQueryString();
 
         // Finalized direct orders (no team store)
         $finalizedDirectOrders = ParentOrder::whereNull('team_store_id')
@@ -97,7 +102,49 @@ class AdminController extends Controller
             ];
         });
 
-        $archivedOrderBatches = ParentOrder::where('is_archived', true)
+        // Archived stores
+        $archivedStoresQuery = TeamStore::where('is_archived', true)
+            ->with(['user', 'parentOrders']);
+
+        if ($request->filled('archive_search')) {
+            $search = $request->archive_search;
+            $archivedStoresQuery->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($q2) use ($search) {
+                      $q2->where('first_name', 'like', "%{$search}%")
+                         ->orWhere('last_name', 'like', "%{$search}%")
+                         ->orWhere('organization', 'like', "%{$search}%");
+                  });
+            });
+        }
+        $archivedStores = $archivedStoresQuery->latest()->paginate(10, ['*'], 'archive_store_page')->withQueryString();
+
+        // Archived batches
+        $archivedBatchQuery = ParentOrder::where('is_archived', true)
+            ->whereNotNull('batch_id')
+            ->select('batch_id')
+            ->distinct();
+
+        if ($request->filled('archive_search')) {
+            $search = $request->archive_search;
+            // Since we're selecting distinct batch_id, we need to join or whereHas carefully.
+            // ParentOrder has user_id and team_store_id
+            $archivedBatchQuery->where(function($q) use ($search) {
+                $q->where('batch_id', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($q2) use ($search) {
+                      $q2->where('first_name', 'like', "%{$search}%")
+                         ->orWhere('last_name', 'like', "%{$search}%")
+                         ->orWhere('organization', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('teamStore', function($q2) use ($search) {
+                      $q2->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $archivedBatchIds = $archivedBatchQuery->latest('batch_id')->paginate(10, ['*'], 'archive_batch_page')->withQueryString();
+
+        $archivedOrderBatches = ParentOrder::whereIn('batch_id', $archivedBatchIds->pluck('batch_id'))
             ->with(['user', 'teamStore'])
             ->latest()
             ->get()
@@ -110,6 +157,9 @@ class AdminController extends Controller
                     'financials' => $financials,
                 ];
             });
+
+        // Pass the paginator to the view so we can render links
+        $archivedBatchesPaginator = $archivedBatchIds;
 
         $quoteRequestsQuery = \App\Models\QuoteRequest::query();
 
@@ -155,7 +205,7 @@ class AdminController extends Controller
             $q->where('role', 'admin');
         })->latest()->get();
 
-        $globalOrders = \App\Models\ParentOrder::whereIn('status', ['In Production', 'Shipped', 'Delivered'])->get();
+        $globalOrders = \App\Models\ParentOrder::whereIn('status', ['In Production', 'Shipped', 'Delivered', 'Processing', 'Completed'])->get();
         $storeIds = $globalOrders->pluck('team_store_id')->filter()->unique();
         $storesMap = TeamStore::whereIn('id', $storeIds)->with('items')->get()->keyBy('id');
         
@@ -208,7 +258,7 @@ class AdminController extends Controller
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStoreBatches',
             'designCatalog', 'productionStores', 'quoteRequests', 'quoteRequestsTotal', 'newQuoteRequestsCount', 'landingCollections', 'allStores', 'allCoaches',
-            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'archivedOrderBatches', 'globalSalesSummary'
+            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'archivedOrderBatches', 'globalSalesSummary', 'archivedBatchesPaginator'
         ));
     }
 
@@ -1442,19 +1492,22 @@ class AdminController extends Controller
         $validated = $request->validate([
             'title'       => ['required', 'string', 'max:255'],
             'sort_order'  => ['required', 'integer'],
-            'image'       => ['required', 'image', 'max:10240'], // 10MB max
+            'images'      => ['required', 'array', 'min:1'],
+            'images.*'    => ['image', 'max:10240'], // 10MB max
         ]);
 
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('sizing_charts', 'public');
-            $imagePath = '/storage/' . $path;
+        $imagePaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('sizing_charts', 'public');
+                $imagePaths[] = '/storage/' . $path;
+            }
         }
 
         SizingChart::create([
             'title'       => $validated['title'],
             'sort_order'  => $validated['sort_order'],
-            'image_path'  => $imagePath,
+            'image_paths' => $imagePaths,
             'is_active'   => true,
         ]);
 
@@ -1466,18 +1519,31 @@ class AdminController extends Controller
         $validated = $request->validate([
             'title'       => ['required', 'string', 'max:255'],
             'sort_order'  => ['required', 'integer'],
-            'image'       => ['nullable', 'image', 'max:10240'],
+            'images'      => ['nullable', 'array'],
+            'images.*'    => ['image', 'max:10240'],
         ]);
 
-        if ($request->hasFile('image')) {
-            if ($chart->image_path) {
+        if ($request->hasFile('images')) {
+            if ($chart->image_paths) {
+                foreach ($chart->image_paths as $path) {
+                    $pathToRemove = str_replace('/storage/', '', $path);
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+                }
+            } elseif ($chart->image_path) {
                 $pathToRemove = str_replace('/storage/', '', $chart->image_path);
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
             }
-            $path = $request->file('image')->store('sizing_charts', 'public');
-            $validated['image_path'] = '/storage/' . $path;
+            
+            $imagePaths = [];
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('sizing_charts', 'public');
+                $imagePaths[] = '/storage/' . $path;
+            }
+            $validated['image_paths'] = $imagePaths;
+            $validated['image_path']  = null;
         }
 
+        unset($validated['images']);
         $chart->update($validated);
 
         return redirect()->route('admin.dashboard')->with('success', 'Sizing chart updated successfully.');
@@ -1485,7 +1551,12 @@ class AdminController extends Controller
 
     public function deleteSizingChart(SizingChart $chart)
     {
-        if ($chart->image_path) {
+        if ($chart->image_paths) {
+            foreach ($chart->image_paths as $path) {
+                $pathToRemove = str_replace('/storage/', '', $path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            }
+        } elseif ($chart->image_path) {
             $pathToRemove = str_replace('/storage/', '', $chart->image_path);
             \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
         }
