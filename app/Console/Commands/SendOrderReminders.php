@@ -62,7 +62,8 @@ class SendOrderReminders extends Command
                         }
                     }
 
-                    // Send SMS
+                    // Send SMS - Temporarily Disabled
+                    /*
                     if ($roster->parent_phone && $twilioClient) {
                         try {
                             $message = "REMINDER: Ordering deadline for {$store->name} is approaching on {$store->order_deadline->format('M d, Y')}. Place your order here: " . route('store.show', $store->slug);
@@ -78,6 +79,7 @@ class SendOrderReminders extends Command
                             $this->error("Failed to send SMS to {$roster->parent_phone}: " . $e->getMessage());
                         }
                     }
+                    */
                 }
             }
         }

@@ -66,7 +66,8 @@ class SendStoreClosingReminders extends Command
                     
                     if (!$hasOrdered && !empty($parent->parent_phone)) {
                         $this->info("  -> Sending to {$parent->parent_phone}");
-                        $twilio->sendSms($parent->parent_phone, $message);
+                        // SMS Temporarily disabled
+                        // $twilio->sendSms($parent->parent_phone, $message);
                         $count++;
                     }
                 }
