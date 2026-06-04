@@ -17,6 +17,7 @@
           hx-get="{{ route('store.search') }}"
           hx-target="#store-search-results"
           hx-select="#store-search-results"
+          hx-swap="outerHTML"
           hx-trigger="input from:input[name='q'] delay:300ms, submit"
           hx-push-url="true">
         <div class="flex flex-col md:flex-row gap-3">
@@ -73,7 +74,7 @@
             @endforeach
         </div>
 
-        <div class="mt-10" hx-boost="true" hx-target="#store-search-results" hx-select="#store-search-results">
+        <div class="mt-8 flex justify-center pb-8" hx-boost="true" hx-target="#store-search-results" hx-select="#store-search-results" hx-swap="outerHTML">
             {{ $stores->links() }}
         </div>
     @endif

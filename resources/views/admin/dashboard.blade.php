@@ -213,6 +213,7 @@
                                   hx-get="{{ route('admin.dashboard') }}"
                                   hx-target="#quote-inquiries-results"
                                   hx-select="#quote-inquiries-results"
+                                  hx-swap="outerHTML"
                                   hx-trigger="input from:input[name='quote_search'] delay:300ms, submit"
                                   hx-push-url="true">
                                 <input type="text" name="quote_search" value="{{ request('quote_search') }}" placeholder="Search inquiries..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
@@ -281,11 +282,12 @@
                             @endforeach
                         </div>
                         @if($quoteRequests instanceof \Illuminate\Pagination\LengthAwarePaginator && $quoteRequests->hasPages())
-                        <div class="mt-4 p-4 border-t border-slate-100" hx-boost="true" hx-target="#quote-inquiries-results" hx-select="#quote-inquiries-results">
+                        <div class="mt-4 p-4 border-t border-slate-100" hx-boost="true" hx-target="#quote-inquiries-results" hx-select="#quote-inquiries-results" hx-swap="outerHTML">
                             {{ $quoteRequests->links() }}
                         </div>
                         @endif
                         @endif
+                        </div>
                     </div>
                 </div>
 
@@ -308,6 +310,7 @@
                                   hx-get="{{ route('admin.dashboard') }}"
                                   hx-target="#active-stores-results"
                                   hx-select="#active-stores-results"
+                                  hx-swap="outerHTML"
                                   hx-trigger="input from:input[name='active_store_search'] delay:300ms, submit"
                                   hx-push-url="true">
                                 <input type="text" name="active_store_search" value="{{ request('active_store_search') }}" placeholder="Search active stores..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
@@ -345,7 +348,7 @@
                             </div>
                         @endif
                         @if($productionStores instanceof \Illuminate\Pagination\LengthAwarePaginator && $productionStores->hasPages())
-                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#active-stores-results" hx-select="#active-stores-results">
+                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#active-stores-results" hx-select="#active-stores-results" hx-swap="outerHTML">
                                 {{ $productionStores->links() }}
                             </div>
                         @endif
@@ -546,6 +549,7 @@
                                   hx-get="{{ route('admin.dashboard') }}"
                                   hx-target="#archive-results"
                                   hx-select="#archive-results"
+                                  hx-swap="outerHTML"
                                   hx-trigger="input from:input[name='archive_search'] delay:300ms, submit"
                                   hx-push-url="true">
                                 <input type="text" name="archive_search" value="{{ request('archive_search') }}" placeholder="Search archived stores and batches..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
@@ -622,12 +626,12 @@
                         @endif
                         </div>
                         @if($archivedStores instanceof \Illuminate\Pagination\LengthAwarePaginator && $archivedStores->hasPages())
-                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#archive-results" hx-select="#archive-results">
+                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#archive-results" hx-select="#archive-results" hx-swap="outerHTML">
                                 {{ $archivedStores->links() }}
                             </div>
                         @endif
                         @if($archivedBatchesPaginator instanceof \Illuminate\Pagination\LengthAwarePaginator && $archivedBatchesPaginator->hasPages())
-                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#archive-results" hx-select="#archive-results">
+                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#archive-results" hx-select="#archive-results" hx-swap="outerHTML">
                                 {{ $archivedBatchesPaginator->links() }}
                             </div>
                         @endif
@@ -652,6 +656,7 @@
                               hx-get="{{ route('admin.dashboard') }}"
                               hx-target="#coach-profiles-results"
                               hx-select="#coach-profiles-results"
+                              hx-swap="outerHTML"
                               hx-trigger="input from:input[name='search'] delay:300ms, submit"
                               hx-push-url="true">
                             <div class="relative flex-1 md:w-72">
@@ -727,7 +732,7 @@
                 </table>
                 </div>
                 @if($coaches->hasPages())
-                    <div class="p-5 border-t border-slate-200" hx-boost="true" hx-target="#coach-profiles-results" hx-select="#coach-profiles-results">{{ $coaches->links() }}</div>
+                    <div class="p-5 border-t border-slate-200" hx-boost="true" hx-target="#coach-profiles-results" hx-select="#coach-profiles-results" hx-swap="outerHTML">{{ $coaches->links() }}</div>
                 @endif
                 </div>
             </div>

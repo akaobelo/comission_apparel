@@ -60,6 +60,7 @@
                   hx-get="{{ route('catalog.show', ['collection' => $collection]) }}"
                   hx-target="#catalog-results"
                   hx-select="#catalog-results"
+                  hx-swap="outerHTML"
                   hx-trigger="change from:select, change from:input[type='checkbox'] delay:200ms"
                   hx-push-url="true">
                 <div class="flex flex-col gap-6">
