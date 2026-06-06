@@ -610,7 +610,24 @@ class CoachController extends Controller
             $sizedTypes = DesignCatalog::sizedTypes();
             $hasSizes = count(array_intersect($types, $sizedTypes)) > 0;
 
-            if ($hasSizes && isset($details['sizes']) && is_array($details['sizes'])) {
+            if (isset($details['package_sizes']) && is_array($details['package_sizes'])) {
+                $qty = max(1, intval($details['qty'] ?? 1));
+                $entry = [
+                    'id'           => $designId,
+                    'name'         => $design->name,
+                    'types'        => $types,
+                    'qty'          => $qty,
+                    'gender'       => $details['gender'] ?? 'Unisex',
+                    'sizes'        => [],
+                ];
+                // Apply the sizes selected
+                foreach ($details['package_sizes'] as $t => $size) {
+                    if (!empty($size)) {
+                        $entry['sizes'][$t] = $size;
+                    }
+                }
+                $itemsJson[] = $entry;
+            } else if ($hasSizes && isset($details['sizes']) && is_array($details['sizes'])) {
                 foreach ($details['sizes'] as $size => $qty) {
                     $qty = intval($qty);
                     if ($qty > 0) {

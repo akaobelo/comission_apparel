@@ -324,29 +324,39 @@
             @if($store->items->isNotEmpty())
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Line-Item Pricing Checkout</h2>
+                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Line-Item Configuration (Pricing & Sorting)</h2>
                 </div>
                 <div class="p-5">
                     <form action="{{ route('admin.store.pricing.update', $store) }}" method="POST" class="space-y-4">
                         @csrf
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-3">
                             @foreach($store->items as $item)
-                            <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
-                                <div class="font-bold text-slate-900 mb-2">{{ $item->name }}</div>
-                                <div class="flex gap-3">
-                                    <div class="flex-1">
-                                        <label class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Wholesale ($)</label>
-                                        <input type="number" step="0.01" name="items[{{ $item->id }}][wholesale_price]" value="{{ old('items.'.$item->id.'.wholesale_price', $item->wholesale_price) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <div class="border border-slate-200 rounded-lg p-4 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors hover:bg-slate-100/50">
+                                <div class="font-bold text-slate-900 mb-1 md:mb-0 flex-1 truncate pr-4" title="{{ $item->name }}">{{ $item->name }}</div>
+                                <div class="flex gap-4 w-full md:w-auto">
+                                    <div class="w-28 flex-shrink-0">
+                                        <label class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Wholesale</label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm pointer-events-none">$</span>
+                                            <input type="number" step="0.01" name="items[{{ $item->id }}][wholesale_price]" value="{{ old('items.'.$item->id.'.wholesale_price', $item->wholesale_price) }}" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-medium text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm transition-shadow">
+                                        </div>
                                     </div>
-                                    <div class="flex-1">
-                                        <label class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Retail ($)</label>
-                                        <input type="number" step="0.01" name="items[{{ $item->id }}][retail_price]" value="{{ old('items.'.$item->id.'.retail_price', $item->retail_price) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                    <div class="w-28 flex-shrink-0">
+                                        <label class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Retail</label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm pointer-events-none">$</span>
+                                            <input type="number" step="0.01" name="items[{{ $item->id }}][retail_price]" value="{{ old('items.'.$item->id.'.retail_price', $item->retail_price) }}" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-medium text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm transition-shadow">
+                                        </div>
+                                    </div>
+                                    <div class="w-24 flex-shrink-0">
+                                        <label class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Sort Order</label>
+                                        <input type="number" name="items[{{ $item->id }}][sort_order]" value="{{ old('items.'.$item->id.'.sort_order', $item->sort_order ?? 0) }}" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium text-center text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm transition-shadow">
                                     </div>
                                 </div>
                             </div>
                             @endforeach
                         </div>
-                        <button type="submit" class="btn btn-primary py-2 px-6 text-sm uppercase tracking-wider">Save Pricing</button>
+                        <button type="submit" class="btn btn-primary py-2 px-6 text-sm uppercase tracking-wider">Save Configuration</button>
                     </form>
                 </div>
             </div>

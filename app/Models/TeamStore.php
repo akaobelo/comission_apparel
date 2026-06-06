@@ -32,7 +32,7 @@ class TeamStore extends Model
 
     public function items()
     {
-        return $this->hasMany(StoreItem::class);
+        return $this->hasMany(StoreItem::class)->orderBy('sort_order', 'asc');
     }
 
     public function parentOrders()
