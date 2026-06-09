@@ -1326,11 +1326,8 @@
                 ghostClass: 'bg-slate-50',
                 onEnd: function () {
                     const inputs = Array.from(el.querySelectorAll('.coach-sort-order-input'));
-                    let values = inputs.map(input => parseInt(input.value) || 0)
-                                       .sort((a, b) => b - a);
-
                     inputs.forEach((input, index) => {
-                        input.value = values[index];
+                        input.value = index + 1;
                     });
                 }
             });

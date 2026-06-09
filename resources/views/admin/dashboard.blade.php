@@ -2466,10 +2466,8 @@
                 ghostClass: 'bg-slate-50',
                 onEnd: function () {
                     const inputs = Array.from(updateCollectionsList.querySelectorAll('.sort-order-input-update-col'));
-                    let values = inputs.map(input => parseInt(input.value) || 0).sort((a, b) => a - b); // ascending 0, 1, 2...
-                    
                     inputs.forEach((input, index) => {
-                        input.value = values[index];
+                        input.value = index + 1;
                     });
                 }
             });
@@ -2483,21 +2481,9 @@
                 ghostClass: 'bg-slate-50',
                 onEnd: function (evt) {
                     const inputs = Array.from(listEl.querySelectorAll('.sort-order-input-catalog-col'));
-                    
-                    // If it is a collection list, re-number them 1, 2, 3...
-                    // Otherwise (global unassigned items), keep existing values and just sort them.
-                    const isCollection = listEl.getAttribute('data-is-collection') === 'true';
-                    
-                    if (isCollection) {
-                        inputs.forEach((input, index) => {
-                            input.value = index + 1;
-                        });
-                    } else {
-                        let values = inputs.map(input => parseInt(input.value) || 0).sort((a, b) => a - b);
-                        inputs.forEach((input, index) => {
-                            input.value = values[index];
-                        });
-                    }
+                    inputs.forEach((input, index) => {
+                        input.value = index + 1;
+                    });
                 }
             });
         });
