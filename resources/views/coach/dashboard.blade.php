@@ -544,7 +544,7 @@
                                             <p><strong>Instructions:</strong> Use the <strong>Export CSV</strong> option to download and verify all items, sizes, and quantities. Submit once you have confirmed everything is 100% accurate.</p>
                                             <p class="text-red-600 font-bold text-xs uppercase tracking-widest mt-2">The store will be closed to new orders.</p>
                                         </div>
-                                        
+
                                         <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-6">
                                             <label class="block text-sm text-slate-700 mb-3 font-medium">Please enter your shipping address exactly as it should appear on the label:</label>
                                             <textarea name="shipping_address" required rows="3" class="w-full bg-slate-100 border border-slate-200 rounded-lg p-3 text-sm focus:bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-inner text-slate-900" placeholder="Street Address&#10;City, State ZIP"></textarea>
@@ -642,15 +642,15 @@
                 </div>
                 <div class="p-5">
                     <div class="mb-5 bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs text-blue-800">
-                        <strong>How it works:</strong> Add parent emails or phone numbers below. Our system will automatically email or text them a reminder to order before the store deadline. Parents who have already placed an order will not receive reminders.
+                        <strong>How it works:</strong> Add parent emails below. Our system will automatically email them a reminder to order before the store deadline. Parents who have already placed an order will not receive reminders.
                     </div>
-                    
+
                     {{-- Paste Emails Form --}}
                     <form x-show="rosterTab === 'paste'" action="{{ route('coach.store.roster.paste', $store) }}" method="POST">
                         @csrf
                         <div class="mb-4">
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Comma-Separated Emails or Phone Numbers</label>
-                            <textarea name="emails" rows="3" placeholder="parent1@example.com, 555-123-4567, parent2@example.com..." class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm" required></textarea>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Comma-Separated Emails</label>
+                            <textarea name="emails" rows="3" placeholder="parent1@example.com, parent2@example.com..." class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm" required></textarea>
                         </div>
                         <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold uppercase tracking-widest rounded-lg hover:bg-slate-800 transition-colors">Add to Roster</button>
                     </form>
@@ -696,7 +696,7 @@
                                     @else
                                         <span class="text-[9px] font-bold uppercase tracking-widest text-amber-600 bg-amber-100 px-2 py-1 rounded border border-amber-200">Waiting</span>
                                     @endif
-                                    
+
                                     <form action="{{ route('coach.store.roster.remove', ['store' => $store, 'roster' => $rosterEntry]) }}" method="POST" onsubmit="return confirm('Remove this contact from the reminders list?')">
                                         @csrf
                                         @method('DELETE')
