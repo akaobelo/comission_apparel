@@ -322,11 +322,13 @@
 
             {{-- Set pricing for store items --}}
             @if($store->items->isNotEmpty())
-            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div x-data="{ open: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
+                <button type="button" @click="open = !open" class="w-full p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between hover:bg-slate-100 transition-colors focus:outline-none text-left">
                     <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Line-Item Configuration (Pricing & Sorting)</h2>
-                </div>
-                <div class="p-5">
+                    <svg :class="{'rotate-180': open}" class="w-5 h-5 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div x-show="open" x-collapse x-cloak>
+                    <div class="p-5">
                     <form action="{{ route('admin.store.pricing.update', $store) }}" method="POST" class="space-y-4">
                         @csrf
                         <div class="space-y-3">
@@ -358,6 +360,7 @@
                         </div>
                         <button type="submit" class="btn btn-primary py-2 px-6 text-sm uppercase tracking-wider">Save Configuration</button>
                     </form>
+                </div>
                 </div>
             </div>
             @endif
