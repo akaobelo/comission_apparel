@@ -1161,6 +1161,7 @@
         ];
     })->values()) }},
     selectedDesigns: [],
+    paginatedItemIds: [],
     get filteredItems() {
         if (this.search === '') return this.items;
         return this.items.filter(i => {
@@ -1173,10 +1174,15 @@
     get totalPages() {
         return Math.max(1, Math.ceil(this.filteredItems.length / this.perPage));
     },
-    get paginatedItemIds() {
+    updatePaginated() {
         const start = (this.page - 1) * this.perPage;
         const end = start + this.perPage;
-        return this.filteredItems.slice(start, end).map(i => i.id);
+        this.paginatedItemIds = this.filteredItems.slice(start, end).map(i => i.id);
+    },
+    init() {
+        this.updatePaginated();
+        this.$watch('search', () => { this.page = 1; this.updatePaginated(); });
+        this.$watch('page', () => { this.updatePaginated(); });
     }
 }">
 <div x-show="showItems" x-cloak>
@@ -1197,7 +1203,7 @@
                         </form>
                         <div class="p-3 bg-white border-b border-slate-200 flex justify-between items-center">
                             <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Adjust sort orders below and click save</span>
-                            <button type="submit" form="bulk-sort-form-{{ $collection->id }}" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort Orders</button>
+                            <button type="button" onclick="submitBulkSort('{{ $collection->id }}')" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort Orders</button>
                         </div>
                         <div class="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
                             <div class="flex items-center gap-2">
@@ -1227,7 +1233,7 @@
                         </div>
                         <div id="update-catalog-sortable-list-{{ isset($collection) ? $collection->id : 'unassigned' }}" class="update-catalog-sortable-list max-h-[900px] overflow-y-auto" data-is-collection="{{ isset($collection) ? 'true' : 'false' }}">
                             @foreach($collectionItems as $design)
-                        <div x-show="paginatedItemIds.includes({{ $design->id }})" x-cloak class="flex flex-col sm:flex-row sm:items-start justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 gap-4 bg-white">
+                        <div x-show="paginatedItemIds.includes({{ $design->id }})" :class="paginatedItemIds.includes({{ $design->id }}) ? 'visible-sortable-item' : 'hidden-sortable-item'" x-cloak class="flex flex-col sm:flex-row sm:items-start justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 gap-4 bg-white">
                             <div class="flex items-start gap-3 flex-1 pr-4">
                                 <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1 mt-1" title="Drag to reorder">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
@@ -1742,6 +1748,7 @@
                     selectedDesigns: [],
                     selectAll: false,
                     bulkCoachId: '',
+                    paginatedItemIds: [],
                     get filteredItems() {
                         if (this.search === '') return this.items;
                         return this.items.filter(i => {
@@ -1755,17 +1762,18 @@
                     get totalPages() {
                         return Math.max(1, Math.ceil(this.filteredItems.length / this.perPage));
                     },
-                    get paginatedItemIds() {
+                    updatePaginated() {
                         const start = (this.page - 1) * this.perPage;
                         const end = start + this.perPage;
-                        return this.filteredItems.slice(start, end).map(i => i.id);
+                        this.paginatedItemIds = this.filteredItems.slice(start, end).map(i => i.id);
                     },
                     init() {
+                        this.updatePaginated();
                         const savedExpanded = localStorage.getItem('catalogExpanded');
                         if (savedExpanded === 'true') {
                             this.expandedCatalog = true;
                         }
-                        $watch('expandedCatalog', value => {
+                        this.$watch('expandedCatalog', value => {
                             localStorage.setItem('catalogExpanded', value);
                         });
 
@@ -1773,10 +1781,12 @@
                         if (savedPage) {
                             this.page = parseInt(savedPage) || 1;
                         }
-                        $watch('page', value => {
+                        this.updatePaginated();
+                        this.$watch('page', value => {
                             localStorage.setItem('catalogActivePage', value);
+                            this.updatePaginated();
                         });
-                        $watch('search', () => { this.page = 1; });
+                        this.$watch('search', () => { this.page = 1; this.updatePaginated(); });
                     }
                 }">
                     <div class="p-5 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer" @click="expandedCatalog = !expandedCatalog">
@@ -1802,7 +1812,7 @@
                         </form>
                         <div class="p-3 bg-white border-b border-slate-200 flex justify-between items-center">
                             <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Adjust sort orders below and click save</span>
-                            <button type="submit" form="bulk-sort-form" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort Orders</button>
+                            <button type="button" onclick="submitUnassignedBulkSort()" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort Orders</button>
                         </div>
                         <div class="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
                             <div class="flex items-center gap-2">
@@ -1832,7 +1842,7 @@
                         </div>
                         <div id="update-catalog-sortable-list-unassigned" class="update-catalog-sortable-list max-h-[900px] overflow-y-auto" data-is-collection="false">
                             @foreach($designCatalog as $design)
-                        <div x-show="paginatedItemIds.includes({{ $design->id }})" x-cloak class="flex flex-col sm:flex-row sm:items-start justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 gap-4 bg-white">
+                        <div x-show="paginatedItemIds.includes({{ $design->id }})" :class="paginatedItemIds.includes({{ $design->id }}) ? 'visible-sortable-item' : 'hidden-sortable-item'" x-cloak class="flex flex-col sm:flex-row sm:items-start justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 gap-4 bg-white">
                             <div class="flex items-start gap-3 flex-1 pr-4">
                                 <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1 mt-1" title="Drag to reorder">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
@@ -2280,60 +2290,127 @@
 
             <!-- Existing Sizing Charts -->
             <div class="space-y-8">
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden" x-data="{
+                    expanded: true,
+                    page: 1,
+                    perPage: 10,
+                    itemsCount: {{ $sizingCharts->count() }},
+                    get totalPages() {
+                        return Math.max(1, Math.ceil(this.itemsCount / this.perPage));
+                    },
+                    showRow(index) {
+                        const start = (this.page - 1) * this.perPage;
+                        const end = start + this.perPage;
+                        return index >= start && index < end;
+                    }
+                }">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expanded = !expanded">
                         <div>
                             <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Manage Sizing Charts</h2>
                             <p class="text-xs text-slate-500 mt-1">Review, reorder, and delete charts.</p>
                         </div>
-                        <div>
-                            <form id="bulk-sizing-charts-sort-form" action="{{ route('admin.sizing-charts.bulk-sort') }}" method="POST">
-                                @csrf
-                            </form>
-                            <button type="submit" form="bulk-sizing-charts-sort-form" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort</button>
+                        <div class="flex items-center gap-4">
+                            <div @click.stop>
+                                <form id="bulk-sizing-charts-sort-form" action="{{ route('admin.sizing-charts.bulk-sort') }}" method="POST">
+                                    @csrf
+                                </form>
+                                <button type="button" onclick="submitSizingChartsBulkSort()" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort</button>
+                            </div>
+                            <svg class="w-5 h-5 text-slate-400 transform transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
-                    @if($sizingCharts->isNotEmpty())
-                    <div class="divide-y divide-slate-100 max-h-[800px] overflow-y-auto">
-                        @foreach($sizingCharts as $chart)
-                        <div class="p-5 hover:bg-slate-50 flex gap-4 transition-colors">
-                            @if($chart->image_paths && count($chart->image_paths) > 0)
-                                <img src="{{ $chart->image_paths[0] }}" alt="Sizing Chart" class="w-16 h-16 rounded object-cover shrink-0 border border-slate-200">
-                            @elseif($chart->image_path)
-                                <img src="{{ $chart->image_path }}" alt="Sizing Chart" class="w-16 h-16 rounded object-cover shrink-0 border border-slate-200">
-                            @endif
-                            <div class="flex-1">
-                                <div class="flex items-start justify-between gap-4">
-                                    <div>
-                                        <h3 class="text-sm font-bold text-slate-900">{{ $chart->title }}</h3>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <form action="{{ route('admin.sizing-charts.delete', $chart->id) }}" method="POST" onsubmit="return confirm('Delete this sizing chart permanently?')">
-                                            @csrf @method('DELETE')
-                                            <button class="text-red-400 hover:text-red-600 p-1 transition-colors">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <div x-show="expanded" x-cloak>
+                        @if($sizingCharts->isNotEmpty())
+                        <div id="update-sizing-charts-sortable-list" class="divide-y divide-slate-100 max-h-[800px] overflow-y-auto">
+                            @foreach($sizingCharts as $chart)
+                            <div x-data="{ editModal: false }" x-show="showRow({{ $loop->index }})" :class="showRow({{ $loop->index }}) ? 'visible-sortable-item' : 'hidden-sortable-item'" class="p-5 hover:bg-slate-50 flex gap-4 transition-colors">
+                                <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1 mt-4" title="Drag to reorder">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                                </div>
+                                @if($chart->image_paths && count($chart->image_paths) > 0)
+                                    <img src="{{ $chart->image_paths[0] }}" alt="Sizing Chart" class="w-16 h-16 rounded object-cover shrink-0 border border-slate-200">
+                                @elseif($chart->image_path)
+                                    <img src="{{ $chart->image_path }}" alt="Sizing Chart" class="w-16 h-16 rounded object-cover shrink-0 border border-slate-200">
+                                @endif
+                                <div class="flex-1">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div>
+                                            <h3 class="text-sm font-bold text-slate-900">{{ $chart->title }}</h3>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <button type="button" @click="editModal = true" class="text-blue-500 hover:text-blue-700 p-1 transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                             </button>
-                                        </form>
+                                            <form action="{{ route('admin.sizing-charts.delete', $chart->id) }}" method="POST" onsubmit="return confirm('Delete this sizing chart permanently?')">
+                                                @csrf @method('DELETE')
+                                                <button class="text-red-400 hover:text-red-600 p-1 transition-colors">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-3">
+                                        <div class="flex items-center gap-2">
+                                            <span>Sort Order:</span>
+                                            <input type="number" 
+                                                   name="items[{{ $loop->index }}][order]" 
+                                                   value="{{ $chart->sort_order }}" 
+                                                   form="bulk-sizing-charts-sort-form"
+                                                   class="w-16 bg-white border border-slate-300 rounded px-2 py-1 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm text-center">
+                                            <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $chart->id }}" form="bulk-sizing-charts-sort-form">
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-3">
-                                    <div class="flex items-center gap-2">
-                                        <span>Sort Order:</span>
-                                        <input type="number" 
-                                               name="items[{{ $loop->index }}][order]" 
-                                               value="{{ $chart->sort_order }}" 
-                                               form="bulk-sizing-charts-sort-form"
-                                               class="w-16 bg-white border border-slate-300 rounded px-2 py-1 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm text-center">
-                                        <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $chart->id }}" form="bulk-sizing-charts-sort-form">
+
+                                <!-- Edit Modal -->
+                                <div x-show="editModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                                    <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl overflow-hidden animate-fade-in text-left">
+                                        <div class="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Edit Sizing Chart</h2>
+                                            <button @click="editModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                                        </div>
+                                        <div class="p-6">
+                                            <form action="{{ route('admin.sizing-charts.update', $chart->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                                @csrf @method('PUT')
+                                                <div>
+                                                    <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Chart Title *</label>
+                                                    <input type="text" name="title" value="{{ $chart->title }}" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Sort Order *</label>
+                                                        <input type="number" name="sort_order" value="{{ $chart->sort_order }}" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Replace Chart Images (leave blank to keep current)</label>
+                                                    <input type="file" name="images[]" multiple accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:tracking-wider file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300">
+                                                </div>
+                                                <div class="pt-2 flex gap-3">
+                                                    <button type="submit" class="flex-1 py-2.5 bg-secondary hover:bg-[#a11825] text-white text-sm font-bold uppercase tracking-wider rounded-lg transition-colors">Save Changes</button>
+                                                    <button type="button" @click="editModal = false" class="px-6 py-2.5 border border-slate-300 text-slate-700 text-sm font-bold uppercase tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
+                                                </div>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            @endforeach
                         </div>
-                        @endforeach
+                        <div class="p-5 border-t border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4" x-show="totalPages > 1">
+                            <div class="text-xs text-slate-500 font-bold uppercase tracking-wider text-center md:text-left">
+                                Showing <span x-text="((page - 1) * perPage) + 1"></span> to <span x-text="Math.min(page * perPage, itemsCount)"></span> of <span x-text="itemsCount"></span> results
+                            </div>
+                            <div class="flex items-center justify-center md:justify-end gap-1">
+                                <button type="button" @click="if (page > 1) page--" :disabled="page === 1" :class="page === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-200 text-slate-700'" class="px-3 py-1.5 rounded bg-white border border-slate-300 text-xs font-bold uppercase transition-colors">Prev</button>
+                                <span class="text-xs font-bold px-2 text-slate-600"><span x-text="page"></span> / <span x-text="totalPages"></span></span>
+                                <button type="button" @click="if (page < totalPages) page++" :disabled="page === totalPages" :class="page === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-200 text-slate-700'" class="px-3 py-1.5 rounded bg-white border border-slate-300 text-xs font-bold uppercase transition-colors">Next</button>
+                            </div>
+                        </div>
+                        @else
+                        <div class="p-8 text-center text-slate-400 text-sm">No sizing charts added yet.</div>
+                        @endif
                     </div>
-                    @else
-                    <div class="p-8 text-center text-slate-400 text-sm">No sizing charts added yet.</div>
-                    @endif
                 </div>
             </div>
         </div>
@@ -2478,15 +2555,111 @@
             new Sortable(listEl, {
                 animation: 150,
                 handle: '.cursor-move',
+                draggable: '.visible-sortable-item',
                 ghostClass: 'bg-slate-50',
+                scroll: true,
+                bubbleScroll: true,
                 onEnd: function (evt) {
                     const inputs = Array.from(listEl.querySelectorAll('.sort-order-input-catalog-col'));
+                    const values = inputs.map(input => parseInt(input.value) || 0).sort((a, b) => a - b);
                     inputs.forEach((input, index) => {
-                        input.value = index + 1;
+                        input.value = values[index];
                     });
                 }
             });
         });
+
+        const updateSizingChartsList = document.getElementById('update-sizing-charts-sortable-list');
+        if (updateSizingChartsList) {
+            new Sortable(updateSizingChartsList, {
+                animation: 150,
+                handle: '.cursor-move',
+                draggable: '.visible-sortable-item',
+                ghostClass: 'bg-slate-50',
+                scroll: true,
+                bubbleScroll: true,
+                onEnd: function () {
+                    const inputs = Array.from(updateSizingChartsList.querySelectorAll('.visible-sortable-item input[name$="[order]"]'));
+                    const values = inputs.map(input => parseInt(input.value) || 0).sort((a, b) => a - b);
+                    inputs.forEach((input, index) => {
+                        input.value = values[index];
+                    });
+                }
+            });
+        }
     });
+
+    function submitBulkSort(collectionId) {
+        const form = document.getElementById('bulk-sort-form-' + collectionId);
+        const listEl = document.getElementById('update-catalog-sortable-list-' + collectionId);
+        if (!form || !listEl) return;
+        
+        // Remove old cloned inputs
+        form.querySelectorAll('.cloned-sort-input').forEach(el => el.remove());
+        
+        // Clone all sort order inputs into the form
+        const inputs = listEl.querySelectorAll('.sort-order-input-catalog-col');
+        inputs.forEach(input => {
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = input.name;
+            hiddenInput.value = input.value;
+            hiddenInput.className = 'cloned-sort-input';
+            form.appendChild(hiddenInput);
+        });
+        
+        form.submit();
+    }
+
+    function submitUnassignedBulkSort() {
+        const form = document.getElementById('bulk-sort-form');
+        const listEl = document.getElementById('update-catalog-sortable-list-unassigned');
+        if (!form || !listEl) return;
+        
+        form.querySelectorAll('.cloned-sort-input').forEach(el => el.remove());
+        
+        const inputs = listEl.querySelectorAll('.sort-order-input-catalog-col');
+        inputs.forEach(input => {
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = input.name;
+            hiddenInput.value = input.value;
+            hiddenInput.className = 'cloned-sort-input';
+            form.appendChild(hiddenInput);
+        });
+        
+        form.submit();
+    }
+
+    function submitSizingChartsBulkSort() {
+        const form = document.getElementById('bulk-sizing-charts-sort-form');
+        const listEl = document.getElementById('update-sizing-charts-sortable-list');
+        if (!form || !listEl) return;
+        
+        form.querySelectorAll('.cloned-sort-input').forEach(el => el.remove());
+        
+        const ids = listEl.querySelectorAll('input[name$="[id]"]');
+        const orders = listEl.querySelectorAll('input[name$="[order]"]');
+        
+        ids.forEach((idInput, index) => {
+            const orderInput = orders[index];
+            
+            const hiddenId = document.createElement('input');
+            hiddenId.type = 'hidden';
+            hiddenId.name = idInput.name;
+            hiddenId.value = idInput.value;
+            hiddenId.className = 'cloned-sort-input';
+            form.appendChild(hiddenId);
+            
+            const hiddenOrder = document.createElement('input');
+            hiddenOrder.type = 'hidden';
+            hiddenOrder.name = orderInput.name;
+            hiddenOrder.value = orderInput.value;
+            hiddenOrder.className = 'cloned-sort-input';
+            form.appendChild(hiddenOrder);
+        });
+        
+        form.submit();
+    }
 </script>
 @endsection

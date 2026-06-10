@@ -519,15 +519,18 @@ class AdminController extends Controller
 
     public function bulkSortDesigns(Request $request)
     {
+        \Log::info('Designs bulkSortDesigns requested data: ' . json_encode($request->all()));
+
         $request->validate([
             'designs' => ['required', 'array'],
-            'designs.*.sort_order' => ['required', 'numeric'],
+            'designs.*.sort_order' => ['nullable', 'numeric'],
         ]);
 
         foreach ($request->designs as $designId => $data) {
             $design = \App\Models\DesignCatalog::find($designId);
             if ($design) {
-                $design->update(['sort_order' => $data['sort_order']]);
+                $sortOrder = isset($data['sort_order']) && $data['sort_order'] !== '' ? $data['sort_order'] : 0;
+                $design->update(['sort_order' => $sortOrder]);
             }
         }
 
@@ -1569,14 +1572,19 @@ class AdminController extends Controller
         $request->validate([
             'items' => 'required|array',
             'items.*.id' => 'required|exists:sizing_charts,id',
-            'items.*.order' => 'required|integer',
+            'items.*.order' => 'nullable|integer',
         ]);
 
         foreach ($request->items as $item) {
-            SizingChart::where('id', $item['id'])->update(['sort_order' => $item['order']]);
+            $order = isset($item['order']) && $item['order'] !== '' ? (int)$item['order'] : 0;
+            SizingChart::where('id', $item['id'])->update(['sort_order' => $order]);
         }
 
-        return response()->json(['success' => true]);
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()->route('admin.dashboard')->with('success', 'Sizing chart order updated successfully.');
     }
 
     // ─── TESTIMONIALS ────────────────────────────────────────────────────────────
