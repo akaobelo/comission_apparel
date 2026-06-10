@@ -151,6 +151,9 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     Route::get('/coach/dashboard', [CoachController::class, 'dashboard'])->name('coach.dashboard');
 
     // Store management
+    Route::get('/coach/store', function () {
+        return redirect()->route('coach.dashboard');
+    });
     Route::post('/coach/store', [CoachController::class, 'createStore'])->name('coach.store.create');
     Route::post('/coach/store/{store}/item', [CoachController::class, 'addStoreItem'])->name('coach.store.item.add');
     Route::post('/coach/item/{item}/remove', [CoachController::class, 'removeStoreItem'])->name('coach.store.item.remove');
@@ -172,7 +175,13 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     Route::delete('/coach/order/{order}/delete', [CoachController::class, 'deleteOrder'])->name('coach.order.delete');
 
     // Direct Orders (No Team Store)
+    Route::get('/coach/direct-order/submit', function () {
+        return redirect()->route('coach.dashboard');
+    });
     Route::post('/coach/direct-order/submit', [CoachController::class, 'submitDirectOrder'])->name('coach.direct-order.submit');
+    Route::get('/coach/direct-order/finalize', function () {
+        return redirect()->route('coach.dashboard');
+    });
     Route::post('/coach/direct-order/finalize', [CoachController::class, 'finalizeDirectOrders'])->name('coach.direct-order.finalize');
     Route::get('/coach/direct-order/export/{batchId}', [CoachController::class, 'exportDirectOrderBatch'])->name('coach.direct-order.export');
     Route::post('/coach/direct-order/archive/{batchId}', [CoachController::class, 'archiveDirectOrderBatch'])->name('coach.direct-order.archive');

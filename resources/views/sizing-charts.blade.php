@@ -3,20 +3,28 @@
 @section('title', 'Sizing Charts | The Commission Apparel')
 
 @section('content')
-<div class="bg-slate-50 min-h-screen pt-32 pb-24" x-data="{ activeImages: [], activeIndex: 0, openLightbox(images) { this.activeImages = images; this.activeIndex = 0; }, closeLightbox() { this.activeImages = []; } }">
+<div class="bg-slate-50 min-h-screen pt-32 pb-24" x-data="{ search: '', activeImages: [], activeIndex: 0, openLightbox(images) { this.activeImages = images; this.activeIndex = 0; }, closeLightbox() { this.activeImages = []; } }">
     <div class="max-w-[1200px] mx-auto px-6">
-        <div class="text-center mb-12">
+        <div class="text-center mb-8">
             <h1 class="text-4xl md:text-5xl font-black uppercase tracking-tight text-slate-900 mb-4">Sizing Charts</h1>
             <p class="text-slate-600 text-lg max-w-2xl mx-auto">Review our sizing charts below to ensure the perfect fit for your custom apparel.</p>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 mb-10">
+        <!-- Search Bar -->
+        <div class="max-w-md mx-auto mb-12 relative">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <input type="text" x-model="search" placeholder="Search sizing charts (e.g. Jersey, Hoodie)..." class="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-slate-950 focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none shadow-sm transition-all placeholder-slate-400">
+        </div>
+
+        <div x-ref="grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 mb-10">
             @forelse($sizingCharts as $chart)
             @php
                 $chartImages = $chart->image_paths && count($chart->image_paths) > 0 ? json_encode($chart->image_paths) : ($chart->image_path ? json_encode([$chart->image_path]) : json_encode([]));
                 $firstImage = $chart->image_paths && count($chart->image_paths) > 0 ? $chart->image_paths[0] : $chart->image_path;
             @endphp
-            <div class="flex flex-col group cursor-pointer" @click="openLightbox(JSON.parse($el.dataset.images))" data-images="{{ $chartImages }}">
+            <div class="flex flex-col group cursor-pointer sizing-chart-card" x-show="search === '' || '{{ strtolower(addslashes($chart->title)) }}'.includes(search.toLowerCase())" @click="openLightbox(JSON.parse($el.dataset.images))" data-images="{{ $chartImages }}">
                 <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center border border-slate-200">
                     <img src="{{ $firstImage }}" alt="{{ $chart->title }}" class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105">
                     @if($chart->image_paths && count($chart->image_paths) > 1)
@@ -38,6 +46,15 @@
             </div>
             @endforelse
         </div>
+
+        <!-- No Results Message -->
+        @if($sizingCharts->isNotEmpty())
+        <div x-show="search !== '' && $refs.grid && !$refs.grid.querySelector('.sizing-chart-card:not([style*=\x22display: none\x22])')" x-cloak class="text-center text-slate-500 py-12 bg-white rounded-2xl border border-slate-200 shadow-sm max-w-md mx-auto">
+            <svg class="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <p class="font-bold text-slate-700">No sizing charts found</p>
+            <p class="text-sm text-slate-500 mt-1">Try checking your spelling or search for a different item.</p>
+        </div>
+        @endif
         <!-- Lightbox Modal -->
         <div x-show="activeImages.length > 0" x-cloak class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 p-4 backdrop-blur-sm" @click.self="closeLightbox()" @keydown.escape.window="closeLightbox()">
             <button @click="closeLightbox()" class="absolute top-6 right-6 text-white/70 hover:text-white transition-colors z-[110]">
