@@ -26,6 +26,14 @@ class TeamStore extends Model
         'pricing_approved' => 'boolean',
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($store) {
+            \DB::table('team_stores')->increment('sort_order');
+            $store->sort_order = 1;
+        });
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
