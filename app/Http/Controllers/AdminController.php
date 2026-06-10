@@ -84,7 +84,7 @@ class AdminController extends Controller
                   });
             });
         }
-        $productionStores = $activeStoresQuery->latest()->paginate(10, ['*'], 'active_store_page')->withQueryString();
+        $productionStores = $activeStoresQuery->orderBy('sort_order', 'asc')->orderByDesc('created_at')->orderByDesc('id')->get();
 
         // Finalized direct orders (no team store)
         $finalizedDirectOrders = ParentOrder::whereNull('team_store_id')
@@ -837,6 +837,22 @@ class AdminController extends Controller
 
         return redirect()->route('admin.store.edit', $store)
             ->with('success', 'Campaign Store created successfully. You can now assign designs to it.');
+    }
+
+    public function updateStoresSortOrder(Request $request)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array',
+            'items.*.id' => 'required|exists:team_stores,id',
+            'items.*.order' => 'nullable|integer',
+        ]);
+
+        foreach ($validated['items'] as $item) {
+            $order = isset($item['order']) ? (int)$item['order'] : 0;
+            TeamStore::where('id', $item['id'])->update(['sort_order' => $order]);
+        }
+
+        return redirect()->route('admin.dashboard')->with('success', 'Stores sort order updated successfully.');
     }
 
     public function archiveStore(TeamStore $store)

@@ -300,7 +300,13 @@
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Active Team Stores</h2>
                         </div>
                         <div class="flex items-center gap-4 text-slate-400">
-                            <span class="text-sm font-bold">{{ $productionStores->total() }} Stores</span>
+                            <div @click.stop x-show="expanded" x-cloak>
+                                <form id="bulk-stores-sort-form" action="{{ route('admin.stores.bulk-sort') }}" method="POST">
+                                    @csrf
+                                </form>
+                                <button type="button" onclick="submitStoresBulkSort()" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort</button>
+                            </div>
+                            <span class="text-sm font-bold">{{ $productionStores->count() }} Stores</span>
                             <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
@@ -324,19 +330,33 @@
                         @if($productionStores->isEmpty())
                             <div class="p-8 text-center text-slate-400 text-sm">No active stores.</div>
                         @else
-                            <div class="divide-y divide-slate-100">
+                            <div id="update-active-stores-sortable-list" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
                                 @foreach($productionStores as $store)
-                                <div class="p-4 flex items-center justify-between gap-4">
-                                    <div>
-                                        <div class="font-bold text-sm text-slate-900">{{ $store->name }}</div>
-                                        <div class="text-xs text-slate-500">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
-                                        @if($store->order_deadline)
-                                            <div class="text-[10px] font-bold text-{{ $store->order_deadline->isPast() ? 'red' : 'slate' }}-500 mt-0.5 uppercase tracking-wide">
-                                                Deadline: {{ $store->order_deadline->format('M d, Y') }}
-                                            </div>
-                                        @endif
+                                <div class="p-4 flex items-center justify-between gap-4 visible-sortable-item bg-white">
+                                    <div class="flex items-center gap-3">
+                                        <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1" title="Drag to reorder">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-sm text-slate-900">{{ $store->name }}</div>
+                                            <div class="text-xs text-slate-500">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
+                                            @if($store->order_deadline)
+                                                <div class="text-[10px] font-bold text-{{ $store->order_deadline->isPast() ? 'red' : 'slate' }}-500 mt-0.5 uppercase tracking-wide">
+                                                    Deadline: {{ $store->order_deadline->format('M d, Y') }}
+                                                </div>
+                                            @endif
+                                        </div>
                                     </div>
                                     <div class="flex items-center gap-2 flex-shrink-0">
+                                        <div class="flex items-center gap-1.5 mr-2">
+                                            <span class="text-[10px] font-black uppercase text-slate-400">Sort:</span>
+                                            <input type="number" 
+                                                   name="items[{{ $loop->index }}][order]" 
+                                                   value="{{ $store->sort_order }}" 
+                                                   class="w-14 bg-white border border-slate-300 rounded px-2 py-1 text-xs text-slate-900 text-center font-bold focus:border-primary focus:outline-none shadow-sm">
+                                        </div>
+                                        <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $store->id }}">
+
                                         <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this active store?')">
                                             @csrf
                                             <button type="submit" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors">Archive</button>
@@ -345,11 +365,6 @@
                                     </div>
                                 </div>
                                 @endforeach
-                            </div>
-                        @endif
-                        @if($productionStores instanceof \Illuminate\Pagination\LengthAwarePaginator && $productionStores->hasPages())
-                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#active-stores-results" hx-select="#active-stores-results" hx-swap="outerHTML">
-                                {{ $productionStores->links() }}
                             </div>
                         @endif
                         </div>
@@ -2593,7 +2608,36 @@
                 }
             });
         }
+
+        initActiveStoresSortable();
     });
+
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'active-stores-results') {
+            initActiveStoresSortable();
+        }
+    });
+
+    function initActiveStoresSortable() {
+        const listEl = document.getElementById('update-active-stores-sortable-list');
+        if (listEl) {
+            new Sortable(listEl, {
+                animation: 150,
+                handle: '.cursor-move',
+                draggable: '.visible-sortable-item',
+                ghostClass: 'bg-slate-50',
+                scroll: true,
+                bubbleScroll: true,
+                onEnd: function () {
+                    const inputs = Array.from(listEl.querySelectorAll('.visible-sortable-item input[name$="[order]"]'));
+                    const values = inputs.map(input => parseInt(input.value) || 0).sort((a, b) => a - b);
+                    inputs.forEach((input, index) => {
+                        input.value = values[index];
+                    });
+                }
+            });
+        }
+    }
 
     function submitBulkSort(collectionId) {
         const form = document.getElementById('bulk-sort-form-' + collectionId);
@@ -2640,6 +2684,37 @@
     function submitSizingChartsBulkSort() {
         const form = document.getElementById('bulk-sizing-charts-sort-form');
         const listEl = document.getElementById('update-sizing-charts-sortable-list');
+        if (!form || !listEl) return;
+        
+        form.querySelectorAll('.cloned-sort-input').forEach(el => el.remove());
+        
+        const ids = listEl.querySelectorAll('input[name$="[id]"]');
+        const orders = listEl.querySelectorAll('input[name$="[order]"]');
+        
+        ids.forEach((idInput, index) => {
+            const orderInput = orders[index];
+            
+            const hiddenId = document.createElement('input');
+            hiddenId.type = 'hidden';
+            hiddenId.name = idInput.name;
+            hiddenId.value = idInput.value;
+            hiddenId.className = 'cloned-sort-input';
+            form.appendChild(hiddenId);
+            
+            const hiddenOrder = document.createElement('input');
+            hiddenOrder.type = 'hidden';
+            hiddenOrder.name = orderInput.name;
+            hiddenOrder.value = orderInput.value;
+            hiddenOrder.className = 'cloned-sort-input';
+            form.appendChild(hiddenOrder);
+        });
+        
+        form.submit();
+    }
+
+    function submitStoresBulkSort() {
+        const form = document.getElementById('bulk-stores-sort-form');
+        const listEl = document.getElementById('update-active-stores-sortable-list');
         if (!form || !listEl) return;
         
         form.querySelectorAll('.cloned-sort-input').forEach(el => el.remove());

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -218,6 +218,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::delete('/admin/coach/{coach}/remove-design/{design}', [AdminController::class, 'removeDesign'])->name('admin.coach.remove-design');
 
     // Store controls
+    Route::post('/admin/stores/bulk-sort', [AdminController::class, 'updateStoresSortOrder'])->name('admin.stores.bulk-sort');
     Route::post('/admin/stores', [AdminController::class, 'createCampaignStore'])->name('admin.stores.create');
     Route::post('/admin/stores/{store}/approve', [AdminController::class, 'approveStore'])->name('admin.stores.approve');
     Route::post('/admin/stores/{store}/decline', [AdminController::class, 'declineStore'])->name('admin.stores.decline');

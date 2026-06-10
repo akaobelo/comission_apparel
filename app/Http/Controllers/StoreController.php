@@ -30,7 +30,11 @@ class StoreController extends Controller
             });
         }
 
-        $stores = $query->latest()->paginate(12)->withQueryString();
+        $stores = $query->orderBy('sort_order', 'asc')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate(12)
+            ->withQueryString();
 
         return view('store.search', compact('stores'));
     }
