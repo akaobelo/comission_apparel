@@ -16,7 +16,7 @@
                 $chartImages = $chart->image_paths && count($chart->image_paths) > 0 ? json_encode($chart->image_paths) : ($chart->image_path ? json_encode([$chart->image_path]) : json_encode([]));
                 $firstImage = $chart->image_paths && count($chart->image_paths) > 0 ? $chart->image_paths[0] : $chart->image_path;
             @endphp
-            <div class="flex flex-col group cursor-pointer" @click="openLightbox({!! $chartImages !!})">
+            <div class="flex flex-col group cursor-pointer" @click="openLightbox(JSON.parse($el.dataset.images))" data-images="{{ $chartImages }}">
                 <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center border border-slate-200">
                     <img src="{{ $firstImage }}" alt="{{ $chart->title }}" class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105">
                     @if($chart->image_paths && count($chart->image_paths) > 1)
