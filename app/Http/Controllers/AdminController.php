@@ -1542,25 +1542,45 @@ class AdminController extends Controller
             'images.*'    => ['image', 'max:10240'],
         ]);
 
-        if ($request->hasFile('images')) {
-            if ($chart->image_paths) {
-                foreach ($chart->image_paths as $path) {
-                    $pathToRemove = str_replace('/storage/', '', $path);
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+        // Get existing paths (supporting legacy image_path or image_paths)
+        $existingPaths = $chart->image_paths ?? [];
+        if (empty($existingPaths) && !empty($chart->image_path)) {
+            $existingPaths[] = $chart->image_path;
+        }
+
+        // Handle explicit reordering from frontend
+        if ($request->has('existing_images') && is_array($request->existing_images)) {
+            $reordered = [];
+            foreach ($request->existing_images as $path) {
+                if (in_array($path, $existingPaths)) {
+                    $reordered[] = $path;
                 }
-            } elseif ($chart->image_path) {
-                $pathToRemove = str_replace('/storage/', '', $chart->image_path);
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
             }
-            
-            $imagePaths = [];
+            $existingPaths = $reordered;
+        }
+
+        // Handle image removals
+        if ($request->has('remove_images') && is_array($request->remove_images)) {
+            foreach ($request->remove_images as $pathToRemoveRaw) {
+                if (($key = array_search($pathToRemoveRaw, $existingPaths)) !== false) {
+                    $pathToRemove = str_replace('/storage/', '', $pathToRemoveRaw);
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+                    unset($existingPaths[$key]);
+                }
+            }
+            $existingPaths = array_values($existingPaths); // re-index
+        }
+
+        // Handle new image uploads
+        if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('sizing_charts', 'public');
-                $imagePaths[] = '/storage/' . $path;
+                $existingPaths[] = '/storage/' . $path;
             }
-            $validated['image_paths'] = $imagePaths;
-            $validated['image_path']  = null;
         }
+
+        $validated['image_paths'] = array_values($existingPaths);
+        $validated['image_path']  = null;
 
         unset($validated['images']);
         $chart->update($validated);

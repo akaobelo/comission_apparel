@@ -20,4 +20,12 @@ class SizingChart extends Model
     protected $casts = [
         'image_paths' => 'array',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($chart) {
+            \DB::table('sizing_charts')->increment('sort_order');
+            $chart->sort_order = 1;
+        });
+    }
 }

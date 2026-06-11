@@ -33,6 +33,22 @@ class DesignCatalog extends Model
         'image_paths' => 'array',
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($design) {
+            if ($design->design_collection_id) {
+                \DB::table('design_catalog')
+                    ->where('design_collection_id', $design->design_collection_id)
+                    ->increment('sort_order');
+            } else {
+                \DB::table('design_catalog')
+                    ->whereNull('design_collection_id')
+                    ->increment('sort_order');
+            }
+            $design->sort_order = 1;
+        });
+    }
+
     public function designCollection()
     {
         return $this->belongsTo(DesignCollection::class);

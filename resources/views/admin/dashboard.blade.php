@@ -2401,7 +2401,7 @@
                                             <button @click="editModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
                                         </div>
                                         <div class="p-6">
-                                            <form action="{{ route('admin.sizing-charts.update', $chart->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                            <form action="{{ route('admin.sizing-charts.update', $chart) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                                                 @csrf @method('PUT')
                                                 <div>
                                                     <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Chart Title *</label>
@@ -2413,8 +2413,65 @@
                                                         <input type="number" name="sort_order" value="{{ $chart->sort_order }}" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">
                                                     </div>
                                                 </div>
+                                                @php
+                                                    $chartImages = $chart->image_paths ?? [];
+                                                    if (empty($chartImages) && !empty($chart->image_path)) {
+                                                        $chartImages[] = $chart->image_path;
+                                                    }
+                                                @endphp
+                                                @if(!empty($chartImages))
+                                                    <div class="mb-3">
+                                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Current Images (Use arrows to reorder. Click DEL to remove)</label>
+                                                        <div x-data="{
+                                                            images: {{ json_encode($chartImages) }},
+                                                            removed: [],
+                                                            moveLeft(idx) {
+                                                                if (idx > 0) {
+                                                                    let temp = this.images[idx];
+                                                                    this.images[idx] = this.images[idx - 1];
+                                                                    this.images[idx - 1] = temp;
+                                                                }
+                                                            },
+                                                            moveRight(idx) {
+                                                                if (idx < this.images.length - 1) {
+                                                                    let temp = this.images[idx];
+                                                                    this.images[idx] = this.images[idx + 1];
+                                                                    this.images[idx + 1] = temp;
+                                                                }
+                                                            },
+                                                            removeImage(idx) {
+                                                                this.removed.push(this.images[idx]);
+                                                                this.images.splice(idx, 1);
+                                                            }
+                                                        }" class="flex flex-wrap gap-2">
+                                                            <template x-for="(imgPath, idx) in images" :key="imgPath">
+                                                                <div class="relative group block w-16 h-16 bg-white rounded-md border border-slate-200 shadow-sm">
+                                                                    <input type="hidden" name="existing_images[]" :value="imgPath">
+                                                                    <img :src="imgPath" class="w-full h-full object-cover rounded-md">
+
+                                                                    <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center rounded-md">
+                                                                        <div class="flex gap-1 mb-1">
+                                                                            <button type="button" @click.prevent="moveLeft(idx)" x-show="idx > 0" class="p-1 bg-white hover:bg-slate-200 text-slate-900 rounded-sm" title="Move Left">
+                                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+                                                                            </button>
+                                                                            <button type="button" @click.prevent="moveRight(idx)" x-show="idx < images.length - 1" class="p-1 bg-white hover:bg-slate-200 text-slate-900 rounded-sm" title="Move Right">
+                                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/></svg>
+                                                                            </button>
+                                                                        </div>
+                                                                        <button type="button" @click.prevent="removeImage(idx)" class="px-2 py-0.5 bg-red-500 hover:bg-red-600 text-white text-[9px] font-bold rounded-sm" title="Remove">
+                                                                            DEL
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+                                                            <template x-for="rm in removed">
+                                                                <input type="hidden" name="remove_images[]" :value="rm">
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                @endif
                                                 <div>
-                                                    <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Replace Chart Images (leave blank to keep current)</label>
+                                                    <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Upload New Images (optional, will be appended)</label>
                                                     <input type="file" name="images[]" multiple accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:tracking-wider file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300">
                                                 </div>
                                                 <div class="pt-2 flex gap-3">

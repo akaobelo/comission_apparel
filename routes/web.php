@@ -268,6 +268,14 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/sizing-charts', [AdminController::class, 'createSizingChart'])->name('admin.sizing-charts.create');
     Route::put('/admin/sizing-charts/{chart}', [AdminController::class, 'updateSizingChart'])->name('admin.sizing-charts.update');
     Route::delete('/admin/sizing-charts/{chart}', [AdminController::class, 'deleteSizingChart'])->name('admin.sizing-charts.delete');
+    Route::get('/admin/sizing-charts', function () {
+        return redirect()->route('admin.dashboard');
+    });
+    Route::get('/admin/sizing-charts/{chart}', function () {
+        return redirect()->route('admin.dashboard');
+    });
+
+
 
     // Hero Settings
     Route::post('/admin/hero-settings', [AdminController::class, 'updateHeroSettings'])->name('admin.hero-settings.update');

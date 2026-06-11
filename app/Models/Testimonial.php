@@ -21,4 +21,12 @@ class Testimonial extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($testimonial) {
+            \DB::table('testimonials')->increment('sort_order');
+            $testimonial->sort_order = 1;
+        });
+    }
 }

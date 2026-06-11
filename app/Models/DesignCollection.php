@@ -20,6 +20,14 @@ class DesignCollection extends Model
         'sports' => 'array',
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($collection) {
+            \DB::table('design_collections')->increment('sort_order');
+            $collection->sort_order = 1;
+        });
+    }
+
     public function designs()
     {
         return $this->hasMany(DesignCatalog::class);

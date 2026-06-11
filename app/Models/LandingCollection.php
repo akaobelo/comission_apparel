@@ -14,4 +14,12 @@ class LandingCollection extends Model
         'sort_order',
         'is_active',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($collection) {
+            \DB::table('landing_collections')->increment('sort_order');
+            $collection->sort_order = 1;
+        });
+    }
 }
