@@ -24,14 +24,22 @@
                 $chartImages = $chart->image_paths && count($chart->image_paths) > 0 ? json_encode($chart->image_paths) : ($chart->image_path ? json_encode([$chart->image_path]) : json_encode([]));
                 $firstImage = $chart->image_paths && count($chart->image_paths) > 0 ? $chart->image_paths[0] : $chart->image_path;
             @endphp
-            <div class="flex flex-col group cursor-pointer sizing-chart-card" x-show="search === '' || '{{ strtolower(addslashes($chart->title)) }}'.includes(search.toLowerCase())" @click="openLightbox(JSON.parse($el.dataset.images))" data-images="{{ $chartImages }}">
+            <div class="flex flex-col group cursor-pointer sizing-chart-card" 
+                 x-show="search === '' || '{{ strtolower(addslashes($chart->title)) }}'.includes(search.toLowerCase())" 
+                 @click="openLightbox(imgs)" 
+                 x-data="{ imgIdx: 0, imgs: {{ $chartImages }}, imgInterval: null }"
+                 @mouseenter="if(imgs.length > 1) imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" 
+                 @mouseleave="clearInterval(imgInterval); imgIdx = 0">
                 <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center border border-slate-200">
-                    <img src="{{ $firstImage }}" alt="{{ $chart->title }}" class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105">
-                    @if($chart->image_paths && count($chart->image_paths) > 1)
-                        <div class="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md font-bold z-10 backdrop-blur-sm">
-                            +{{ count($chart->image_paths) - 1 }}
+                    <img :src="imgs.length > 0 ? imgs[imgIdx] : '{{ $firstImage }}'" src="{{ $firstImage }}" alt="{{ $chart->title }}" class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105">
+                    
+                    <template x-if="imgs.length > 1">
+                        <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <template x-for="(img, idx) in imgs" :key="idx">
+                                <span class="w-1.5 h-1.5 rounded-full transition-colors shadow-sm" :class="idx === imgIdx ? 'bg-red-600' : 'bg-white/60'"></span>
+                            </template>
                         </div>
-                    @endif
+                    </template>
                 </div>
                 <div class="pt-3 flex flex-col text-center items-center w-full px-1">
                     <span class="text-xs md:text-sm font-medium text-red-600 mb-0.5 w-full truncate">View Size Chart</span>
