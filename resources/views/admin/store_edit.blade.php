@@ -278,10 +278,19 @@
                     <div id="admin-current-store-items-container">
                     @if($store->items->isNotEmpty())
                     <div class="space-y-4 border-t border-slate-200 pt-6">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Current Store Items</h4>
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Current Store Items</h4>
+                        </div>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             @foreach($store->items as $item)
-                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col">
+                                <div class="store-item-card bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col relative"
+                                     id="item-card-{{ $item->id }}"
+                                     data-id="{{ $item->id }}"
+                                     data-name="{{ $item->name }}"
+                                     data-wholesale="{{ number_format($item->wholesale_price, 2, '.', '') }}"
+                                     data-retail="{{ number_format($item->retail_price, 2, '.', '') }}"
+                                     data-sort="{{ $item->sort_order ?? 0 }}"
+                                     data-image="{{ !empty($item->image_paths) ? $item->image_paths[0] : ($item->image_url ?? '') }}">
                                     <div class="aspect-[4/5] bg-white rounded-lg mb-3 overflow-hidden">
                                         @if(!empty($item->image_paths))
                                             <img src="{{ $item->image_paths[0] }}" class="w-full h-full object-cover object-top">
@@ -290,11 +299,20 @@
                                         @endif
                                     </div>
                                     <div class="text-xs font-bold text-slate-900 truncate mb-1" title="{{ $item->name }}">{{ $item->name }}</div>
-                                    <div class="text-[10px] text-slate-500 font-medium mb-3">Retail: ${{ number_format($item->retail_price, 2) }}</div>
-                                    <form action="{{ route('admin.store.item.remove', ['item' => $item->id]) }}" method="POST" class="mt-auto" onsubmit="event.preventDefault(); if(confirm('Remove this item from the store?')) { let form = this; let row = form.closest('.bg-slate-50'); if(row) row.style.opacity = '0.5'; fetch(form.action, { method: 'POST', body: new FormData(form), headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'} }).then(res => { if(res.ok) { window.dispatchEvent(new CustomEvent('item-removed', { detail: { id: {{ $item->design_catalog_id }} } })); fetch(window.location.href).then(r => r.text()).then(html => { const doc = new DOMParser().parseFromString(html, 'text/html'); const list = document.querySelector('#admin-current-store-items-container'); if (list && doc.querySelector('#admin-current-store-items-container')) list.innerHTML = doc.querySelector('#admin-current-store-items-container').innerHTML; }); } else { if(row) row.style.opacity = '1'; } }) }">
-                                        @csrf
-                                        <button type="submit" class="w-full py-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 text-[10px] font-black uppercase tracking-widest rounded transition-colors">Remove</button>
-                                    </form>
+                                    <div class="text-[10px] text-slate-500 font-medium mb-3 flex flex-col gap-0.5">
+                                        <span>Wholesale: <strong class="text-slate-700 font-semibold" id="label-wholesale-{{ $item->id }}">${{ number_format($item->wholesale_price, 2) }}</strong></span>
+                                        <span>Retail: <strong class="text-green-600 font-semibold" id="label-retail-{{ $item->id }}">${{ number_format($item->retail_price, 2) }}</strong></span>
+                                        <span>Sort: <strong class="text-slate-600" id="label-sort-{{ $item->id }}">{{ $item->sort_order ?? 0 }}</strong></span>
+                                    </div>
+
+                                    <div class="flex gap-2 mt-auto">
+                                        <button type="button" onclick="openPricingModal({{ $item->id }})" title="Edit Pricing" class="flex-1 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center justify-center focus:outline-none">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        </button>
+                                        <button type="button" onclick="event.preventDefault(); if(confirm('Remove this item from the store?')) { let btn = this; let row = btn.closest('.store-item-card'); if(row) row.style.opacity = '0.5'; let form = document.createElement('form'); form.action = '{{ route('admin.store.item.remove', ['item' => $item->id]) }}'; form.method = 'POST'; let token = document.createElement('input'); token.type = 'hidden'; token.name = '_token'; token.value = '{{ csrf_token() }}'; form.appendChild(token); document.body.appendChild(form); fetch(form.action, { method: 'POST', body: new FormData(form), headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'} }).then(res => { if(res.ok) { window.dispatchEvent(new CustomEvent('item-removed', { detail: { id: {{ $item->design_catalog_id }} } })); fetch(window.location.href).then(r => r.text()).then(html => { const doc = new DOMParser().parseFromString(html, 'text/html'); const list = document.querySelector('#admin-current-store-items-container'); if (list && doc.querySelector('#admin-current-store-items-container')) list.innerHTML = doc.querySelector('#admin-current-store-items-container').innerHTML; }); } else { if(row) row.style.opacity = '1'; } form.remove(); }) }" title="Remove Item" class="px-2.5 py-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors border border-transparent hover:border-red-200 focus:outline-none flex items-center justify-center">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
@@ -320,50 +338,7 @@
                 </div>
             </div>
 
-            {{-- Set pricing for store items --}}
-            @if($store->items->isNotEmpty())
-            <div x-data="{ open: false }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
-                <button type="button" @click="open = !open" class="w-full p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between hover:bg-slate-100 transition-colors focus:outline-none text-left">
-                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Line-Item Configuration (Pricing & Sorting)</h2>
-                    <svg :class="{'rotate-180': open}" class="w-5 h-5 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                </button>
-                <div x-show="open" x-collapse x-cloak>
-                    <div class="p-5">
-                    <form action="{{ route('admin.store.pricing.update', $store) }}" method="POST" class="space-y-4">
-                        @csrf
-                        <div class="space-y-3">
-                            @foreach($store->items as $item)
-                            <div class="border border-slate-200 rounded-lg p-4 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors hover:bg-slate-100/50">
-                                <div class="font-bold text-slate-900 mb-1 md:mb-0 flex-1 truncate pr-4" title="{{ $item->name }}">{{ $item->name }}</div>
-                                <div class="flex gap-4 w-full md:w-auto">
-                                    <div class="w-28 flex-shrink-0">
-                                        <label class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Wholesale</label>
-                                        <div class="relative">
-                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm pointer-events-none">$</span>
-                                            <input type="number" step="0.01" name="items[{{ $item->id }}][wholesale_price]" value="{{ old('items.'.$item->id.'.wholesale_price', $item->wholesale_price) }}" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-medium text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm transition-shadow">
-                                        </div>
-                                    </div>
-                                    <div class="w-28 flex-shrink-0">
-                                        <label class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Retail</label>
-                                        <div class="relative">
-                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm pointer-events-none">$</span>
-                                            <input type="number" step="0.01" name="items[{{ $item->id }}][retail_price]" value="{{ old('items.'.$item->id.'.retail_price', $item->retail_price) }}" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-medium text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm transition-shadow">
-                                        </div>
-                                    </div>
-                                    <div class="w-24 flex-shrink-0">
-                                        <label class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Sort Order</label>
-                                        <input type="number" name="items[{{ $item->id }}][sort_order]" value="{{ old('items.'.$item->id.'.sort_order', $item->sort_order ?? 0) }}" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium text-center text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm transition-shadow">
-                                    </div>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-                        <button type="submit" class="btn btn-primary py-2 px-6 text-sm uppercase tracking-wider">Save Configuration</button>
-                    </form>
-                </div>
-                </div>
-            </div>
-            @endif
+
 
             {{-- Package Management --}}
             @php
@@ -521,4 +496,149 @@
         </div>
     </div>
 </div>
+
+<!-- Pricing Modal -->
+<div id="pricingModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closePricingModal()"></div>
+    
+    <!-- Modal Content -->
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+            <h3 class="font-black uppercase tracking-tight text-slate-900 text-sm">Edit Item Pricing</h3>
+            <button type="button" onclick="closePricingModal()" class="text-slate-400 hover:text-slate-900 transition-colors focus:outline-none">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        
+        <!-- Form Body -->
+        <div class="p-6 space-y-4">
+            <div class="flex gap-4 items-center mb-2">
+                <div class="w-16 h-20 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0">
+                    <img id="modalItemImage" src="" class="w-full h-full object-cover object-top">
+                </div>
+                <div>
+                    <h4 id="modalItemName" class="font-bold text-slate-950 text-sm leading-snug"></h4>
+                </div>
+            </div>
+            
+            <input type="hidden" id="modalItemId">
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Wholesale Price ($)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm pointer-events-none">$</span>
+                        <input type="number" id="modalWholesale" step="0.01" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2.5 text-sm font-medium text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Retail Price ($)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm pointer-events-none">$</span>
+                        <input type="number" id="modalRetail" step="0.01" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2.5 text-sm font-medium text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Sort Order</label>
+                <input type="number" id="modalSort" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+            <button type="button" onclick="closePricingModal()" class="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-slate-900 transition-colors focus:outline-none">Cancel</button>
+            <button type="button" id="modalSaveButton" onclick="saveModalPricing()" class="px-5 py-2 bg-red-600 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-red-700 transition-colors shadow-sm focus:outline-none flex items-center gap-2">
+                Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openPricingModal(itemId) {
+    const card = document.getElementById(`item-card-${itemId}`);
+    if (!card) return;
+    
+    document.getElementById('modalItemId').value = itemId;
+    document.getElementById('modalItemName').innerText = card.dataset.name;
+    document.getElementById('modalItemImage').src = card.dataset.image;
+    document.getElementById('modalWholesale').value = card.dataset.wholesale;
+    document.getElementById('modalRetail').value = card.dataset.retail;
+    document.getElementById('modalSort').value = card.dataset.sort;
+    
+    const modal = document.getElementById('pricingModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closePricingModal() {
+    const modal = document.getElementById('pricingModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function saveModalPricing() {
+    const itemId = document.getElementById('modalItemId').value;
+    const wholesale = document.getElementById('modalWholesale').value;
+    const retail = document.getElementById('modalRetail').value;
+    const sortOrder = document.getElementById('modalSort').value;
+    
+    const saveBtn = document.getElementById('modalSaveButton');
+    const originalText = saveBtn.innerText;
+    saveBtn.innerText = 'Saving...';
+    saveBtn.disabled = true;
+    
+    const formData = new FormData();
+    formData.append('_token', '{{ csrf_token() }}');
+    formData.append(`items[${itemId}][wholesale_price]`, wholesale);
+    formData.append(`items[${itemId}][retail_price]`, retail);
+    formData.append(`items[${itemId}][sort_order]`, sortOrder);
+    
+    fetch('{{ route('admin.store.pricing.update', $store) }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(res => {
+        saveBtn.innerText = originalText;
+        saveBtn.disabled = false;
+        if (res.ok) {
+            // Update Card Datasets
+            const card = document.getElementById(`item-card-${itemId}`);
+            if (card) {
+                card.dataset.wholesale = parseFloat(wholesale).toFixed(2);
+                card.dataset.retail = parseFloat(retail).toFixed(2);
+                card.dataset.sort = parseInt(sortOrder);
+                
+                // Update Labels
+                document.getElementById(`label-wholesale-${itemId}`).innerText = `$${parseFloat(wholesale).toFixed(2)}`;
+                document.getElementById(`label-retail-${itemId}`).innerText = `$${parseFloat(retail).toFixed(2)}`;
+                document.getElementById(`label-sort-${itemId}`).innerText = sortOrder;
+                
+                // Show temporary success badge
+                const badge = document.createElement('div');
+                badge.className = 'absolute top-2 right-2 bg-green-600 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded shadow z-10';
+                badge.innerText = 'Saved!';
+                card.appendChild(badge);
+                setTimeout(() => badge.remove(), 1500);
+            }
+            closePricingModal();
+        } else {
+            alert('Error updating configuration.');
+        }
+    })
+    .catch(err => {
+        saveBtn.innerText = originalText;
+        saveBtn.disabled = false;
+        alert('Error updating configuration.');
+    });
+}
+</script>
 @endsection

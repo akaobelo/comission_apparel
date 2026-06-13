@@ -13,7 +13,7 @@ class StoreController extends Controller
     {
         $query = TeamStore::query()
             ->with('user')
-            ->where('status', 'approved')
+            ->whereIn('status', ['approved', 'submitted_to_admin'])
             ->where('pricing_approved', true)
             ->where('is_archived', false);
 

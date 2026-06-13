@@ -243,7 +243,7 @@
                                                                             <div x-show="selected" class="flex items-center gap-3 shrink-0">
                                                                                 <label class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Gender</label>
                                                                                 <select name="items[{{ $design->id }}][gender]" class="border border-slate-300 bg-white rounded-lg px-3 py-1.5 text-sm font-medium focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" required :disabled="!selected">
-                                                                                    <option value="Unisex" selected>Unisex</option>
+                                                                                    <option value="" disabled selected>Select Gender...</option>
                                                                                     <option value="Male">Male</option>
                                                                                     <option value="Female">Female</option>
                                                                                 </select>

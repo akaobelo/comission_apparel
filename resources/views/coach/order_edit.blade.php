@@ -121,7 +121,6 @@
                                         <div>
                                             <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Gender</label>
                                             <select :name="`items[${idx}][gender]`" x-model="item.gender" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm min-w-[100px]">
-                                                <option value="Unisex">Unisex</option>
                                                 <option value="Male">Male</option>
                                                 <option value="Female">Female</option>
                                             </select>
@@ -176,7 +175,7 @@ document.addEventListener('alpine:init', () => {
                     item.sizes = {};
                 }
                 if (!item.gender) {
-                    item.gender = 'Unisex';
+                    item.gender = 'Male';
                 }
                 const match = this.availableItems.find(i => i.id == item.id);
                 if (match && match.image_path) {
@@ -205,7 +204,7 @@ document.addEventListener('alpine:init', () => {
                 type: storeItem.types[0] || 'Unknown',
                 types: storeItem.types,
                 qty: 1,
-                gender: 'Unisex',
+                gender: 'Male',
                 sizes: sizes,
                 image_path: storeItem.image_path
             });

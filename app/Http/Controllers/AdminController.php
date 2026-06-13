@@ -69,7 +69,7 @@ class AdminController extends Controller
             ->get();
 
         // Production orders (in production status)
-        $activeStoresQuery = TeamStore::where('status', 'approved')
+        $activeStoresQuery = TeamStore::whereIn('status', ['approved', 'submitted_to_admin'])
             ->where('is_archived', false)
             ->with(['user', 'parentOrders']);
 

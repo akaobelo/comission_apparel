@@ -209,7 +209,6 @@
                                 <option value="">Select cut pattern...</option>
                                 <option value="Mens / Boys">Men's / Boy's Cut</option>
                                 <option value="Womens / Girls">Women's / Girl's Cut</option>
-                                <option value="Unisex">Unisex</option>
                             </select>
                             @error('gender')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                         </div>
