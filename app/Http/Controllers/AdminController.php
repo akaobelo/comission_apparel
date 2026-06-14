@@ -910,6 +910,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'items' => ['required', 'array'],
+            'items.*.name' => ['nullable', 'string', 'max:255'],
             'items.*.wholesale_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.retail_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.sort_order' => ['nullable', 'integer'],
@@ -919,6 +920,7 @@ class AdminController extends Controller
             $storeItem = $store->items()->find($itemId);
             if ($storeItem) {
                 $storeItem->update([
+                    'name' => $data['name'] ?? $storeItem->name,
                     'wholesale_price' => $data['wholesale_price'] ?? null,
                     'retail_price' => $data['retail_price'] ?? null,
                     'sort_order' => $data['sort_order'] ?? $storeItem->sort_order,

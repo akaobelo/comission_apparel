@@ -298,7 +298,7 @@
                                             <img src="{{ $item->image_url }}" class="w-full h-full object-cover object-top">
                                         @endif
                                     </div>
-                                    <div class="text-xs font-bold text-slate-900 truncate mb-1" title="{{ $item->name }}">{{ $item->name }}</div>
+                                    <div class="text-xs font-bold text-slate-900 truncate mb-1" title="{{ $item->name }}" id="label-name-{{ $item->id }}">{{ $item->name }}</div>
                                     <div class="text-[10px] text-slate-500 font-medium mb-3 flex flex-col gap-0.5">
                                         <span>Wholesale: <strong class="text-slate-700 font-semibold" id="label-wholesale-{{ $item->id }}">${{ number_format($item->wholesale_price, 2) }}</strong></span>
                                         <span>Retail: <strong class="text-green-600 font-semibold" id="label-retail-{{ $item->id }}">${{ number_format($item->retail_price, 2) }}</strong></span>
@@ -518,8 +518,9 @@
                 <div class="w-16 h-20 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0">
                     <img id="modalItemImage" src="" class="w-full h-full object-cover object-top">
                 </div>
-                <div>
-                    <h4 id="modalItemName" class="font-bold text-slate-950 text-sm leading-snug"></h4>
+                <div class="flex-grow">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Item Name</label>
+                    <input type="text" id="modalItemName" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                 </div>
             </div>
             
@@ -564,7 +565,7 @@ function openPricingModal(itemId) {
     if (!card) return;
     
     document.getElementById('modalItemId').value = itemId;
-    document.getElementById('modalItemName').innerText = card.dataset.name;
+    document.getElementById('modalItemName').value = card.dataset.name;
     document.getElementById('modalItemImage').src = card.dataset.image;
     document.getElementById('modalWholesale').value = card.dataset.wholesale;
     document.getElementById('modalRetail').value = card.dataset.retail;
@@ -583,6 +584,7 @@ function closePricingModal() {
 
 function saveModalPricing() {
     const itemId = document.getElementById('modalItemId').value;
+    const name = document.getElementById('modalItemName').value;
     const wholesale = document.getElementById('modalWholesale').value;
     const retail = document.getElementById('modalRetail').value;
     const sortOrder = document.getElementById('modalSort').value;
@@ -594,6 +596,7 @@ function saveModalPricing() {
     
     const formData = new FormData();
     formData.append('_token', '{{ csrf_token() }}');
+    formData.append(`items[${itemId}][name]`, name);
     formData.append(`items[${itemId}][wholesale_price]`, wholesale);
     formData.append(`items[${itemId}][retail_price]`, retail);
     formData.append(`items[${itemId}][sort_order]`, sortOrder);
@@ -613,11 +616,17 @@ function saveModalPricing() {
             // Update Card Datasets
             const card = document.getElementById(`item-card-${itemId}`);
             if (card) {
+                card.dataset.name = name;
                 card.dataset.wholesale = parseFloat(wholesale).toFixed(2);
                 card.dataset.retail = parseFloat(retail).toFixed(2);
                 card.dataset.sort = parseInt(sortOrder);
                 
                 // Update Labels
+                const nameLabel = document.getElementById(`label-name-${itemId}`);
+                if (nameLabel) {
+                    nameLabel.innerText = name;
+                    nameLabel.title = name;
+                }
                 document.getElementById(`label-wholesale-${itemId}`).innerText = `$${parseFloat(wholesale).toFixed(2)}`;
                 document.getElementById(`label-retail-${itemId}`).innerText = `$${parseFloat(retail).toFixed(2)}`;
                 document.getElementById(`label-sort-${itemId}`).innerText = sortOrder;
