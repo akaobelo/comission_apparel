@@ -4,9 +4,9 @@ $app = require_once __DIR__.'/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-use App\Models\DesignCollection;
+use App\Models\TeamStore;
 
-$collections = DesignCollection::withCount('designs')->get();
-foreach ($collections as $c) {
-    echo 'Collection ' . $c->id . ' has ' . $c->designs_count . " items.\n";
+$stores = TeamStore::all();
+foreach ($stores as $s) {
+    echo "ID: {$s->id} | Name: {$s->name} | Status: {$s->status} | Deadline: " . ($s->order_deadline ? $s->order_deadline->toIso8601String() : 'N/A') . " | Pricing Approved: " . ($s->pricing_approved ? 'Yes' : 'No') . "\n";
 }

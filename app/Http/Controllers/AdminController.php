@@ -1205,7 +1205,7 @@ class AdminController extends Controller
             'Store Name', 'Order ID', 'Submission Date', 
             'Athlete First Name', 'Athlete Last Name', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price', 'Special Notes', 'Edited?'
+            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price', 'Manufacture Price', 'Total Manufacture Price', 'Special Notes', 'Edited?'
         ];
 
         $callback = function() use ($store, $orders, $columns) {
@@ -1237,6 +1237,8 @@ class AdminController extends Controller
                         $storeItem = $store->items->firstWhere('id', $item['id'] ?? null);
                         $itemPrice = $storeItem ? (float) $storeItem->retail_price : 0;
                         $totalRowPrice = $itemPrice * $qty;
+                        $mfgPrice = $storeItem ? (float) $storeItem->wholesale_price : 0;
+                        $totalMfgPrice = $mfgPrice * $qty;
 
                         fputcsv($file, [
                             $store->name,
@@ -1254,6 +1256,8 @@ class AdminController extends Controller
                             $qty,
                             number_format($itemPrice, 2, '.', ''),
                             number_format($totalRowPrice, 2, '.', ''),
+                            number_format($mfgPrice, 2, '.', ''),
+                            number_format($totalMfgPrice, 2, '.', ''),
                             $order->special_notes ?? '',
                             $order->is_edited ? 'Yes' : 'No',
                         ]);
@@ -1284,7 +1288,7 @@ class AdminController extends Controller
         $columns = [
             'First Name', 'Last Name', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Item', 'Types', 'Sizes', 'Qty', 'Item Price', 'Total Price', 'Special Notes', 'Edited?'
+            'Item', 'Types', 'Sizes', 'Qty', 'Item Price', 'Total Price', 'Manufacture Price', 'Total Manufacture Price', 'Special Notes', 'Edited?'
         ];
 
         $callback = function() use ($orders, $columns) {
@@ -1313,16 +1317,20 @@ class AdminController extends Controller
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
 
                         $itemPrice = 0;
+                        $mfgPrice = 0;
                         if ($order->teamStore) {
                             $storeItem = $order->teamStore->items->firstWhere('id', $item['id'] ?? null);
                             $itemPrice = $storeItem ? (float) $storeItem->retail_price : 0;
+                            $mfgPrice = $storeItem ? (float) $storeItem->wholesale_price : 0;
                         } else {
                             $design = \App\Models\DesignCatalog::find($item['id'] ?? null);
                             $itemPrice = $design ? (float) $design->wholesale_price : 0;
+                            $mfgPrice = $design ? (float) $design->wholesale_price : 0;
                         }
                         
                         $qty = $item['qty'] ?? 1;
                         $totalPrice = $itemPrice * $qty;
+                        $totalMfgPrice = $mfgPrice * $qty;
 
                         fputcsv($file, [
                             $order->athlete_first_name,
@@ -1337,6 +1345,8 @@ class AdminController extends Controller
                             $qty,
                             number_format($itemPrice, 2, '.', ''),
                             number_format($totalPrice, 2, '.', ''),
+                            number_format($mfgPrice, 2, '.', ''),
+                            number_format($totalMfgPrice, 2, '.', ''),
                             $order->special_notes ?? '',
                             $order->is_edited ? 'Yes' : 'No',
                         ]);
@@ -1364,7 +1374,7 @@ class AdminController extends Controller
             "Expires"             => "0"
         ];
 
-        $columns = ['Item Name', 'Type', 'Size', 'Unit Price', 'Total Quantity', 'Total Price'];
+        $columns = ['Item Name', 'Type', 'Size', 'Unit Price', 'Total Quantity', 'Total Price', 'Manufacture Price', 'Total Manufacture Price'];
         
         $aggregated = [];
 
@@ -1374,12 +1384,15 @@ class AdminController extends Controller
                     $itemQty = max(1, (int)($item['qty'] ?? 1));
 
                     $itemPrice = 0;
+                    $mfgPrice = 0;
                     if ($order->teamStore) {
                         $storeItem = $order->teamStore->items->firstWhere('id', $item['id'] ?? null);
                         $itemPrice = $storeItem ? (float) $storeItem->retail_price : 0;
+                        $mfgPrice = $storeItem ? (float) $storeItem->wholesale_price : 0;
                     } else {
                         $design = \App\Models\DesignCatalog::find($item['id'] ?? null);
                         $itemPrice = $design ? (float) $design->wholesale_price : 0;
+                        $mfgPrice = $design ? (float) $design->wholesale_price : 0;
                     }
 
                     if (isset($item['components']) && is_array($item['components'])) {
@@ -1389,12 +1402,12 @@ class AdminController extends Controller
                             
                             if (isset($comp['sizes']) && is_array($comp['sizes'])) {
                                 foreach ($comp['sizes'] as $type => $size) {
-                                    $key = "{$name}|{$type}|{$size}|{$itemPrice}";
+                                    $key = "{$name}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
                                     $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
                                 }
                             } else {
                                 $type = isset($comp['types']) ? implode(', ', $comp['types']) : ($comp['type'] ?? 'N/A');
-                                $key = "{$name}|{$type}|N/A|{$itemPrice}";
+                                $key = "{$name}|{$type}|N/A|{$itemPrice}|{$mfgPrice}";
                                 $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
                             }
                         }
@@ -1403,12 +1416,12 @@ class AdminController extends Controller
                         
                         if (isset($item['sizes']) && is_array($item['sizes'])) {
                             foreach ($item['sizes'] as $type => $size) {
-                                $key = "{$name}|{$type}|{$size}|{$itemPrice}";
+                                $key = "{$name}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
                                 $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
                             }
                         } else {
                             $type = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
-                            $key = "{$name}|{$type}|N/A|{$itemPrice}";
+                            $key = "{$name}|{$type}|N/A|{$itemPrice}|{$mfgPrice}";
                             $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
                         }
                     }
@@ -1423,7 +1436,9 @@ class AdminController extends Controller
                 $parts = explode('|', $key);
                 $unitPrice = (float)($parts[3] ?? 0);
                 $totalPrice = $unitPrice * $qty;
-                fputcsv($file, [$parts[0], $parts[1], $parts[2], number_format($unitPrice, 2, '.', ''), $qty, number_format($totalPrice, 2, '.', '')]);
+                $mfgPrice = (float)($parts[4] ?? 0);
+                $totalMfgPrice = $mfgPrice * $qty;
+                fputcsv($file, [$parts[0], $parts[1], $parts[2], number_format($unitPrice, 2, '.', ''), $qty, number_format($totalPrice, 2, '.', ''), number_format($mfgPrice, 2, '.', ''), number_format($totalMfgPrice, 2, '.', '')]);
             }
             fclose($file);
         };

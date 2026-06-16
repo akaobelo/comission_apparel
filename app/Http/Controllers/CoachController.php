@@ -321,7 +321,7 @@ class CoachController extends Controller
             'Store Name', 'Order ID', 'Submission Date', 
             'Athlete First Name', 'Athlete Last Name', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price', 'Special Notes', 'Edited?'
+            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price', 'Manufacture Price', 'Total Manufacture Price', 'Special Notes', 'Edited?'
         ];
 
         $callback = function() use ($store, $orders, $columns) {
@@ -353,6 +353,8 @@ class CoachController extends Controller
                         $storeItem = $store->items->firstWhere('id', $item['id'] ?? null);
                         $itemPrice = $storeItem ? (float) $storeItem->retail_price : 0;
                         $totalRowPrice = $itemPrice * $qty;
+                        $mfgPrice = $storeItem ? (float) $storeItem->wholesale_price : 0;
+                        $totalMfgPrice = $mfgPrice * $qty;
 
                         fputcsv($file, [
                             $store->name,
@@ -370,6 +372,8 @@ class CoachController extends Controller
                             $qty,
                             number_format($itemPrice, 2, '.', ''),
                             number_format($totalRowPrice, 2, '.', ''),
+                            number_format($mfgPrice, 2, '.', ''),
+                            number_format($totalMfgPrice, 2, '.', ''),
                             $order->special_notes ?? '',
                             $order->is_edited ? 'Yes' : 'No',
                         ]);
@@ -739,7 +743,7 @@ class CoachController extends Controller
         $columns = [
             'First Name', 'Last Name', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Item', 'Types', 'Sizes', 'Qty', 'Item Price', 'Total Price'
+            'Item', 'Types', 'Sizes', 'Qty', 'Item Price', 'Total Price', 'Manufacture Price', 'Total Manufacture Price'
         ];
 
         $callback = function() use ($orders, $columns) {
@@ -771,6 +775,8 @@ class CoachController extends Controller
                         $itemPrice = $design ? (float) $design->wholesale_price : 0;
                         $qty = $item['qty'] ?? 1;
                         $totalPrice = $itemPrice * $qty;
+                        $mfgPrice = $design ? (float) $design->wholesale_price : 0;
+                        $totalMfgPrice = $mfgPrice * $qty;
 
                         fputcsv($file, [
                             $order->athlete_first_name,
@@ -785,6 +791,8 @@ class CoachController extends Controller
                             $qty,
                             number_format($itemPrice, 2, '.', ''),
                             number_format($totalPrice, 2, '.', ''),
+                            number_format($mfgPrice, 2, '.', ''),
+                            number_format($totalMfgPrice, 2, '.', ''),
                         ]);
                     }
                 }
