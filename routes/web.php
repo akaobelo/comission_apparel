@@ -37,6 +37,7 @@ Route::get('/sizing-charts', function () {
     $sizingCharts = \App\Models\SizingChart::where('is_active', true)->orderBy('sort_order', 'asc')->get();
     return view('sizing-charts', compact('sizingCharts')); 
 })->name('sizing-charts');
+Route::get('/our-team', [AdminController::class, 'publicOurTeam'])->name('our-team');
 Route::get('/quote', [QuoteRequestController::class, 'show'])->name('quote.show');
 Route::post('/quote', [QuoteRequestController::class, 'store'])->name('quote.store');
 Route::get('/quote/success', function () { return view('quote_success'); })->name('quote.success');
@@ -289,6 +290,12 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
 
     // Quotes
     Route::post('/admin/quote/{quoteRequest}/mark-addressed', [AdminController::class, 'markQuoteAddressed'])->name('admin.quote.mark-addressed');
+
+    // Sales Agents Admin CRUD
+    Route::post('/admin/sales-agents', [AdminController::class, 'createSalesAgent'])->name('admin.sales-agent.create');
+    Route::put('/admin/sales-agents/{agent}', [AdminController::class, 'updateSalesAgent'])->name('admin.sales-agent.update');
+    Route::delete('/admin/sales-agents/{agent}', [AdminController::class, 'deleteSalesAgent'])->name('admin.sales-agent.delete');
+    Route::post('/admin/sales-agents/bulk-sort', [AdminController::class, 'bulkSortSalesAgents'])->name('admin.sales-agent.bulk-sort');
 });
 Route::post('/coach/store/{store}/blast', [App\Http\Controllers\CoachController::class, 'sendReminderBlast'])->name('coach.store.blast')->middleware(['auth', \App\Http\Middleware\CoachMiddleware::class]);
 Route::delete('/coach/store/{store}/roster/{roster}', [App\Http\Controllers\CoachController::class, 'removeRoster'])->name('coach.store.roster.remove')->middleware(['auth', \App\Http\Middleware\CoachMiddleware::class]);

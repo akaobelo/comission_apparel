@@ -121,6 +121,7 @@
             <button @click="setTab('landing')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'landing' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Landing Page Settings</button>
             <button @click="setTab('testimonials')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'testimonials' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Testimonials</button>
             <button @click="setTab('sizing_charts')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'sizing_charts' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Sizing Charts</button>
+            <button @click="setTab('sales_agents')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'sales_agents' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Sales Agents</button>
             <button @click="setTab('campaigns')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'campaigns' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Campaign Stores</button>
             <button @click="setTab('security')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'security' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Security Logs</button>
         </div>
@@ -2607,12 +2608,206 @@
             </div>
         </div>
 
+        {{-- ═══ SALES AGENTS TAB ═══ --}}
+        <div x-show="activeAdminTab === 'sales_agents'" x-cloak class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Add Rep -->
+            <div class="space-y-8">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Add Sales Representative</h2>
+                            <p class="text-xs text-slate-500 mt-1">Create a new sales rep for a state or country territory.</p>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <form action="{{ route('admin.sales-agent.create') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
+                            @csrf
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Rep Full Name *</label>
+                                <input type="text" name="name" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Title *</label>
+                                <input type="text" name="title" required placeholder="e.g. Regional Sales Rep" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">USA State (if USA rep)</label>
+                                    <input type="text" name="state" placeholder="e.g. Florida" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Country *</label>
+                                    <input type="text" name="country" required value="USA" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Short Bio</label>
+                                <textarea name="bio" rows="3" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:border-primary outline-none text-sm"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Rep Picture</label>
+                                <input type="file" name="image" accept="image/*" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:border-primary outline-none text-sm">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" name="is_active" id="agent_active" checked value="1" class="rounded text-primary focus:ring-primary">
+                                <label for="agent_active" class="text-xs font-bold uppercase tracking-wider text-slate-600">Active and Visible on "Our Team" Page</label>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-[#cd202c] hover:bg-[#a11825] text-white font-bold rounded-lg uppercase tracking-wider text-xs shadow transition-colors">
+                                Create Representative
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manage Reps -->
+            <div class="space-y-8">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden" x-data="{ filterText: '' }">
+                    <div class="p-6 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Manage Representatives</h2>
+                            <p class="text-xs text-slate-500 mt-1">Review and delete active representatives.</p>
+                            <div class="mt-3 relative">
+                                <input type="text" x-model="filterText" placeholder="Search by name, state, country..." class="w-64 max-w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-xs">
+                            </div>
+                        </div>
+                        <form id="bulk-sales-agents-sort-form" action="{{ route('admin.sales-agent.bulk-sort') }}" method="POST">
+                            @csrf
+                            <button type="submit" form="bulk-sales-agents-sort-form" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort Orders</button>
+                        </form>
+                    </div>
+                    
+                    @if($salesAgents->isNotEmpty())
+                    <div class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto" id="update-sales-agents-sortable-list">
+                        @foreach($salesAgents as $agent)
+                        <div class="p-4 flex flex-col hover:bg-slate-50 transition-colors visible-sortable-item relative group" x-data="{ editing: false }"
+                             x-show="!filterText || '{{ addslashes(strtolower($agent->name)) }}'.includes(filterText.toLowerCase()) || '{{ addslashes(strtolower($agent->title)) }}'.includes(filterText.toLowerCase()) || '{{ addslashes(strtolower($agent->state ?? '')) }}'.includes(filterText.toLowerCase()) || '{{ addslashes(strtolower($agent->country)) }}'.includes(filterText.toLowerCase())">
+                            
+                            <div class="flex items-center gap-4 w-full">
+                                <input type="hidden" name="agents[{{ $agent->id }}][id]" value="{{ $agent->id }}" form="bulk-sales-agents-sort-form">
+                                
+                                <!-- Drag Handle -->
+                                <div class="cursor-move p-2 text-slate-400 hover:text-slate-600 shrink-0 self-center">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                                </div>
+
+                                @if($agent->image_path)
+                                    <img src="{{ $agent->image_path }}" alt="{{ $agent->name }}" class="w-12 h-12 rounded-full object-cover shrink-0">
+                                @else
+                                    <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 shrink-0 border border-slate-200">
+                                        {{ substr($agent->name, 0, 1) }}
+                                    </div>
+                                @endif
+
+                                <div class="flex-1 min-w-0 cursor-pointer" @click="editing = !editing">
+                                    <div class="flex items-center justify-between">
+                                        <h4 class="font-bold text-slate-900 text-sm truncate">{{ $agent->name }}</h4>
+                                    </div>
+                                    <p class="text-xs text-slate-600 mt-0.5">{{ $agent->title }}</p>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                                            {{ $agent->state ?: 'Global' }} ({{ $agent->country }})
+                                        </span>
+                                        @if(!$agent->is_active)
+                                            <span class="px-2 py-0.5 bg-red-100 text-red-700 border border-red-200 rounded text-[9px] font-black uppercase tracking-wider">Inactive</span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <!-- Edit Icon (Pencil) -->
+                                    <button @click="editing = !editing" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-slate-100 transition-colors" title="Edit Representative" aria-label="Edit">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </button>
+
+                                    <!-- Delete Icon (Trash) -->
+                                    <form action="{{ route('admin.sales-agent.delete', $agent) }}" method="POST" onsubmit="return confirm('Delete this representative permanently?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-500 hover:text-red-700 p-2 rounded hover:bg-slate-100 transition-colors" title="Delete Representative" aria-label="Delete">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Edit Form inline (Accordion) -->
+                            <div class="w-full mt-4 bg-slate-50 p-4 border border-slate-200 rounded-lg transition-all duration-300" x-show="editing" x-cloak style="display: none;">
+                                <form action="{{ route('admin.sales-agent.update', $agent) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                    @csrf
+                                    @method('PUT')
+                                    <div>
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Rep Full Name *</label>
+                                        <input type="text" name="name" required value="{{ $agent->name }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-slate-900 outline-none text-xs focus:ring-1 focus:ring-primary focus:border-primary">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Title *</label>
+                                        <input type="text" name="title" required value="{{ $agent->title }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-slate-900 outline-none text-xs focus:ring-1 focus:ring-primary focus:border-primary">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">USA State</label>
+                                            <input type="text" name="state" value="{{ $agent->state }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-slate-900 outline-none text-xs focus:ring-1 focus:ring-primary focus:border-primary">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Country *</label>
+                                            <input type="text" name="country" required value="{{ $agent->country }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-slate-900 outline-none text-xs focus:ring-1 focus:ring-primary focus:border-primary">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Short Bio</label>
+                                        <textarea name="bio" rows="2" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-slate-900 outline-none text-xs focus:ring-1 focus:ring-primary focus:border-primary">{{ $agent->bio }}</textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Rep Picture (Leave blank to keep existing)</label>
+                                        <input type="file" name="image" accept="image/*" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-slate-900 outline-none text-xs">
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" name="is_active" id="agent_active_{{ $agent->id }}" @checked($agent->is_active) value="1" class="rounded text-primary focus:ring-primary">
+                                        <label for="agent_active_{{ $agent->id }}" class="text-[10px] font-bold uppercase tracking-wider text-slate-600">Active</label>
+                                    </div>
+                                    <div class="flex justify-end gap-2">
+                                        <button type="button" @click="editing = false" class="px-3 py-1.5 border border-slate-300 rounded text-slate-700 font-bold uppercase tracking-wider text-[10px]">Cancel</button>
+                                        <button type="submit" class="px-3 py-1.5 bg-secondary text-white rounded font-bold uppercase tracking-wider text-[10px] hover:bg-[#a11825]">Save</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <input type="hidden" name="agents[{{ $agent->id }}][sort_order]" value="{{ $agent->sort_order }}" class="sort-order-input-agents-col" form="bulk-sales-agents-sort-form">
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <div class="p-8 text-center text-slate-400 text-sm">No sales representatives configured yet.</div>
+                    @endif
+                </div>
+            </div>
+            </div>
+
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const updateSalesAgentsList = document.getElementById('update-sales-agents-sortable-list');
+        if (updateSalesAgentsList) {
+            new Sortable(updateSalesAgentsList, {
+                animation: 150,
+                handle: '.cursor-move',
+                draggable: '.visible-sortable-item',
+                ghostClass: 'bg-slate-50',
+                scroll: true,
+                bubbleScroll: true,
+                onEnd: function () {
+                    const inputs = Array.from(updateSalesAgentsList.querySelectorAll('.visible-sortable-item input[name$="[sort_order]"]'));
+                    inputs.forEach((input, index) => {
+                        input.value = index + 1;
+                    });
+                }
+            });
+        }
+
         const updateCollectionsList = document.getElementById('update-collections-sortable-list');
         if (updateCollectionsList) {
             new Sortable(updateCollectionsList, {

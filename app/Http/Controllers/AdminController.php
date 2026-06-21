@@ -13,6 +13,7 @@ use App\Models\StoreItem;
 use App\Models\PasswordResetLog;
 use App\Models\Testimonial;
 use App\Models\SizingChart;
+use App\Models\SalesAgent;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
 
@@ -195,6 +196,8 @@ class AdminController extends Controller
 
         $sizingCharts = SizingChart::orderBy('sort_order', 'asc')->get();
 
+        $salesAgents = SalesAgent::orderBy('sort_order', 'asc')->get();
+
         $heroSettings = [
             'subtitle'   => \App\Models\SiteSetting::where('key', 'hero_subtitle')->value('value') ?? 'Premium armor tailored for programs that demand greatness. Built for the modern athlete, delivered with lightning speed.',
             'media_path' => \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value'),
@@ -258,7 +261,8 @@ class AdminController extends Controller
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStoreBatches',
             'designCatalog', 'productionStores', 'quoteRequests', 'quoteRequestsTotal', 'newQuoteRequestsCount', 'landingCollections', 'allStores', 'allCoaches',
-            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'archivedOrderBatches', 'globalSalesSummary', 'archivedBatchesPaginator'
+            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'archivedOrderBatches', 'globalSalesSummary', 'archivedBatchesPaginator',
+            'salesAgents'
         ));
     }
 
@@ -1774,5 +1778,117 @@ class AdminController extends Controller
     {
         $quoteRequest->update(['status' => 'addressed']);
         return redirect()->back()->with('success', 'Quote inquiry marked as addressed.');
+    }
+
+    // ─── PUBLIC OUR TEAM ────────────────────────────────────────────────────────
+    public function publicOurTeam(Request $request)
+    {
+        $query = SalesAgent::where('is_active', true);
+
+        if ($request->filled('q')) {
+            $q = $request->query('q');
+            $query->where(function($sub) use ($q) {
+                $sub->where('name', 'like', "%{$q}%")
+                    ->orWhere('title', 'like', "%{$q}%")
+                    ->orWhere('state', 'like', "%{$q}%")
+                    ->orWhere('country', 'like', "%{$q}%")
+                    ->orWhere('bio', 'like', "%{$q}%");
+            });
+        }
+
+        $agents = $query->orderBy('sort_order', 'asc')->get();
+
+        // Separate US reps (has state) and International reps (no state, country is not 'USA' / 'US')
+        $usAgents = $agents->filter(function($agent) {
+            return !empty($agent->state) && in_array(strtoupper(trim($agent->country)), ['USA', 'US', '']);
+        })->groupBy(function($agent) {
+            return strtoupper(trim($agent->state));
+        });
+
+        $intlAgents = $agents->filter(function($agent) {
+            $country = strtoupper(trim($agent->country));
+            return !in_array($country, ['USA', 'US', '']) || empty($agent->state);
+        })->groupBy(function($agent) {
+            return strtoupper(trim($agent->country ?: 'USA'));
+        });
+
+        return view('our-team', compact('agents', 'usAgents', 'intlAgents'));
+    }
+
+    // ─── SALES AGENTS ADMIN CRUD ───────────────────────────────────────────────
+    public function createSalesAgent(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'country' => 'required|string|max:255',
+            'bio' => 'nullable|string',
+            'image' => 'nullable|image|max:4096',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $validated['is_active'] = $request->has('is_active');
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('sales-agents', 'public');
+            $validated['image_path'] = '/storage/' . $path;
+        }
+
+        SalesAgent::create($validated);
+
+        return redirect()->route('admin.dashboard')->with('success', 'Sales agent added successfully.');
+    }
+
+    public function updateSalesAgent(Request $request, SalesAgent $agent)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'country' => 'required|string|max:255',
+            'bio' => 'nullable|string',
+            'image' => 'nullable|image|max:4096',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $validated['is_active'] = $request->has('is_active');
+
+        if ($request->hasFile('image')) {
+            if ($agent->image_path) {
+                $pathToRemove = str_replace('/storage/', '', $agent->image_path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            }
+            $path = $request->file('image')->store('sales-agents', 'public');
+            $validated['image_path'] = '/storage/' . $path;
+        }
+
+        $agent->update($validated);
+
+        return redirect()->route('admin.dashboard')->with('success', 'Sales agent updated successfully.');
+    }
+
+    public function deleteSalesAgent(SalesAgent $agent)
+    {
+        $agent->delete();
+
+        return redirect()->route('admin.dashboard')->with('success', 'Sales agent removed.');
+    }
+
+    public function bulkSortSalesAgents(Request $request)
+    {
+        $request->validate([
+            'agents' => ['required', 'array'],
+            'agents.*.sort_order' => ['required', 'integer'],
+        ]);
+
+        foreach ($request->agents as $agentId => $data) {
+            $agent = SalesAgent::find($agentId);
+            if ($agent) {
+                $agent->update(['sort_order' => $data['sort_order']]);
+            }
+        }
+
+        return redirect()->route('admin.dashboard')->with('success', 'Sales agents sort orders updated.');
     }
 }

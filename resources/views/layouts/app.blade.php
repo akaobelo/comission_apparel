@@ -41,6 +41,7 @@
                 <a href="{{ route('store.search') }}" class="text-white hover:text-secondary transition-colors">Team Stores</a>
                 <a href="{{ route('sizing-charts') }}" class="text-white hover:text-secondary transition-colors">Sizing Charts</a>
                 <a href="{{ route('how-it-works') }}" class="text-white hover:text-secondary transition-colors">How It Works</a>
+                <a href="{{ route('our-team') }}" class="text-white hover:text-secondary transition-colors">Our Team</a>
                 <a href="/quote" class="text-white hover:text-secondary transition-colors">Request A Quote</a>
                 <div class="h-6 w-px bg-slate-700"></div>
                 <a href="/coach/dashboard" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
@@ -65,6 +66,7 @@
                 <a href="{{ route('store.search') }}" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Team Stores</a>
                 <a href="{{ route('sizing-charts') }}" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Sizing Charts</a>
                 <a href="{{ route('how-it-works') }}" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">How It Works</a>
+                <a href="{{ route('our-team') }}" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Our Team</a>
                 <a href="/quote" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Request A Quote</a>
                 <div class="flex flex-col gap-4 mt-4">
                     <a href="/coach/dashboard" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-4 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">
@@ -107,6 +109,7 @@
                     <li><a href="{{ route('store.search') }}" class="hover:text-secondary transition-colors">Team Stores</a></li>
                     <li><a href="{{ route('sizing-charts') }}" class="hover:text-secondary transition-colors">Sizing Charts</a></li>
                     <li><a href="{{ route('how-it-works') }}" class="hover:text-secondary transition-colors">How it Works</a></li>
+                    <li><a href="{{ route('our-team') }}" class="hover:text-secondary transition-colors">Our Team</a></li>
                     <li><a href="/quote" class="hover:text-secondary transition-colors">Request A Quote</a></li>
                     <li><a href="{{ route('login') }}" class="hover:text-secondary transition-colors">Employee Login</a></li>
                 </ul>

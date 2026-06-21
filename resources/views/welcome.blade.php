@@ -39,13 +39,13 @@
         <!-- Gallery Carousel -->
         <div x-data="{ 
             activePage: 0,
-            itemsPerPage: window.innerWidth < 768 ? 2 : (window.innerWidth < 1024 ? 3 : 5),
+            itemsPerPage: window.innerWidth < 768 ? 1 : (window.innerWidth < 1024 ? 3 : 5),
             get totalPages() { return Math.max(1, Math.ceil({{ count($landingCollections ?? []) }} / this.itemsPerPage)) },
             next() { this.activePage = (this.activePage + 1) % this.totalPages },
             prev() { this.activePage = (this.activePage - 1 + this.totalPages) % this.totalPages },
             init() {
                 window.addEventListener('resize', () => {
-                    this.itemsPerPage = window.innerWidth < 768 ? 2 : (window.innerWidth < 1024 ? 3 : 5);
+                    this.itemsPerPage = window.innerWidth < 768 ? 1 : (window.innerWidth < 1024 ? 3 : 5);
                     if (this.activePage >= this.totalPages) this.activePage = Math.max(0, this.totalPages - 1);
                 });
             }
@@ -60,6 +60,11 @@
                         <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
                             <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
                             <a href="{{ route('catalog.index') }}" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                @if($loop->first)
+                                <div class="absolute top-3 left-3 bg-[#cd202c] text-white text-[9px] font-black tracking-widest uppercase px-2.5 py-1 rounded shadow-md z-10 animate-pulse">
+                                    NEWEST ARRIVAL
+                                </div>
+                                @endif
                                 <img src="{{ Str::startsWith($collection->image_path, 'http') ? $collection->image_path : $collection->image_path }}" alt="{{ $collection->tab_name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                             </a>
                             <div class="p-3 md:p-4 flex flex-col flex-1">
