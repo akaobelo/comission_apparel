@@ -2646,7 +2646,13 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Rep Picture</label>
-                                <input type="file" name="image" accept="image/*" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:border-primary outline-none text-sm">
+                                <div class="flex items-center gap-3 mt-1" x-data="{ fileName: 'No file chosen' }">
+                                    <label class="cursor-pointer bg-[#cd202c] hover:bg-[#a11825] text-white text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-lg shadow-sm transition-colors shrink-0 select-none">
+                                        Choose File
+                                        <input type="file" name="image" accept="image/*" class="hidden" @change="fileName = $event.target.files[0] ? $event.target.files[0].name : 'No file chosen'">
+                                    </label>
+                                    <span class="text-xs text-slate-500 truncate" x-text="fileName"></span>
+                                </div>
                             </div>
                             <div class="flex items-center gap-2">
                                 <input type="checkbox" name="is_active" id="agent_active" checked value="1" class="rounded text-primary focus:ring-primary">
@@ -2760,7 +2766,13 @@
                                     </div>
                                     <div>
                                         <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Rep Picture (Leave blank to keep existing)</label>
-                                        <input type="file" name="image" accept="image/*" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-slate-900 outline-none text-xs">
+                                        <div class="flex items-center gap-3 mt-1" x-data="{ fileName: 'No file chosen' }">
+                                            <label class="cursor-pointer bg-[#cd202c] hover:bg-[#a11825] text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-2 rounded-lg shadow-sm transition-colors shrink-0 select-none">
+                                                Choose File
+                                                <input type="file" name="image" accept="image/*" class="hidden" @change="fileName = $event.target.files[0] ? $event.target.files[0].name : 'No file chosen'">
+                                            </label>
+                                            <span class="text-[11px] text-slate-500 truncate" x-text="fileName"></span>
+                                        </div>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <input type="checkbox" name="is_active" id="agent_active_{{ $agent->id }}" @checked($agent->is_active) value="1" class="rounded text-primary focus:ring-primary">
