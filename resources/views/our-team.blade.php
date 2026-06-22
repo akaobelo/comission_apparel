@@ -33,15 +33,15 @@
     </form>
 
     <div id="team-search-results" class="space-y-16">
-        
+
         {{-- US Territory Group --}}
         @if($usAgents->isNotEmpty())
         <section class="space-y-8">
             <div class="border-l-4 border-secondary pl-4">
-                <h2 class="text-xl md:text-2xl font-black uppercase tracking-tight text-slate-900">United States Representatives</h2>
-                <p class="text-slate-500 text-xs md:text-sm font-medium mt-0.5">Find the regional representative serving your state.</p>
+                <h2 class="text-xl md:text-2xl font-black uppercase tracking-tight text-slate-900">Find your representative</h2>
+                <p class="text-slate-500 text-xs md:text-sm font-medium mt-0.5">Find  the regional representative serving your area.</p>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($usAgents as $state => $agentsInState)
                     @foreach($agentsInState as $agent)
@@ -89,7 +89,7 @@
                 <h2 class="text-xl md:text-2xl font-black uppercase tracking-tight text-slate-900">International Representatives</h2>
                 <p class="text-slate-500 text-xs md:text-sm font-medium mt-0.5">Connecting international programs with local support.</p>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($intlAgents as $country => $agentsInCountry)
                     @foreach($agentsInCountry as $agent)
