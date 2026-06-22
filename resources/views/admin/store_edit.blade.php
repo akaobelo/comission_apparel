@@ -65,6 +65,10 @@
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Description</label>
                                 <textarea name="description" rows="3" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm" placeholder="Optional store description for the coach...">{{ old('description', $store->description) }}</textarea>
                             </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Shipping Address</label>
+                                <textarea name="shipping_address" rows="3" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm" placeholder="Shipping Address submitted by Coach...">{{ old('shipping_address', $store->shipping_address) }}</textarea>
+                            </div>
                         </div>
                         <div class="flex gap-3">
                             <button type="submit" class="btn btn-primary py-3 px-8 text-sm uppercase tracking-wider">Save Changes</button>
@@ -484,6 +488,13 @@
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Average Order</span><span class="font-bold text-slate-900">${{ number_format($financials['average_order_value'] ?? 0, 2) }}</span></div>
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Due To TCA</span><span class="font-bold text-secondary">${{ number_format($financials['total_wholesale'] ?? 0, 2) }}</span></div>
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Net Proceeds</span><span class="font-bold text-green-600">${{ number_format($financials['net_proceeds'] ?? 0, 2) }}</span></div>
+                    </div>
+
+                    <div class="pt-3 mt-3 border-t border-slate-200">
+                        <span class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Shipping Address</span>
+                        <div class="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded p-2.5 whitespace-pre-line font-medium leading-relaxed">
+                            {{ $store->shipping_address ?: 'Not provided yet' }}
+                        </div>
                     </div>
 
                     <div class="pt-3 mt-3 border-t border-slate-200">

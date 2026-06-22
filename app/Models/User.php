@@ -29,6 +29,7 @@ class User extends Authenticatable
         'phone',
         'sport',
         'logo_path',
+        'sales_rep',
     ];
 
     /**

@@ -157,6 +157,19 @@
                 </div>
             </div>
 
+            <!-- Section 4 -->
+            <div>
+                <h3 class="text-lg font-black uppercase text-slate-900 mb-4 border-b border-slate-200 pb-1">4. Commission Apparel Rep</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Representative Name</label>
+                        <p class="text-xs text-slate-500 mb-2">(If you are working with a representative, please enter their name below)</p>
+                        <input type="text" name="sales_rep" value="{{ old('sales_rep') }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-400 shadow-sm" placeholder="e.g. John Doe">
+                        @error('sales_rep')<p class="text-red-500 text-xs mt-2 font-bold">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+            </div>
+
             <!-- Submit Button -->
             <div class="pt-4 border-t border-slate-200 text-center">
                 <button type="submit" class="btn btn-primary px-8 py-3 text-base w-full max-w-sm uppercase tracking-widest shadow-[0_4px_20px_rgba(26,86,204,0.3)]">

@@ -243,7 +243,7 @@
                                             <div class="text-sm text-slate-500">
                                                 {{ $quoteRequest->email }} · {{ $quoteRequest->phone }}
                                             </div>
-                                            <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                                                 <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
                                                     <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Estimated Qty</div>
                                                     <div class="text-sm font-black text-slate-900">{{ $quoteRequest->estimated_quantity }}</div>
@@ -255,6 +255,10 @@
                                                 <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
                                                     <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Target Date</div>
                                                     <div class="text-sm font-black text-slate-900">{{ $quoteRequest->target_delivery_date?->format('M d, Y') ?? 'Not provided' }}</div>
+                                                </div>
+                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">TCA Sales Rep</div>
+                                                    <div class="text-sm font-black text-secondary">{{ $quoteRequest->sales_rep ?: '—' }}</div>
                                                 </div>
                                             </div>
                                             @if($quoteRequest->design_vision)
@@ -696,6 +700,7 @@
                             <th class="px-5 py-3">Last Name</th>
                             <th class="px-5 py-3">Organization</th>
                             <th class="px-5 py-3">Apparel Category</th>
+                            <th class="px-5 py-3">Sales Rep</th>
                             <th class="px-5 py-3">Status</th>
                             <th class="px-5 py-3">Store</th>
                             <th class="px-5 py-3">Actions</th>
@@ -714,6 +719,7 @@
                             </td>
                             <td class="px-5 py-4 text-slate-700">{{ $coach->organization ?? '—' }}</td>
                             <td class="px-5 py-4 text-slate-700">{{ $coach->sport ?? '—' }}</td>
+                            <td class="px-5 py-4 text-slate-700 font-medium">{{ $coach->sales_rep ?: '—' }}</td>
                             <td class="px-5 py-4">
                                 @if($coach->status === 'active')
                                     <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">Active</span>

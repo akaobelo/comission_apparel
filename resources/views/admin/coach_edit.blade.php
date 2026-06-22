@@ -64,6 +64,11 @@
                                     <option value="declined" {{ old('status', $user->status) === 'declined' ? 'selected' : '' }}>Declined</option>
                                 </select>
                             </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Commission Apparel Rep</label>
+                                <input type="text" name="sales_rep" value="{{ old('sales_rep', $user->sales_rep) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" placeholder="e.g. John Doe">
+                                @error('sales_rep')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary py-3 px-8 text-sm uppercase tracking-wider font-bold">Save Changes</button>
                     </form>

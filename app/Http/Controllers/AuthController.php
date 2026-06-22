@@ -76,6 +76,7 @@ class AuthController extends Controller
             'email'                 => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'email_confirmation'    => ['required', 'same:email'],
             'password'              => ['required', 'min:8', 'confirmed'],
+            'sales_rep'             => ['nullable', 'string', 'max:255'],
         ]);
 
         $logoPath = null;
@@ -94,6 +95,7 @@ class AuthController extends Controller
             'logo_path'    => $logoPath,
             'role'         => 'coach',
             'status'       => 'active', // Auto-approved — no admin gate
+            'sales_rep'    => $validated['sales_rep'] ?? null,
         ]);
 
         // Notify admin of new coach registration (for their awareness)

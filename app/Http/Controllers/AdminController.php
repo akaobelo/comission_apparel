@@ -291,6 +291,7 @@ class AdminController extends Controller
             'phone'        => ['required', 'string', 'max:20'],
             'sport'        => ['required', 'string', 'max:100'],
             'status'       => ['required', 'in:active,declined'],
+            'sales_rep'    => ['nullable', 'string', 'max:255'],
         ]);
 
         $user->update($validated);
@@ -899,7 +900,8 @@ class AdminController extends Controller
             'package_type' => ['nullable', 'in:package_a,package_b,package_c,individual'],
             'order_deadline' => ['nullable', 'date'],
             'status'       => ['required', 'in:pending,approved,submitted_to_admin,declined'],
-            'pricing_approved' => ['boolean']
+            'pricing_approved' => ['boolean'],
+            'shipping_address' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $validated['pricing_approved'] = $request->boolean('pricing_approved');

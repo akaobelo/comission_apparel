@@ -72,6 +72,13 @@
                     </div>
                 </div>
 
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-widest text-slate-700 mb-2">Commission Apparel Rep</label>
+                    <p class="text-xs text-slate-500 mb-2">(If you are working with a representative, please enter their name below)</p>
+                    <input type="text" name="sales_rep" value="{{ old('sales_rep') }}" placeholder="e.g. John Doe" class="w-full bg-white border border-slate-300 rounded text-sm px-4 py-3 text-slate-900 focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-none transition-all placeholder:text-slate-400">
+                    @error('sales_rep') <p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p> @enderror
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6" x-data="{ showPass: false }">
                     <div>
                         <label class="block text-xs font-black uppercase tracking-widest text-slate-700 mb-2">Password</label>

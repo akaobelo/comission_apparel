@@ -18,6 +18,7 @@ class QuoteRequest extends Model
         'package_type',
         'target_delivery_date',
         'design_vision',
+        'sales_rep',
         'status',
     ];
 

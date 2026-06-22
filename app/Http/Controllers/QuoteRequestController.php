@@ -32,6 +32,7 @@ class QuoteRequestController extends Controller
             'package_type'         => ['required', Rule::in(['base_uniforms', 'full_program_bundle', 'merch_only'])],
             'target_delivery_date' => ['nullable', 'date'],
             'design_vision'        => ['nullable', 'string'],
+            'sales_rep'            => ['nullable', 'string', 'max:255'],
         ]);
 
         if (! Schema::hasTable('quote_requests')) {
