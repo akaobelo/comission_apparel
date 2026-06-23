@@ -191,6 +191,8 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
 // ─── Admin Portal ────────────────────────────────────────────────────────────
 Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/profile', [AdminController::class, 'editProfile'])->name('admin.profile.edit');
+    Route::post('/admin/profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
 
     // Coach CRUD
     Route::get('/admin/coaches/export', [AdminController::class, 'exportCoaches'])->name('admin.coaches.export');

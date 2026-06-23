@@ -1893,4 +1893,35 @@ class AdminController extends Controller
 
         return redirect()->route('admin.dashboard')->with('success', 'Sales agents sort orders updated.');
     }
+
+    public function editProfile(Request $request)
+    {
+        $user = auth()->user();
+        return view('admin.profile', compact('user'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'current_password' => ['required', 'string'],
+            'new_password' => ['nullable', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'The provided password does not match your current password.'])->withInput();
+        }
+
+        $user->email = $request->email;
+
+        if ($request->filled('new_password')) {
+            $user->password = \Illuminate\Support\Facades\Hash::make($request->new_password);
+        }
+
+        $user->save();
+
+        return redirect()->route('admin.dashboard')->with('success', 'Credentials updated successfully.');
+    }
 }
