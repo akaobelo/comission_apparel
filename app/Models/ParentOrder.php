@@ -49,6 +49,8 @@ class ParentOrder extends Model
         return $this->belongsTo(User::class);
     }
 
+    protected static $designCatalogCache = null;
+
     public static function calculateBatchFinancials($orders, $store = null)
     {
         $totalSales = 0;
@@ -58,7 +60,13 @@ class ParentOrder extends Model
         // If it's a store batch, load prices from the store
         $priceByItemId = $store ? $store->items->keyBy('id') : collect();
         // If it's a direct order batch, we load prices from DesignCatalog
-        $designCatalogById = !$store ? \App\Models\DesignCatalog::all()->keyBy('id') : collect();
+        $designCatalogById = collect();
+        if (!$store) {
+            if (self::$designCatalogCache === null) {
+                self::$designCatalogCache = \App\Models\DesignCatalog::all()->keyBy('id');
+            }
+            $designCatalogById = self::$designCatalogCache;
+        }
 
         foreach ($orders as $order) {
             $orderTotal = 0;
