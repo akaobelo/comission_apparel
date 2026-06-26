@@ -124,7 +124,7 @@ class AdminController extends Controller
         $archivedBatchQuery = ParentOrder::where('is_archived', true)
             ->whereNotNull('batch_id')
             ->select('batch_id')
-            ->distinct();
+            ->groupBy('batch_id');
 
         if ($request->filled('archive_search')) {
             $search = $request->archive_search;
