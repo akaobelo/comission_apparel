@@ -15,11 +15,16 @@
                 }
             }
         }
-        
-        // Fallback to the collection's cover photo if no specific design is requested (or not found)
+        // Fallback to the collection's cover photo (which is the first design's image in this collection)
         if (!$ogImage) {
-            $collectionModel = \App\Models\DesignCollection::where('name', $collection)->first();
-            $ogImage = $collectionModel ? $collectionModel->image : null;
+            $firstDesign = isset($designCatalog) ? $designCatalog->first() : null;
+            if ($firstDesign) {
+                if (!empty($firstDesign->image_paths)) {
+                    $ogImage = $firstDesign->image_paths[0];
+                } elseif ($firstDesign->image_url) {
+                    $ogImage = $firstDesign->image_url;
+                }
+            }
         }
 
         if ($ogImage && !str_starts_with($ogImage, 'http')) {
