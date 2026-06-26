@@ -561,8 +561,8 @@
                             <p class="text-sm text-slate-400 mt-1">Past orders that have been archived for production auditing.</p>
                         </div>
                         <div class="flex items-center gap-4 text-slate-400">
-                            <span class="text-sm font-bold">{{ $archivedStores->count() }} Stores</span>
-                            <span class="text-sm font-bold">{{ $archivedOrderBatches->count() }} Batches</span>
+                            <span class="text-sm font-bold">{{ $archivedStores->total() }} Stores</span>
+                            <span class="text-sm font-bold">{{ $archivedBatchesPaginator->total() }} Batches</span>
                             <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
