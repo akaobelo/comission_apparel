@@ -2,6 +2,33 @@
 
 @section('title', $collection . ' | Design Collections | The Commission Apparel')
 
+@section('meta')
+    @php
+        // Find the first design's image to use as the open graph image
+        $firstDesign = \App\Models\DesignCatalog::where('collection_name', $collection)
+            ->orderBy('sort_order', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->first();
+        $ogImage = null;
+        if ($firstDesign) {
+            if (!empty($firstDesign->image_paths)) {
+                $ogImage = $firstDesign->image_paths[0];
+            } elseif ($firstDesign->image_url) {
+                $ogImage = $firstDesign->image_url;
+            }
+        }
+        if ($ogImage && !str_starts_with($ogImage, 'http')) {
+            $ogImage = asset($ogImage);
+        }
+    @endphp
+    @if($ogImage)
+        <meta property="og:image" content="{{ $ogImage }}">
+    @endif
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ $collection }} | Design Collections | The Commission Apparel">
+    <meta property="og:description" content="Explore our latest team apparel concepts for {{ $collection }} across all packages and individual items.">
+@endsection
+
 @php
     if (!isset($collection)) {
         $collection = request()->route('collection') ?? 'Collection';
