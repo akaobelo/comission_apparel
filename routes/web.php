@@ -119,7 +119,7 @@ Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request,
     $collection = $collectionModel->name;
         
     return view('catalog.show', compact('designCatalog', 'availableSports', 'selectedSport', 'selectedTypes', 'collection', 'availableTypeKeys'));
-})->name('catalog.show');
+})->name('catalog.show')->where('collection', '.*');
 
 // Public Team Stores (parent-facing, no auth)
 Route::get('/store/search', [StoreController::class, 'search'])->name('store.search');
