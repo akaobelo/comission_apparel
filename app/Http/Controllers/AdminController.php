@@ -72,7 +72,9 @@ class AdminController extends Controller
         // Production orders (in production status)
         $activeStoresQuery = TeamStore::whereIn('status', ['approved', 'submitted_to_admin'])
             ->where('is_archived', false)
-            ->with(['user', 'parentOrders']);
+            ->with(['user', 'parentOrders' => function($q) {
+                $q->where('is_archived', false);
+            }]);
 
         if ($request->filled('active_store_search')) {
             $search = $request->active_store_search;
@@ -886,7 +888,9 @@ class AdminController extends Controller
 
     public function editStore(TeamStore $store)
     {
-        $store->load(['user', 'items', 'parentOrders']);
+        $store->load(['user', 'items', 'parentOrders' => function($q) {
+            $q->where('is_archived', false);
+        }]);
         $financials = \App\Models\ParentOrder::calculateBatchFinancials($store->parentOrders, $store);
         $allDesigns = \App\Models\DesignCatalog::orderBy('sort_order', 'asc')->get();
         return view('admin.store_edit', compact('store', 'financials', 'allDesigns'));
@@ -1195,7 +1199,9 @@ class AdminController extends Controller
 
     public function exportOrderCSV(TeamStore $store)
     {
-        $store->load('items');
+        $store->load(['items', 'parentOrders' => function($q) {
+            $q->where('is_archived', false);
+        }]);
         $orders = $store->parentOrders;
 
         $filename = "{$store->slug}-master-order.csv";

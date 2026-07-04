@@ -305,7 +305,9 @@ class CoachController extends Controller
     {
         if ($store->user_id !== request()->user()->id) abort(403);
 
-        $store->load('items');
+        $store->load(['items', 'parentOrders' => function($q) {
+            $q->where('is_archived', false);
+        }]);
         $orders = $store->parentOrders;
 
         $filename = "{$store->slug}-master-order.csv";
