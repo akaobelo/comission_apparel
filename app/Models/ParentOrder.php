@@ -49,24 +49,59 @@ class ParentOrder extends Model
         return $this->belongsTo(User::class);
     }
 
-    protected static $designCatalogCache = null;
+    public static function getItemPrices($item, $store = null)
+    {
+        $itemId = isset($item['id']) ? (int) $item['id'] : null;
+        $itemName = $item['name'] ?? null;
+
+        if ($store) {
+            $storeItem = $itemId ? $store->items->firstWhere('id', $itemId) : null;
+            if ($storeItem) {
+                return [
+                    'retail_price'    => (float) $storeItem->retail_price,
+                    'wholesale_price' => (float) $storeItem->wholesale_price,
+                ];
+            }
+        }
+
+        // Fallback to DesignCatalog
+        $design = null;
+        if (!$store && $itemId) {
+            $design = \App\Models\DesignCatalog::find($itemId);
+        }
+
+        if (!$design && $itemName) {
+            $design = \App\Models\DesignCatalog::where('name', $itemName)->first();
+            if (!$design) {
+                $normalized = str_replace(' ', '', strtolower($itemName));
+                $allDesigns = \App\Models\DesignCatalog::all();
+                foreach ($allDesigns as $d) {
+                    if (str_replace(' ', '', strtolower($d->name)) === $normalized) {
+                        $design = $d;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($design) {
+            return [
+                'retail_price'    => (float) $design->wholesale_price,
+                'wholesale_price' => (float) $design->wholesale_price,
+            ];
+        }
+
+        return [
+            'retail_price'    => 0.0,
+            'wholesale_price' => 0.0,
+        ];
+    }
 
     public static function calculateBatchFinancials($orders, $store = null)
     {
         $totalSales = 0;
         $totalWholesale = 0;
         $totalItemsSold = 0;
-
-        // If it's a store batch, load prices from the store
-        $priceByItemId = $store ? $store->items->keyBy('id') : collect();
-        // If it's a direct order batch, we load prices from DesignCatalog
-        $designCatalogById = collect();
-        if (!$store) {
-            if (self::$designCatalogCache === null) {
-                self::$designCatalogCache = \App\Models\DesignCatalog::all()->keyBy('id');
-            }
-            $designCatalogById = self::$designCatalogCache;
-        }
 
         foreach ($orders as $order) {
             $orderTotal = 0;
@@ -75,19 +110,12 @@ class ParentOrder extends Model
             $items = is_array($order->items_json) ? $order->items_json : [];
 
             foreach ($items as $orderedItem) {
-                $itemId = isset($orderedItem['id']) ? (int) $orderedItem['id'] : null;
                 $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
                 $orderItemsCount += $qty;
 
-                if ($store) {
-                    $storeItem = $itemId ? $priceByItemId->get($itemId) : null;
-                    $retailPrice = $storeItem ? (float) $storeItem->retail_price : 0;
-                    $wholesalePrice = $storeItem ? (float) $storeItem->wholesale_price : 0;
-                } else {
-                    $design = $itemId ? $designCatalogById->get($itemId) : null;
-                    $wholesalePrice = $design ? (float) $design->wholesale_price : 0;
-                    $retailPrice = $wholesalePrice; // No markup for direct orders
-                }
+                $prices = self::getItemPrices($orderedItem, $store);
+                $retailPrice = $prices['retail_price'];
+                $wholesalePrice = $prices['wholesale_price'];
                 
                 $orderTotal += ($retailPrice * $qty);
                 $orderWholesaleTotal += ($wholesalePrice * $qty);

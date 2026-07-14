@@ -238,15 +238,9 @@ class AdminController extends Controller
                 $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
                 $orderItemsCount += $qty;
 
-                if ($store) {
-                    $storeItem = $itemId ? $priceByItemId->get($itemId) : null;
-                    $retailPrice = $storeItem ? (float) $storeItem->retail_price : 0;
-                    $wholesalePrice = $storeItem ? (float) $storeItem->wholesale_price : 0;
-                } else {
-                    $design = $itemId ? $designCatalogById->get($itemId) : null;
-                    $wholesalePrice = $design ? (float) $design->wholesale_price : 0;
-                    $retailPrice = $wholesalePrice;
-                }
+                $prices = \App\Models\ParentOrder::getItemPrices($orderedItem, $store);
+                $retailPrice = $prices['retail_price'];
+                $wholesalePrice = $prices['wholesale_price'];
                 
                 $orderTotal += ($retailPrice * $qty);
                 $orderWholesaleTotal += ($wholesalePrice * $qty);
@@ -1246,10 +1240,10 @@ class AdminController extends Controller
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
 
                         $qty = $item['qty'] ?? 1;
-                        $storeItem = $store->items->firstWhere('id', $item['id'] ?? null);
-                        $itemPrice = $storeItem ? (float) $storeItem->retail_price : 0;
+                        $prices = \App\Models\ParentOrder::getItemPrices($item, $store);
+                        $itemPrice = $prices['retail_price'];
                         $totalRowPrice = $itemPrice * $qty;
-                        $mfgPrice = $storeItem ? (float) $storeItem->wholesale_price : 0;
+                        $mfgPrice = $prices['wholesale_price'];
                         $totalMfgPrice = $mfgPrice * $qty;
 
                         fputcsv($file, [
@@ -1330,15 +1324,9 @@ class AdminController extends Controller
 
                         $itemPrice = 0;
                         $mfgPrice = 0;
-                        if ($order->teamStore) {
-                            $storeItem = $order->teamStore->items->firstWhere('id', $item['id'] ?? null);
-                            $itemPrice = $storeItem ? (float) $storeItem->retail_price : 0;
-                            $mfgPrice = $storeItem ? (float) $storeItem->wholesale_price : 0;
-                        } else {
-                            $design = \App\Models\DesignCatalog::find($item['id'] ?? null);
-                            $itemPrice = $design ? (float) $design->wholesale_price : 0;
-                            $mfgPrice = $design ? (float) $design->wholesale_price : 0;
-                        }
+                        $prices = \App\Models\ParentOrder::getItemPrices($item, $order->teamStore);
+                        $itemPrice = $prices['retail_price'];
+                        $mfgPrice = $prices['wholesale_price'];
                         
                         $qty = $item['qty'] ?? 1;
                         $totalPrice = $itemPrice * $qty;
@@ -1397,15 +1385,9 @@ class AdminController extends Controller
 
                     $itemPrice = 0;
                     $mfgPrice = 0;
-                    if ($order->teamStore) {
-                        $storeItem = $order->teamStore->items->firstWhere('id', $item['id'] ?? null);
-                        $itemPrice = $storeItem ? (float) $storeItem->retail_price : 0;
-                        $mfgPrice = $storeItem ? (float) $storeItem->wholesale_price : 0;
-                    } else {
-                        $design = \App\Models\DesignCatalog::find($item['id'] ?? null);
-                        $itemPrice = $design ? (float) $design->wholesale_price : 0;
-                        $mfgPrice = $design ? (float) $design->wholesale_price : 0;
-                    }
+                    $prices = \App\Models\ParentOrder::getItemPrices($item, $order->teamStore);
+                    $itemPrice = $prices['retail_price'];
+                    $mfgPrice = $prices['wholesale_price'];
 
                     if (isset($item['components']) && is_array($item['components'])) {
                         foreach ($item['components'] as $comp) {

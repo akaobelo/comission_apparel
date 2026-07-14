@@ -77,9 +77,9 @@ class CoachController extends Controller
                     $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
                     $orderItemsCount += $qty;
 
-                    $storeItem = $itemId ? $priceByItemId->get($itemId) : null;
-                    $retailPrice = $storeItem ? (float) $storeItem->retail_price : 0;
-                    $wholesalePrice = $storeItem ? (float) $storeItem->wholesale_price : 0;
+                    $prices = \App\Models\ParentOrder::getItemPrices($orderedItem, $store);
+                    $retailPrice = $prices['retail_price'];
+                    $wholesalePrice = $prices['wholesale_price'];
                     
                     $orderTotal += ($retailPrice * $qty);
                     $orderWholesaleTotal += ($wholesalePrice * $qty);
@@ -352,10 +352,10 @@ class CoachController extends Controller
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
 
                         $qty = $item['qty'] ?? 1;
-                        $storeItem = $store->items->firstWhere('id', $item['id'] ?? null);
-                        $itemPrice = $storeItem ? (float) $storeItem->retail_price : 0;
+                        $prices = \App\Models\ParentOrder::getItemPrices($item, $store);
+                        $itemPrice = $prices['retail_price'];
                         $totalRowPrice = $itemPrice * $qty;
-                        $mfgPrice = $storeItem ? (float) $storeItem->wholesale_price : 0;
+                        $mfgPrice = $prices['wholesale_price'];
                         $totalMfgPrice = $mfgPrice * $qty;
 
                         fputcsv($file, [
