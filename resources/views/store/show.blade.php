@@ -5,14 +5,24 @@
 @section('meta')
     <meta property="og:title" content="{{ $store->name }} | The Commission Apparel">
     <meta property="og:description" content="Official Custom Apparel Storefront for {{ $store->user->organization ?? 'Team' }}. Order before the deadline!">
-    @if($store->cover_image_path)
-        <meta property="og:image" content="{{ asset(Storage::url($store->cover_image_path)) }}">
-    @else
-        <meta property="og:image" content="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=1200">
-    @endif
+    @php
+        $ogImage = 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=1200';
+        if ($store->cover_image_path) {
+            $storageUrl = Storage::url($store->cover_image_path);
+            if (!str_starts_with($storageUrl, 'http')) {
+                $ogImage = rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($storageUrl, '/');
+            } else {
+                $ogImage = $storageUrl;
+            }
+        }
+    @endphp
+    <meta property="og:image" content="{{ $ogImage }}">
+    <meta name="twitter:image" content="{{ $ogImage }}">
     <meta property="og:url" content="{{ route('store.show', $store->slug) }}">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $store->name }} | The Commission Apparel">
+    <meta name="twitter:description" content="Official Custom Apparel Storefront for {{ $store->user->organization ?? 'Team' }}. Order before the deadline!">
 @endsection
 
 @section('content')

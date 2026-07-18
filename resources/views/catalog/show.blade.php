@@ -34,15 +34,20 @@
         }
 
         if ($ogImage && !str_starts_with($ogImage, 'http')) {
-            $ogImage = asset($ogImage);
+            $ogImage = rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($ogImage, '/');
         }
     @endphp
     @if($ogImage)
         <meta property="og:image" content="{{ $ogImage }}">
+        <meta name="twitter:image" content="{{ $ogImage }}">
     @endif
     <meta property="og:type" content="website">
     <meta property="og:title" content="{{ $collection }} | Design Collections | The Commission Apparel">
     <meta property="og:description" content="Explore our latest team apparel concepts for {{ $collection }} across all packages and individual items.">
+    <meta property="og:url" content="{{ request()->fullUrl() }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $collection }} | Design Collections | The Commission Apparel">
+    <meta name="twitter:description" content="Explore our latest team apparel concepts for {{ $collection }} across all packages and individual items.">
 @endsection
 
 @php

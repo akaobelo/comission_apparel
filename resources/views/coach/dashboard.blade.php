@@ -251,28 +251,7 @@
                                                                         </div>
 
                                                                         <div x-show="selected" x-collapse class="mt-4 pt-4 border-t border-slate-200/60">
-                                                                            @php
-                                                                                $itemSizedTypes = array_intersect($types, $sizedTypes);
-                                                                            @endphp
-                                                                            @if($design->isPackage() && count($itemSizedTypes) > 0)
-                                                                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                                                                    @foreach($itemSizedTypes as $t)
-                                                                                        <div>
-                                                                                            <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">{{ str_replace('_', ' ', $t) }} Size</label>
-                                                                                            <select name="items[{{ $design->id }}][package_sizes][{{ $t }}]" class="w-full border border-slate-300 bg-white rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" :disabled="!selected">
-                                                                                                <option value="">Select size...</option>
-                                                                                                @foreach(\App\Models\DesignCatalog::sizeChart() as $s)
-                                                                                                    <option value="{{ $s }}">{{ $s }}</option>
-                                                                                                @endforeach
-                                                                                            </select>
-                                                                                        </div>
-                                                                                    @endforeach
-                                                                                    <div>
-                                                                                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Quantity</label>
-                                                                                        <input type="number" name="items[{{ $design->id }}][qty]" value="1" min="1" class="w-full border border-slate-300 bg-white rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" :required="selected" :disabled="!selected">
-                                                                                    </div>
-                                                                                </div>
-                                                                            @elseif($hasSizes)
+                                                                            @if($hasSizes)
                                                                                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-4 gap-x-8">
                                                                                     @foreach(\App\Models\DesignCatalog::sizeChart() as $size)
                                                                                         <div class="flex items-center gap-3">
