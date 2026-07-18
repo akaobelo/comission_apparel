@@ -6,14 +6,56 @@
     <meta property="og:title" content="{{ $store->name }} | The Commission Apparel">
     <meta property="og:description" content="Official Custom Apparel Storefront for {{ $store->user->organization ?? 'Team' }}. Order before the deadline!">
     @php
-        $ogImage = 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=1200';
-        if ($store->cover_image_path) {
+        $ogImage = null;
+        if (request()->filled('design')) {
+            $sharedDesign = \App\Models\DesignCatalog::find(request()->query('design'));
+            if ($sharedDesign) {
+                if (!empty($sharedDesign->image_paths)) {
+                    $ogImage = $sharedDesign->image_paths[0];
+                } elseif ($sharedDesign->image_url) {
+                    $ogImage = $sharedDesign->image_url;
+                }
+            }
+        }
+        
+        // Fallback to the first store item's design catalog image
+        if (!$ogImage && isset($store->items)) {
+            $firstItem = $store->items->first();
+            if ($firstItem) {
+                if (!empty($firstItem->image_paths)) {
+                    $ogImage = $firstItem->image_paths[0];
+                } elseif ($firstItem->image_url) {
+                    $ogImage = $firstItem->image_url;
+                } elseif ($firstItem->designCatalog) {
+                    if (!empty($firstItem->designCatalog->image_paths)) {
+                        $ogImage = $firstItem->designCatalog->image_paths[0];
+                    } elseif ($firstItem->designCatalog->image_url) {
+                        $ogImage = $firstItem->designCatalog->image_url;
+                    }
+                }
+            }
+        }
+
+        // Fallback to the store's cover image
+        if (!$ogImage && $store->cover_image_path) {
             $storageUrl = Storage::url($store->cover_image_path);
             if (!str_starts_with($storageUrl, 'http')) {
                 $ogImage = rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($storageUrl, '/');
             } else {
                 $ogImage = $storageUrl;
             }
+        }
+
+        // Final fallback to generic background
+        if (!$ogImage) {
+            $ogImage = 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=1200';
+        }
+
+        // Make sure it has absolute URL
+        if ($ogImage && !str_starts_with($ogImage, 'http') && !str_starts_with($ogImage, '/storage')) {
+            $ogImage = rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($ogImage, '/');
+        } elseif ($ogImage && str_starts_with($ogImage, '/storage')) {
+            $ogImage = rtrim(request()->getSchemeAndHttpHost(), '/') . $ogImage;
         }
     @endphp
     <meta property="og:image" content="{{ $ogImage }}">
