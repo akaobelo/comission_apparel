@@ -5,7 +5,15 @@
 @section('meta')
     @php
         $ogImage = null;
-        if (request()->filled('design')) {
+        $collectionModel = \App\Models\DesignCollection::where('name', $collection)->first();
+        
+        // Prioritize the collection's cover photo (image_path) since it is landscape and renders a large preview card
+        if ($collectionModel && !empty($collectionModel->image_path)) {
+            $ogImage = $collectionModel->image_path;
+        }
+
+        // Fallback to specific design if requested in query
+        if (!$ogImage && request()->filled('design')) {
             $sharedDesign = \App\Models\DesignCatalog::find(request()->query('design'));
             if ($sharedDesign) {
                 if (!empty($sharedDesign->image_paths)) {
@@ -15,26 +23,23 @@
                 }
             }
         }
-        // Fallback to the collection's cover photo (image_path)
+
+        // Fallback to the first design in the collection if no cover or specific design is found
         if (!$ogImage) {
-            $collectionModel = \App\Models\DesignCollection::where('name', $collection)->first();
-            if ($collectionModel && !empty($collectionModel->image_path)) {
-                $ogImage = $collectionModel->image_path;
-            } else {
-                // If no cover image exists, fallback to the first design in the collection
-                $firstDesign = isset($designCatalog) ? $designCatalog->first() : null;
-                if ($firstDesign) {
-                    if (!empty($firstDesign->image_paths)) {
-                        $ogImage = $firstDesign->image_paths[0];
-                    } elseif ($firstDesign->image_url) {
-                        $ogImage = $firstDesign->image_url;
-                    }
+            $firstDesign = isset($designCatalog) ? $designCatalog->first() : null;
+            if ($firstDesign) {
+                if (!empty($firstDesign->image_paths)) {
+                    $ogImage = $firstDesign->image_paths[0];
+                } elseif ($firstDesign->image_url) {
+                    $ogImage = $firstDesign->image_url;
                 }
             }
         }
 
-        if ($ogImage && !str_starts_with($ogImage, 'http')) {
+        if ($ogImage && !str_starts_with($ogImage, 'http') && !str_starts_with($ogImage, '/storage')) {
             $ogImage = rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($ogImage, '/');
+        } elseif ($ogImage && str_starts_with($ogImage, '/storage')) {
+            $ogImage = rtrim(request()->getSchemeAndHttpHost(), '/') . $ogImage;
         }
     @endphp
     @if($ogImage)

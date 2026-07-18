@@ -7,7 +7,18 @@
     <meta property="og:description" content="Official Custom Apparel Storefront for {{ $store->user->organization ?? 'Team' }}. Order before the deadline!">
     @php
         $ogImage = null;
-        if (request()->filled('design')) {
+        // Prioritize the store's cover image (which is wide and creates a large preview card)
+        if ($store->cover_image_path) {
+            $storageUrl = Storage::url($store->cover_image_path);
+            if (!str_starts_with($storageUrl, 'http')) {
+                $ogImage = rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($storageUrl, '/');
+            } else {
+                $ogImage = $storageUrl;
+            }
+        }
+
+        // Fallback to specific design if query parameter is set
+        if (!$ogImage && request()->filled('design')) {
             $sharedDesign = \App\Models\DesignCatalog::find(request()->query('design'));
             if ($sharedDesign) {
                 if (!empty($sharedDesign->image_paths)) {
@@ -33,16 +44,6 @@
                         $ogImage = $firstItem->designCatalog->image_url;
                     }
                 }
-            }
-        }
-
-        // Fallback to the store's cover image
-        if (!$ogImage && $store->cover_image_path) {
-            $storageUrl = Storage::url($store->cover_image_path);
-            if (!str_starts_with($storageUrl, 'http')) {
-                $ogImage = rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($storageUrl, '/');
-            } else {
-                $ogImage = $storageUrl;
             }
         }
 
