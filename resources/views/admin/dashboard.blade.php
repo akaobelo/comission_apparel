@@ -163,39 +163,57 @@
         <div x-show="activeAdminTab === 'stores'" x-cloak class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="space-y-8">
                 {{-- ═══ PENDING STORE APPROVALS ═══ --}}
-            @if($pendingStores->isNotEmpty())
+            @if($pendingStores->isNotEmpty() || request('pending_store_search'))
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div class="p-6 border-b border-slate-200 bg-orange-50 flex items-center justify-between">
+                <div class="p-6 border-b border-slate-200 bg-orange-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 flex items-center gap-2">
                         <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Pending Store Approvals
                         <span class="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-500 text-white text-[10px] font-black">{{ $pendingStores->count() }}</span>
                     </h2>
+                    <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-xs w-full"
+                          hx-get="{{ route('admin.dashboard') }}"
+                          hx-target="#pending-store-results"
+                          hx-select="#pending-store-results"
+                          hx-swap="outerHTML"
+                          hx-trigger="input from:input[name='pending_store_search'] delay:300ms, submit"
+                          hx-push-url="true">
+                        <input type="text" name="pending_store_search" value="{{ request('pending_store_search') }}" placeholder="Search pending stores..." class="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                        @if(request('pending_store_search'))
+                            <a href="{{ route('admin.dashboard') }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors">Clear</a>
+                        @endif
+                    </form>
                 </div>
-                <div class="divide-y divide-slate-100">
-                    @foreach($pendingStores as $store)
-                    <div class="p-5 flex flex-col md:flex-row md:items-center gap-4 justify-between">
-                        <div>
-                            <div class="font-bold text-slate-900 uppercase">{{ $store->name }}</div>
-                            <div class="text-sm text-slate-500 mt-0.5">
-                                Coach: <span class="font-semibold text-slate-700">{{ $store->user->name }}</span> —
-                                {{ $store->user->organization }} — Package: <span class="font-bold text-primary uppercase text-xs">{{ str_replace('_', ' ', $store->package_type ?? 'N/A') }}</span>
+                <div id="pending-store-results">
+                    @if($pendingStores->isEmpty())
+                        <div class="p-8 text-center text-slate-400 text-sm">No pending store approvals found.</div>
+                    @else
+                        <div class="divide-y divide-slate-100">
+                            @foreach($pendingStores as $store)
+                            <div class="p-5 flex flex-col md:flex-row md:items-center gap-4 justify-between">
+                                <div>
+                                    <div class="font-bold text-slate-900 uppercase">{{ $store->name }}</div>
+                                    <div class="text-sm text-slate-500 mt-0.5">
+                                        Coach: <span class="font-semibold text-slate-700">{{ $store->user?->name ?? 'Unknown' }}</span> —
+                                        {{ $store->user?->organization ?? 'No Organization' }} — Package: <span class="font-bold text-primary uppercase text-xs">{{ str_replace('_', ' ', $store->package_type ?? 'N/A') }}</span>
+                                    </div>
+                                    <div class="text-xs text-slate-400 mt-1">Requested {{ $store->created_at->diffForHumans() }}</div>
+                                </div>
+                                <div class="flex gap-2 flex-shrink-0">
+                                    <form action="{{ route('admin.stores.approve', $store) }}" method="POST">
+                                        @csrf
+                                        <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Approve</button>
+                                    </form>
+                                    <form action="{{ route('admin.stores.decline', $store) }}" method="POST">
+                                        @csrf
+                                        <button class="px-4 py-2 bg-white border border-red-300 text-red-600 hover:bg-red-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Decline</button>
+                                    </form>
+                                    <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Edit</a>
+                                </div>
                             </div>
-                            <div class="text-xs text-slate-400 mt-1">Requested {{ $store->created_at->diffForHumans() }}</div>
+                            @endforeach
                         </div>
-                        <div class="flex gap-2 flex-shrink-0">
-                            <form action="{{ route('admin.stores.approve', $store) }}" method="POST">
-                                @csrf
-                                <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Approve</button>
-                            </form>
-                            <form action="{{ route('admin.stores.decline', $store) }}" method="POST">
-                                @csrf
-                                <button class="px-4 py-2 bg-white border border-red-300 text-red-600 hover:bg-red-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Decline</button>
-                            </form>
-                            <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Edit</a>
-                        </div>
-                    </div>
-                    @endforeach
+                    @endif
                 </div>
             </div>
             @endif

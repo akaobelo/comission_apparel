@@ -32,17 +32,32 @@ class AdminController extends Controller
                 $q->where('first_name', 'like', "%{$search}%")
                   ->orWhere('last_name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('organization', 'like', "%{$search}%");
+                  ->orWhere('organization', 'like', "%{$search}%")
+                  ->orWhereHas('teamStores', function($q2) use ($search) {
+                      $q2->where('name', 'like', "%{$search}%");
+                  });
             });
         }
 
         $coaches = $query->latest()->paginate(20)->withQueryString();
 
         // Stores pending admin approval
-        $pendingStores = TeamStore::where('status', 'pending')
-            ->with('user')
-            ->latest()
-            ->get();
+        $pendingStoresQuery = TeamStore::where('status', 'pending')
+            ->with('user');
+
+        if ($request->filled('pending_store_search')) {
+            $search = $request->pending_store_search;
+            $pendingStoresQuery->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($q2) use ($search) {
+                      $q2->where('first_name', 'like', "%{$search}%")
+                         ->orWhere('last_name', 'like', "%{$search}%")
+                         ->orWhere('organization', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $pendingStores = $pendingStoresQuery->latest()->get();
 
         // Finalized store batches (preserves history even if store is re-opened)
         $finalizedStoreBatches = ParentOrder::whereNotNull('team_store_id')
