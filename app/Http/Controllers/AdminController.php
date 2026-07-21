@@ -39,7 +39,7 @@ class AdminController extends Controller
             });
         }
 
-        $coaches = $query->latest()->paginate(20)->withQueryString();
+        $coaches = $query->latest()->paginate(20, ['*'], 'coach_page')->withQueryString();
 
         // Stores pending admin approval
         $pendingStoresQuery = TeamStore::where('status', 'pending')
