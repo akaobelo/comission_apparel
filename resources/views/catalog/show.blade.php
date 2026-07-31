@@ -36,10 +36,17 @@
             }
         }
 
-        if ($ogImage && !str_starts_with($ogImage, 'http') && !str_starts_with($ogImage, '/storage')) {
-            $ogImage = rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($ogImage, '/');
-        } elseif ($ogImage && str_starts_with($ogImage, '/storage')) {
-            $ogImage = rtrim(request()->getSchemeAndHttpHost(), '/') . $ogImage;
+        if ($ogImage && !str_starts_with($ogImage, 'http')) {
+            $ogImage = url($ogImage);
+        }
+        
+        if ($ogImage && str_contains($ogImage, 'thecommissionapparel.com')) {
+            $ogImage = str_replace('http://', 'https://', $ogImage);
+        }
+
+        $ogUrl = request()->fullUrl();
+        if (str_contains($ogUrl, 'thecommissionapparel.com')) {
+            $ogUrl = str_replace('http://', 'https://', $ogUrl);
         }
     @endphp
     @if($ogImage)
@@ -49,7 +56,7 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="{{ $collection }} | Design Collections | The Commission Apparel">
     <meta property="og:description" content="Explore our latest team apparel concepts for {{ $collection }} across all packages and individual items.">
-    <meta property="og:url" content="{{ request()->fullUrl() }}">
+    <meta property="og:url" content="{{ $ogUrl }}">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $collection }} | Design Collections | The Commission Apparel">
     <meta name="twitter:description" content="Explore our latest team apparel concepts for {{ $collection }} across all packages and individual items.">

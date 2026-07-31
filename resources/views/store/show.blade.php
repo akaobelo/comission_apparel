@@ -52,16 +52,22 @@
             $ogImage = 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=1200';
         }
 
-        // Make sure it has absolute URL
-        if ($ogImage && !str_starts_with($ogImage, 'http') && !str_starts_with($ogImage, '/storage')) {
-            $ogImage = rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($ogImage, '/');
-        } elseif ($ogImage && str_starts_with($ogImage, '/storage')) {
-            $ogImage = rtrim(request()->getSchemeAndHttpHost(), '/') . $ogImage;
+        if ($ogImage && !str_starts_with($ogImage, 'http')) {
+            $ogImage = url($ogImage);
+        }
+        
+        if ($ogImage && str_contains($ogImage, 'thecommissionapparel.com')) {
+            $ogImage = str_replace('http://', 'https://', $ogImage);
+        }
+
+        $ogUrl = route('store.show', $store->slug);
+        if (str_contains($ogUrl, 'thecommissionapparel.com')) {
+            $ogUrl = str_replace('http://', 'https://', $ogUrl);
         }
     @endphp
     <meta property="og:image" content="{{ $ogImage }}">
     <meta name="twitter:image" content="{{ $ogImage }}">
-    <meta property="og:url" content="{{ route('store.show', $store->slug) }}">
+    <meta property="og:url" content="{{ $ogUrl }}">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $store->name }} | The Commission Apparel">
