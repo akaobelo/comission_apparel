@@ -48,9 +48,17 @@
         if (str_contains($ogUrl, 'thecommissionapparel.com')) {
             $ogUrl = str_replace('http://', 'https://', $ogUrl);
         }
+        $ogImageType = 'image/jpeg';
+        if ($ogImage && (str_contains(strtolower($ogImage), '.png') || str_ends_with(strtolower(parse_url($ogImage, PHP_URL_PATH) ?? ''), '.png'))) {
+            $ogImageType = 'image/png';
+        }
     @endphp
     @if($ogImage)
         <meta property="og:image" content="{{ $ogImage }}">
+        <meta property="og:image:secure_url" content="{{ $ogImage }}">
+        <meta property="og:image:type" content="{{ $ogImageType }}">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
         <meta name="twitter:image" content="{{ $ogImage }}">
     @endif
     <meta property="og:type" content="website">
