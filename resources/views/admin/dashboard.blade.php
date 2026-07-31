@@ -30,6 +30,9 @@
                     'uniform_package_custom' => 'Uniform Package (Custom)',
                 ];
             @endphp
+<script>
+    window.availableSportsList = {!! json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) !!};
+</script>
 <div class="max-w-[1600px] mx-auto px-6 pb-8" style="padding-top: clamp(2rem, 10vw, 7rem);">
     @if(session('success'))
         <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 font-bold flex items-center gap-3">
@@ -867,7 +870,7 @@
                             <div x-data="{
                                 open: false,
                                 search: '',
-                                options: {{ json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) }},
+                                options: window.availableSportsList,
                                 get filteredOptions() {
                                     if (this.search === '') return this.options;
                                     return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
@@ -1327,8 +1330,8 @@
                                                 <div class="relative">
                                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none appearance-none">
                                                         <option value="">No Collection</option>
-                                                        @foreach($designCollections as $collection)
-                                                            <option value="{{ $collection->id }}" {{ $design->design_collection_id == $collection->id ? 'selected' : '' }}>{{ $collection->name }}</option>
+                                                        @foreach($designCollections as $col)
+                                                            <option value="{{ $col->id }}" {{ $design->design_collection_id == $col->id ? 'selected' : '' }}>{{ $col->name }}</option>
                                                         @endforeach
                                                     </select>
                                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
@@ -1339,7 +1342,7 @@
                                             <div x-data="{
                                                 open: false,
                                                 search: '{{ addslashes($design->sport) }}',
-                                                options: {{ json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) }},
+                                                options: window.availableSportsList,
                                                 get filteredOptions() {
                                                     if (this.search === '') return this.options;
                                                     return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
@@ -1552,8 +1555,8 @@
                                 <div class="relative">
                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
                                         <option value="">Select a Collection...</option>
-                                        @foreach($designCollections as $collection)
-                                            <option value="{{ $collection->id }}">{{ $collection->name }}</option>
+                                        @foreach($designCollections as $col)
+                                            <option value="{{ $col->id }}">{{ $col->name }}</option>
                                         @endforeach
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
@@ -1566,7 +1569,7 @@
                             <div x-data="{
                                 open: false,
                                 search: '',
-                                options: {{ json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) }},
+                                options: window.availableSportsList,
                                 get filteredOptions() {
                                     if (this.search === '') return this.options;
                                     return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
@@ -1674,8 +1677,8 @@
                                 <div class="relative">
                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
                                         <option value="">Select a Collection...</option>
-                                        @foreach($designCollections as $collection)
-                                            <option value="{{ $collection->id }}">{{ $collection->name }}</option>
+                                        @foreach($designCollections as $col)
+                                            <option value="{{ $col->id }}">{{ $col->name }}</option>
                                         @endforeach
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
@@ -1688,7 +1691,7 @@
                             <div x-data="{
                                 open: false,
                                 search: '',
-                                options: {{ json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) }},
+                                options: window.availableSportsList,
                                 get filteredOptions() {
                                     if (this.search === '') return this.options;
                                     return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
@@ -1884,7 +1887,7 @@
                             </form>
                         </div>
                         <div id="update-catalog-sortable-list-unassigned" class="update-catalog-sortable-list max-h-[900px] overflow-y-auto" data-is-collection="false">
-                            @foreach($designCatalog as $design)
+                            @foreach($designCatalog->whereNull('design_collection_id') as $design)
                         <div x-show="paginatedItemIds.includes({{ $design->id }})" :class="paginatedItemIds.includes({{ $design->id }}) ? 'visible-sortable-item' : 'hidden-sortable-item'" x-cloak class="flex flex-col sm:flex-row sm:items-start justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 gap-4 bg-white">
                             <div class="flex items-start gap-3 flex-1 pr-4">
                                 <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1 mt-1" title="Drag to reorder">
@@ -1936,8 +1939,8 @@
                                                 <div class="relative">
                                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none appearance-none">
                                                         <option value="">No Collection</option>
-                                                        @foreach($designCollections as $collection)
-                                                            <option value="{{ $collection->id }}" {{ $design->design_collection_id == $collection->id ? 'selected' : '' }}>{{ $collection->name }}</option>
+                                                        @foreach($designCollections as $col)
+                                                            <option value="{{ $col->id }}" {{ $design->design_collection_id == $col->id ? 'selected' : '' }}>{{ $col->name }}</option>
                                                         @endforeach
                                                     </select>
                                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
@@ -1948,7 +1951,7 @@
                                             <div x-data="{
                                                 open: false,
                                                 search: '{{ addslashes($design->sport) }}',
-                                                options: {{ json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) }},
+                                                options: window.availableSportsList,
                                                 get filteredOptions() {
                                                     if (this.search === '') return this.options;
                                                     return this.options.filter(i => i.toLowerCase().includes(this.search.toLowerCase()));
