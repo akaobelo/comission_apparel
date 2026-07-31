@@ -70,7 +70,20 @@ Route::get('/catalog', function () {
 })->name('catalog.index');
 
 Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request, $collection) {
-    $collectionModel = \App\Models\DesignCollection::where('name', $collection)->firstOrFail();
+    // Find the collection: try exact match first, then fallback to match without trailing dots/spaces
+    $collectionModel = \App\Models\DesignCollection::where('name', $collection)->first();
+    if (!$collectionModel) {
+        $cleanCollection = rtrim($collection, '. ');
+        $collectionModel = \App\Models\DesignCollection::where('name', $collection . '.')
+            ->orWhere('name', $cleanCollection)
+            ->orWhere('name', $cleanCollection . '.')
+            ->orWhere('name', 'like', $cleanCollection . '%')
+            ->first();
+    }
+
+    if (!$collectionModel) {
+        abort(404);
+    }
     
     $selectedSport = $request->query('sport');
     $selectedTypes = $request->query('types', []);
