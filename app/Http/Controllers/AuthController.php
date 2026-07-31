@@ -81,7 +81,7 @@ class AuthController extends Controller
 
         $logoPath = null;
         if ($request->hasFile('logo')) {
-            $logoPath = $request->file('logo')->store('organization_logos', 'public');
+            $logoPath = \App\Services\ImageOptimizer::optimize($request->file('logo'), 'organization_logos');
         }
 
         $user = User::create([

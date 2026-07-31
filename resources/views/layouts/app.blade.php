@@ -32,7 +32,7 @@
         <div class="max-w-[1500px] mx-auto px-6 flex items-center justify-between transition-all duration-300" :class="{ 'h-12': scrolled, 'h-14 md:h-16': !scrolled }">
             <!-- Logo -->
             <a href="/" class="flex items-center group z-50 relative">
-                <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-10 md:h-[2.2rem] w-auto group-hover:opacity-80 transition-opacity">
+                <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-10 md:h-[2.2rem] w-auto group-hover:opacity-80 transition-opacity" fetchpriority="high">
             </a>
 
             <!-- Desktop Navigation -->
@@ -46,7 +46,7 @@
                 <div class="h-6 w-px bg-slate-700"></div>
                 <a href="/coach/dashboard" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
                     <span class="relative z-10 flex items-center gap-2">
-                        <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain">
+                        <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
                         Dashboard Sign-in
                     </span>
                 </a>
@@ -70,7 +70,7 @@
                 <a href="/quote" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Request A Quote</a>
                 <div class="flex flex-col gap-4 mt-4">
                     <a href="/coach/dashboard" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-4 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">
-                        <img src="/images/LR.png" alt="LR Logo" class="h-5 w-auto object-contain">
+                        <img src="/images/LR.png" alt="LR Logo" class="h-5 w-auto object-contain" loading="lazy">
                         Dashboard Sign-in
                     </a>
                 </div>
@@ -87,7 +87,7 @@
         <div class="max-w-[1500px] mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
             <div class="col-span-1 md:col-span-2">
                 <div class="mb-6 mix-blend-screen">
-                    <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-14 w-auto mix-blend-screen">
+                    <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-14 w-auto mix-blend-screen" loading="lazy">
                 </div>
                 <p class="text-slate-400 max-w-sm mb-6">Elite Custom Uniforms for Teams Worldwide. We build powerful visual identities for programs that expect to win.</p>
                 <div class="flex gap-4">

@@ -20,7 +20,7 @@
 
 <!-- Hero Section -->
 <section class="w-full bg-black" style="padding-top: 85px;">
-    <img src="{{ asset('images/hero-banner.jpeg') }}" alt="Elite Custom Apparel" class="w-full h-auto object-cover">
+    <img src="{{ asset('images/hero-banner.jpeg') }}" alt="Elite Custom Apparel" class="w-full h-auto object-cover" fetchpriority="high">
 </section>
 
 <!-- Content Container -->
@@ -65,7 +65,7 @@
                                     NEWEST ARRIVAL
                                 </div>
                                 @endif
-                                <img src="{{ Str::startsWith($collection->image_path, 'http') ? $collection->image_path : $collection->image_path }}" alt="{{ $collection->tab_name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <img src="{{ Str::startsWith($collection->image_path, 'http') ? $collection->image_path : $collection->image_path }}" alt="{{ $collection->tab_name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                             </a>
                             <div class="p-3 md:p-4 flex flex-col flex-1">
                                 <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">{{ $collection->tab_name }}</div>
@@ -104,7 +104,7 @@
         <!-- UI Mockup Image -->
         <div class="mb-6 md:mb-10 px-4 lg:px-6 max-w-[85rem] mx-auto">
              <div class="w-full rounded-xl overflow-hidden shadow-2xl relative" style="aspect-ratio: 3.2 / 1;">
-                 <img src="/images/team-store-background-v2.png" alt="Team Store UI Previews" class="absolute w-full max-w-none h-auto left-0 -top-[9%] md:-top-[12%] lg:-top-[15%]">
+                 <img src="/images/team-store-background-v2.png" alt="Team Store UI Previews" class="absolute w-full max-w-none h-auto left-0 -top-[9%] md:-top-[12%] lg:-top-[15%]" loading="lazy">
              </div>
         </div>
 
@@ -174,7 +174,7 @@
 
         <div class="grid lg:grid-cols-2 gap-12 items-center">
             <div class="order-2 lg:order-1 relative rounded-xl overflow-hidden shadow-sm border border-slate-200">
-                <img src="/images/group.jpg" alt="Dashboard Concept" class="w-full h-auto object-cover">
+                <img src="/images/group.jpg" alt="Dashboard Concept" class="w-full h-auto object-cover" loading="lazy">
                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent"></div>
                 <div class="absolute bottom-0 left-0 w-full p-6">
                     <div class="bg-white rounded-lg p-3 shadow-md border border-slate-100 flex items-center gap-3">
@@ -277,7 +277,7 @@
                             </p>
                             <div class="flex items-center gap-4 mt-auto">
                                 @if($testimonial->image_path)
-                                    <img src="{{ $testimonial->image_path }}" alt="{{ $testimonial->client_name }}" class="w-10 h-10 rounded-full object-cover shrink-0">
+                                    <img src="{{ $testimonial->image_path }}" alt="{{ $testimonial->client_name }}" class="w-10 h-10 rounded-full object-cover shrink-0" loading="lazy">
                                 @else
                                     <div class="w-10 h-10 rounded-full bg-[#1e40af] text-white flex items-center justify-center font-black text-base shrink-0">
                                         {{ substr($testimonial->client_name, 0, 1) }}

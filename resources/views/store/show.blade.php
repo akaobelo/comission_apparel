@@ -331,7 +331,7 @@
                                                 class="w-full h-full block focus:outline-none"
                                                 @click.prevent="previewOpen = true; previewImgs = imgs; previewIdx = imgIdx; previewAlt = '{{ addslashes($item->name) }}'; document.body.style.overflow = 'hidden';"
                                             >
-                                                <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300 cursor-zoom-in">
+                                                <img :src="imgs[imgIdx]" alt="" class="w-full h-full object-cover object-top transition-opacity duration-300 cursor-zoom-in" loading="lazy">
                                             </button>
 
                                             <!-- Manual Navigation Arrows -->
@@ -354,7 +354,7 @@
                                             class="w-full h-full block focus:outline-none"
                                             @click.prevent="previewOpen = true; previewImgs = ['{{ $item->image_paths[0] }}']; previewIdx = 0; previewAlt = '{{ addslashes($item->name) }}'; document.body.style.overflow = 'hidden';"
                                         >
-                                            <img src="{{ $item->image_paths[0] }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 cursor-zoom-in">
+                                            <img src="{{ $item->image_paths[0] }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 cursor-zoom-in" loading="lazy">
                                         </button>
                                     @endif
                                 @elseif($item->image_url)
@@ -363,7 +363,7 @@
                                         class="w-full h-full block focus:outline-none"
                                         @click.prevent="previewOpen = true; previewImgs = ['{{ $item->image_url }}']; previewIdx = 0; previewAlt = '{{ addslashes($item->name) }}'; document.body.style.overflow = 'hidden';"
                                     >
-                                        <img src="{{ $item->image_url }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 cursor-zoom-in">
+                                        <img src="{{ $item->image_url }}" alt="" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 cursor-zoom-in" loading="lazy">
                                     </button>
                                 @else
                                     <div class="text-slate-400 font-medium">No Image</div>

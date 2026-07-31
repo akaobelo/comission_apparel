@@ -554,7 +554,7 @@ class CoachController extends Controller
             }
 
             // Store new image
-            $path = $request->file('cover_image')->store('covers', 'public');
+            $path = \App\Services\ImageOptimizer::optimize($request->file('cover_image'), 'covers');
             $store->update(['cover_image_path' => $path]);
         }
 
@@ -578,7 +578,7 @@ class CoachController extends Controller
             }
 
             // Store new logo
-            $path = $request->file('logo')->store('organization_logos', 'public');
+            $path = \App\Services\ImageOptimizer::optimize($request->file('logo'), 'organization_logos');
             $user->update(['logo_path' => $path]);
         }
 

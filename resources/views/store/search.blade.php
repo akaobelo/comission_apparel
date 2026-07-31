@@ -55,7 +55,7 @@
                         <div class="flex flex-col items-end gap-2 shrink-0">
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">Open</span>
                             @if($store->user->logo_path)
-                                <img src="{{ Str::startsWith($store->user->logo_path, 'http') ? $store->user->logo_path : '/storage/' . $store->user->logo_path }}" alt="Team Logo" class="w-12 h-12 md:w-14 md:h-14 object-contain rounded-full border border-slate-200 shadow-sm mt-1 bg-white">
+                                <img src="{{ Str::startsWith($store->user->logo_path, 'http') ? $store->user->logo_path : '/storage/' . $store->user->logo_path }}" alt="Team Logo" class="w-12 h-12 md:w-14 md:h-14 object-contain rounded-full border border-slate-200 shadow-sm mt-1 bg-white" loading="lazy">
                             @endif
                         </div>
                     </div>

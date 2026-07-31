@@ -79,7 +79,7 @@
                         <div class="flex flex-col group" x-show="activeCat === 'All' || {{ json_encode($collection->sports ?? []) }}.includes(activeCat)">
                             <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center">
                                 @if($collection->image)
-                                    <img src="{{ asset($collection->image) }}" alt="{{ $collection->name }}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
+                                    <img src="{{ asset($collection->image) }}" alt="{{ $collection->name }}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" loading="lazy">
                                 @else
                                     <div class="text-slate-400 font-medium text-xs uppercase tracking-widest">No Cover Image</div>
                                 @endif
@@ -142,7 +142,7 @@
                                             class="w-full h-full block focus:outline-none"
                                             @click="previewOpen = true; previewImgs = imgs; previewIdx = imgIdx; previewAlt = '{{ addslashes($design->name) }}'; document.body.style.overflow = 'hidden';"
                                         >
-                                            <img :src="imgs[imgIdx]" alt="{{ $design->name }}" class="w-full h-full object-cover object-top transition-opacity duration-300 cursor-zoom-in">
+                                            <img :src="imgs[imgIdx]" alt="{{ $design->name }}" class="w-full h-full object-cover object-top transition-opacity duration-300 cursor-zoom-in" loading="lazy">
                                         </button>
                                         
                                         <!-- Manual Navigation Arrows -->
@@ -165,7 +165,7 @@
                                         class="w-full h-full block focus:outline-none"
                                         @click="previewOpen = true; previewImgs = ['{{ asset($imageSrc) }}']; previewIdx = 0; previewAlt = '{{ addslashes($design->name) }}'; document.body.style.overflow = 'hidden';"
                                     >
-                                        <img src="{{ asset($imageSrc) }}" alt="{{ $design->name }}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 cursor-zoom-in">
+                                        <img src="{{ asset($imageSrc) }}" alt="{{ $design->name }}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 cursor-zoom-in" loading="lazy">
                                     </button>
                                 @else
                                     <div class="text-slate-400 font-medium text-xs uppercase tracking-widest">No Image</div>

@@ -998,7 +998,7 @@ class AdminController extends Controller
                 $pathToRemove = str_replace('/storage/', '', $store->cover_image_path);
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
             }
-            $path = $request->file('cover_image')->store('covers', 'public');
+            $path = \App\Services\ImageOptimizer::optimize($request->file('cover_image'), 'covers');
             $store->update(['cover_image_path' => $path]);
         }
 
@@ -1019,7 +1019,7 @@ class AdminController extends Controller
                 $pathToRemove = str_replace('/storage/', '', $user->logo_path);
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
             }
-            $path = $request->file('logo')->store('organization_logos', 'public');
+            $path = \App\Services\ImageOptimizer::optimize($request->file('logo'), 'organization_logos');
             $user->update(['logo_path' => $path]);
         }
 
@@ -1544,7 +1544,7 @@ class AdminController extends Controller
         $imagePaths = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $path = $image->store('sizing_charts', 'public');
+                $path = \App\Services\ImageOptimizer::optimize($image, 'sizing_charts');
                 $imagePaths[] = '/storage/' . $path;
             }
         }
@@ -1600,7 +1600,7 @@ class AdminController extends Controller
         // Handle new image uploads
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $path = $image->store('sizing_charts', 'public');
+                $path = \App\Services\ImageOptimizer::optimize($image, 'sizing_charts');
                 $existingPaths[] = '/storage/' . $path;
             }
         }
@@ -1663,7 +1663,7 @@ class AdminController extends Controller
 
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('testimonials', 'public');
+            $path = \App\Services\ImageOptimizer::optimize($request->file('image'), 'testimonials');
             $imagePath = '/storage/' . $path;
         }
 
@@ -1696,7 +1696,7 @@ class AdminController extends Controller
                 $pathToRemove = str_replace('/storage/', '', $testimonial->image_path);
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
             }
-            $path = $request->file('image')->store('testimonials', 'public');
+            $path = \App\Services\ImageOptimizer::optimize($request->file('image'), 'testimonials');
             $validated['image_path'] = '/storage/' . $path;
         }
 
@@ -1748,7 +1748,11 @@ class AdminController extends Controller
                     \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
                 }
 
-                $path = $file->store('hero', 'public');
+                if ($isImage) {
+                    $path = \App\Services\ImageOptimizer::optimize($file, 'hero');
+                } else {
+                    $path = $file->store('hero', 'public');
+                }
                 
                 \App\Models\SiteSetting::updateOrCreate(
                     ['key' => 'hero_media_path'],
