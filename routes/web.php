@@ -81,6 +81,13 @@ Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request,
             ->first();
     }
 
+    // Fallback to slug-based match (e.g. legacy-elite-runners-tc)
+    if (!$collectionModel) {
+        $collectionModel = \App\Models\DesignCollection::all()->first(function ($item) use ($collection) {
+            return \Illuminate\Support\Str::slug($item->name) === \Illuminate\Support\Str::slug($collection);
+        });
+    }
+
     if (!$collectionModel) {
         abort(404);
     }
