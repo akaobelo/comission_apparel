@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class ParentOrder extends Model
 {
+    protected static $designsCache = null;
+
     protected $fillable = [
         'team_store_id',
         'athlete_first_name',
@@ -64,18 +66,21 @@ class ParentOrder extends Model
             }
         }
 
-        // Fallback to DesignCatalog
+        // Fallback to DesignCatalog using localized cache to avoid N+1 query bottleneck
         $design = null;
-        if (!$store && $itemId) {
-            $design = \App\Models\DesignCatalog::find($itemId);
+        if (self::$designsCache === null) {
+            self::$designsCache = \App\Models\DesignCatalog::all();
+        }
+
+        if ($itemId) {
+            $design = self::$designsCache->firstWhere('id', $itemId);
         }
 
         if (!$design && $itemName) {
-            $design = \App\Models\DesignCatalog::where('name', $itemName)->first();
+            $design = self::$designsCache->firstWhere('name', $itemName);
             if (!$design) {
                 $normalized = str_replace(' ', '', strtolower($itemName));
-                $allDesigns = \App\Models\DesignCatalog::all();
-                foreach ($allDesigns as $d) {
+                foreach (self::$designsCache as $d) {
                     if (str_replace(' ', '', strtolower($d->name)) === $normalized) {
                         $design = $d;
                         break;
