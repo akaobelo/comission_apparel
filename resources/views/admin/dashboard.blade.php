@@ -1192,7 +1192,7 @@
                             
 </div>
 @php
-    $collectionItems = $designCatalog->where('design_collection_id', $collection->id)->values();
+    $collectionItems = $collection->designs;
 @endphp
 <div class="border-t border-slate-100 bg-white" x-show="showItems" x-cloak x-data="{
     search: '',
@@ -1330,7 +1330,7 @@
                                                 <div class="relative">
                                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none appearance-none">
                                                         <option value="">No Collection</option>
-                                                        @foreach($designCollections as $col)
+                                                        @foreach($allCollections as $col)
                                                             <option value="{{ $col->id }}" {{ $design->design_collection_id == $col->id ? 'selected' : '' }}>{{ $col->name }}</option>
                                                         @endforeach
                                                     </select>
@@ -1529,6 +1529,9 @@
 </div>
                             @endforeach
                             </div>
+                            <div class="mt-4 px-4 py-3 bg-slate-50 border-t border-slate-200">
+                                {{ $designCollections->appends(request()->except('collection_page'))->links() }}
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -1555,7 +1558,7 @@
                                 <div class="relative">
                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
                                         <option value="">Select a Collection...</option>
-                                        @foreach($designCollections as $col)
+                                        @foreach($allCollections as $col)
                                             <option value="{{ $col->id }}">{{ $col->name }}</option>
                                         @endforeach
                                     </select>
@@ -1677,7 +1680,7 @@
                                 <div class="relative">
                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
                                         <option value="">Select a Collection...</option>
-                                        @foreach($designCollections as $col)
+                                        @foreach($allCollections as $col)
                                             <option value="{{ $col->id }}">{{ $col->name }}</option>
                                         @endforeach
                                     </select>
@@ -1783,7 +1786,7 @@
                     search: '',
                     page: 1,
                     perPage: 100,
-                    items: {{ json_encode($designCatalog->whereNull('design_collection_id')->values()->map(function($d) {
+                    items: {{ json_encode($unassignedDesigns->map(function($d) {
                         return [
                             'id' => $d->id,
                             'name' => $d->name,
@@ -1841,18 +1844,30 @@
                             <p class="text-xs text-slate-500 mt-1">Edit design details for items not assigned to any collection.</p>
                         </div>
                         <div class="flex gap-4 items-center">
-                            <div class="flex gap-2" @click.stop>
+                            <form method="GET" action="{{ route('admin.dashboard') }}" class="flex gap-2" @click.stop>
+                                @foreach(request()->except(['unassigned_search', 'unassigned_page']) as $k => $v)
+                                    @if(is_array($v))
+                                        @foreach($v as $arrVal)
+                                            <input type="hidden" name="{{ $k }}[]" value="{{ $arrVal }}">
+                                        @endforeach
+                                    @else
+                                        <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+                                    @endif
+                                @endforeach
                                 <div class="relative">
                                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                    <input type="text" x-model="search" placeholder="Search designs..." class="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm w-full md:w-64">
+                                    <input type="text" name="unassigned_search" value="{{ request('unassigned_search') }}" placeholder="Search unassigned designs..." class="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm w-full md:w-64">
                                 </div>
-                                <button type="button" x-show="search !== ''" @click="search = ''" x-cloak class="px-3 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Clear</button>
-                            </div>
+                                @if(request()->filled('unassigned_search'))
+                                    <a href="{{ route('admin.dashboard', request()->except(['unassigned_search', 'unassigned_page'])) }}" class="px-3 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center">Clear</a>
+                                @endif
+                                <button type="submit" class="px-3 py-2 bg-slate-800 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-700 transition-colors">Search</button>
+                            </form>
                             <svg class="w-5 h-5 text-slate-400 transform transition-transform" :class="expandedCatalog ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
                     <div x-show="expandedCatalog" x-cloak>
-                        @if($designCatalog->isNotEmpty())
+                        @if($unassignedDesigns->isNotEmpty())
                         <form id="bulk-sort-form" action="{{ route('admin.design.bulk-sort') }}" method="POST">
                             @csrf
                         </form>
@@ -1887,7 +1902,7 @@
                             </form>
                         </div>
                         <div id="update-catalog-sortable-list-unassigned" class="update-catalog-sortable-list max-h-[900px] overflow-y-auto" data-is-collection="false">
-                            @foreach($designCatalog->whereNull('design_collection_id') as $design)
+                            @foreach($unassignedDesigns as $design)
                         <div x-show="paginatedItemIds.includes({{ $design->id }})" :class="paginatedItemIds.includes({{ $design->id }}) ? 'visible-sortable-item' : 'hidden-sortable-item'" x-cloak class="flex flex-col sm:flex-row sm:items-start justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 gap-4 bg-white">
                             <div class="flex items-start gap-3 flex-1 pr-4">
                                 <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1 mt-1" title="Drag to reorder">
@@ -1939,7 +1954,7 @@
                                                 <div class="relative">
                                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none appearance-none">
                                                         <option value="">No Collection</option>
-                                                        @foreach($designCollections as $col)
+                                                        @foreach($allCollections as $col)
                                                             <option value="{{ $col->id }}" {{ $design->design_collection_id == $col->id ? 'selected' : '' }}>{{ $col->name }}</option>
                                                         @endforeach
                                                     </select>
@@ -2129,6 +2144,9 @@
                             <span class="text-xs font-bold px-2 text-slate-600"><span x-text="page"></span> / <span x-text="totalPages"></span></span>
                             <button @click="if (page < totalPages) page++" :disabled="page === totalPages" :class="page === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-200 text-slate-700'" class="px-3 py-1.5 rounded bg-white border border-slate-300 text-xs font-bold uppercase transition-colors">Next</button>
                         </div>
+                    </div>
+                    <div class="mt-4 px-4 py-3 bg-slate-50 border-t border-slate-200">
+                        {{ $unassignedDesigns->appends(request()->except('unassigned_page'))->links() }}
                     </div>
                     @else
                     <div class="p-6 text-center text-sm text-slate-400">No designs in catalog yet.</div>
@@ -2561,6 +2579,9 @@
                         @endif
                     </tbody>
                 </table>
+                <div class="mt-4 px-4 py-3 bg-slate-50 border-t border-slate-200">
+                    {{ $passwordResetLogs->appends(request()->except('password_log_page'))->links() }}
+                </div>
                 </div>
             </div>
         </div>

@@ -77,12 +77,28 @@ class AdminController extends Controller
                 ];
             });
 
-        // Design catalog
-        $designCatalog = DesignCatalog::with(['designCollection', 'coaches'])
-            ->orderBy('sort_order', 'asc')
+        // Unassigned designs paginated
+        $unassignedSearch = $request->input('unassigned_search');
+        $unassignedQuery = DesignCatalog::whereNull('design_collection_id')
+            ->with(['designCollection', 'coaches']);
+
+        if (!empty($unassignedSearch)) {
+            $unassignedQuery->where(function($q) use ($unassignedSearch) {
+                $q->where('name', 'like', "%{$unassignedSearch}%")
+                  ->orWhere('sport', 'like', "%{$unassignedSearch}%")
+                  ->orWhereHas('coaches', function($q2) use ($unassignedSearch) {
+                      $q2->where('first_name', 'like', "%{$unassignedSearch}%")
+                         ->orWhere('last_name', 'like', "%{$unassignedSearch}%")
+                         ->orWhere('organization', 'like', "%{$unassignedSearch}%");
+                  });
+            });
+        }
+
+        $unassignedDesigns = $unassignedQuery->orderBy('sort_order', 'asc')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->get();
+            ->paginate(15, ['*'], 'unassigned_page')
+            ->withQueryString();
 
         // Production orders (in production status)
         $activeStoresQuery = TeamStore::whereIn('status', ['approved', 'submitted_to_admin'])
@@ -200,14 +216,27 @@ class AdminController extends Controller
 
         $landingCollections = LandingCollection::orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
 
-        $allStores = TeamStore::with('user')->latest()->get();
-        $allCoaches = User::where('role', 'coach')->orderBy('organization')->get();
+        // Optimize dropdown payloads: select only necessary columns to avoid loading heavy object trees
+        $allStores = TeamStore::select('id', 'name', 'user_id')->with(['user' => function($q) {
+            $q->select('id', 'first_name', 'last_name', 'organization');
+        }])->latest()->get();
+
+        $allCoaches = User::where('role', 'coach')->select('id', 'first_name', 'last_name', 'organization')->orderBy('organization')->get();
 
         $availableSports = config('sports.categories');
 
-        $designCollections = \App\Models\DesignCollection::orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
+        // Paginate collections and eager load designs & coaches for those collections only
+        $designCollections = \App\Models\DesignCollection::with(['designs' => function($q) {
+            $q->with('coaches')->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc');
+        }])->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->paginate(10, ['*'], 'collection_page')->withQueryString();
 
-        $passwordResetLogs = PasswordResetLog::with('user')->latest()->get();
+        // Complete list of collections for selection dropdowns
+        $allCollections = \App\Models\DesignCollection::select('id', 'name')->orderBy('sort_order', 'asc')->get();
+
+        // Paginate password reset logs
+        $passwordResetLogs = PasswordResetLog::with(['user' => function($q) {
+            $q->select('id', 'first_name', 'last_name', 'email');
+        }])->latest()->paginate(10, ['*'], 'password_log_page')->withQueryString();
 
         $testimonials = Testimonial::orderBy('sort_order', 'asc')->get();
 
@@ -225,8 +254,12 @@ class AdminController extends Controller
             $q->where('role', 'admin');
         })->latest()->get();
 
-        $globalOrders = \App\Models\ParentOrder::whereIn('status', ['In Production', 'Shipped', 'Delivered', 'Processing', 'Completed'])->get();
-        $storeIds = $globalOrders->pluck('team_store_id')->filter()->unique();
+        // Optimize memory by plucking store IDs via distinct SQL query
+        $storeIds = \App\Models\ParentOrder::whereIn('status', ['In Production', 'Shipped', 'Delivered', 'Processing', 'Completed'])
+            ->whereNotNull('team_store_id')
+            ->distinct()
+            ->pluck('team_store_id');
+            
         $storesMap = TeamStore::whereIn('id', $storeIds)->with('items')->get()->keyBy('id');
         
         $globalSalesSummary = [
@@ -237,41 +270,42 @@ class AdminController extends Controller
             'total_items_sold' => 0,
         ];
         
-        $designCatalogById = \App\Models\DesignCatalog::all()->keyBy('id');
+        // Chunk orders to process them in smaller memory batches, selecting only needed columns
+        \App\Models\ParentOrder::whereIn('status', ['In Production', 'Shipped', 'Delivered', 'Processing', 'Completed'])
+            ->select('id', 'items_json', 'team_store_id')
+            ->chunk(150, function($orders) use (&$globalSalesSummary, $storesMap) {
+                foreach ($orders as $order) {
+                    $store = $order->team_store_id ? $storesMap->get($order->team_store_id) : null;
+                    
+                    $orderTotal = 0;
+                    $orderWholesaleTotal = 0;
+                    $orderItemsCount = 0;
+                    $items = is_array($order->items_json) ? $order->items_json : [];
 
-        foreach ($globalOrders as $order) {
-            $store = $order->team_store_id ? $storesMap->get($order->team_store_id) : null;
-            $priceByItemId = $store ? $store->items->keyBy('id') : collect();
-            
-            $orderTotal = 0;
-            $orderWholesaleTotal = 0;
-            $orderItemsCount = 0;
-            $items = is_array($order->items_json) ? $order->items_json : [];
+                    foreach ($items as $orderedItem) {
+                        $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
+                        $orderItemsCount += $qty;
 
-            foreach ($items as $orderedItem) {
-                $itemId = isset($orderedItem['id']) ? (int) $orderedItem['id'] : null;
-                $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
-                $orderItemsCount += $qty;
-
-                $prices = \App\Models\ParentOrder::getItemPrices($orderedItem, $store);
-                $retailPrice = $prices['retail_price'];
-                $wholesalePrice = $prices['wholesale_price'];
-                
-                $orderTotal += ($retailPrice * $qty);
-                $orderWholesaleTotal += ($wholesalePrice * $qty);
-            }
-            
-            $globalSalesSummary['total_sales'] += $orderTotal;
-            $globalSalesSummary['total_wholesale'] += $orderWholesaleTotal;
-            $globalSalesSummary['total_items_sold'] += $orderItemsCount;
-            $globalSalesSummary['orders_count']++;
-        }
+                        $prices = \App\Models\ParentOrder::getItemPrices($orderedItem, $store);
+                        $retailPrice = $prices['retail_price'];
+                        $wholesalePrice = $prices['wholesale_price'];
+                        
+                        $orderTotal += ($retailPrice * $qty);
+                        $orderWholesaleTotal += ($wholesalePrice * $qty);
+                    }
+                    
+                    $globalSalesSummary['total_sales'] += $orderTotal;
+                    $globalSalesSummary['total_wholesale'] += $orderWholesaleTotal;
+                    $globalSalesSummary['total_items_sold'] += $orderItemsCount;
+                    $globalSalesSummary['orders_count']++;
+                }
+            });
         
         $globalSalesSummary['net_proceeds'] = $globalSalesSummary['total_sales'] - $globalSalesSummary['total_wholesale'];
 
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStoreBatches',
-            'designCatalog', 'productionStores', 'quoteRequests', 'quoteRequestsTotal', 'newQuoteRequestsCount', 'landingCollections', 'allStores', 'allCoaches',
+            'unassignedDesigns', 'allCollections', 'productionStores', 'quoteRequests', 'quoteRequestsTotal', 'newQuoteRequestsCount', 'landingCollections', 'allStores', 'allCoaches',
             'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'archivedOrderBatches', 'globalSalesSummary', 'archivedBatchesPaginator',
             'salesAgents'
         ));

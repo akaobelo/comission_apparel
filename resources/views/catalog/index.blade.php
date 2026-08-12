@@ -50,7 +50,7 @@
     </div>
 </section>
 
-<section class="py-4 md:py-8 bg-slate-50 min-h-[50vh]" x-data="{ previewOpen: false, previewImgs: [], previewIdx: 0, previewAlt: '', touchStartX: 0, touchEndX: 0, activeCat: 'All', categories: ['All', ...{{ isset($allSports) ? json_encode($allSports) : '[]' }}] }" @keydown.escape.window="previewOpen = false; document.body.style.overflow = 'auto';" @keydown.right.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx + 1) % previewImgs.length" @keydown.left.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx - 1 + previewImgs.length) % previewImgs.length">
+<section class="py-4 md:py-8 bg-slate-50 min-h-[50vh]" x-data="{ previewOpen: false, previewImgs: [], previewIdx: 0, previewAlt: '', touchStartX: 0, touchEndX: 0 }" @keydown.escape.window="previewOpen = false; document.body.style.overflow = 'auto';" @keydown.right.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx + 1) % previewImgs.length" @keydown.left.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx - 1 + previewImgs.length) % previewImgs.length">
     <div class="max-w-[1500px] mx-auto px-6">
         @if($collections->isEmpty() && $orphanedDesigns->isEmpty())
             <div class="bg-white border-2 border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500 font-bold uppercase tracking-widest text-sm">
@@ -58,13 +58,14 @@
             </div>
         @else
             <!-- Filter Categories -->
-            <div class="mb-8" x-show="categories.length > 1" x-cloak>
+            <div class="mb-8">
                 <h3 class="text-sm font-black text-slate-600 uppercase tracking-wide mb-3">Filter By Categories</h3>
                 <div class="relative w-full max-w-[280px]">
-                    <select x-model="activeCat" class="w-full appearance-none bg-white border border-slate-200 text-slate-900 py-3.5 pl-5 pr-10 rounded-xl text-[13px] font-black uppercase tracking-wide focus:outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer shadow-sm hover:border-slate-300">
-                        <template x-for="cat in categories" :key="cat">
-                            <option :value="cat" x-text="cat === 'All' ? 'All Categories' : cat"></option>
-                        </template>
+                    <select @change="window.location.href = '?sport=' + $event.target.value" class="w-full appearance-none bg-white border border-slate-200 text-slate-900 py-3.5 pl-5 pr-10 rounded-xl text-[13px] font-black uppercase tracking-wide focus:outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer shadow-sm hover:border-slate-300">
+                        <option value="All" {{ $selectedSport === 'All' || !$selectedSport ? 'selected' : '' }}>All Categories</option>
+                        @foreach($allSports as $cat)
+                            <option value="{{ $cat }}" {{ $selectedSport === $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                        @endforeach
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-800">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
@@ -76,7 +77,7 @@
             @if($collections->isNotEmpty())
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 mb-10">
                     @foreach($collections as $collection)
-                        <div class="flex flex-col group" x-show="activeCat === 'All' || {{ json_encode($collection->sports ?? []) }}.includes(activeCat)">
+                        <div class="flex flex-col group">
                             <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center">
                                 @if($collection->image)
                                     <img src="{{ asset($collection->image) }}" alt="{{ $collection->name }}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" loading="lazy">
@@ -113,6 +114,9 @@
                         </div>
                     @endforeach
                 </div>
+                <div class="mt-6 mb-10">
+                    {{ $collectionsPaginator->appends(request()->except('collection_page'))->links() }}
+                </div>
             @endif
 
             <!-- Orphaned Designs Grid -->
@@ -133,7 +137,7 @@
                                 $imageSrc = $design->image_url;
                             }
                         @endphp
-                        <div class="flex flex-col group" x-show="activeCat === 'All' || '{{ $design->sport }}' === activeCat">
+                        <div class="flex flex-col group">
                             <div class="aspect-[4/5] bg-white rounded-2xl relative overflow-hidden transition-colors flex items-center justify-center">
                                 @if(!empty($design->image_paths) && count($design->image_paths) > 1)
                                     <div class="w-full h-full relative group/slider" x-data="{ imgIdx: 0, imgs: {{ json_encode($design->image_paths) }}, imgInterval: null }" @mouseenter="imgInterval = setInterval(() => { imgIdx = (imgIdx + 1) % imgs.length }, 1500)" @mouseleave="clearInterval(imgInterval); imgIdx = 0">
@@ -181,6 +185,9 @@
                             </div>
                         </div>
                     @endforeach
+                </div>
+                <div class="mt-6">
+                    {{ $orphanedDesigns->appends(request()->except('orphaned_page'))->links() }}
                 </div>
             @endif
         @endif

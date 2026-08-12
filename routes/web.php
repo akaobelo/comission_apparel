@@ -43,30 +43,57 @@ Route::post('/quote', [QuoteRequestController::class, 'store'])->name('quote.sto
 Route::get('/quote/success', function () { return view('quote_success'); })->name('quote.success');
 Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
 Route::get('/catalog', function () {
-    $collections = \App\Models\DesignCollection::with('designs')
-        ->orderBy('sort_order', 'asc')
+    $selectedSport = request()->query('sport');
+
+    // Build collections query
+    $collectionsQuery = \App\Models\DesignCollection::query();
+    if ($selectedSport && $selectedSport !== 'All') {
+        $collectionsQuery->where(function($query) use ($selectedSport) {
+            $query->whereJsonContains('sports', $selectedSport)
+                  ->orWhereHas('designs', function($q) use ($selectedSport) {
+                      $q->where('sport', $selectedSport);
+                  });
+        });
+    }
+
+    $collectionsPaginator = $collectionsQuery->orderBy('sort_order', 'asc')
         ->orderBy('created_at', 'desc')
-        ->get()
-        ->map(function ($col) {
+        ->paginate(15, ['id', 'name', 'image_path', 'sports'], 'collection_page')
+        ->withQueryString();
+
+    // Map the paginated collection items to get sports from relationship without loading full design objects
+    $collections = collect($collectionsPaginator->items())->map(function ($col) {
+        $designSports = \App\Models\DesignCatalog::where('design_collection_id', $col->id)
+            ->whereNotNull('sport')
+            ->distinct()
+            ->pluck('sport')
+            ->toArray();
+
         return (object)[
+            'id' => $col->id,
             'name' => $col->name,
             'image' => $col->image_path,
             'sports' => array_values(array_unique(array_merge(
                 is_array($col->sports) ? $col->sports : [],
-                $col->designs->pluck('sport')->filter()->unique()->toArray()
+                $designSports
             )))
         ];
     });
 
-    // Get orphaned designs (no collection)
-    $orphanedDesigns = \App\Models\DesignCatalog::whereNull('design_collection_id')
-        ->orderBy('sort_order', 'desc')
+    // Build orphaned designs query
+    $orphanedQuery = \App\Models\DesignCatalog::whereNull('design_collection_id');
+    if ($selectedSport && $selectedSport !== 'All') {
+        $orphanedQuery->where('sport', $selectedSport);
+    }
+
+    $orphanedDesigns = $orphanedQuery->orderBy('sort_order', 'desc')
         ->orderBy('created_at', 'desc')
-        ->get();
+        ->paginate(15, ['*'], 'orphaned_page')
+        ->withQueryString();
 
     $allSports = config('sports.categories');
 
-    return view('catalog.index', compact('collections', 'orphanedDesigns', 'allSports'));
+    return view('catalog.index', compact('collections', 'collectionsPaginator', 'orphanedDesigns', 'allSports', 'selectedSport'));
 })->name('catalog.index');
 
 Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request, $collection) {

@@ -48,9 +48,6 @@ class CoachController extends Controller
             'individual' => $assignedDesigns->where('category', 'individual'),
         ];
 
-        // Global Design Catalog for picking
-        $globalCatalog = DesignCatalog::latest()->get();
-
         $salesSummary = [
             'orders_count' => 0,
             'total_sales' => 0,
@@ -109,7 +106,7 @@ class CoachController extends Controller
             ];
         }
 
-        return view('coach.dashboard', compact('user', 'store', 'assignedDesigns', 'packageDesigns', 'globalCatalog', 'salesSummary', 'directOrders', 'directOrderBatches', 'archivedOrderBatches'));
+        return view('coach.dashboard', compact('user', 'store', 'assignedDesigns', 'packageDesigns', 'salesSummary', 'directOrders', 'directOrderBatches', 'archivedOrderBatches'));
     }
 
 

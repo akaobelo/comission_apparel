@@ -21,6 +21,8 @@ class ImageOptimizer
      */
     public static function optimize(UploadedFile $file, string $directory, string $disk = 'public', int $maxWidth = 1200, int $quality = 80): string
     {
+        @ini_set('memory_limit', '256M');
+
         // If GD extension is not loaded, fall back to default store
         if (!extension_loaded('gd')) {
             return $file->store($directory, $disk);
