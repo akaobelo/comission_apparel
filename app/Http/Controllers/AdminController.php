@@ -1115,8 +1115,7 @@ class AdminController extends Controller
 
     public function showDirectBatch($batchId)
     {
-        $orders = ParentOrder::whereNull('team_store_id')
-            ->where('batch_id', $batchId)
+        $orders = ParentOrder::where('batch_id', $batchId)
             ->with('user')
             ->get();
 
@@ -1132,8 +1131,7 @@ class AdminController extends Controller
 
     public function markDirectBatchAddressed($batchId)
     {
-        ParentOrder::whereNull('team_store_id')
-            ->where('batch_id', $batchId)
+        ParentOrder::where('batch_id', $batchId)
             ->update(['status' => 'Processing', 'is_archived' => true]);
             
         return back()->with('success', 'Direct Order Batch marked as addressed and archived.');

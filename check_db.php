@@ -1,13 +1,13 @@
 <?php
-require __DIR__.'/vendor/autoload.php';
-$app = require_once __DIR__.'/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
-
-use App\Models\DesignCollection;
-use App\Models\DesignCatalog;
-
-$items = DesignCatalog::whereNotNull('design_collection_id')->orderBy('sort_order', 'desc')->take(20)->get();
-foreach ($items as $item) {
-    echo "Collection: {$item->design_collection_id}, Sort: {$item->sort_order}, ID: {$item->id}\n";
+$db = new SQLite3('database/database.sqlite');
+$results = $db->query("SELECT id, team_store_id, batch_id, is_archived, status FROM parent_orders LIMIT 50");
+while ($row = $results->fetchArray(SQLITE3_ASSOC)) {
+    echo "ID: {$row['id']}, Store ID: " . ($row['team_store_id'] ?? 'NULL') . ", Batch: " . ($row['batch_id'] ?? 'NULL') . ", Archived: {$row['is_archived']}, Status: {$row['status']}\n";
 }
+
+
+
+
+
+
+
