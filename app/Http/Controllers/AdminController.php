@@ -1117,7 +1117,6 @@ class AdminController extends Controller
     {
         $orders = ParentOrder::whereNull('team_store_id')
             ->where('batch_id', $batchId)
-            ->where('is_archived', false)
             ->with('user')
             ->get();
 
