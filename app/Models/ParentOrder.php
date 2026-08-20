@@ -18,6 +18,7 @@ class ParentOrder extends Model
         'jersey_name',
         'jersey_number',
         'backpack_name',
+        'shipping_address',
         'items_json',
         'special_notes',
         'status',

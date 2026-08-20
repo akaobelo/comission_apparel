@@ -1255,7 +1255,7 @@ class AdminController extends Controller
 
         $columns = [
             'Store Name', 'Order ID', 'Submission Date', 
-            'Athlete First Name', 'Athlete Last Name', 'Gender', 
+            'Athlete First Name', 'Athlete Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
             'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price', 'Manufacture Price', 'Total Manufacture Price', 'Special Notes', 'Edited?'
         ];
@@ -1298,6 +1298,9 @@ class AdminController extends Controller
                             $order->created_at->format('Y-m-d'),
                             $order->athlete_first_name,
                             $order->athlete_last_name,
+                            $order->parent_email ?? '',
+                            $order->parent_phone ?? '',
+                            $order->shipping_address ?? '',
                             $item['gender'] ?? $order->gender ?? 'Not Specified',
                             $order->jersey_name ?? '',
                             $order->jersey_number ?? '',
@@ -1338,7 +1341,7 @@ class AdminController extends Controller
         ];
 
         $columns = [
-            'First Name', 'Last Name', 'Gender', 
+            'First Name', 'Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
             'Item', 'Types', 'Sizes', 'Qty', 'Item Price', 'Total Price', 'Manufacture Price', 'Total Manufacture Price', 'Special Notes', 'Edited?'
         ];
@@ -1381,6 +1384,9 @@ class AdminController extends Controller
                         fputcsv($file, [
                             $order->athlete_first_name,
                             $order->athlete_last_name,
+                            $order->parent_email ?? '',
+                            $order->parent_phone ?? '',
+                            $order->shipping_address ?? '',
                             $item['gender'] ?? $order->gender ?? 'Not Specified',
                             $order->jersey_name ?? '',
                             $order->jersey_number ?? '',

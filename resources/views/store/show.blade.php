@@ -279,6 +279,11 @@
                             </select>
                             @error('gender')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                         </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Shipping Address <span class="text-red-500">*</span></label>
+                            <textarea name="shipping_address" required placeholder="e.g. 123 Main St, Apt 4B, New York, NY 10001" rows="2" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all"></textarea>
+                            @error('shipping_address')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                        </div>
                         <div>
                             <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Name on Jersey (if applicable)</label>
                             <input type="text" name="jersey_name" placeholder="e.g. SMITH" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
