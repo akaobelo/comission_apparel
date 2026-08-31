@@ -221,7 +221,14 @@ class AdminController extends Controller
             $q->select('id', 'first_name', 'last_name', 'organization');
         }])->latest()->get();
 
-        $allCoaches = User::where('role', 'coach')->select('id', 'first_name', 'last_name', 'organization')->orderBy('organization')->get();
+        $allCoaches = User::where('role', 'coach')
+            ->select('id', 'first_name', 'last_name', 'organization')
+            ->with('teamStore:id,user_id,name')
+            ->get()
+            ->sortBy(function($user) {
+                $club = $user->teamStore?->name ?? $user->organization ?? '';
+                return strtolower($club);
+            });
 
         $availableSports = config('sports.categories');
 

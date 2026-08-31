@@ -1271,7 +1271,7 @@
                                 <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2.5 py-1.5 w-48 focus:border-primary focus:outline-none shadow-sm">
                                     <option value="">Assign selected to...</option>
                                     @foreach($allCoaches as $c)
-                                        <option value="{{ $c->id }}">{{ $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
+                                        <option value="{{ $c->id }}">{{ $c->teamStore?->name ?? $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
                                     @endforeach
                                 </select>
                                 <button type="submit" class="text-xs font-bold uppercase px-3 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors">Mass Assign</button>
@@ -1492,7 +1492,7 @@
                                         <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2 py-1 w-32 focus:border-primary focus:outline-none">
                                             <option value="">Assign to coach...</option>
                                             @foreach($allCoaches as $c)
-                                                <option value="{{ $c->id }}">{{ $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
+                                                <option value="{{ $c->id }}">{{ $c->teamStore?->name ?? $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
                                             @endforeach
                                         </select>
                                         <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors" title="Assign Design to Coach">Assign</button>
@@ -1895,7 +1895,7 @@
                                 <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2.5 py-1.5 w-48 focus:border-primary focus:outline-none shadow-sm">
                                     <option value="">Assign selected to...</option>
                                     @foreach($allCoaches as $c)
-                                        <option value="{{ $c->id }}">{{ $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
+                                        <option value="{{ $c->id }}">{{ $c->teamStore?->name ?? $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
                                     @endforeach
                                 </select>
                                 <button type="submit" class="text-xs font-bold uppercase px-3 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors">Mass Assign</button>
@@ -2116,7 +2116,7 @@
                                         <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2 py-1 w-32 focus:border-primary focus:outline-none">
                                             <option value="">Assign to coach...</option>
                                             @foreach($allCoaches as $c)
-                                                <option value="{{ $c->id }}">{{ $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
+                                                <option value="{{ $c->id }}">{{ $c->teamStore?->name ?? $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
                                             @endforeach
                                         </select>
                                         <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors" title="Assign Design to Coach">Assign</button>
