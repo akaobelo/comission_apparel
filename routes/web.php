@@ -44,6 +44,7 @@ Route::get('/quote/success', function () { return view('quote_success'); })->nam
 Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
 Route::get('/catalog', function () {
     $selectedSport = request()->query('sport');
+    $search = trim((string)request()->query('q', request()->query('search', '')));
 
     // Build collections query
     $collectionsQuery = \App\Models\DesignCollection::query();
@@ -53,6 +54,22 @@ Route::get('/catalog', function () {
                   ->orWhereHas('designs', function($q) use ($selectedSport) {
                       $q->where('sport', $selectedSport);
                   });
+        });
+    }
+
+    if ($search !== '') {
+        $collectionsQuery->where(function($query) use ($search) {
+            $query->where('name', 'like', "%{$search}%");
+            if (\DB::connection()->getDriverName() === 'mysql') {
+                $query->orWhereRaw('CAST(sports AS CHAR) LIKE ?', ["%{$search}%"]);
+            } else {
+                $query->orWhere('sports', 'like', "%{$search}%");
+            }
+            $query->orWhereHas('designs', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sport', 'like', "%{$search}%")
+                  ->orWhere('type', 'like', "%{$search}%");
+            });
         });
     }
 
@@ -86,6 +103,14 @@ Route::get('/catalog', function () {
         $orphanedQuery->where('sport', $selectedSport);
     }
 
+    if ($search !== '') {
+        $orphanedQuery->where(function($query) use ($search) {
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhere('sport', 'like', "%{$search}%")
+                  ->orWhere('type', 'like', "%{$search}%");
+        });
+    }
+
     $orphanedDesigns = $orphanedQuery->orderBy('sort_order', 'desc')
         ->orderBy('created_at', 'desc')
         ->paginate(15, ['*'], 'orphaned_page')
@@ -93,7 +118,7 @@ Route::get('/catalog', function () {
 
     $allSports = config('sports.categories');
 
-    return view('catalog.index', compact('collections', 'collectionsPaginator', 'orphanedDesigns', 'allSports', 'selectedSport'));
+    return view('catalog.index', compact('collections', 'collectionsPaginator', 'orphanedDesigns', 'allSports', 'selectedSport', 'search'));
 })->name('catalog.index');
 
 Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request, $collection) {

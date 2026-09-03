@@ -35,6 +35,16 @@
             ->orderBy('created_at', 'desc')
             ->get();
     }
+
+    if (!isset($search)) {
+        $search = trim((string)request()->query('q', request()->query('search', '')));
+    }
+    if (!isset($selectedSport)) {
+        $selectedSport = request()->query('sport');
+    }
+    if (!isset($allSports)) {
+        $allSports = config('sports.categories') ?? [];
+    }
 @endphp
 
 @section('content')
@@ -50,28 +60,174 @@
     </div>
 </section>
 
-<section class="py-4 md:py-8 bg-slate-50 min-h-[50vh]" x-data="{ previewOpen: false, previewImgs: [], previewIdx: 0, previewAlt: '', touchStartX: 0, touchEndX: 0 }" @keydown.escape.window="previewOpen = false; document.body.style.overflow = 'auto';" @keydown.right.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx + 1) % previewImgs.length" @keydown.left.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx - 1 + previewImgs.length) % previewImgs.length">
+<section class="py-4 md:py-8 bg-slate-50 min-h-[50vh]" x-data="{
+    previewOpen: false,
+    previewImgs: [],
+    previewIdx: 0,
+    previewAlt: '',
+    touchStartX: 0,
+    touchEndX: 0,
+    query: '{{ addslashes($search) }}',
+    sport: '{{ addslashes($selectedSport && $selectedSport !== '' ? $selectedSport : 'All') }}',
+    hasFilters() {
+        return (this.query && this.query.trim().length > 0) || (this.sport && this.sport !== 'All');
+    },
+    clearSearch() {
+        this.query = '';
+        const el = document.getElementById('catalog-search');
+        if (el) {
+            el.value = '';
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    },
+    clearSport() {
+        this.sport = 'All';
+        const el = document.getElementById('catalog-sport');
+        if (el) {
+            el.value = 'All';
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    },
+    resetFilters() {
+        this.query = '';
+        this.sport = 'All';
+        const qEl = document.getElementById('catalog-search');
+        const sEl = document.getElementById('catalog-sport');
+        if (qEl) qEl.value = '';
+        if (sEl) sEl.value = 'All';
+        if (sEl) sEl.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}" @keydown.escape.window="previewOpen = false; document.body.style.overflow = 'auto';" @keydown.right.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx + 1) % previewImgs.length" @keydown.left.window="if(previewOpen && previewImgs.length > 1) previewIdx = (previewIdx - 1 + previewImgs.length) % previewImgs.length">
     <div class="max-w-[1500px] mx-auto px-6">
-        @if($collections->isEmpty() && $orphanedDesigns->isEmpty())
-            <div class="bg-white border-2 border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500 font-bold uppercase tracking-widest text-sm">
-                No design collections available yet.
-            </div>
-        @else
-            <!-- Filter Categories -->
-            <div class="mb-8">
-                <h3 class="text-sm font-black text-slate-600 uppercase tracking-wide mb-3">Filter By Categories</h3>
-                <div class="relative w-full max-w-[280px]">
-                    <select @change="window.location.href = '?sport=' + $event.target.value" class="w-full appearance-none bg-white border border-slate-200 text-slate-900 py-3.5 pl-5 pr-10 rounded-xl text-[13px] font-black uppercase tracking-wide focus:outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer shadow-sm hover:border-slate-300">
-                        <option value="All" {{ $selectedSport === 'All' || !$selectedSport ? 'selected' : '' }}>All Categories</option>
-                        @foreach($allSports as $cat)
-                            <option value="{{ $cat }}" {{ $selectedSport === $cat ? 'selected' : '' }}>{{ $cat }}</option>
-                        @endforeach
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-800">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+        <!-- Search & Filter Controls -->
+        <div class="mb-8">
+            <form action="{{ route('catalog.index') }}" method="GET" class="w-full"
+                  hx-get="{{ route('catalog.index') }}"
+                  hx-target="#catalog-results"
+                  hx-select="#catalog-results"
+                  hx-swap="outerHTML"
+                  hx-trigger="input from:input[name='q'] delay:300ms, change from:select[name='sport'], submit"
+                  hx-push-url="true">
+                <div class="flex flex-col md:flex-row gap-4 md:gap-5 items-stretch md:items-end">
+                    <!-- Category Filter (Left Side) -->
+                    <div class="w-full md:w-[280px] shrink-0">
+                        <label for="catalog-sport" class="block text-sm font-black text-slate-600 uppercase tracking-wide mb-2">Filter By Categories</label>
+                        <div class="relative">
+                            <select id="catalog-sport" name="sport" x-model="sport" @change="sport = $event.target.value" class="w-full appearance-none bg-white border border-slate-200 text-slate-900 py-3.5 pl-5 pr-10 rounded-xl text-[13px] font-black uppercase tracking-wide focus:outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer shadow-sm hover:border-slate-300">
+                                <option value="All" {{ $selectedSport === 'All' || !$selectedSport ? 'selected' : '' }}>All Categories</option>
+                                @foreach($allSports as $cat)
+                                    <option value="{{ $cat }}" {{ $selectedSport === $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                                @endforeach
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-800">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Filter (Beside Category Filter) -->
+                    <div class="w-full md:flex-1 md:max-w-2xl">
+                        <label for="catalog-search" class="block text-sm font-black text-slate-600 uppercase tracking-wide mb-2">Search Catalog</label>
+                        <div class="flex items-center gap-2">
+                            <div class="relative flex-1">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35"></path></svg>
+                                </div>
+                                <input
+                                    id="catalog-search"
+                                    type="text"
+                                    name="q"
+                                    x-model="query"
+                                    @input="query = $event.target.value"
+                                    placeholder="Search by collection, sport, or apparel..."
+                                    class="w-full bg-white border border-slate-200 text-slate-900 py-3.5 pl-11 pr-10 rounded-xl text-[13px] font-medium placeholder:text-slate-400 focus:outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-300 transition-all shadow-sm hover:border-slate-300"
+                                >
+                                <button type="button" x-show="query && query.trim().length > 0" x-cloak @click="clearSearch()" class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-700 transition-colors" title="Clear search">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </div>
+
+                            <!-- Reset Button -->
+                            <button
+                                type="button"
+                                x-show="hasFilters()"
+                                x-cloak
+                                @click="resetFilters()"
+                                class="py-3.5 px-4 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 rounded-xl text-xs uppercase tracking-wider font-bold transition-all shadow-sm flex items-center gap-1.5 shrink-0"
+                                title="Reset all filters"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                <span>Reset</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </form>
+        </div>
+
+        <!-- Catalog Results Container -->
+        <div id="catalog-results">
+            <!-- Active Filter Badges & Results Count -->
+            @if(!empty($search) || ($selectedSport && $selectedSport !== 'All'))
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-200/80">
+                    <div class="flex flex-wrap items-center gap-2 text-xs text-slate-600 font-medium">
+                        <span class="font-bold text-slate-500 uppercase tracking-wider text-[11px]">Active Filters:</span>
+                        @if(!empty($search))
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 text-slate-800 rounded-full font-bold text-xs shadow-sm">
+                                <span>Search: <span class="text-secondary font-black">"{{ $search }}"</span></span>
+                                <button type="button" @click="clearSearch()" class="text-slate-400 hover:text-red-600 ml-0.5 focus:outline-none" title="Remove search filter">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </span>
+                        @endif
+                        @if($selectedSport && $selectedSport !== 'All')
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 text-slate-800 rounded-full font-bold text-xs shadow-sm">
+                                <span>Category: <span class="text-secondary font-black">{{ $selectedSport }}</span></span>
+                                <button type="button" @click="clearSport()" class="text-slate-400 hover:text-red-600 ml-0.5 focus:outline-none" title="Remove category filter">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </span>
+                        @endif
+                        <button type="button" @click="resetFilters()" class="text-red-600 hover:text-red-700 font-bold hover:underline ml-1 text-xs focus:outline-none">Clear all</button>
+                    </div>
+
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Found {{ $collectionsPaginator->total() }} collection{{ $collectionsPaginator->total() === 1 ? '' : 's' }}
+                        @if($orphanedDesigns->total() > 0)
+                            &amp; {{ $orphanedDesigns->total() }} individual design{{ $orphanedDesigns->total() === 1 ? '' : 's' }}
+                        @endif
+                    </p>
+                </div>
+            @endif
+
+            @if($collections->isEmpty() && $orphanedDesigns->isEmpty())
+                <div class="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center shadow-sm">
+                    <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35"></path></svg>
+                    </div>
+                    @if(!empty($search) || ($selectedSport && $selectedSport !== 'All'))
+                        <h3 class="text-lg font-black uppercase tracking-tight text-slate-800 mb-1">No Matching Collections or Designs</h3>
+                        <p class="text-slate-500 text-sm max-w-md mx-auto mb-6">We couldn't find anything matching your criteria. Try adjusting your search term or category.</p>
+                        <button type="button" @click="resetFilters()" class="inline-flex items-center gap-2 btn btn-primary py-2.5 px-6 rounded-xl text-xs uppercase tracking-wider font-bold">
+                            <span>View Full Catalog</span>
+                        </button>
+                    @else
+                        <h3 class="text-lg font-black uppercase tracking-tight text-slate-800 mb-1">No Design Collections Available</h3>
+                        <p class="text-slate-500 text-sm">Please check back soon for our latest apparel releases.</p>
+                    @endif
+                </div>
+            @else
+                <!-- Results Count Summary -->
+                @if(!empty($search) || ($selectedSport && $selectedSport !== 'All'))
+                    <div class="mb-6 flex items-center justify-between">
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                            Found {{ $collectionsPaginator->total() }} collection{{ $collectionsPaginator->total() === 1 ? '' : 's' }}
+                            @if($orphanedDesigns->total() > 0)
+                                &amp; {{ $orphanedDesigns->total() }} individual design{{ $orphanedDesigns->total() === 1 ? '' : 's' }}
+                            @endif
+                        </p>
+                    </div>
+                @endif
 
             <!-- Collections Grid -->
             @if($collections->isNotEmpty())
@@ -191,6 +347,7 @@
                 </div>
             @endif
         @endif
+        </div>
     </div>
 
     <div x-show="previewOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
@@ -232,4 +389,12 @@
         </div>
     </div>
 </section>
+
+<script>
+    document.addEventListener('htmx:afterSwap', function(evt) {
+        if (window.Alpine && evt.detail.target) {
+            window.Alpine.initTree(evt.detail.target);
+        }
+    });
+</script>
 @endsection
