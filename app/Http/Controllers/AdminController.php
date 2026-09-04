@@ -23,6 +23,40 @@ class AdminController extends Controller
 
     public function dashboard(Request $request)
     {
+        // Fast partial response for collections accordion AJAX
+        if ($request->input('ajax_section') === 'collections' || $request->header('X-Ajax-Section') === 'collections') {
+            $collectionSearch = $request->input('collection_search');
+            $collectionsQuery = \App\Models\DesignCollection::with(['designs' => function($q) {
+                $q->with('coaches')->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc');
+            }]);
+
+            if (!empty($collectionSearch)) {
+                $collectionsQuery->where(function($q) use ($collectionSearch) {
+                    $q->where('name', 'like', "%{$collectionSearch}%")
+                      ->orWhere('sports', 'like', "%{$collectionSearch}%")
+                      ->orWhereHas('designs', function($dq) use ($collectionSearch) {
+                          $dq->where('name', 'like', "%{$collectionSearch}%");
+                      });
+                });
+            }
+
+            $designCollections = $collectionsQuery->orderBy('sort_order', 'asc')
+                ->orderBy('created_at', 'desc')
+                ->paginate(10, ['*'], 'collection_page')
+                ->withQueryString();
+
+            $availableSports = config('sports.categories') ?? [];
+            $allCollections = \App\Models\DesignCollection::select('id', 'name')->orderBy('sort_order', 'asc')->get();
+            $allCoaches = User::where('role', 'coach')->with('teamStore')->orderBy('first_name')->get();
+
+            return view('admin.partials.existing_collections_list', compact(
+                'designCollections',
+                'availableSports',
+                'allCollections',
+                'allCoaches'
+            ));
+        }
+
         $query = User::where('role', 'coach');
 
         // Search functionality
