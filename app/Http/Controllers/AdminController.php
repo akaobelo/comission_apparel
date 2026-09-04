@@ -232,10 +232,26 @@ class AdminController extends Controller
 
         $availableSports = config('sports.categories');
 
-        // Paginate collections and eager load designs & coaches for those collections only
-        $designCollections = \App\Models\DesignCollection::with(['designs' => function($q) {
+        // Paginate collections (10 per page) and eager load designs & coaches for those collections only
+        $collectionSearch = $request->input('collection_search');
+        $collectionsQuery = \App\Models\DesignCollection::with(['designs' => function($q) {
             $q->with('coaches')->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc');
-        }])->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->paginate(10, ['*'], 'collection_page')->withQueryString();
+        }]);
+
+        if (!empty($collectionSearch)) {
+            $collectionsQuery->where(function($q) use ($collectionSearch) {
+                $q->where('name', 'like', "%{$collectionSearch}%")
+                  ->orWhere('sports', 'like', "%{$collectionSearch}%")
+                  ->orWhereHas('designs', function($dq) use ($collectionSearch) {
+                      $dq->where('name', 'like', "%{$collectionSearch}%");
+                  });
+            });
+        }
+
+        $designCollections = $collectionsQuery->orderBy('sort_order', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10, ['*'], 'collection_page')
+            ->withQueryString();
 
         // Complete list of collections for selection dropdowns
         $allCollections = \App\Models\DesignCollection::select('id', 'name')->orderBy('sort_order', 'asc')->get();
@@ -269,46 +285,49 @@ class AdminController extends Controller
             
         $storesMap = TeamStore::whereIn('id', $storeIds)->with('items')->get()->keyBy('id');
         
-        $globalSalesSummary = [
-            'orders_count' => 0,
-            'total_sales' => 0,
-            'total_wholesale' => 0,
-            'net_proceeds' => 0,
-            'total_items_sold' => 0,
-        ];
-        
-        // Chunk orders to process them in smaller memory batches, selecting only needed columns
-        \App\Models\ParentOrder::whereIn('status', ['In Production', 'Shipped', 'Delivered', 'Processing', 'Completed'])
-            ->select('id', 'items_json', 'team_store_id')
-            ->chunk(150, function($orders) use (&$globalSalesSummary, $storesMap) {
-                foreach ($orders as $order) {
-                    $store = $order->team_store_id ? $storesMap->get($order->team_store_id) : null;
-                    
-                    $orderTotal = 0;
-                    $orderWholesaleTotal = 0;
-                    $orderItemsCount = 0;
-                    $items = is_array($order->items_json) ? $order->items_json : [];
-
-                    foreach ($items as $orderedItem) {
-                        $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
-                        $orderItemsCount += $qty;
-
-                        $prices = \App\Models\ParentOrder::getItemPrices($orderedItem, $store);
-                        $retailPrice = $prices['retail_price'];
-                        $wholesalePrice = $prices['wholesale_price'];
+        $globalSalesSummary = \Illuminate\Support\Facades\Cache::remember('admin_global_sales_summary', 300, function() use ($storeIds, $storesMap) {
+            $summary = [
+                'orders_count' => 0,
+                'total_sales' => 0,
+                'total_wholesale' => 0,
+                'net_proceeds' => 0,
+                'total_items_sold' => 0,
+            ];
+            
+            // Chunk orders to process them in smaller memory batches, selecting only needed columns
+            \App\Models\ParentOrder::whereIn('status', ['In Production', 'Shipped', 'Delivered', 'Processing', 'Completed'])
+                ->select('id', 'items_json', 'team_store_id')
+                ->chunk(150, function($orders) use (&$summary, $storesMap) {
+                    foreach ($orders as $order) {
+                        $store = $order->team_store_id ? $storesMap->get($order->team_store_id) : null;
                         
-                        $orderTotal += ($retailPrice * $qty);
-                        $orderWholesaleTotal += ($wholesalePrice * $qty);
+                        $orderTotal = 0;
+                        $orderWholesaleTotal = 0;
+                        $orderItemsCount = 0;
+                        $items = is_array($order->items_json) ? $order->items_json : [];
+
+                        foreach ($items as $orderedItem) {
+                            $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
+                            $orderItemsCount += $qty;
+
+                            $prices = \App\Models\ParentOrder::getItemPrices($orderedItem, $store);
+                            $retailPrice = $prices['retail_price'];
+                            $wholesalePrice = $prices['wholesale_price'];
+                            
+                            $orderTotal += ($retailPrice * $qty);
+                            $orderWholesaleTotal += ($wholesalePrice * $qty);
+                        }
+                        
+                        $summary['total_sales'] += $orderTotal;
+                        $summary['total_wholesale'] += $orderWholesaleTotal;
+                        $summary['total_items_sold'] += $orderItemsCount;
+                        $summary['orders_count']++;
                     }
-                    
-                    $globalSalesSummary['total_sales'] += $orderTotal;
-                    $globalSalesSummary['total_wholesale'] += $orderWholesaleTotal;
-                    $globalSalesSummary['total_items_sold'] += $orderItemsCount;
-                    $globalSalesSummary['orders_count']++;
-                }
-            });
-        
-        $globalSalesSummary['net_proceeds'] = $globalSalesSummary['total_sales'] - $globalSalesSummary['total_wholesale'];
+                });
+            
+            $summary['net_proceeds'] = $summary['total_sales'] - $summary['total_wholesale'];
+            return $summary;
+        });
 
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStoreBatches',
@@ -625,7 +644,7 @@ class AdminController extends Controller
             }
         }
 
-        return redirect()->route('admin.dashboard')
+        return redirect()->back()
             ->with('success', "Design collections sort orders updated.");
     }
 

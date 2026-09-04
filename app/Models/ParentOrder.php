@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class ParentOrder extends Model
 {
     protected static $designsCache = null;
+    protected static $designsById = null;
+    protected static $designsByName = null;
+    protected static $designsByNormalized = null;
 
     protected $fillable = [
         'team_store_id',
@@ -52,6 +55,25 @@ class ParentOrder extends Model
         return $this->belongsTo(User::class);
     }
 
+    protected static function initDesignsCache()
+    {
+        if (self::$designsCache === null) {
+            self::$designsCache = \App\Models\DesignCatalog::all();
+            self::$designsById = [];
+            self::$designsByName = [];
+            self::$designsByNormalized = [];
+
+            foreach (self::$designsCache as $d) {
+                self::$designsById[$d->id] = $d;
+                if ($d->name) {
+                    self::$designsByName[$d->name] = $d;
+                    $norm = str_replace(' ', '', strtolower($d->name));
+                    self::$designsByNormalized[$norm] = $d;
+                }
+            }
+        }
+    }
+
     public static function getItemPrices($item, $store = null)
     {
         $itemId = isset($item['id']) ? (int) $item['id'] : null;
@@ -67,26 +89,18 @@ class ParentOrder extends Model
             }
         }
 
-        // Fallback to DesignCatalog using localized cache to avoid N+1 query bottleneck
+        // Fast O(1) hashmap lookup to avoid N*M loop bottleneck
+        self::initDesignsCache();
+
         $design = null;
-        if (self::$designsCache === null) {
-            self::$designsCache = \App\Models\DesignCatalog::all();
-        }
-
-        if ($itemId) {
-            $design = self::$designsCache->firstWhere('id', $itemId);
-        }
-
-        if (!$design && $itemName) {
-            $design = self::$designsCache->firstWhere('name', $itemName);
-            if (!$design) {
-                $normalized = str_replace(' ', '', strtolower($itemName));
-                foreach (self::$designsCache as $d) {
-                    if (str_replace(' ', '', strtolower($d->name)) === $normalized) {
-                        $design = $d;
-                        break;
-                    }
-                }
+        if ($itemId && isset(self::$designsById[$itemId])) {
+            $design = self::$designsById[$itemId];
+        } elseif ($itemName) {
+            if (isset(self::$designsByName[$itemName])) {
+                $design = self::$designsByName[$itemName];
+            } else {
+                $norm = str_replace(' ', '', strtolower($itemName));
+                $design = self::$designsByNormalized[$norm] ?? null;
             }
         }
 
