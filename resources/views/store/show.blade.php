@@ -200,6 +200,7 @@
                   @invalid.capture="athleteInfoOpen = true; setTimeout(() => document.getElementById('athlete-info-section').scrollIntoView({behavior: 'smooth', block: 'start'}), 100)"
                   x-data="{
                       athleteInfoOpen: {{ $errors->any() ? 'true' : 'false' }},
+                      storeInfoOpen: false,
                       activeItemId: null,
                       slideOpen: false,
                       previewOpen: false,
@@ -226,7 +227,26 @@
                   }">
                 @csrf
 
-                                @if(!$isClosed)
+                @if(!empty(trim($store->description)))
+                {{-- Store Notes / Payment, Production & Delivery Accordion --}}
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-4 overflow-hidden" id="store-info-section">
+                    <button type="button" @click="storeInfoOpen = !storeInfoOpen" class="w-full flex items-center justify-between p-4 md:p-4 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="storeInfoOpen ? 'border-slate-100 bg-slate-50/50' : ''">
+                        <div>
+                            <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Payment, Production & Delivery</h2>
+                            <p class="text-xs font-bold text-slate-500 mt-1" x-show="!storeInfoOpen"><span class="text-secondary font-black">CLICK HERE</span> <span class="italic">for details on how to make payment, production time, and delivery process.</span></p>
+                        </div>
+                        <div class="flex items-center gap-4 flex-shrink-0 ml-3">
+                            <svg class="w-6 h-6 text-slate-400 transition-transform duration-300" :class="storeInfoOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </button>
+
+                    <div x-show="storeInfoOpen" x-transition.opacity class="px-6 md:px-8 pb-6 md:pb-8 pt-6">
+                        <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-medium border-l-4 border-secondary pl-4 py-1">{{ $store->description }}</div>
+                    </div>
+                </div>
+                @endif
+
+                @if(!$isClosed)
                 {{-- Athlete Info --}}
                 <div class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-4 overflow-hidden" id="athlete-info-section">
                     <button type="button" @click="athleteInfoOpen = !athleteInfoOpen" class="w-full flex items-center justify-between p-4 md:p-4 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="athleteInfoOpen ? 'border-slate-100 bg-slate-50/50' : ''">
