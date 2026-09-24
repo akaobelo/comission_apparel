@@ -240,6 +240,7 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     Route::post('/coach/store/{store}/reopen', [CoachController::class, 'reopenStore'])->name('coach.store.reopen');
     Route::post('/coach/store/{store}/approve-pricing', [CoachController::class, 'approvePricing'])->name('coach.store.pricing.approve');
     Route::post('/coach/store/{store}/cover', [CoachController::class, 'updateCoverImage'])->name('coach.store.cover');
+    Route::post('/coach/store/{store}/description', [CoachController::class, 'updateDescription'])->name('coach.store.description');
     Route::post('/coach/profile/logo', [CoachController::class, 'updateProfileLogo'])->name('coach.profile.logo');
 
     // Coach can edit parent orders

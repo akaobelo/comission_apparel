@@ -85,7 +85,7 @@ class StoreController extends Controller
             'items'               => 'required|array|min:1',
         ]);
 
-        // Build the rich items JSON — each item has per-piece sizing
+        // Build the rich items JSON — supporting per-unit sizing and legacy format
         $itemsJson = [];
 
         foreach ($request->items as $itemId => $details) {
@@ -97,47 +97,88 @@ class StoreController extends Controller
             if (!$storeItem) continue;
 
             $qty = max(1, intval($details['qty'] ?? 1));
-
             $types = $storeItem->types ?? [$storeItem->type];
-            $entry = [
-                'id'           => $itemId,
-                'name'         => $storeItem->name,
-                'types'        => $types,
-                'qty'          => $qty,
-                'sizes'        => [],
-            ];
 
-            if ($storeItem->isPackage() && isset($details['components'])) {
-                $componentsData = [];
-                foreach ($storeItem->components as $component) {
-                    if (isset($details['components'][$component->id]['sizes'])) {
-                        $compTypes = $component->types ?? [$component->type];
-                        $compSizedTypes = array_intersect($compTypes, DesignCatalog::sizedTypes());
-                        
-                        $compSizes = [];
-                        foreach ($compSizedTypes as $t) {
-                            $compSizes[$t] = $details['components'][$component->id]['sizes'][$t] ?? null;
-                        }
-                        
-                        $componentsData[] = [
-                            'id' => $component->id,
-                            'name' => $component->name,
-                            'sizes' => $compSizes
-                        ];
-                    }
-                }
-                $entry['components'] = $componentsData;
-            } else {
-                // Handle sizes for each sized type
-                $sizedTypes = DesignCatalog::sizedTypes();
-                foreach ($types as $t) {
-                    if (in_array($t, $sizedTypes)) {
-                        $entry['sizes'][$t] = $details['sizes'][$t] ?? null;
+            // Collect per-unit data if submitted
+            $units = [];
+            if (!empty($details['units']) && is_array($details['units'])) {
+                for ($u = 0; $u < $qty; $u++) {
+                    if (isset($details['units'][$u])) {
+                        $units[] = $details['units'][$u];
                     }
                 }
             }
 
-            $itemsJson[] = $entry;
+            // Fallback for single-size legacy submission or non-sized items
+            if (empty($units)) {
+                $units[] = [
+                    'sizes'      => $details['sizes'] ?? [],
+                    'components' => $details['components'] ?? [],
+                    'qty'        => $qty,
+                ];
+            }
+
+            // Group identical units by their size configuration so they have proper qty
+            $groupedUnits = [];
+            foreach ($units as $unit) {
+                $unitCount = isset($unit['qty']) ? intval($unit['qty']) : 1;
+                $unitKey = serialize([
+                    'sizes'      => $unit['sizes'] ?? [],
+                    'components' => $unit['components'] ?? [],
+                ]);
+
+                if (!isset($groupedUnits[$unitKey])) {
+                    $groupedUnits[$unitKey] = [
+                        'unit' => $unit,
+                        'qty'  => 0,
+                    ];
+                }
+                $groupedUnits[$unitKey]['qty'] += $unitCount;
+            }
+
+            foreach ($groupedUnits as $group) {
+                $unitData = $group['unit'];
+                $unitQty  = $group['qty'];
+
+                $entry = [
+                    'id'    => $itemId,
+                    'name'  => $storeItem->name,
+                    'types' => $types,
+                    'qty'   => $unitQty,
+                    'sizes' => [],
+                ];
+
+                if ($storeItem->isPackage() && isset($unitData['components'])) {
+                    $componentsData = [];
+                    foreach ($storeItem->components as $component) {
+                        if (isset($unitData['components'][$component->id]['sizes'])) {
+                            $compTypes = $component->types ?? [$component->type];
+                            $compSizedTypes = array_intersect($compTypes, DesignCatalog::sizedTypes());
+
+                            $compSizes = [];
+                            foreach ($compSizedTypes as $t) {
+                                $compSizes[$t] = $unitData['components'][$component->id]['sizes'][$t] ?? null;
+                            }
+
+                            $componentsData[] = [
+                                'id'    => $component->id,
+                                'name'  => $component->name,
+                                'sizes' => $compSizes,
+                            ];
+                        }
+                    }
+                    $entry['components'] = $componentsData;
+                } else {
+                    $sizedTypes = DesignCatalog::sizedTypes();
+                    foreach ($types as $t) {
+                        if (in_array($t, $sizedTypes)) {
+                            $entry['sizes'][$t] = $unitData['sizes'][$t] ?? null;
+                        }
+                    }
+                }
+
+                $itemsJson[] = $entry;
+            }
         }
 
         if (empty($itemsJson)) {

@@ -339,6 +339,8 @@ class CoachController extends Controller
                                     foreach ($comp['sizes'] as $t => $s) {
                                         $sizesArr[] = "{$comp['name']} ($t): $s";
                                     }
+                                } elseif (!empty($comp['size'])) {
+                                    $sizesArr[] = "{$comp['name']}: {$comp['size']}";
                                 }
                             }
                         } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
@@ -465,7 +467,7 @@ class CoachController extends Controller
 
         $itemsJson = [];
         foreach ($request->items as $idx => $item) {
-            $itemsJson[] = [
+            $entry = [
                 'id'           => $item['id'] ?? $idx,
                 'name'         => $item['name'] ?? 'Unknown',
                 'types'        => $item['types'] ?? [],
@@ -473,6 +475,10 @@ class CoachController extends Controller
                 'qty'          => $item['qty'] ?? 1,
                 'gender'       => $item['gender'] ?? 'Unisex',
             ];
+            if (!empty($item['components']) && is_array($item['components'])) {
+                $entry['components'] = $item['components'];
+            }
+            $itemsJson[] = $entry;
         }
 
         $order->update([
@@ -560,6 +566,22 @@ class CoachController extends Controller
 
         return redirect()->route('coach.dashboard')
             ->with('success', 'Store cover image updated successfully.');
+    }
+
+    public function updateDescription(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'description' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $store->update([
+            'description' => $request->description,
+        ]);
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Store payment, production & delivery details updated.');
     }
 
     public function updateProfileLogo(Request $request)
@@ -764,6 +786,8 @@ class CoachController extends Controller
                                     foreach ($comp['sizes'] as $t => $s) {
                                         $sizesArr[] = "{$comp['name']} ($t): $s";
                                     }
+                                } elseif (!empty($comp['size'])) {
+                                    $sizesArr[] = "{$comp['name']}: {$comp['size']}";
                                 }
                             }
                         } elseif (isset($item['sizes']) && is_array($item['sizes'])) {

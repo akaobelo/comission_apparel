@@ -390,7 +390,10 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Description (optional)</label>
-                    <textarea name="description" rows="2" placeholder="Brief description for your athletes and parents..." class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm text-sm"></textarea>
+                    <textarea name="description" rows="3" placeholder="e.g. Payment details, production turnaround time, delivery or pickup instructions..." class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm text-sm"></textarea>
+                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+                        <strong class="text-slate-700">Note:</strong> This description is displayed in the <strong class="text-slate-800">"Payment, Production & Delivery"</strong> section on your team store. If you want details on how to make payment, production time, or the delivery process displayed to parents and athletes, please include that info here.
+                    </p>
                 </div>
                 {{-- <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Package / Order Type</label>
@@ -570,7 +573,7 @@
                                         <div class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center font-black text-primary text-sm">{{ substr($order->athlete_name, 0, 1) }}</div>
                                         <div>
                                             <div class="font-bold text-slate-900 text-sm">{{ $order->athlete_name }}</div>
-                                            <div class="text-[10px] text-slate-500 uppercase tracking-wide">{{ count(is_array($order->items_json) ? $order->items_json : []) }} item(s)</div>
+                                            <div class="text-[10px] text-slate-500 uppercase tracking-wide">{{ collect(is_array($order->items_json) ? $order->items_json : [])->sum(fn($i) => $i['qty'] ?? 1) }} item(s)</div>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -907,6 +910,17 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Payment, Production & Delivery Notes --}}
+                <div class="p-5 border-t border-slate-100">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Payment, Production & Delivery Notes</h4>
+                    <p class="text-[11px] text-slate-500 mb-3">Displayed under the "Payment, Production & Delivery" section on your store page. Include instructions on payment methods, production timelines, and delivery process.</p>
+                    <form action="{{ route('coach.store.description', $store) }}" method="POST">
+                        @csrf
+                        <textarea name="description" rows="3" placeholder="e.g. Payment due by... Production takes 3-4 weeks... Delivery/pickup instructions..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm leading-relaxed mb-3">{{ old('description', $store->description) }}</textarea>
+                        <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-800 transition-colors">Save Details</button>
+                    </form>
+                </div>
             </div>
             @endif
 
@@ -1157,7 +1171,7 @@
                             $isMaster = !is_null($firstOrder->team_store_id);
 
                             $statusBadge = $isArchived ? 'ARCHIVED' : ($status === 'Shipped' ? 'SHIPPED' : strtoupper($status));
-                            $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
+                            $totalItems = $batchOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
 
                             $badgeColor = $isArchived ? 'bg-slate-200 text-slate-600' : match($status) {
                                 'Submitted to Admin' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -1236,7 +1250,16 @@
                                                             <div class="w-full md:w-auto space-y-2 flex-grow">
                                                                 @foreach(is_array($order->items_json) ? $order->items_json : [] as $item)
                                                                     <div class="text-sm flex justify-between bg-white border border-slate-100 p-2 rounded items-center">
-                                                                        <div class="text-slate-700 font-medium truncate pr-4 max-w-[200px]">{{ $item['name'] ?? 'Item' }} @if(isset($item['gender'])) <span class="text-[10px] text-slate-400 font-normal ml-1">({{ $item['gender'] }})</span> @endif</div>
+                                                                        <div>
+                                                                            <div class="text-slate-700 font-medium truncate pr-4 max-w-[200px]">{{ $item['name'] ?? 'Item' }} @if(isset($item['gender'])) <span class="text-[10px] text-slate-400 font-normal ml-1">({{ $item['gender'] }})</span> @endif</div>
+                                                                            @if(!empty($item['components']) && is_array($item['components']))
+                                                                                <div class="text-[11px] text-slate-500 mt-0.5">
+                                                                                    @foreach($item['components'] as $comp)
+                                                                                        <span>{{ $comp['name'] ?? '' }}: <strong>{{ $comp['size'] ?? '' }}</strong></span>@if(!$loop->last), @endif
+                                                                                    @endforeach
+                                                                                </div>
+                                                                            @endif
+                                                                        </div>
                                                                         <div class="text-slate-500 text-right whitespace-nowrap flex items-center">
                                                                             @if(!empty($item['sizes']))
                                                                                 @foreach($item['sizes'] as $sizeType => $size)

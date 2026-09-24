@@ -105,6 +105,13 @@
                                     <template x-if="!item.types || !Array.isArray(item.types)">
                                         <input type="hidden" :name="`items[${idx}][type]`" :value="item.type || ''">
                                     </template>
+                                    <template x-if="item.components && Array.isArray(item.components)">
+                                        <template x-for="(c, cIdx) in item.components" :key="cIdx">
+                                            <input type="hidden" :name="`items[${idx}][components][${cIdx}][name]`" :value="c.name">
+                                            <input type="hidden" :name="`items[${idx}][components][${cIdx}][size]`" :value="c.size">
+                                            <input type="hidden" :name="`items[${idx}][components][${cIdx}][type]`" :value="c.type || ''">
+                                        </template>
+                                    </template>
                                     
                                     <div class="flex flex-wrap gap-3">
                                         <template x-for="(sizeVal, sizeType) in item.sizes" :key="sizeType">

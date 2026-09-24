@@ -90,6 +90,13 @@
                                 @else
                                     <input type="hidden" name="items[{{ $idx }}][type]" value="{{ $item['type'] ?? '' }}">
                                 @endif
+                                @if(!empty($item['components']) && is_array($item['components']))
+                                    @foreach($item['components'] as $cIdx => $comp)
+                                        <input type="hidden" name="items[{{ $idx }}][components][{{ $cIdx }}][name]" value="{{ $comp['name'] ?? '' }}">
+                                        <input type="hidden" name="items[{{ $idx }}][components][{{ $cIdx }}][size]" value="{{ $comp['size'] ?? '' }}">
+                                        <input type="hidden" name="items[{{ $idx }}][components][{{ $cIdx }}][type]" value="{{ $comp['type'] ?? '' }}">
+                                    @endforeach
+                                @endif
                                 <div class="flex flex-wrap gap-3">
                                     @php
                                         $sizes = $item['sizes'] ?? [];

@@ -74,8 +74,17 @@
 
                                 <div class="w-full md:w-auto space-y-2 flex-grow">
                                     @foreach(is_array($order->items_json) ? $order->items_json : [] as $item)
-                                        <div class="text-sm flex justify-between bg-white border border-slate-100 p-2 rounded">
-                                            <div class="text-slate-700 font-medium truncate pr-4 max-w-[200px]">{{ $item['name'] ?? 'Item' }}</div>
+                                        <div class="text-sm flex justify-between bg-white border border-slate-100 p-2 rounded items-center">
+                                            <div>
+                                                <div class="text-slate-700 font-medium truncate pr-4 max-w-[200px]">{{ $item['name'] ?? 'Item' }}</div>
+                                                @if(!empty($item['components']) && is_array($item['components']))
+                                                    <div class="text-[11px] text-slate-500 mt-0.5">
+                                                        @foreach($item['components'] as $comp)
+                                                            <span>{{ $comp['name'] ?? '' }}: <strong>{{ $comp['size'] ?? '' }}</strong></span>@if(!$loop->last), @endif
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                            </div>
                                             <div class="text-slate-500 text-right whitespace-nowrap">
                                                 @if(!empty($item['sizes']))
                                                     @foreach($item['sizes'] as $sizeType => $size)

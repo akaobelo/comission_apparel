@@ -227,7 +227,7 @@
                   }">
                 @csrf
 
-                @if(!empty(trim($store->description)))
+                @if(!empty(trim($store->description ?? '')))
                 {{-- Store Notes / Payment, Production & Delivery Accordion --}}
                 <div class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-4 overflow-hidden" id="store-info-section">
                     <button type="button" @click="storeInfoOpen = !storeInfoOpen" class="w-full flex items-center justify-between p-4 md:p-4 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="storeInfoOpen ? 'border-slate-100 bg-slate-50/50' : ''">
@@ -356,7 +356,7 @@
                             <!-- Selected Badge -->
                             <div x-show="items['{{ $item->id }}'].selected" x-transition class="absolute top-4 right-4 bg-secondary text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full z-20 flex items-center gap-1 shadow-md">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                Selected
+                                <span x-text="(items['{{ $item->id }}'].qty || 1) > 1 ? ((items['{{ $item->id }}'].qty || 1) + ' Selected') : 'Selected'">Selected</span>
                             </div>
 
                             <!-- Image Hero -->
@@ -441,7 +441,7 @@
                                 <div class="mt-auto w-full">
                                     <button type="button" @click.prevent="openPanel('{{ $item->id }}')" class="w-full py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all"
                                             :class="items['{{ $item->id }}'].selected ? 'bg-slate-50 border-2 border-slate-300 text-slate-600' : 'bg-secondary text-white hover:bg-[#a11825] shadow-sm hover:shadow-md border-2 border-transparent'"
-                                            x-text="items['{{ $item->id }}'].selected ? 'EDIT SIZING' : ( '{{ $isClosed ? 1 : 0 }}' == '1' ? 'VIEW DETAILS' : 'ORDER' )">
+                                            x-text="items['{{ $item->id }}'].selected ? ((items['{{ $item->id }}'].qty || 1) > 1 ? ('EDIT SIZING (' + items['{{ $item->id }}'].qty + ')') : 'EDIT SIZING') : ( '{{ $isClosed ? 1 : 0 }}' == '1' ? 'VIEW DETAILS' : 'ORDER' )">
                                     </button>
                                 </div>
                             </div>
@@ -550,62 +550,129 @@
                                 </div>
 
                                 <div class="space-y-5">
+                                    {{-- Quantity Selector --}}
+                                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-700">Quantity</label>
+                                            <span class="text-xs font-bold text-slate-500" x-show="(items['{{ $item->id }}'].qty || 1) > 1">
+                                                Total: $<span x-text="(((items['{{ $item->id }}'].qty || 1) * {{ (float)$item->retail_price }}).toFixed(2))"></span>
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <button type="button" 
+                                                    @click="items['{{ $item->id }}'].qty = Math.max(1, (items['{{ $item->id }}'].qty || 1) - 1)" 
+                                                    class="w-10 h-10 rounded-xl bg-white border border-slate-300 text-slate-700 font-black text-lg flex items-center justify-center hover:bg-slate-100 hover:border-slate-400 active:scale-95 transition-all shadow-sm">
+                                                −
+                                            </button>
+                                            <input type="number" 
+                                                   name="items[{{ $item->id }}][qty]" 
+                                                   min="1" 
+                                                   max="10" 
+                                                   x-model.number="items['{{ $item->id }}'].qty" 
+                                                   class="w-20 text-center bg-white border border-slate-300 rounded-xl py-2 text-base font-black text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                            <button type="button" 
+                                                    @click="items['{{ $item->id }}'].qty = Math.min(10, (items['{{ $item->id }}'].qty || 1) + 1)" 
+                                                    class="w-10 h-10 rounded-xl bg-white border border-slate-300 text-slate-700 font-black text-lg flex items-center justify-center hover:bg-slate-100 hover:border-slate-400 active:scale-95 transition-all shadow-sm">
+                                                +
+                                            </button>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 mt-2 font-medium" x-show="(items['{{ $item->id }}'].qty || 1) > 1">
+                                            Select the size for each of your <span class="font-bold text-slate-800" x-text="items['{{ $item->id }}'].qty"></span> units below.
+                                        </p>
+                                    </div>
+
                                     @if($item->isPackage() && $item->components->isNotEmpty())
-                                        @foreach($item->components as $component)
-                                            @php
-                                                $compTypes = $component->types ?? [$component->type];
-                                                $compSizedTypes = array_intersect($compTypes, \App\Models\DesignCatalog::sizedTypes());
-                                            @endphp
-                                            <div class="pt-4 mt-2 border-t border-slate-200 first:border-0 first:pt-0 first:mt-0">
-                                                <h4 class="text-xs font-black text-slate-800 mb-3 uppercase tracking-wide">{{ $component->name }}</h4>
-                                                @foreach($compSizedTypes as $t)
-                                                    <div class="mb-3">
-                                                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{{ str_replace('_', ' ', $t) }} Size <span class="text-red-500">*</span></label>
-                                                        <select name="items[{{ $item->id }}][components][{{ $component->id }}][sizes][{{ $t }}]" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium">
-                                                            <optgroup label="Youth Sizes">
-                                                                @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $s)
-                                                                    <option value="{{ $s }}">{{ $s }}</option>
-                                                                @endforeach
-                                                            </optgroup>
-                                                            <optgroup label="Adult Sizes">
-                                                                @foreach(['AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL'] as $s)
-                                                                    <option value="{{ $s }}" {{ $s === 'AM' ? 'selected' : '' }}>{{ $s }}</option>
-                                                                @endforeach
-                                                            </optgroup>
-                                                        </select>
+                                        {{-- Packages: 1 to 10 sets --}}
+                                        <div class="space-y-4">
+                                            @for($u = 1; $u <= 10; $u++)
+                                            <div x-show="(items['{{ $item->id }}'].qty || 1) >= {{ $u }}" class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+                                                <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                                                    <span class="text-xs font-black uppercase tracking-wider text-slate-900">
+                                                        <span x-show="(items['{{ $item->id }}'].qty || 1) > 1">Package Set {{ $u }} Sizes</span>
+                                                        <span x-show="(items['{{ $item->id }}'].qty || 1) <= 1">Package Sizes</span>
+                                                    </span>
+                                                    <span class="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">Required</span>
+                                                </div>
+
+                                                @foreach($item->components as $component)
+                                                    @php
+                                                        $compTypes = $component->types ?? [$component->type];
+                                                        $compSizedTypes = array_intersect($compTypes, \App\Models\DesignCatalog::sizedTypes());
+                                                    @endphp
+                                                    @if(!empty($compSizedTypes))
+                                                    <div class="pt-2 first:pt-0">
+                                                        <h4 class="text-[11px] font-black text-slate-800 mb-2 uppercase tracking-wide">{{ $component->name }}</h4>
+                                                        @foreach($compSizedTypes as $t)
+                                                            <div class="mb-2 last:mb-0">
+                                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">{{ str_replace('_', ' ', $t) }} Size <span class="text-red-500">*</span></label>
+                                                                <select name="items[{{ $item->id }}][units][{{ $u - 1 }}][components][{{ $component->id }}][sizes][{{ $t }}]"
+                                                                        :disabled="(items['{{ $item->id }}'].qty || 1) < {{ $u }}"
+                                                                        class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium shadow-sm">
+                                                                    <optgroup label="Youth Sizes">
+                                                                        @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $s)
+                                                                            <option value="{{ $s }}">{{ $s }}</option>
+                                                                        @endforeach
+                                                                    </optgroup>
+                                                                    <optgroup label="Adult Sizes">
+                                                                        @foreach(['AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL'] as $s)
+                                                                            <option value="{{ $s }}" {{ $s === 'AM' ? 'selected' : '' }}>{{ $s }}</option>
+                                                                        @endforeach
+                                                                    </optgroup>
+                                                                </select>
+                                                            </div>
+                                                        @endforeach
                                                     </div>
+                                                    @endif
                                                 @endforeach
                                             </div>
-                                        @endforeach
-                                    @else
-                                        @foreach($itemSizedTypes as $t)
-                                        <div>
-                                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">{{ str_replace('_', ' ', $t) }} Size <span class="text-red-500">*</span></label>
-                                            <select name="items[{{ $item->id }}][sizes][{{ $t }}]" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium">
-                                                <optgroup label="Youth Sizes">
-                                                    @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $s)
-                                                        <option value="{{ $s }}">{{ $s }}</option>
-                                                    @endforeach
-                                                </optgroup>
-                                                <optgroup label="Adult Sizes">
-                                                    @foreach(['AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL'] as $s)
-                                                        <option value="{{ $s }}" {{ $s === 'AM' ? 'selected' : '' }}>{{ $s }}</option>
-                                                    @endforeach
-                                                </optgroup>
-                                            </select>
+                                            @endfor
                                         </div>
-                                        @endforeach
-                                    @endif
+                                    @elseif(!empty($itemSizedTypes))
+                                        {{-- Sized items: 1 to 10 units --}}
+                                        <div class="space-y-3">
+                                            @for($u = 1; $u <= 10; $u++)
+                                            <div x-show="(items['{{ $item->id }}'].qty || 1) >= {{ $u }}" class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                                                    <span class="text-xs font-black uppercase tracking-wider text-slate-900">
+                                                        <span x-show="(items['{{ $item->id }}'].qty || 1) > 1">Unit {{ $u }} Size</span>
+                                                        <span x-show="(items['{{ $item->id }}'].qty || 1) <= 1">Select Size</span>
+                                                    </span>
+                                                    <span class="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">Required</span>
+                                                </div>
 
-                                    <div>
-                                        <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Quantity</label>
-                                        <input type="number" name="items[{{ $item->id }}][qty]" value="1" min="1" max="5" x-model.number="items['{{ $item->id }}'].qty" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none font-medium">
-                                    </div>
+                                                @foreach($itemSizedTypes as $t)
+                                                <div>
+                                                    @if(count($itemSizedTypes) > 1)
+                                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">{{ str_replace('_', ' ', $t) }} Size <span class="text-red-500">*</span></label>
+                                                    @endif
+                                                    <select name="items[{{ $item->id }}][units][{{ $u - 1 }}][sizes][{{ $t }}]"
+                                                            :disabled="(items['{{ $item->id }}'].qty || 1) < {{ $u }}"
+                                                            class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium shadow-sm">
+                                                        <optgroup label="Youth Sizes">
+                                                            @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $s)
+                                                                <option value="{{ $s }}">{{ $s }}</option>
+                                                            @endforeach
+                                                        </optgroup>
+                                                        <optgroup label="Adult Sizes">
+                                                            @foreach(['AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL'] as $s)
+                                                                <option value="{{ $s }}" {{ $s === 'AM' ? 'selected' : '' }}>{{ $s }}</option>
+                                                            @endforeach
+                                                        </optgroup>
+                                                    </select>
+                                                </div>
+                                                @endforeach
+                                            </div>
+                                            @endfor
+                                        </div>
+                                    @endif
                                 </div>
 
                                 <div class="pt-8 border-t border-slate-100 mt-8">
-                                                                        @if(!$isClosed)
-                                        <button type="button" @click="items['{{ $item->id }}'].selected = true; closePanel()" class="w-full py-4 bg-slate-900 text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-secondary transition-colors shadow-lg shadow-slate-900/20">Save & Select</button>
+                                    @if(!$isClosed)
+                                        <button type="button" @click="items['{{ $item->id }}'].selected = true; closePanel()" class="w-full py-4 bg-slate-900 text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-secondary transition-colors shadow-lg shadow-slate-900/20">
+                                            <span x-show="(items['{{ $item->id }}'].qty || 1) > 1">Save & Select (<span x-text="items['{{ $item->id }}'].qty"></span> Items)</span>
+                                            <span x-show="(items['{{ $item->id }}'].qty || 1) <= 1">Save & Select</span>
+                                        </button>
                                         <button type="button" @click="items['{{ $item->id }}'].selected = false; closePanel()" x-show="items['{{ $item->id }}'].selected" class="w-full py-3 mt-3 bg-red-50 text-red-600 font-bold uppercase tracking-widest text-xs rounded-xl hover:bg-red-100 transition-colors">Remove Item</button>
                                     @else
                                         <button type="button" @click="closePanel()" class="w-full py-4 bg-slate-900 text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-secondary transition-colors shadow-lg shadow-slate-900/20">Close Details</button>
@@ -716,7 +783,7 @@
                                 <div class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center font-black text-primary text-xs flex-shrink-0">{{ substr($order->athlete_name, 0, 1) }}</div>
                                 <div class="min-w-0">
                                     <div class="font-bold text-slate-900 text-xs truncate max-w-[120px] sm:max-w-[150px]">{{ $order->athlete_name }}</div>
-                                    <div class="text-[9px] text-slate-500 font-black uppercase tracking-widest">{{ count(is_array($order->items_json) ? $order->items_json : []) }} items</div>
+                                    <div class="text-[9px] text-slate-500 font-black uppercase tracking-widest">{{ collect(is_array($order->items_json) ? $order->items_json : [])->sum(fn($i) => $i['qty'] ?? 1) }} items</div>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 flex-shrink-0">
@@ -752,6 +819,23 @@
                                                                     <div class="bg-white border border-slate-200 rounded text-[11px] px-2 py-1.5 flex justify-between items-center shadow-sm">
                                                                         <span class="text-slate-500 font-bold uppercase">{{ str_replace('_', ' ', $type) }}:</span>
                                                                         <span class="text-slate-900 font-black">{{ $size }}</span>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+
+                                                        @if(!empty($item['components']) && is_array($item['components']))
+                                                            <div class="space-y-1.5 mt-2">
+                                                                @foreach($item['components'] as $comp)
+                                                                    <div class="bg-white border border-slate-200 rounded p-2 text-xs">
+                                                                        <div class="font-bold text-slate-800 text-[11px]">{{ $comp['name'] ?? 'Component' }}</div>
+                                                                        @if(!empty($comp['sizes']) && is_array($comp['sizes']))
+                                                                            <div class="flex gap-2 flex-wrap mt-1">
+                                                                                @foreach($comp['sizes'] as $type => $size)
+                                                                                    <span class="text-slate-500 font-bold uppercase text-[10px]">{{ str_replace('_', ' ', $type) }}: <strong class="text-slate-900">{{ $size }}</strong></span>
+                                                                                @endforeach
+                                                                            </div>
+                                                                        @endif
                                                                     </div>
                                                                 @endforeach
                                                             </div>

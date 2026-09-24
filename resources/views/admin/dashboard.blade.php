@@ -423,7 +423,7 @@
                                     $store = $batchOrders->first()?->teamStore;
                                     $coach = $store ? $store->user : null;
                                     $totalAthletes = $batchOrders->count();
-                                    $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
+                                    $totalItems = $batchOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
                                 @endphp
                                 <div class="p-5">
                                     <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -512,7 +512,7 @@
                             @foreach($finalizedDirectOrderBatches as $batchId => $batchData)
                             @php
                                 $batchOrders = $batchData['orders'] ?? collect();
-                                $totalItems = $batchOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : []));
+                                $totalItems = $batchOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
                                 $coach = $batchOrders->first()?->user;
                             @endphp
                             <div class="p-5">

@@ -1248,13 +1248,17 @@ class AdminController extends Controller
         // Rebuild items JSON from form data
         $itemsJson = [];
         foreach ($request->items as $idx => $item) {
-            $itemsJson[] = [
+            $entry = [
                 'id'           => $item['id'] ?? $idx,
                 'name'         => $item['name'] ?? 'Unknown',
                 'types'        => $item['types'] ?? [],
                 'sizes'        => $item['sizes'] ?? [],
                 'qty'          => $item['qty'] ?? 1,
             ];
+            if (!empty($item['components']) && is_array($item['components'])) {
+                $entry['components'] = $item['components'];
+            }
+            $itemsJson[] = $entry;
         }
 
         $order->update([
@@ -1336,6 +1340,8 @@ class AdminController extends Controller
                                     foreach ($comp['sizes'] as $t => $s) {
                                         $sizesArr[] = "{$comp['name']} ($t): $s";
                                     }
+                                } elseif (!empty($comp['size'])) {
+                                    $sizesArr[] = "{$comp['name']}: {$comp['size']}";
                                 }
                             }
                         } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
@@ -1422,6 +1428,8 @@ class AdminController extends Controller
                                     foreach ($comp['sizes'] as $t => $s) {
                                         $sizesArr[] = "{$comp['name']} ($t): $s";
                                     }
+                                } elseif (!empty($comp['size'])) {
+                                    $sizesArr[] = "{$comp['name']}: {$comp['size']}";
                                 }
                             }
                         } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
@@ -1511,6 +1519,11 @@ class AdminController extends Controller
                                     $key = "{$name}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
                                     $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
                                 }
+                            } elseif (!empty($comp['size'])) {
+                                $type = isset($comp['types']) ? implode(', ', $comp['types']) : ($comp['type'] ?? 'N/A');
+                                $size = $comp['size'];
+                                $key = "{$name}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
+                                $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
                             } else {
                                 $type = isset($comp['types']) ? implode(', ', $comp['types']) : ($comp['type'] ?? 'N/A');
                                 $key = "{$name}|{$type}|N/A|{$itemPrice}|{$mfgPrice}";
@@ -1525,6 +1538,11 @@ class AdminController extends Controller
                                 $key = "{$name}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
                                 $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
                             }
+                        } elseif (!empty($item['size'])) {
+                            $type = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
+                            $size = $item['size'];
+                            $key = "{$name}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
+                            $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
                         } else {
                             $type = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
                             $key = "{$name}|{$type}|N/A|{$itemPrice}|{$mfgPrice}";

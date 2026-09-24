@@ -64,6 +64,7 @@
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Description</label>
                                 <textarea name="description" rows="3" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm" placeholder="Optional store description for the coach...">{{ old('description', $store->description) }}</textarea>
+                                <p class="text-xs text-slate-500 mt-1.5">Displayed under the "Payment, Production & Delivery" section on the public storefront.</p>
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Shipping Address</label>
@@ -453,7 +454,7 @@
                                         <div class="text-[10px] font-bold uppercase tracking-wide text-orange-500">Edited by {{ $order->edited_by }}</div>
                                     @endif
                                 </td>
-                                <td class="px-5 py-3 text-slate-600">{{ is_array($order->items_json) ? count($order->items_json) : 0 }} item(s)</td>
+                                <td class="px-5 py-3 text-slate-600">{{ collect(is_array($order->items_json) ? $order->items_json : [])->sum(fn($i) => $i['qty'] ?? 1) }} item(s)</td>
                                 <td class="px-5 py-3 text-slate-500 text-xs">{{ $order->created_at->format('M d, Y') }}</td>
                                 <td class="px-5 py-3">
                                     <a href="{{ route('admin.order.edit', $order) }}" class="px-3 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
@@ -480,7 +481,7 @@
                         @endif
                     </div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Athletes Ordered</span><span class="font-bold text-slate-900">{{ $store->parentOrders->count() }}</span></div>
-                    <div class="flex justify-between text-sm"><span class="text-slate-500">Total Items</span><span class="font-bold text-slate-900">{{ $financials['total_items_sold'] ?? $store->parentOrders->sum(fn($o) => count(is_array($o->items_json) ? $o->items_json : [])) }}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Total Items</span><span class="font-bold text-slate-900">{{ $financials['total_items_sold'] ?? $store->parentOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1)) }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Deadline</span><span class="font-bold text-slate-900">{{ $store->order_deadline?->format('M d, Y') ?? '—' }}</span></div>
                     
                     <div class="pt-3 mt-3 border-t border-slate-200 space-y-3">
