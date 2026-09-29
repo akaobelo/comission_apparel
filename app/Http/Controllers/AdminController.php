@@ -185,12 +185,12 @@ class AdminController extends Controller
                   });
             });
         }
-        $archivedStores = $archivedStoresQuery->latest()->paginate(10, ['*'], 'archive_store_page')->withQueryString();
+        $archivedStores = $archivedStoresQuery->latest('updated_at')->paginate(10, ['*'], 'archive_store_page')->withQueryString();
 
         // Archived batches
         $archivedBatchQuery = ParentOrder::where('is_archived', true)
             ->whereNotNull('batch_id')
-            ->select('batch_id')
+            ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(updated_at) as latest_archive_date'))
             ->groupBy('batch_id');
 
         if ($request->filled('archive_search')) {
@@ -210,13 +210,16 @@ class AdminController extends Controller
             });
         }
 
-        $archivedBatchIds = $archivedBatchQuery->latest('batch_id')->paginate(10, ['*'], 'archive_batch_page')->withQueryString();
+        $archivedBatchIds = $archivedBatchQuery->orderByDesc('latest_archive_date')->paginate(10, ['*'], 'archive_batch_page')->withQueryString();
 
         $archivedOrderBatches = ParentOrder::whereIn('batch_id', $archivedBatchIds->pluck('batch_id'))
             ->with(['user', 'teamStore'])
-            ->latest()
+            ->latest('updated_at')
             ->get()
             ->groupBy('batch_id')
+            ->sortByDesc(function ($orders) {
+                return $orders->max('updated_at');
+            })
             ->map(function ($orders) {
                 $store = $orders->first()->teamStore;
                 $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, $store);

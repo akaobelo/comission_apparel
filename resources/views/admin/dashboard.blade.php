@@ -616,7 +616,12 @@
                                 <div class="p-4 flex items-center justify-between gap-4 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
                                     <div>
                                         <div class="font-bold text-sm text-slate-700">{{ $store->name }}</div>
-                                        <div class="text-xs text-slate-500">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
+                                        <div class="text-xs text-slate-500">
+                                            {{ $store->user->name }} · {{ $store->parentOrders->count() }} orders
+                                            @if($store->updated_at)
+                                                · Archived {{ $store->updated_at->format('M d, Y') }}
+                                            @endif
+                                        </div>
                                     </div>
                                     <div class="flex items-center gap-2 flex-shrink-0">
                                         <form action="{{ route('admin.stores.unarchive', $store) }}" method="POST" onsubmit="return confirm('Restore this store back to active production?')">
@@ -642,6 +647,7 @@
                                     $orders = $batchData['orders'];
                                     $store = $orders->first()->teamStore;
                                     $coach = $orders->first()->user;
+                                    $latestArchiveDate = $orders->max('updated_at');
                                 @endphp
                                 <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
                                     <div>
@@ -649,6 +655,9 @@
                                         <div class="text-xs text-slate-500">
                                             {{ $coach?->name ?? 'Unknown Coach' }} · {{ $orders->count() }} orders
                                             @if($store) · Team Store @endif
+                                            @if($latestArchiveDate)
+                                                · Archived {{ \Carbon\Carbon::parse($latestArchiveDate)->format('M d, Y') }}
+                                            @endif
                                         </div>
                                         <div class="text-xs text-slate-400 mt-1">Batch ID: {{ $batchId }}</div>
                                     </div>
