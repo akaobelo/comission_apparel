@@ -116,6 +116,7 @@ class CoachController extends Controller
             'name'         => 'required|string|max:255',
             'description'  => 'nullable|string|max:1000',
             'package_type' => 'nullable|in:package_a,package_b,package_c,individual',
+            'payment_mode' => 'nullable|in:in_house,online',
         ]);
 
         $user = $request->user();
@@ -131,6 +132,7 @@ class CoachController extends Controller
             'description'  => $request->description,
             'slug'         => Str::slug($request->name) . '-' . strtolower(Str::random(6)),
             'package_type' => $request->package_type,
+            'payment_mode' => $request->payment_mode ?? 'in_house',
             'status'       => 'pending',
         ]);
 
@@ -270,11 +272,17 @@ class CoachController extends Controller
             'shipping_address' => 'required|string|max:1000',
         ]);
 
-        $unbatchedOrders = $store->parentOrders()->whereNull('batch_id');
+        $unbatchedOrders = $store->parentOrders()
+            ->whereNull('batch_id')
+            ->where('is_archived', false)
+            ->where(function($q) {
+                $q->where('payment_status', 'paid')
+                  ->orWhere('payment_status', 'not_applicable');
+            });
 
         if ($unbatchedOrders->count() === 0) {
             return redirect()->route('coach.dashboard')
-                ->with('error', 'No orders have been submitted yet. Cannot finalize an empty roster.');
+                ->with('error', 'No confirmed orders are ready to submit. Please ensure all online orders are paid before finalizing.');
         }
 
         $batchId = (string) Str::uuid();
@@ -317,7 +325,7 @@ class CoachController extends Controller
         ];
 
         $columns = [
-            'Store Name', 'Order ID', 'Submission Date', 
+            'Store Name', 'Order ID', 'Submission Date', 'Payment Mode', 'Payment Status',
             'Athlete First Name', 'Athlete Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
             'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price', 'Manufacture Price', 'Total Manufacture Price', 'Special Notes', 'Edited?'
@@ -361,6 +369,8 @@ class CoachController extends Controller
                             $store->name,
                             $order->id,
                             $order->created_at->format('Y-m-d'),
+                            $store->payment_mode ?? 'in_house',
+                            $order->payment_status ?? 'not_applicable',
                             $order->athlete_first_name,
                             $order->athlete_last_name,
                             $order->parent_email ?? '',
@@ -513,6 +523,12 @@ class CoachController extends Controller
             if ($store->user_id !== $request->user()->id) abort(403);
             
             $fullName = trim($order->athlete_first_name . ' ' . $order->athlete_last_name);
+
+            if ($order->payment_status === 'paid') {
+                return redirect()->route('coach.dashboard', ['tab' => 'overview'])
+                    ->with('error', "Cannot delete order for {$fullName} because it has already been paid online. Please contact admin if cancellation is needed.");
+            }
+
             $order->delete();
             return redirect()->route('coach.dashboard', ['tab' => 'overview'])->with('success', "Order for {$fullName} has been deleted.");
         } else {
@@ -573,12 +589,16 @@ class CoachController extends Controller
         if ($store->user_id !== $request->user()->id) abort(403);
 
         $request->validate([
-            'description' => ['nullable', 'string', 'max:5000'],
+            'description'  => ['nullable', 'string', 'max:5000'],
+            'payment_mode' => ['nullable', 'in:in_house,online'],
         ]);
 
-        $store->update([
-            'description' => $request->description,
-        ]);
+        $updateData = ['description' => $request->description];
+        if ($request->filled('payment_mode')) {
+            $updateData['payment_mode'] = $request->payment_mode;
+        }
+
+        $store->update($updateData);
 
         return redirect()->route('coach.dashboard')
             ->with('success', 'Store payment, production & delivery details updated.');

@@ -441,6 +441,7 @@
                             <tr class="text-xs font-bold uppercase tracking-wider text-slate-500">
                                 <th class="px-5 py-3 text-left">Athlete</th>
                                 <th class="px-5 py-3 text-left">Items</th>
+                                <th class="px-5 py-3 text-left">Payment</th>
                                 <th class="px-5 py-3 text-left">Submitted</th>
                                 <th class="px-5 py-3"></th>
                             </tr>
@@ -455,6 +456,25 @@
                                     @endif
                                 </td>
                                 <td class="px-5 py-3 text-slate-600">{{ collect(is_array($order->items_json) ? $order->items_json : [])->sum(fn($i) => $i['qty'] ?? 1) }} item(s)</td>
+                                <td class="px-5 py-3">
+                                    @if($order->payment_status === 'paid')
+                                        <span class="inline-flex items-center text-[10px] font-black uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                            Paid (${{ number_format($order->total_paid, 2) }})
+                                        </span>
+                                    @elseif($order->payment_status === 'pending')
+                                        <span class="inline-flex items-center text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                            Pending
+                                        </span>
+                                    @elseif($order->payment_status === 'failed')
+                                        <span class="inline-flex items-center text-[10px] font-black uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-200">
+                                            Failed
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center text-[10px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                                            In-House
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3 text-slate-500 text-xs">{{ $order->created_at->format('M d, Y') }}</td>
                                 <td class="px-5 py-3">
                                     <a href="{{ route('admin.order.edit', $order) }}" class="px-3 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
@@ -480,6 +500,9 @@
                             <span class="font-bold text-orange-500 uppercase text-xs inline-block ml-2">Pending</span>
                         @endif
                     </div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Payment Mode</span>
+                        <span class="font-bold text-slate-900 uppercase text-xs">{{ $store->isOnlinePayment() ? 'Online (Stripe)' : 'In-House' }}</span>
+                    </div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Athletes Ordered</span><span class="font-bold text-slate-900">{{ $store->parentOrders->count() }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Total Items</span><span class="font-bold text-slate-900">{{ $financials['total_items_sold'] ?? $store->parentOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1)) }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Deadline</span><span class="font-bold text-slate-900">{{ $store->order_deadline?->format('M d, Y') ?? '—' }}</span></div>
@@ -487,8 +510,14 @@
                     <div class="pt-3 mt-3 border-t border-slate-200 space-y-3">
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Total Sales</span><span class="font-bold text-slate-900">${{ number_format($financials['total_sales'] ?? 0, 2) }}</span></div>
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Average Order</span><span class="font-bold text-slate-900">${{ number_format($financials['average_order_value'] ?? 0, 2) }}</span></div>
-                        <div class="flex justify-between text-sm"><span class="text-slate-500">Due To TCA</span><span class="font-bold text-secondary">${{ number_format($financials['total_wholesale'] ?? 0, 2) }}</span></div>
-                        <div class="flex justify-between text-sm"><span class="text-slate-500">Net Proceeds</span><span class="font-bold text-green-600">${{ number_format($financials['net_proceeds'] ?? 0, 2) }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">Due To TCA (Wholesale)</span><span class="font-bold text-secondary">${{ number_format($financials['total_wholesale'] ?? 0, 2) }}</span></div>
+                        @if($store->isOnlinePayment())
+                            <div class="flex justify-between text-sm"><span class="text-slate-500">Online Paid (Stripe)</span><span class="font-bold text-emerald-700">${{ number_format($financials['total_online_paid'] ?? 0, 2) }}</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-slate-500">Sales Tax (7.5%)</span><span class="font-bold text-slate-700">${{ number_format($financials['total_tax'] ?? 0, 2) }}</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-slate-500 font-bold text-indigo-900">Coach Profit Owed</span><span class="font-black text-indigo-600">${{ number_format($financials['coach_profit_owed'] ?? 0, 2) }}</span></div>
+                        @else
+                            <div class="flex justify-between text-sm"><span class="text-slate-500">Net Proceeds</span><span class="font-bold text-green-600">${{ number_format($financials['net_proceeds'] ?? 0, 2) }}</span></div>
+                        @endif
                     </div>
 
                     <div class="pt-3 mt-3 border-t border-slate-200">

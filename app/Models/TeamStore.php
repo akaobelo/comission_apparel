@@ -15,11 +15,22 @@ class TeamStore extends Model
         'order_deadline',
         'status',
         'package_type',
+        'payment_mode',
         'pricing_approved',
         'is_archived',
         'shipping_address',
         'sort_order',
     ];
+
+    public function isOnlinePayment(): bool
+    {
+        return ($this->payment_mode ?? 'in_house') === 'online';
+    }
+
+    public function isInHousePayment(): bool
+    {
+        return !$this->isOnlinePayment();
+    }
 
     protected $casts = [
         'order_deadline' => 'datetime',
@@ -47,6 +58,11 @@ class TeamStore extends Model
     public function parentOrders()
     {
         return $this->hasMany(ParentOrder::class);
+    }
+
+    public function orders()
+    {
+        return $this->parentOrders();
     }
 
     public function rosters()

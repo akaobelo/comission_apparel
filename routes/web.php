@@ -197,6 +197,12 @@ Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request,
 Route::get('/store/search', [StoreController::class, 'search'])->name('store.search');
 Route::get('/store/{slug}', [StoreController::class, 'show'])->name('store.show');
 Route::post('/store/{slug}/order', [StoreController::class, 'submitOrder'])->name('store.order.submit');
+Route::get('/store/{slug}/order/success/{order}', [StoreController::class, 'checkoutSuccess'])->name('store.checkout.success');
+Route::get('/store/{slug}/order/cancel/{order}', [StoreController::class, 'checkoutCancel'])->name('store.checkout.cancel');
+Route::get('/store/{slug}/order/receipt/{order}', [StoreController::class, 'orderReceipt'])->name('store.order.receipt');
+
+// Stripe Webhook (CSRF-exempt in bootstrap/app.php)
+Route::post('/stripe/webhook', [\App\Http\Controllers\StripeWebhookController::class, 'handleWebhook'])->name('stripe.webhook');
 
 // ─── Authentication ──────────────────────────────────────────────────────────
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

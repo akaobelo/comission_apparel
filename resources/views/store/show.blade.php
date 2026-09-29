@@ -209,10 +209,37 @@
                       previewAlt: '',
                       touchStartX: 0,
                       touchEndX: 0,
+                      policyAgreed: false,
+                      isOnline: {{ $store->isOnlinePayment() ? 'true' : 'false' }},
                       items: {
                           @foreach($store->items as $item)
-                          '{{ $item->id }}': { selected: false, qty: 1 },
+                          '{{ $item->id }}': { selected: false, qty: 1, price: {{ (float) ($item->retail_price ?? 0) }} },
                           @endforeach
+                      },
+                      getSubtotal() {
+                          let total = 0;
+                          for (const [id, item] of Object.entries(this.items)) {
+                              if (item.selected) {
+                                  total += (item.price || 0) * (parseInt(item.qty) || 1);
+                              }
+                          }
+                          return total;
+                      },
+                      getTax() {
+                          return Math.round(this.getSubtotal() * 0.075 * 100) / 100;
+                      },
+                      getGrandTotal() {
+                          const sub = this.getSubtotal();
+                          if (sub <= 0) return 0;
+                          const tax = this.getTax();
+                          const total = (sub + tax + 0.30) / (1 - 0.029);
+                          return Math.round(total * 100) / 100;
+                      },
+                      getProcessingFee() {
+                          const grand = this.getGrandTotal();
+                          if (grand <= 0) return 0;
+                          const fee = grand - (this.getSubtotal() + this.getTax());
+                          return Math.round(fee * 100) / 100;
                       },
                       openPanel(id) {
                           this.activeItemId = id;
@@ -686,8 +713,47 @@
 
                                 @if(!$isClosed)
                 {{-- STICKY BOTTOM SUBMIT BAR --}}
-                <div class="fixed bottom-0 left-0 right-0 p-3 md:p-4 bg-white/90 backdrop-blur-md border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-40 flex justify-center">
-                    <div class="max-w-[1400px] w-full flex items-center justify-between gap-6 px-4">
+                <div class="fixed bottom-0 left-0 right-0 p-3 md:p-4 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] z-40 flex justify-center">
+                    <div class="max-w-[1400px] w-full flex flex-col md:flex-row items-center justify-between gap-4 px-4">
+                        @if($store->isOnlinePayment())
+                        <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+                            <div>
+                                <span class="text-slate-400 font-bold uppercase text-[10px] block">Items</span>
+                                <span class="font-black text-slate-900 text-sm"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Selected</span>
+                            </div>
+                            <div x-show="getSubtotal() > 0" class="border-l border-slate-200 pl-4">
+                                <span class="text-slate-400 font-bold uppercase text-[10px] block">Subtotal</span>
+                                <span class="font-bold text-slate-700">$<span x-text="getSubtotal().toFixed(2)">0.00</span></span>
+                            </div>
+                            <div x-show="getSubtotal() > 0">
+                                <span class="text-slate-400 font-bold uppercase text-[10px] block">Tax (7.5%)</span>
+                                <span class="font-bold text-slate-700">$<span x-text="getTax().toFixed(2)">0.00</span></span>
+                            </div>
+                            <div x-show="getSubtotal() > 0">
+                                <span class="text-slate-400 font-bold uppercase text-[10px] block">Card Fee</span>
+                                <span class="font-bold text-slate-700">$<span x-text="getProcessingFee().toFixed(2)">0.00</span></span>
+                            </div>
+                            <div x-show="getSubtotal() > 0" class="border-l border-slate-200 pl-4">
+                                <span class="text-emerald-600 font-black uppercase text-[10px] block tracking-wider">Total Due</span>
+                                <span class="font-black text-slate-900 text-base text-emerald-700">$<span x-text="getGrandTotal().toFixed(2)">0.00</span></span>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                            <label class="flex items-center gap-2 cursor-pointer text-[11px] text-slate-600 select-none">
+                                <input type="checkbox" name="policy_agreed" x-model="policyAgreed" required class="rounded text-primary focus:ring-primary w-4 h-4">
+                                <span>I agree: <strong class="text-slate-900">All sales final</strong> (no refunds/returns).</span>
+                            </label>
+
+                            <button type="submit" 
+                                    :disabled="!policyAgreed || Object.values(items).filter(i => i.selected).length === 0"
+                                    :class="(!policyAgreed || Object.values(items).filter(i => i.selected).length === 0) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-secondary hover:-translate-y-0.5 hover:shadow-[0_10px_20px_rgba(192,30,46,0.3)]'"
+                                    class="w-full sm:w-auto px-7 py-3 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm flex-shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                <span>Pay Online & Submit</span>
+                            </button>
+                        </div>
+                        @else
                         <div class="hidden md:block">
                             <h4 class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">Ready to complete?</h4>
                             <p class="text-lg font-black text-slate-900"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Items Selected</p>
@@ -695,6 +761,7 @@
                         <button type="submit" class="w-full md:w-auto px-8 py-3 md:py-3.5 bg-secondary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(192,30,46,0.3)] transition-all flex-shrink-0">
                             Submit My Order
                         </button>
+                        @endif
                     </div>
                 </div>
                 @endif

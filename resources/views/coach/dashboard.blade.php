@@ -395,6 +395,25 @@
                         <strong class="text-slate-700">Note:</strong> This description is displayed in the <strong class="text-slate-800">"Payment, Production & Delivery"</strong> section on your team store. If you want details on how to make payment, production time, or the delivery process displayed to parents and athletes, please include that info here.
                     </p>
                 </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Payment Collection Method</label>
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all hover:bg-slate-50 border-slate-300">
+                            <input type="radio" name="payment_mode" value="in_house" checked class="mt-1 text-primary focus:ring-primary">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-900 uppercase tracking-wide">Collect Payment In-House (Default)</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">You collect funds directly from parents via cash, check, or external tools as you do today.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all hover:bg-slate-50 border-slate-300">
+                            <input type="radio" name="payment_mode" value="online" class="mt-1 text-primary focus:ring-primary">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-900 uppercase tracking-wide">Allow Payment Online</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">Parents pay directly online at checkout via credit card, Apple Pay, or Google Pay. The Commission Apparel collects payment directly.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
                 {{-- <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Package / Order Type</label>
                     <select name="package_type" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm">
@@ -577,15 +596,30 @@
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2">
+                                        @if($order->payment_status === 'paid')
+                                            <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200 tracking-wider">Paid (${{ number_format($order->total_paid, 2) }})</span>
+                                        @elseif($order->payment_status === 'pending')
+                                            <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200 tracking-wider">Pending Pay</span>
+                                        @elseif($order->payment_status === 'failed')
+                                            <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200 tracking-wider">Pay Failed</span>
+                                        @else
+                                            <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 tracking-wider">In-House</span>
+                                        @endif
                                         @if($order->is_edited)
                                             <span class="text-[10px] font-bold text-orange-500 uppercase">Edited</span>
                                         @endif
                                         @if(!$isLocked)
                                             <a href="{{ route('coach.order.edit', $order) }}" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 text-[10px] font-bold uppercase rounded hover:bg-slate-50 transition-colors">View/Edit</a>
                                         @endif
+                                        @if($order->payment_status === 'paid' || $order->payment_status === 'not_applicable')
                                         <span class="w-6 h-6 flex items-center justify-center bg-green-100 text-green-600 rounded-full border border-green-200">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                         </span>
+                                        @else
+                                        <span class="w-6 h-6 flex items-center justify-center bg-amber-100 text-amber-600 rounded-full border border-amber-200">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01"/></svg>
+                                        </span>
+                                        @endif
                                     </div>
                                 </div>
                                 @endforeach
@@ -913,12 +947,35 @@
 
                 {{-- Payment, Production & Delivery Notes --}}
                 <div class="p-5 border-t border-slate-100">
-                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Payment, Production & Delivery Notes</h4>
-                    <p class="text-[11px] text-slate-500 mb-3">Displayed under the "Payment, Production & Delivery" section on your store page. Include instructions on payment methods, production timelines, and delivery process.</p>
-                    <form action="{{ route('coach.store.description', $store) }}" method="POST">
+                    <form action="{{ route('coach.store.description', $store) }}" method="POST" class="space-y-4">
                         @csrf
-                        <textarea name="description" rows="3" placeholder="e.g. Payment due by... Production takes 3-4 weeks... Delivery/pickup instructions..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm leading-relaxed mb-3">{{ old('description', $store->description) }}</textarea>
-                        <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-800 transition-colors">Save Details</button>
+                        <div>
+                            <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Payment Collection Method</h4>
+                            <p class="text-[11px] text-slate-500 mb-2">Choose how parents pay for their orders on this team store.</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                <label class="flex items-start gap-2.5 p-3 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
+                                    <input type="radio" name="payment_mode" value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'checked' : '' }} class="mt-0.5 text-primary focus:ring-primary">
+                                    <div>
+                                        <span class="block text-xs font-bold text-slate-900 uppercase">In-House Collection</span>
+                                        <span class="block text-[10px] text-slate-500 mt-0.5">You collect funds directly from parents.</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-2.5 p-3 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
+                                    <input type="radio" name="payment_mode" value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'checked' : '' }} class="mt-0.5 text-primary focus:ring-primary">
+                                    <div>
+                                        <span class="block text-xs font-bold text-slate-900 uppercase">Online Card Payment</span>
+                                        <span class="block text-[10px] text-slate-500 mt-0.5">Parents pay online at checkout via Stripe.</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Payment, Production & Delivery Notes</h4>
+                            <p class="text-[11px] text-slate-500 mb-2">Displayed under the "Payment, Production & Delivery" section on your store page. Include instructions on payment methods, production timelines, and delivery process.</p>
+                            <textarea name="description" rows="3" placeholder="e.g. Payment due by... Production takes 3-4 weeks... Delivery/pickup instructions..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm leading-relaxed mb-1">{{ old('description', $store->description) }}</textarea>
+                        </div>
+                        <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-800 transition-colors">Save Settings</button>
                     </form>
                 </div>
             </div>

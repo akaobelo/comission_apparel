@@ -140,12 +140,15 @@ class StoreController extends Controller
                 $unitData = $group['unit'];
                 $unitQty  = $group['qty'];
 
+                $unitPrice = (float) ($storeItem->retail_price ?? 0);
                 $entry = [
-                    'id'    => $itemId,
-                    'name'  => $storeItem->name,
-                    'types' => $types,
-                    'qty'   => $unitQty,
-                    'sizes' => [],
+                    'id'          => $itemId,
+                    'name'        => $storeItem->name,
+                    'types'       => $types,
+                    'qty'         => $unitQty,
+                    'unit_price'  => $unitPrice,
+                    'line_total'  => round($unitPrice * $unitQty, 2),
+                    'sizes'       => [],
                 ];
 
                 if ($storeItem->isPackage() && isset($unitData['components'])) {
@@ -185,6 +188,137 @@ class StoreController extends Controller
             return back()->with('error', 'Please select at least one item before submitting.');
         }
 
+        $subtotal = collect($itemsJson)->sum('line_total');
+        $fullName = trim($request->athlete_first_name . ' ' . $request->athlete_last_name);
+
+        // ─── Online Payment Flow ─────────────────────────────────────────────
+        if ($store->isOnlinePayment()) {
+            $taxRate = (float) config('services.stripe.tax_rate', 0.075);
+            $taxAmount = round($subtotal * $taxRate, 2);
+
+            $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+            $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+            $preFeeTotal = $subtotal + $taxAmount;
+            $grandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
+            $feeAmount = round($grandTotal - $preFeeTotal, 2);
+
+            $parentOrder = ParentOrder::create([
+                'team_store_id'       => $store->id,
+                'athlete_first_name'  => trim($request->athlete_first_name),
+                'athlete_last_name'   => trim($request->athlete_last_name),
+                'parent_email'        => trim($request->parent_email),
+                'parent_phone'        => trim($request->parent_phone),
+                'gender'              => trim($request->gender),
+                'jersey_name'         => $request->jersey_name,
+                'jersey_number'       => $request->jersey_number,
+                'backpack_name'       => $request->backpack_name,
+                'shipping_address'    => trim($request->shipping_address),
+                'special_notes'       => $request->special_notes,
+                'items_json'          => $itemsJson,
+                'status'              => 'Pending Payment',
+                'payment_status'      => 'pending',
+                'subtotal'            => $subtotal,
+                'tax_amount'          => $taxAmount,
+                'fee_amount'          => $feeAmount,
+                'shipping_amount'     => 0.00,
+                'shipping_method'     => 'coach_batch',
+                'total_paid'          => $grandTotal,
+                'total_retail_price'  => $subtotal,
+            ]);
+
+            $stripeSecret = config('services.stripe.secret');
+
+            if ($stripeSecret) {
+                try {
+                    $stripe = new \Stripe\StripeClient($stripeSecret);
+
+                    $lineItems = [];
+                    foreach ($itemsJson as $itemEntry) {
+                        $unitCents = max(50, intval(round($itemEntry['unit_price'] * 100)));
+                        $lineItems[] = [
+                            'price_data' => [
+                                'currency'     => 'usd',
+                                'unit_amount'  => $unitCents,
+                                'product_data' => [
+                                    'name'        => $itemEntry['name'],
+                                    'description' => 'Athlete: ' . $fullName . ' (' . $store->name . ')',
+                                ],
+                            ],
+                            'quantity'   => max(1, intval($itemEntry['qty'] ?? 1)),
+                        ];
+                    }
+
+                    if ($taxAmount > 0) {
+                        $lineItems[] = [
+                            'price_data' => [
+                                'currency'     => 'usd',
+                                'unit_amount'  => intval(round($taxAmount * 100)),
+                                'product_data' => [
+                                    'name'        => 'Sales Tax (7.5%)',
+                                    'description' => 'Mandatory sales tax per transaction',
+                                ],
+                            ],
+                            'quantity'   => 1,
+                        ];
+                    }
+
+                    if ($feeAmount > 0) {
+                        $lineItems[] = [
+                            'price_data' => [
+                                'currency'     => 'usd',
+                                'unit_amount'  => intval(round($feeAmount * 100)),
+                                'product_data' => [
+                                    'name'        => 'Card Processing Fee',
+                                    'description' => 'Credit card processing fee',
+                                ],
+                            ],
+                            'quantity'   => 1,
+                        ];
+                    }
+
+                    $session = $stripe->checkout->sessions->create([
+                        'payment_method_types' => ['card'],
+                        'line_items'           => $lineItems,
+                        'mode'                 => 'payment',
+                        'customer_email'       => trim($request->parent_email),
+                        'client_reference_id'  => (string) $parentOrder->id,
+                        'metadata'             => [
+                            'order_id'     => $parentOrder->id,
+                            'store_id'     => $store->id,
+                            'athlete_name' => $fullName,
+                        ],
+                        'success_url'          => route('store.checkout.success', ['slug' => $store->slug, 'order' => $parentOrder->id]) . '?session_id={CHECKOUT_SESSION_ID}',
+                        'cancel_url'           => route('store.checkout.cancel', ['slug' => $store->slug, 'order' => $parentOrder->id]),
+                    ]);
+
+                    $parentOrder->update(['stripe_session_id' => $session->id]);
+
+                    return redirect($session->url);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Stripe Checkout creation failed: ' . $e->getMessage());
+                    return back()->with('error', 'Payment gateway error: ' . $e->getMessage());
+                }
+            } else {
+                // In local dev/fallback when Stripe secret key is not populated
+                $parentOrder->update([
+                    'payment_status' => 'paid',
+                    'status'         => 'Submitted',
+                    'paid_at'        => now(),
+                ]);
+
+                $store->rosters()->where(function($query) use ($request) {
+                    $query->where('parent_email', trim($request->parent_email))
+                          ->orWhere('parent_phone', preg_replace('/[^0-9]/', '', (string)$request->parent_phone));
+                })->update(['has_ordered' => true]);
+
+                $store->user->notify(new \App\Notifications\ParentOrderPlaced($fullName, $store->name));
+
+                return redirect()->route('store.checkout.success', ['slug' => $store->slug, 'order' => $parentOrder->id])
+                    ->with('success', 'Order submitted and confirmed (Stripe Test Simulation)!');
+            }
+        }
+
+        // ─── In-House Payment Flow (Unchanged Default) ───────────────────────
         $parentOrder = ParentOrder::create([
             'team_store_id'       => $store->id,
             'athlete_first_name'  => trim($request->athlete_first_name),
@@ -199,21 +333,89 @@ class StoreController extends Controller
             'special_notes'       => $request->special_notes,
             'items_json'          => $itemsJson,
             'status'              => 'Submitted',
-            'total_retail_price'  => 0, // No longer tracked
+            'payment_status'      => 'not_applicable',
+            'subtotal'            => $subtotal,
+            'tax_amount'          => 0.00,
+            'fee_amount'          => 0.00,
+            'shipping_amount'     => 0.00,
+            'shipping_method'     => 'coach_batch',
+            'total_paid'          => 0.00,
+            'total_retail_price'  => $subtotal,
         ]);
 
         // If parent email or phone exists in roster, mark as ordered
         $store->rosters()->where(function($query) use ($request) {
             $query->where('parent_email', trim($request->parent_email))
-                  ->orWhere('parent_phone', preg_replace('/[^0-9]/', '', $request->parent_phone));
+                  ->orWhere('parent_phone', preg_replace('/[^0-9]/', '', (string)$request->parent_phone));
         })->update(['has_ordered' => true]);
-
-        $fullName = trim($request->athlete_first_name . ' ' . $request->athlete_last_name);
 
         $store->user->notify(
             new \App\Notifications\ParentOrderPlaced($fullName, $store->name)
         );
 
         return back()->with('success', 'Order successfully submitted for ' . $fullName . '! Your coach will be notified.');
+    }
+
+    public function checkoutSuccess(Request $request, $slug, $orderId)
+    {
+        $store = TeamStore::where('slug', $slug)->firstOrFail();
+        $order = ParentOrder::where('id', $orderId)->where('team_store_id', $store->id)->firstOrFail();
+
+        $sessionId = $request->query('session_id');
+        $stripeSecret = config('services.stripe.secret');
+
+        if ($sessionId && $stripeSecret && !$order->isPaid()) {
+            try {
+                $stripe = new \Stripe\StripeClient($stripeSecret);
+                $session = $stripe->checkout->sessions->retrieve($sessionId);
+
+                if ($session->payment_status === 'paid') {
+                    $order->update([
+                        'payment_status'          => 'paid',
+                        'status'                  => 'Submitted',
+                        'stripe_payment_intent_id'=> $session->payment_intent,
+                        'paid_at'                 => now(),
+                    ]);
+
+                    $parentEmail = trim($order->parent_email);
+                    $parentPhone = preg_replace('/[^0-9]/', '', (string)$order->parent_phone);
+                    $store->rosters()->where(function($query) use ($parentEmail, $parentPhone) {
+                        if ($parentEmail) $query->where('parent_email', $parentEmail);
+                        if ($parentPhone) $query->orWhere('parent_phone', $parentPhone);
+                    })->update(['has_ordered' => true]);
+
+                    $fullName = $order->athlete_name;
+                    $store->user->notify(new \App\Notifications\ParentOrderPlaced($fullName, $store->name));
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Error verifying Stripe session on return: ' . $e->getMessage());
+            }
+        }
+
+        return view('store.receipt', compact('store', 'order'));
+    }
+
+    public function checkoutCancel(Request $request, $slug, $orderId)
+    {
+        $store = TeamStore::where('slug', $slug)->firstOrFail();
+        $order = ParentOrder::where('id', $orderId)->where('team_store_id', $store->id)->first();
+
+        if ($order && !$order->isPaid()) {
+            $order->update([
+                'payment_status' => 'failed',
+                'status'         => 'Payment Cancelled',
+            ]);
+        }
+
+        return redirect()->route('store.show', $store->slug)
+            ->with('error', 'Online payment was cancelled or interrupted. Your cart details remain saved — please try again whenever you are ready.');
+    }
+
+    public function orderReceipt($slug, $orderId)
+    {
+        $store = TeamStore::where('slug', $slug)->firstOrFail();
+        $order = ParentOrder::where('id', $orderId)->where('team_store_id', $store->id)->firstOrFail();
+
+        return view('store.receipt', compact('store', 'order'));
     }
 }
