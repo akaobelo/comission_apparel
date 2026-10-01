@@ -149,18 +149,23 @@
                 </div>
             </div>
 
-            {{-- Coach's Team Store Info --}}
-            @if($user->teamStore)
+            {{-- Coach's Team Stores Info --}}
+            @if($user->teamStores && $user->teamStores->isNotEmpty())
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div class="p-5 border-b border-slate-200 bg-slate-50">
-                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Team Store</h2>
+                <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Linked Stores ({{ $user->teamStores->count() }})</h2>
                 </div>
-                <div class="p-5">
-                    <div class="font-bold text-slate-900">{{ $user->teamStore->name }}</div>
-                    <div class="text-xs text-slate-500 mt-1">Status: <span class="font-bold uppercase text-primary">{{ $user->teamStore->status }}</span></div>
-                    <div class="mt-3">
-                        <a href="{{ route('admin.store.edit', $user->teamStore) }}" class="btn btn-outline py-2 px-4 text-xs uppercase tracking-wide">Manage Store →</a>
+                <div class="divide-y divide-slate-100">
+                    @foreach($user->teamStores as $coachStore)
+                    <div class="p-5">
+                        <div class="font-bold text-slate-900 text-sm">{{ $coachStore->name }}</div>
+                        <div class="text-xs text-slate-500 mt-1">Status: <span class="font-bold uppercase {{ $coachStore->status === 'approved' ? 'text-green-600' : ($coachStore->status === 'pending' ? 'text-amber-600' : 'text-slate-600') }}">{{ $coachStore->status }}</span> · {{ $coachStore->items->count() }} items · {{ $coachStore->parentOrders->count() }} orders</div>
+                        <div class="mt-3 flex gap-2">
+                            <a href="{{ route('admin.store.edit', $coachStore) }}" class="btn btn-outline py-1.5 px-3 text-xs uppercase tracking-wide">Manage Store →</a>
+                            <a href="{{ route('store.show', $coachStore->slug) }}" target="_blank" class="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded text-xs font-bold uppercase tracking-wide">View Public ↗</a>
+                        </div>
                     </div>
+                    @endforeach
                 </div>
             </div>
             @endif
