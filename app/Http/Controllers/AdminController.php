@@ -47,7 +47,14 @@ class AdminController extends Controller
 
             $availableSports = config('sports.categories') ?? [];
             $allCollections = \App\Models\DesignCollection::select('id', 'name')->orderBy('sort_order', 'asc')->get();
-            $allCoaches = User::where('role', 'coach')->with('teamStore')->orderBy('first_name')->get();
+            $allCoaches = User::where('role', 'coach')
+                ->select('id', 'first_name', 'last_name', 'organization')
+                ->with('teamStore:id,user_id,name')
+                ->get()
+                ->sortBy(function($user) {
+                    $club = $user->teamStore?->name ?? $user->organization ?? trim($user->first_name . ' ' . $user->last_name);
+                    return strtolower(trim($club ?: 'zzz'));
+                }, SORT_NATURAL | SORT_FLAG_CASE)->values();
 
             return view('admin.partials.existing_collections_list', compact(
                 'designCollections',
@@ -256,16 +263,16 @@ class AdminController extends Controller
         // Optimize dropdown payloads: select only necessary columns to avoid loading heavy object trees
         $allStores = TeamStore::select('id', 'name', 'user_id')->with(['user' => function($q) {
             $q->select('id', 'first_name', 'last_name', 'organization');
-        }])->latest()->get();
+        }])->orderBy('name', 'asc')->get();
 
         $allCoaches = User::where('role', 'coach')
             ->select('id', 'first_name', 'last_name', 'organization')
             ->with('teamStore:id,user_id,name')
             ->get()
             ->sortBy(function($user) {
-                $club = $user->teamStore?->name ?? $user->organization ?? '';
-                return strtolower($club);
-            });
+                $club = $user->teamStore?->name ?? $user->organization ?? trim($user->first_name . ' ' . $user->last_name);
+                return strtolower(trim($club ?: 'zzz'));
+            }, SORT_NATURAL | SORT_FLAG_CASE)->values();
 
         $availableSports = config('sports.categories');
 

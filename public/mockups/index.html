@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Commission Apparel - Landing Page Layout Proposals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f1117;
+            color: #f1f5f9;
+            padding: 30px 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #1e293b;
+        }
+        .badge {
+            display: inline-block;
+            background: #cd202c;
+            color: white;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 6px 14px;
+            border-radius: 999px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        p.subtitle {
+            color: #94a3b8;
+            font-size: 15px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid #334155;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tab-btn:hover {
+            background: #334155;
+            color: white;
+        }
+        .tab-btn.active {
+            background: #cd202c;
+            border-color: #cd202c;
+            color: white;
+            box-shadow: 0 4px 15px rgba(205, 32, 44, 0.4);
+        }
+        .mockup-card {
+            display: none;
+            background: #181e2a;
+            border: 1px solid #263346;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .mockup-card.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card-header {
+            padding: 20px 25px;
+            background: #131722;
+            border-bottom: 1px solid #263346;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .card-title {
+            font-size: 20px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .card-desc {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .btn-view-full {
+            background: #334155;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: background 0.2s;
+        }
+        .btn-view-full:hover {
+            background: #cd202c;
+        }
+        .image-container {
+            padding: 20px;
+            background: #090b10;
+            display: flex;
+            justify-content: center;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid #263346;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 25px;
+            background: #131722;
+            border-top: 1px solid #263346;
+        }
+        .feature-item {
+            background: #181e2a;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #263346;
+        }
+        .feature-item h4 {
+            color: #cd202c;
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .feature-item p {
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <span class="badge">The Commission Apparel</span>
+            <h1>Landing Page Layout Proposals</h1>
+            <p class="subtitle">Sample layout designs inspired by Wooter.com & Adidas, mapped with your existing assets and a clean News & Stories section.</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('tab-a')">Option A: Bold Powerhouse</button>
+            <button class="tab-btn" onclick="showTab('tab-b')">Option B: Dynamic Video & News</button>
+            <button class="tab-btn" onclick="showTab('tab-c')">Option C: Modern Editorial Hub</button>
+            <button class="tab-btn" onclick="showTab('tab-detail')">Article Detail View</button>
+        </div>
+
+        <!-- Tab A -->
+        <div id="tab-a" class="mockup-card active">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Option A: The Bold Athletic Powerhouse</div>
+                    <div class="card-desc">Full-width hero banner (hero-models.png), 4-sport athlete grid, Spartan Concept-to-Reality, and clean 3-card News row.</div>
+                </div>
+                <a href="layout-option-a.jpg" target="_blank" class="btn-view-full">Open Full Image ↗</a>
+            </div>
+            <div class="image-container">
+                <img src="layout-option-a.jpg" alt="Layout Option A">
+            </div>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h4>Hero Banner</h4>
+                    <p>Uses <code>hero-models.png</code> in full athletic action with high-contrast typography and red CTA.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Concept to Reality</h4>
+                    <p>Side-by-side 3D render vs actual jersey using <code>concept-spartan.png</code> and <code>reality-spartan.png</code>.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Minimal News Row</h4>
+                    <p>3 streamlined story cards with category tags and dates, keeping the homepage uncluttered.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab B -->
+        <div id="tab-b" class="mockup-card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Option B: Dynamic Performance & Video Featured News</div>
+                    <div class="card-desc">High-energy dark mode, 1 featured video story + 2 stacked side stories, technical fabric callouts, and coach storefront.</div>
+                </div>
+                <a href="layout-option-b.jpg" target="_blank" class="btn-view-full">Open Full Image ↗</a>
+            </div>
+            <div class="image-container">
+                <img src="layout-option-b.jpg" alt="Layout Option B">
+            </div>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h4>Featured Video Story</h4>
+                    <p>Highlights a major championship story or uniform drop with a play button alongside 2 compact cards.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Technical Proofing</h4>
+                    <p>Shows annotated fabric features (moisture wicking, reinforced seams, sublimation durability).</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Team Store Platform</h4>
+                    <p>Showcases <code>team-store-background-v2.png</code> highlighting zero coach paperwork & direct parent orders.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab C -->
+        <div id="tab-c" class="mockup-card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Option C: Modern Dark Editorial & Interactive Hub</div>
+                    <div class="card-desc">Split-screen hero with instant quote builder widget, sports switcher, dark editorial media cards, and live reviews.</div>
+                </div>
+                <a href="layout-option-c.jpg" target="_blank" class="btn-view-full">Open Full Image ↗</a>
+            </div>
+            <div class="image-container">
+                <img src="layout-option-c.jpg" alt="Layout Option C">
+            </div>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h4>Instant Quote Builder</h4>
+                    <p>Direct hero input field for team name & sport to immediately capture leads.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Media Hub Cards</h4>
+                    <p>Adidas-style cards with video play overlays, story tags, and clean summary snippets.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Coach Dashboard Feature</h4>
+                    <p>Uses <code>group.jpg</code> and mobile UI mockups to promote the coach ordering system.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Detail -->
+        <div id="tab-detail" class="mockup-card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Full Article Detail Page View (/news/{slug})</div>
+                    <div class="card-desc">Rich reading experience with 16:9 embedded video, high-res uniform gallery, editorial write-up, and conversion CTA.</div>
+                </div>
+                <a href="news-article-detail.jpg" target="_blank" class="btn-view-full">Open Full Image ↗</a>
+            </div>
+            <div class="image-container">
+                <img src="news-article-detail.jpg" alt="Article Detail Page View">
+            </div>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h4>Embedded Video Player</h4>
+                    <p>Responsive 16:9 player for highlight reels, uniform reveal videos, and athlete interviews.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Photo Gallery</h4>
+                    <p>High-resolution uniform detail shots and on-field game photography.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Bottom Conversion CTA</h4>
+                    <p>Direct button connecting the story to a custom uniform quote or team store link.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.mockup-card').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
