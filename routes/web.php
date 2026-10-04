@@ -31,7 +31,7 @@ Route::get('/', function () {
     $heroSettings = [
         'title'               => \App\Models\SiteSetting::where('key', 'hero_title')->value('value') ?? 'CUSTOM GEAR BUILT FOR THE COMMITTED',
         'subtitle'            => \App\Models\SiteSetting::where('key', 'hero_subtitle')->value('value') ?? 'Dominate the competition with elite performance apparel designed for champion athletes. Elevate your team\'s game with custom uniforms crafted with speed and precision.',
-        'media_path'          => \App\Models\SiteSetting::where('key', 'hero_banner_image')->value('value') ?? \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value') ?? asset('images/hero-banner.jpeg'),
+        'media_path'          => \App\Models\SiteSetting::where('key', 'hero_banner_image')->value('value') ?? \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value') ?? asset('images/hero-models.png'),
         'cta_primary_text'    => \App\Models\SiteSetting::where('key', 'hero_cta_primary_text')->value('value') ?? 'START DESIGNING',
         'cta_primary_url'     => \App\Models\SiteSetting::where('key', 'hero_cta_primary_url')->value('value') ?? '/quote',
         'cta_secondary_text'  => \App\Models\SiteSetting::where('key', 'hero_cta_secondary_text')->value('value') ?? 'VIEW CATALOG',

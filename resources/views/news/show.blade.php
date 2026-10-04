@@ -57,7 +57,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-12 items-start mb-16">
             
             <!-- Left: Article Write-up -->
-            <div class="space-y-6 text-slate-300 text-base md:text-lg leading-relaxed bg-[#12141a] border border-slate-800/80 rounded-2xl p-8 md:p-10 shadow-xl">
+            <div class="space-y-6 bg-[#12141a] border border-slate-800/80 rounded-2xl p-8 md:p-10 shadow-xl">
                 @if($article->summary)
                 <p class="text-xl md:text-2xl font-bold text-white leading-snug border-l-4 border-[#cd202c] pl-5 py-1">
                     {{ $article->summary }}
@@ -65,9 +65,29 @@
                 <hr class="border-slate-800 my-6">
                 @endif
 
-                <div class="prose prose-invert max-w-none text-slate-300 leading-relaxed font-sans space-y-5">
+                <div class="article-body prose prose-invert max-w-none text-slate-200 text-base md:text-lg leading-relaxed font-sans space-y-6">
                     {!! $article->content !!}
                 </div>
+
+                <style>
+                    .article-body p, .article-body span, .article-body li, .article-body div {
+                        color: #e2e8f0 !important; /* slate-200 */
+                    }
+                    .article-body h1, .article-body h2, .article-body h3, .article-body h4, .article-body h5, .article-body h6, .article-body strong {
+                        color: #ffffff !important;
+                    }
+                    .article-body blockquote {
+                        background-color: #0f1117 !important;
+                        color: #ffffff !important;
+                        border-left: 4px solid #cd202c !important;
+                        padding: 1.5rem !important;
+                        border-radius: 0.75rem !important;
+                        margin: 2rem 0 !important;
+                    }
+                    .article-body blockquote p {
+                        color: #ffffff !important;
+                    }
+                </style>
 
                 <!-- Uniform Photo Gallery Grid -->
                 @if(!empty($article->gallery_images) && count($article->gallery_images) > 0)
