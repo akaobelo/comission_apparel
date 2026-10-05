@@ -401,15 +401,17 @@
                         <label class="flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all hover:bg-slate-50 border-slate-300">
                             <input type="radio" name="payment_mode" value="in_house" checked class="mt-1 text-primary focus:ring-primary">
                             <div>
-                                <span class="block text-xs font-bold text-slate-900 uppercase tracking-wide">Collect Payment In-House (Default)</span>
-                                <span class="block text-[11px] text-slate-500 mt-0.5">You collect funds directly from parents via cash, check, or external tools as you do today.</span>
+                                <span class="block text-xs font-bold text-slate-900 uppercase tracking-wide">Cash Collection (Default)</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5 leading-relaxed">You collect funds from the parents directly and we send you an invoice for the manufacturing total.</span>
                             </div>
                         </label>
                         <label class="flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all hover:bg-slate-50 border-slate-300">
                             <input type="radio" name="payment_mode" value="online" class="mt-1 text-primary focus:ring-primary">
                             <div>
-                                <span class="block text-xs font-bold text-slate-900 uppercase tracking-wide">Allow Payment Online</span>
-                                <span class="block text-[11px] text-slate-500 mt-0.5">Parents pay directly online at checkout via credit card, Apple Pay, or Google Pay. The Commission Apparel collects payment directly.</span>
+                                <span class="block text-xs font-bold text-slate-900 uppercase tracking-wide">Online Credit Card Payment</span>
+                                <span class="block text-[11px] text-slate-500 mt-1 leading-relaxed">This option is available once your store has closed and the total order is reviewed to ensure the minimum order quantity for each item is met.</span>
+                                <span class="block text-[11px] text-slate-500 mt-1 leading-relaxed">Once enabled, parents can go back to store’s link, click their order at the bottom of the page and make payment at that point.</span>
+                                <span class="block text-[11px] text-slate-500 mt-1 leading-relaxed">If you’ve marked up your items, proceeds earned from your sale will be sent to you via Intuit Quickbooks direct deposit once funds have cleared.</span>
                             </div>
                         </label>
                     </div>
@@ -944,27 +946,34 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            @endif
 
-                {{-- Payment, Production & Delivery Notes --}}
-                <div class="p-5 border-t border-slate-100">
+            {{-- Payment, Production & Delivery Notes --}}
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
+                <div class="p-5 border-b border-slate-200 bg-slate-50">
+                    <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Payment Collection Method</h3>
+                    <p class="text-xs text-slate-500 mt-1">Choose how parents pay for their orders on this team store.</p>
+                </div>
+                <div class="p-5">
                     <form action="{{ route('coach.store.description', $store) }}" method="POST" class="space-y-4">
                         @csrf
                         <div>
-                            <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Payment Collection Method</h4>
-                            <p class="text-[11px] text-slate-500 mb-2">Choose how parents pay for their orders on this team store.</p>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                                <label class="flex items-start gap-2.5 p-3 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
+                            <div class="space-y-3 mb-3">
+                                <label class="flex items-start gap-2.5 p-3.5 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
                                     <input type="radio" name="payment_mode" value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'checked' : '' }} class="mt-0.5 text-primary focus:ring-primary">
                                     <div>
-                                        <span class="block text-xs font-bold text-slate-900 uppercase">In-House Collection</span>
-                                        <span class="block text-[10px] text-slate-500 mt-0.5">You collect funds directly from parents.</span>
+                                        <span class="block text-xs font-bold text-slate-900 uppercase">Cash Collection</span>
+                                        <span class="block text-[11px] text-slate-500 mt-0.5 leading-relaxed">You collect funds from the parents directly and we send you an invoice for the manufacturing total.</span>
                                     </div>
                                 </label>
-                                <label class="flex items-start gap-2.5 p-3 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
+                                <label class="flex items-start gap-2.5 p-3.5 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
                                     <input type="radio" name="payment_mode" value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'checked' : '' }} class="mt-0.5 text-primary focus:ring-primary">
                                     <div>
-                                        <span class="block text-xs font-bold text-slate-900 uppercase">Online Card Payment</span>
-                                        <span class="block text-[10px] text-slate-500 mt-0.5">Parents pay online at checkout via Stripe.</span>
+                                        <span class="block text-xs font-bold text-slate-900 uppercase">Online Credit Card Payment</span>
+                                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">This option is available once your store has closed and the total order is reviewed to ensure the minimum order quantity for each item is met.</p>
+                                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Once enabled, parents can go back to store’s link, click their order at the bottom of the page and make payment at that point.</p>
+                                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">If you’ve marked up your items, proceeds earned from your sale will be sent to you via Intuit Quickbooks direct deposit once funds have cleared.</p>
                                     </div>
                                 </label>
                             </div>
@@ -979,7 +988,6 @@
                     </form>
                 </div>
             </div>
-            @endif
 
             {{-- Team Builder: Add Items --}}
             @if(!$isLocked)

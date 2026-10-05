@@ -70,6 +70,20 @@
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Shipping Address</label>
                                 <textarea name="shipping_address" rows="3" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm" placeholder="Shipping Address submitted by Coach...">{{ old('shipping_address', $store->shipping_address) }}</textarea>
                             </div>
+                            <div class="col-span-2 pt-2">
+                                <label class="flex items-start gap-3 p-4 bg-blue-50/60 border border-blue-200 rounded-xl cursor-pointer hover:bg-blue-50 transition-colors">
+                                    <input type="checkbox" name="is_tax_exempt" value="1" {{ old('is_tax_exempt', $store->is_tax_exempt || $store->user?->is_tax_exempt) ? 'checked' : '' }} class="mt-0.5 rounded text-primary focus:ring-primary w-5 h-5">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="block text-xs font-black uppercase tracking-wider text-slate-900">501(c)(3) Nonprofit / Tax-Exempt Store (Waive Sales Tax)</span>
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">Nonprofit</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                                            Check this box to waive sales tax (7.5%) for this store. All orders placed under this store will have sales tax set to $0.00.
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                         <div class="flex gap-3">
                             <button type="submit" class="btn btn-primary py-3 px-8 text-sm uppercase tracking-wider">Save Changes</button>

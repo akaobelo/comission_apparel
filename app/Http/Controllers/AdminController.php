@@ -397,7 +397,10 @@ class AdminController extends Controller
             'sport'        => ['required', 'string', 'max:100'],
             'status'       => ['required', 'in:active,declined'],
             'sales_rep'    => ['nullable', 'string', 'max:255'],
+            'is_tax_exempt'=> ['nullable', 'boolean'],
         ]);
+
+        $validated['is_tax_exempt'] = $request->boolean('is_tax_exempt');
 
         $user->update($validated);
 
@@ -1008,10 +1011,12 @@ class AdminController extends Controller
             'order_deadline' => ['nullable', 'date'],
             'status'       => ['required', 'in:pending,approved,submitted_to_admin,declined'],
             'pricing_approved' => ['boolean'],
+            'is_tax_exempt'    => ['boolean'],
             'shipping_address' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $validated['pricing_approved'] = $request->boolean('pricing_approved');
+        $validated['is_tax_exempt'] = $request->boolean('is_tax_exempt');
 
         $store->update($validated);
 

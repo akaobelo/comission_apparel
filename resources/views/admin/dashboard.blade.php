@@ -741,7 +741,12 @@
                             <td class="px-5 py-4">
                                 <div class="font-bold text-slate-900">{{ $coach->last_name }}</div>
                             </td>
-                            <td class="px-5 py-4 text-slate-700">{{ $coach->organization ?? '—' }}</td>
+                            <td class="px-5 py-4 text-slate-700">
+                                <div>{{ $coach->organization ?? '—' }}</div>
+                                @if($coach->is_tax_exempt)
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200 mt-1">501(c)(3) Exempt</span>
+                                @endif
+                            </td>
                             <td class="px-5 py-4 text-slate-700">{{ $coach->sport ?? '—' }}</td>
                             <td class="px-5 py-4 text-slate-700 font-medium">{{ $coach->sales_rep ?: '—' }}</td>
                             <td class="px-5 py-4">

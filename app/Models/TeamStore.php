@@ -17,6 +17,7 @@ class TeamStore extends Model
         'package_type',
         'payment_mode',
         'pricing_approved',
+        'is_tax_exempt',
         'is_archived',
         'shipping_address',
         'sort_order',
@@ -32,9 +33,15 @@ class TeamStore extends Model
         return !$this->isOnlinePayment();
     }
 
+    public function isTaxExempt(): bool
+    {
+        return (bool) ($this->is_tax_exempt || $this->user?->is_tax_exempt);
+    }
+
     protected $casts = [
         'order_deadline' => 'datetime',
         'pricing_approved' => 'boolean',
+        'is_tax_exempt' => 'boolean',
     ];
 
     protected static function booted()
