@@ -572,10 +572,15 @@
                                         <div class="text-sm text-slate-500 mt-0.5">
                                             Coach: {{ $coach?->name ?? 'Unknown' }} — {{ $coach?->organization ?? '—' }}
                                         </div>
-                                        <div class="mt-1">
+                                        <div class="mt-1 flex items-center gap-2 flex-wrap">
                                             <span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md border border-slate-200">
                                                 Status: {{ $batchOrders->first()?->status ?? 'Submitted' }}
                                             </span>
+                                            @if($batchOrders->first()?->payment_status === 'paid')
+                                                <span class="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold uppercase tracking-wider rounded-md border border-green-200">
+                                                    ✓ Paid Online
+                                                </span>
+                                            @endif
                                         </div>
                                         <div class="mt-3 grid grid-cols-3 gap-4">
                                             <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">

@@ -129,7 +129,7 @@ class CoachController extends Controller
         $store = TeamStore::create([
             'user_id'      => $user->id,
             'name'         => $request->name,
-            'description'  => $request->description,
+            'description'  => null,
             'slug'         => Str::slug($request->name) . '-' . strtolower(Str::random(6)),
             'package_type' => $request->package_type,
             'payment_mode' => $request->payment_mode ?? 'in_house',
@@ -589,28 +589,24 @@ class CoachController extends Controller
         if ($store->user_id !== $request->user()->id) abort(403);
 
         $request->validate([
-            'description'  => ['nullable', 'string', 'max:5000'],
-            'payment_mode' => ['nullable', 'in:in_house,online'],
+            'payment_mode' => ['required', 'in:in_house,online'],
         ]);
 
-        $updateData = ['description' => $request->description];
-        if ($request->filled('payment_mode')) {
-            $updateData['payment_mode'] = $request->payment_mode;
-            if ($request->payment_mode === 'online') {
-                $store->parentOrders()->where(function($q) {
-                    $q->whereNull('payment_status')
-                      ->orWhere('payment_status', 'not_applicable');
-                })->update(['payment_status' => 'pending']);
-            } else {
-                $store->parentOrders()->where('payment_status', 'pending')
-                      ->update(['payment_status' => 'not_applicable']);
-            }
+        $store->update(['payment_mode' => $request->payment_mode]);
+
+        if ($request->payment_mode === 'online') {
+            $store->parentOrders()->where(function($q) {
+                $q->whereNull('payment_status')
+                  ->orWhere('payment_status', 'not_applicable');
+            })->update(['payment_status' => 'pending']);
+        } else {
+            $store->parentOrders()->where('payment_status', 'pending')
+                  ->update(['payment_status' => 'not_applicable']);
         }
 
-        $store->update($updateData);
-
+        $label = $request->payment_mode === 'online' ? 'Online Credit Card Payment' : 'Cash Collection (In-House)';
         return redirect()->route('coach.dashboard')
-            ->with('success', 'Store payment, production & delivery details updated.');
+            ->with('success', "Payment collection method updated to: {$label}.");
     }
 
     public function updateProfileLogo(Request $request)
@@ -662,6 +658,7 @@ class CoachController extends Controller
             $design = $user->designCatalog()->find($designId);
             if (!$design) continue;
 
+            $unitPrice = (float) $design->wholesale_price;
             $qty = max(1, intval($details['qty'] ?? 1));
 
             $types = $design->types ?? [];
@@ -677,6 +674,7 @@ class CoachController extends Controller
                     'qty'          => $qty,
                     'gender'       => $details['gender'] ?? 'Unisex',
                     'sizes'        => [],
+                    'unit_price'   => $unitPrice,
                 ];
                 // Apply the sizes selected
                 foreach ($details['package_sizes'] as $t => $size) {
@@ -696,6 +694,7 @@ class CoachController extends Controller
                             'qty'          => $qty,
                             'gender'       => $details['gender'] ?? 'Unisex',
                             'sizes'        => [],
+                            'unit_price'   => $unitPrice,
                         ];
                         // Apply this size to all sized types in the item
                         foreach ($types as $t) {
@@ -716,6 +715,7 @@ class CoachController extends Controller
                     'qty'          => $qty,
                     'gender'       => $details['gender'] ?? 'Unisex',
                     'sizes'        => [],
+                    'unit_price'   => $unitPrice,
                 ];
                 $itemsJson[] = $entry;
             }
@@ -729,6 +729,13 @@ class CoachController extends Controller
         $firstName = $request->order_type === 'item' ? 'Bulk' : trim($request->athlete_first_name);
         $lastName = $request->order_type === 'item' ? 'Order' : trim($request->athlete_last_name);
 
+        $lineSubtotal = 0.0;
+        foreach ($itemsJson as $item) {
+            $qty = max(1, intval($item['qty'] ?? 1));
+            $unitPrice = (float) ($item['unit_price'] ?? 0);
+            $lineSubtotal += ($unitPrice * $qty);
+        }
+
         ParentOrder::create([
             'user_id'             => $user->id,
             'team_store_id'       => null,
@@ -740,7 +747,9 @@ class CoachController extends Controller
             'backpack_name'       => $request->backpack_name,
             'items_json'          => $itemsJson,
             'status'              => 'Draft',
-            'total_retail_price'  => 0,
+            'payment_status'      => 'pending_payment',
+            'subtotal'            => $lineSubtotal,
+            'total_retail_price'  => $lineSubtotal,
         ]);
 
         return redirect()->route('coach.dashboard')->with('success', 'Order line added to your draft.')->with('activeCoachTab', 'create_order');
@@ -756,25 +765,242 @@ class CoachController extends Controller
             ->get();
 
         if ($draftOrders->isEmpty()) {
-            return redirect()->route('coach.dashboard')->with('error', 'You have no draft orders to submit.');
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'You have no draft orders to submit.')
+                ->with('activeCoachTab', 'create_order');
+        }
+
+        // Calculate and sync accurate subtotal per draft order
+        $subtotal = 0.0;
+        foreach ($draftOrders as $order) {
+            $orderSubtotal = (float) $order->getCalculatedSubtotal();
+            $order->update([
+                'subtotal'           => $orderSubtotal,
+                'total_retail_price' => $orderSubtotal,
+            ]);
+            $subtotal += $orderSubtotal;
+        }
+
+        if ($subtotal <= 0) {
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'The draft orders total must be greater than $0.00.')
+                ->with('activeCoachTab', 'create_order');
         }
 
         $batchId = (string) Str::uuid();
 
+        // 501(c)(3) tax exemption check
+        $isTaxExempt = (bool) $user->is_tax_exempt;
+        $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
+        $taxAmount = $isTaxExempt ? 0.00 : round($subtotal * $taxRate, 2);
+
+        $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+        $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+        $preFeeTotal = $subtotal + $taxAmount;
+        $grandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
+        $feeAmount = round($grandTotal - $preFeeTotal, 2);
+        $totalPaid = $grandTotal;
+
+        // Assign batch ID and pending payment state
         foreach ($draftOrders as $order) {
             $order->update([
-                'status' => 'Submitted to Admin',
-                'batch_id' => $batchId,
+                'batch_id'       => $batchId,
+                'payment_status' => 'pending_payment',
             ]);
         }
 
-        // Notify Admin
-        \Illuminate\Support\Facades\Notification::send(
-            \App\Models\User::where('role', 'admin')->get(),
-            new \App\Notifications\MasterOrderSubmitted((object) ['name' => $user->organization . ' Direct Order', 'user' => $user])
-        );
+        $stripeSecret = config('services.stripe.secret');
 
-        return redirect()->route('coach.dashboard')->with('success', 'Your direct orders have been submitted to The Commission Apparel!')->with('activeCoachTab', 'create_order');
+        if ($stripeSecret) {
+            try {
+                $stripe = new \Stripe\StripeClient($stripeSecret);
+
+                $lineItems = [];
+                foreach ($draftOrders as $order) {
+                    $itemsJson = is_array($order->items_json) ? $order->items_json : [];
+                    foreach ($itemsJson as $itemEntry) {
+                        $itemPrices = \App\Models\ParentOrder::getItemPrices($itemEntry, null);
+                        $unitPrice = isset($itemEntry['unit_price']) && (float)$itemEntry['unit_price'] > 0
+                            ? (float) $itemEntry['unit_price']
+                            : (float) $itemPrices['retail_price'];
+                        $unitCents = max(50, intval(round($unitPrice * 100)));
+                        $qty = max(1, intval($itemEntry['qty'] ?? 1));
+
+                        // Build sizes description
+                        $sizesDesc = '';
+                        if (!empty($itemEntry['sizes']) && is_array($itemEntry['sizes'])) {
+                            $sizesDesc = ' (Sizes: ' . implode(', ', array_map(fn($k, $v) => "{$k}: {$v}", array_keys($itemEntry['sizes']), $itemEntry['sizes'])) . ')';
+                        }
+                        $genderDesc = isset($itemEntry['gender']) ? ' [' . $itemEntry['gender'] . ']' : '';
+
+                        $lineItems[] = [
+                            'price_data' => [
+                                'currency'     => 'usd',
+                                'unit_amount'  => $unitCents,
+                                'product_data' => [
+                                    'name'        => ($itemEntry['name'] ?? 'Item') . $genderDesc,
+                                    'description' => ($order->athlete_name ?: 'Direct Order') . $sizesDesc,
+                                ],
+                            ],
+                            'quantity'   => $qty,
+                        ];
+                    }
+                }
+
+                if ($taxAmount > 0) {
+                    $lineItems[] = [
+                        'price_data' => [
+                            'currency'     => 'usd',
+                            'unit_amount'  => intval(round($taxAmount * 100)),
+                            'product_data' => [
+                                'name'        => 'Sales Tax (7.5%)',
+                                'description' => 'Mandatory sales tax per transaction',
+                            ],
+                        ],
+                        'quantity'   => 1,
+                    ];
+                }
+
+                if ($feeAmount > 0) {
+                    $lineItems[] = [
+                        'price_data' => [
+                            'currency'     => 'usd',
+                            'unit_amount'  => intval(round($feeAmount * 100)),
+                            'product_data' => [
+                                'name'        => 'Card Processing Fee',
+                                'description' => 'Credit card processing fee',
+                            ],
+                        ],
+                        'quantity'   => 1,
+                    ];
+                }
+
+                $sessionParams = [
+                    'payment_method_types' => ['card'],
+                    'line_items'           => $lineItems,
+                    'mode'                 => 'payment',
+                    'client_reference_id'  => (string) $batchId,
+                    'metadata'             => [
+                        'type'         => 'direct_order',
+                        'batch_id'     => $batchId,
+                        'user_id'      => $user->id,
+                        'organization' => $user->organization ?? '',
+                        'subtotal'     => $subtotal,
+                        'tax_amount'   => $taxAmount,
+                        'fee_amount'   => $feeAmount,
+                        'grand_total'  => $grandTotal,
+                    ],
+                    'success_url'          => route('coach.direct-order.checkout.success') . '?session_id={CHECKOUT_SESSION_ID}&batch_id=' . $batchId,
+                    'cancel_url'           => route('coach.direct-order.checkout.cancel') . '?batch_id=' . $batchId,
+                ];
+
+                if (!empty($user->email) && filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+                    $sessionParams['customer_email'] = $user->email;
+                }
+
+                $session = $stripe->checkout->sessions->create($sessionParams);
+
+                foreach ($draftOrders as $order) {
+                    $order->update([
+                        'stripe_session_id' => $session->id,
+                        'tax_amount'        => $taxAmount,
+                        'fee_amount'        => $feeAmount,
+                        'total_paid'        => $grandTotal,
+                    ]);
+                }
+
+                return redirect($session->url);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Direct order Stripe Checkout creation failed: ' . $e->getMessage());
+                return back()->with('error', 'Payment gateway error: ' . $e->getMessage());
+            }
+        } else {
+            // Local dev simulation when Stripe secret is not configured
+            foreach ($draftOrders as $order) {
+                $order->update([
+                    'status'         => 'Submitted to Admin',
+                    'payment_status' => 'paid',
+                    'paid_at'        => now(),
+                    'total_paid'     => $order->getCalculatedSubtotal(),
+                ]);
+            }
+
+            // Notify Admin
+            \Illuminate\Support\Facades\Notification::send(
+                \App\Models\User::where('role', 'admin')->get(),
+                new \App\Notifications\MasterOrderSubmitted((object) [
+                    'name' => ($user->organization ?: $user->name) . ' Direct Order (Paid Online)',
+                    'user' => $user
+                ])
+            );
+
+            return redirect()->route('coach.dashboard')
+                ->with('success', 'Direct orders successfully paid and submitted to production (Test Simulation)!')
+                ->with('activeCoachTab', 'order_status');
+        }
+    }
+
+    public function directOrderCheckoutSuccess(Request $request)
+    {
+        $user = $request->user();
+        $batchId = $request->query('batch_id');
+        $sessionId = $request->query('session_id');
+
+        $orders = ParentOrder::where('batch_id', $batchId)
+            ->where('user_id', $user->id)
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'Direct order batch not found.')
+                ->with('activeCoachTab', 'create_order');
+        }
+
+        $stripeSecret = config('services.stripe.secret');
+
+        if ($sessionId && $stripeSecret) {
+            try {
+                $stripe = new \Stripe\StripeClient($stripeSecret);
+                $session = $stripe->checkout->sessions->retrieve($sessionId);
+
+                if ($session->payment_status === 'paid') {
+                    $firstOrder = $orders->first();
+                    $alreadyNotified = ($firstOrder->status === 'Submitted to Admin' && $firstOrder->isPaid());
+
+                    foreach ($orders as $order) {
+                        $order->update([
+                            'status'                   => 'Submitted to Admin',
+                            'payment_status'           => 'paid',
+                            'stripe_payment_intent_id' => $session->payment_intent,
+                            'paid_at'                  => now(),
+                        ]);
+                    }
+
+                    if (!$alreadyNotified) {
+                        \Illuminate\Support\Facades\Notification::send(
+                            \App\Models\User::where('role', 'admin')->get(),
+                            new \App\Notifications\MasterOrderSubmitted((object) [
+                                'name' => ($user->organization ?: $user->name) . ' Direct Order (Paid Online)',
+                                'user' => $user
+                            ])
+                        );
+                    }
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Error verifying Stripe session for direct order return: ' . $e->getMessage());
+            }
+        }
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Payment successful! Your direct order has been automatically submitted to production.')
+            ->with('activeCoachTab', 'order_status');
+    }
+
+    public function directOrderCheckoutCancel(Request $request)
+    {
+        return redirect()->route('coach.dashboard')
+            ->with('error', 'Online payment was cancelled. Your draft orders are still saved and ready for checkout whenever you are.')
+            ->with('activeCoachTab', 'create_order');
     }
 
     public function exportDirectOrderBatch(Request $request, $batchId)

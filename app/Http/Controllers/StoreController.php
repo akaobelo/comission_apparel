@@ -336,11 +336,10 @@ class StoreController extends Controller
                     ];
                 }
 
-                $session = $stripe->checkout->sessions->create([
+                $sessionParams = [
                     'payment_method_types' => ['card'],
                     'line_items'           => $lineItems,
                     'mode'                 => 'payment',
-                    'customer_email'       => trim($order->parent_email),
                     'client_reference_id'  => (string) $order->id,
                     'metadata'             => [
                         'order_id'     => $order->id,
@@ -349,7 +348,14 @@ class StoreController extends Controller
                     ],
                     'success_url'          => route('store.checkout.success', ['slug' => $store->slug, 'order' => $order->id]) . '?session_id={CHECKOUT_SESSION_ID}',
                     'cancel_url'           => route('store.checkout.cancel', ['slug' => $store->slug, 'order' => $order->id]),
-                ]);
+                ];
+
+                $parentEmail = trim((string) $order->parent_email);
+                if (!empty($parentEmail) && filter_var($parentEmail, FILTER_VALIDATE_EMAIL)) {
+                    $sessionParams['customer_email'] = $parentEmail;
+                }
+
+                $session = $stripe->checkout->sessions->create($sessionParams);
 
                 $order->update(['stripe_session_id' => $session->id]);
 
@@ -385,12 +391,19 @@ class StoreController extends Controller
                 $session = $stripe->checkout->sessions->retrieve($sessionId);
 
                 if ($session->payment_status === 'paid') {
-                    $order->update([
+                    $updateFields = [
                         'payment_status'          => 'paid',
                         'status'                  => 'Submitted',
                         'stripe_payment_intent_id'=> $session->payment_intent,
                         'paid_at'                 => now(),
-                    ]);
+                    ];
+
+                    $checkoutEmail = $session->customer_details->email ?? null;
+                    if (empty($order->parent_email) && !empty($checkoutEmail)) {
+                        $updateFields['parent_email'] = $checkoutEmail;
+                    }
+
+                    $order->update($updateFields);
 
                     $parentEmail = trim($order->parent_email);
                     $parentPhone = preg_replace('/[^0-9]/', '', (string)$order->parent_phone);

@@ -84,9 +84,9 @@
                                 </p>
                             </div>
                             <div class="col-span-2">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Description</label>
-                                <textarea name="description" rows="3" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm" placeholder="Optional store description for the coach...">{{ old('description', $store->description) }}</textarea>
-                                <p class="text-xs text-slate-500 mt-1.5">Displayed under the "Payment, Production & Delivery" section on the public storefront.</p>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Production, Payment, and Shipping Notes (Super Admin Only)</label>
+                                <textarea name="description" rows="3" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm" placeholder="Optional custom notes for production, payment, or shipping...">{{ old('description', $store->description) }}</textarea>
+                                <p class="text-xs text-slate-500 mt-1.5">Displayed inside the "Production, Payment, and Shipping" dropdown on the public storefront. Only editable by Super Admin.</p>
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Shipping Address</label>

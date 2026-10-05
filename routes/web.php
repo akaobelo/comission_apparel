@@ -264,6 +264,8 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
         return redirect()->route('coach.dashboard');
     });
     Route::post('/coach/direct-order/finalize', [CoachController::class, 'finalizeDirectOrders'])->name('coach.direct-order.finalize');
+    Route::get('/coach/direct-order/checkout/success', [CoachController::class, 'directOrderCheckoutSuccess'])->name('coach.direct-order.checkout.success');
+    Route::get('/coach/direct-order/checkout/cancel', [CoachController::class, 'directOrderCheckoutCancel'])->name('coach.direct-order.checkout.cancel');
     Route::get('/coach/direct-order/export/{batchId}', [CoachController::class, 'exportDirectOrderBatch'])->name('coach.direct-order.export');
     Route::post('/coach/direct-order/archive/{batchId}', [CoachController::class, 'archiveDirectOrderBatch'])->name('coach.direct-order.archive');
 });

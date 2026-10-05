@@ -157,7 +157,7 @@ class AdminController extends Controller
         // Finalized direct orders (no team store)
         $finalizedDirectOrders = ParentOrder::whereNull('team_store_id')
             ->whereNotNull('batch_id')
-            ->where('status', '!=', 'Pending')
+            ->whereNotIn('status', ['Pending', 'Draft'])
             ->where('is_archived', false)
             ->with('user')
             ->latest()

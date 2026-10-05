@@ -254,24 +254,58 @@
                   }">
                 @csrf
 
-                @if(!empty(trim($store->description ?? '')))
-                {{-- Store Notes / Payment, Production & Delivery Accordion --}}
+                {{-- Store Notes / Production, Payment, and Shipping Accordion --}}
                 <div class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-4 overflow-hidden" id="store-info-section">
                     <button type="button" @click="storeInfoOpen = !storeInfoOpen" class="w-full flex items-center justify-between p-4 md:p-4 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="storeInfoOpen ? 'border-slate-100 bg-slate-50/50' : ''">
                         <div>
-                            <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Payment, Production & Delivery</h2>
-                            <p class="text-xs font-bold text-slate-500 mt-1" x-show="!storeInfoOpen"><span class="text-secondary font-black">CLICK HERE</span> <span class="italic">for details on how to make payment, production time, and delivery process.</span></p>
+                            <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Production, Payment, and Shipping</h2>
+                            <p class="text-xs font-bold text-slate-500 mt-1" x-show="!storeInfoOpen"><span class="text-secondary font-black">CLICK HERE</span> <span class="italic">for details on production time, payment methods, and shipping process.</span></p>
                         </div>
                         <div class="flex items-center gap-4 flex-shrink-0 ml-3">
                             <svg class="w-6 h-6 text-slate-400 transition-transform duration-300" :class="storeInfoOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </button>
 
-                    <div x-show="storeInfoOpen" x-transition.opacity class="px-6 md:px-8 pb-6 md:pb-8 pt-6">
-                        <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-medium border-l-4 border-secondary pl-4 py-1">{{ $store->description }}</div>
+                    <div x-show="storeInfoOpen" x-transition.opacity class="px-6 md:px-8 pb-6 md:pb-8 pt-6 space-y-4">
+                        @if(!empty(trim($store->description ?? '')))
+                            <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-medium border-l-4 border-secondary pl-4 py-1">
+                                {{ $store->description }}
+                            </div>
+                        @endif
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
+                            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                                    <span class="text-xs font-black uppercase tracking-wider text-slate-900">Production</span>
+                                </div>
+                                <p class="text-xs text-slate-600 leading-relaxed">
+                                    A minimum order of 10 units per item is required. Orders that do not meet this minimum will not be processed.
+                                </p>
+                            </div>
+
+                            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                    <span class="text-xs font-black uppercase tracking-wider text-slate-900">Payment</span>
+                                </div>
+                                <p class="text-xs text-slate-600 leading-relaxed">
+                                    Please contact your store administrator to confirm how payment will be collected. Administrators may choose “Cash Collection,” where all funds are collected directly by the organization and submitted as a single payment, or “Online Credit Card Payment.” Online payment may be enabled after the store deadline has passed and the administrator has reviewed the order details. Once enabled, patrons can return to the store link, locate their order at the bottom of the page, and click to pay.
+                                </p>
+                            </div>
+
+                            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                    <span class="text-xs font-black uppercase tracking-wider text-slate-900">Shipping</span>
+                                </div>
+                                <p class="text-xs text-slate-600 leading-relaxed">
+                                    All items will be shipped to one centralized location provided by the store administrator. We do not ship orders to individual addresses. Items are typically delivered within 21 days of receiving payment.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                @endif
 
                 @if(!$isClosed)
                 {{-- Athlete Info --}}

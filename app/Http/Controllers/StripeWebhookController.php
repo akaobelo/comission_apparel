@@ -64,7 +64,41 @@ class StripeWebhookController extends Controller
     {
         $sessionId = $session->id ?? null;
         $orderId = $session->metadata->order_id ?? null;
+        $batchId = $session->metadata->batch_id ?? null;
+        $orderType = $session->metadata->type ?? null;
         $paymentIntentId = $session->payment_intent ?? null;
+
+        if ($orderType === 'direct_order' || $batchId) {
+            $batchOrders = ParentOrder::where('batch_id', $batchId)->get();
+            if ($batchOrders->isNotEmpty()) {
+                $firstOrder = $batchOrders->first();
+                if (!$firstOrder->isPaid()) {
+                    foreach ($batchOrders as $bo) {
+                        $bo->update([
+                            'status'                   => 'Submitted to Admin',
+                            'payment_status'           => 'paid',
+                            'stripe_payment_intent_id' => $paymentIntentId ?? $bo->stripe_payment_intent_id,
+                            'paid_at'                  => now(),
+                        ]);
+                    }
+                    if ($firstOrder->user) {
+                        try {
+                            \Illuminate\Support\Facades\Notification::send(
+                                \App\Models\User::where('role', 'admin')->get(),
+                                new \App\Notifications\MasterOrderSubmitted((object) [
+                                    'name' => ($firstOrder->user->organization ?: $firstOrder->user->name) . ' Direct Order (Paid Online)',
+                                    'user' => $firstOrder->user
+                                ])
+                            );
+                        } catch (\Exception $e) {
+                            Log::error("Failed to notify admin on webhook direct order: " . $e->getMessage());
+                        }
+                    }
+                    Log::info("Direct order batch {$batchId} marked as paid and submitted to admin via Stripe webhook.");
+                }
+                return;
+            }
+        }
 
         $order = null;
         if ($orderId) {
