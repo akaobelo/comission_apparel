@@ -369,19 +369,11 @@
                                         <div>
                                             <div class="font-bold text-sm text-slate-900">{{ $store->name }}</div>
                                             <div class="text-xs text-slate-500">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
+                                            @if($store->order_deadline || $store->isTaxExempt())
                                             <div class="flex items-center gap-2 mt-1 flex-wrap">
                                                 @if($store->order_deadline)
                                                     <span class="text-[10px] font-bold text-{{ $store->order_deadline->isPast() ? 'red' : 'slate' }}-500 uppercase tracking-wide">
                                                         Deadline: {{ $store->order_deadline->format('M d, Y') }}
-                                                    </span>
-                                                @endif
-                                                @if(($store->payment_mode ?? 'in_house') === 'online')
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                                        💳 Online Credit Card (Stripe)
-                                                    </span>
-                                                @else
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
-                                                        💵 Cash Collection
                                                     </span>
                                                 @endif
                                                 @if($store->isTaxExempt())
@@ -390,6 +382,7 @@
                                                     </span>
                                                 @endif
                                             </div>
+                                            @endif
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
@@ -461,21 +454,10 @@
                                                 <span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md border border-slate-200">
                                                     Status: {{ $batchOrders->first()?->status ?? 'Submitted' }}
                                                 </span>
-                                                @if($store)
-                                                    @if(($store->payment_mode ?? 'in_house') === 'online')
-                                                        <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider rounded-md border border-emerald-200">
-                                                            💳 Online (Stripe)
-                                                        </span>
-                                                    @else
-                                                        <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-wider rounded-md border border-amber-200">
-                                                            💵 Cash Collection
-                                                        </span>
-                                                    @endif
-                                                    @if($store->isTaxExempt())
-                                                        <span class="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[9px] font-black uppercase tracking-wider rounded border border-blue-200">
-                                                            501(c)(3) Exempt
-                                                        </span>
-                                                    @endif
+                                                @if($store && $store->isTaxExempt())
+                                                    <span class="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[9px] font-black uppercase tracking-wider rounded border border-blue-200">
+                                                        501(c)(3) Exempt
+                                                    </span>
                                                 @endif
                                                 <div class="text-xs text-slate-400 uppercase tracking-wide font-bold">Batch Submitted: {{ $batchOrders->first()?->created_at?->format('M d, Y') ?? 'Unknown' }}</div>
                                             </div>
