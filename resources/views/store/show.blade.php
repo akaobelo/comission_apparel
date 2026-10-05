@@ -266,14 +266,8 @@
                         </div>
                     </button>
 
-                    <div x-show="storeInfoOpen" x-transition.opacity class="px-6 md:px-8 pb-6 md:pb-8 pt-6 space-y-4">
-                        @if(!empty(trim($store->description ?? '')))
-                            <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-medium border-l-4 border-secondary pl-4 py-1">
-                                {{ $store->description }}
-                            </div>
-                        @endif
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
+                    <div x-show="storeInfoOpen" x-transition.opacity class="px-6 md:px-8 pb-6 md:pb-8 pt-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                             <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col">
                                 <div class="flex items-center gap-2 mb-2">
                                     <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
