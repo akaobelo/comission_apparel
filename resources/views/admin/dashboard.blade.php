@@ -369,15 +369,31 @@
                                         <div>
                                             <div class="font-bold text-sm text-slate-900">{{ $store->name }}</div>
                                             <div class="text-xs text-slate-500">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
-                                            @if($store->order_deadline)
-                                                <div class="text-[10px] font-bold text-{{ $store->order_deadline->isPast() ? 'red' : 'slate' }}-500 mt-0.5 uppercase tracking-wide">
-                                                    Deadline: {{ $store->order_deadline->format('M d, Y') }}
-                                                </div>
-                                            @endif
+                                            <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                                @if($store->order_deadline)
+                                                    <span class="text-[10px] font-bold text-{{ $store->order_deadline->isPast() ? 'red' : 'slate' }}-500 uppercase tracking-wide">
+                                                        Deadline: {{ $store->order_deadline->format('M d, Y') }}
+                                                    </span>
+                                                @endif
+                                                @if(($store->payment_mode ?? 'in_house') === 'online')
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                        💳 Online Credit Card (Stripe)
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                                                        💵 Cash Collection
+                                                    </span>
+                                                @endif
+                                                @if($store->isTaxExempt())
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">
+                                                        501(c)(3) Exempt
+                                                    </span>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="flex items-center gap-2 flex-shrink-0">
-                                        <div class="flex items-center gap-1.5 mr-2">
+                                    <div class="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+                                        <div class="flex items-center gap-1.5 mr-1">
                                             <span class="text-[10px] font-black uppercase text-slate-400">Sort:</span>
                                             <input type="number" 
                                                    name="items[{{ $loop->index }}][order]" 
@@ -385,6 +401,15 @@
                                                    class="w-14 bg-white border border-slate-300 rounded px-2 py-1 text-xs text-slate-900 text-center font-bold focus:border-primary focus:outline-none shadow-sm">
                                         </div>
                                         <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $store->id }}">
+
+                                        {{-- Quick Payment Mode Switcher --}}
+                                        <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="inline-block">
+                                            @csrf
+                                            <select name="payment_mode" onchange="this.form.submit()" title="Change payment collection method" class="text-xs font-bold rounded-lg px-2.5 py-1.5 border shadow-sm cursor-pointer outline-none transition-colors {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100' }}">
+                                                <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash Collection</option>
+                                                <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Online (Stripe)</option>
+                                            </select>
+                                        </form>
 
                                         <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this active store?')">
                                             @csrf
@@ -432,10 +457,26 @@
                                             <div class="text-sm text-slate-500 mt-0.5">
                                                 Coach: {{ $coach ? $coach->name : 'Unknown' }} — {{ $coach ? $coach->organization : '—' }}
                                             </div>
-                                            <div class="flex items-center gap-2 mt-1">
+                                            <div class="flex items-center gap-2 mt-1 flex-wrap">
                                                 <span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md border border-slate-200">
                                                     Status: {{ $batchOrders->first()?->status ?? 'Submitted' }}
                                                 </span>
+                                                @if($store)
+                                                    @if(($store->payment_mode ?? 'in_house') === 'online')
+                                                        <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider rounded-md border border-emerald-200">
+                                                            💳 Online (Stripe)
+                                                        </span>
+                                                    @else
+                                                        <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-wider rounded-md border border-amber-200">
+                                                            💵 Cash Collection
+                                                        </span>
+                                                    @endif
+                                                    @if($store->isTaxExempt())
+                                                        <span class="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[9px] font-black uppercase tracking-wider rounded border border-blue-200">
+                                                            501(c)(3) Exempt
+                                                        </span>
+                                                    @endif
+                                                @endif
                                                 <div class="text-xs text-slate-400 uppercase tracking-wide font-bold">Batch Submitted: {{ $batchOrders->first()?->created_at?->format('M d, Y') ?? 'Unknown' }}</div>
                                             </div>
                                             <div class="mt-3 grid grid-cols-3 gap-4">
@@ -480,6 +521,15 @@
                                                         <option value="Shipped" @if(($batchOrders->first()?->status ?? '') == 'Shipped') selected @endif>Shipped</option>
                                                         <option value="Delivered" @if(($batchOrders->first()?->status ?? '') == 'Delivered') selected @endif>Delivered</option>
                                                         <option value="Completed" @if(($batchOrders->first()?->status ?? '') == 'Completed') selected @endif>Completed</option>
+                                                    </select>
+                                                </form>
+
+                                                <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2 gap-2 shadow-sm">
+                                                    @csrf
+                                                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Payment Mode:</span>
+                                                    <select name="payment_mode" onchange="this.form.submit()" class="text-xs font-bold rounded px-2 py-1 outline-none border transition-colors w-full max-w-[150px] {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-300' }}">
+                                                        <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash Collection</option>
+                                                        <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Online (Stripe)</option>
                                                     </select>
                                                 </form>
                                             @endif

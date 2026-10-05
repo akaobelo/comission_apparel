@@ -1012,6 +1012,7 @@ class AdminController extends Controller
             'status'       => ['required', 'in:pending,approved,submitted_to_admin,declined'],
             'pricing_approved' => ['boolean'],
             'is_tax_exempt'    => ['boolean'],
+            'payment_mode'     => ['required', 'in:in_house,online'],
             'shipping_address' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -1022,6 +1023,18 @@ class AdminController extends Controller
 
         return redirect()->route('admin.store.edit', $store)
             ->with('success', "Store \"{$store->name}\" has been updated.");
+    }
+
+    public function updateStorePaymentMode(Request $request, TeamStore $store)
+    {
+        $validated = $request->validate([
+            'payment_mode' => ['required', 'in:in_house,online'],
+        ]);
+
+        $store->update(['payment_mode' => $validated['payment_mode']]);
+
+        $label = $validated['payment_mode'] === 'online' ? 'Online Credit Card Payment' : 'Cash Collection (In-House)';
+        return back()->with('success', "Store \"{$store->name}\" payment mode updated to: {$label}.");
     }
 
     public function updateStorePricing(Request $request, TeamStore $store)

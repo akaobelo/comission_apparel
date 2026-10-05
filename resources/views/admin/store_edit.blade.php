@@ -61,6 +61,28 @@
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Order Deadline</label>
                                 <input type="date" name="order_deadline" value="{{ old('order_deadline', $store->order_deadline?->format('Y-m-d')) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                             </div>
+                            <div class="col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="block text-xs font-black uppercase tracking-wider text-slate-900">Payment Collection Method</label>
+                                    @if(($store->payment_mode ?? 'in_house') === 'online')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                            Online Credit Card Active
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                                            Cash Collection Active
+                                        </span>
+                                    @endif
+                                </div>
+                                <select name="payment_mode" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 font-bold focus:border-primary focus:outline-none shadow-sm">
+                                    <option value="in_house" {{ old('payment_mode', $store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash Collection (In-House by Coach)</option>
+                                    <option value="online" {{ old('payment_mode', $store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Online Credit Card Payment (Stripe Checkout)</option>
+                                </select>
+                                <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+                                    <strong>Cash Collection:</strong> Coach collects funds directly from parents; Commission Apparel invoices coach for manufacturing.<br>
+                                    <strong>Online Credit Card Payment:</strong> Enabled post-closure after reviewing MOQ (15 items). Parents visit the store link, view their submitted order at the bottom, and pay via Stripe credit card checkout.
+                                </p>
+                            </div>
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Description</label>
                                 <textarea name="description" rows="3" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm" placeholder="Optional store description for the coach...">{{ old('description', $store->description) }}</textarea>
