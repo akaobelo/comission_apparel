@@ -910,15 +910,20 @@
                                             {{-- Payment Section inside Placed Orders Modal --}}
                                             @php
                                                 $isTaxExempt = (bool) ($store->isTaxExempt() || $order->user?->is_tax_exempt);
-                                                $orderSubtotal = (float) ($order->subtotal > 0 ? $order->subtotal : $order->total_retail_price);
+                                                $orderSubtotal = (float) $order->getCalculatedSubtotal($store);
                                                 $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
                                                 $orderTax = $isTaxExempt ? 0.00 : (float) ($order->tax_amount > 0 ? $order->tax_amount : round($orderSubtotal * $taxRate, 2));
-                                                $feePercent = (float) config('services.stripe.fee_percent', 0.029);
-                                                $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
-                                                $preFeeTotal = $orderSubtotal + $orderTax;
-                                                $computedGrandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
-                                                $orderFee = (float) ($order->fee_amount > 0 ? $order->fee_amount : round($computedGrandTotal - $preFeeTotal, 2));
-                                                $orderGrandTotal = (float) ($order->total_paid > 0 ? $order->total_paid : $computedGrandTotal);
+                                                if ($orderSubtotal > 0) {
+                                                    $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+                                                    $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+                                                    $preFeeTotal = $orderSubtotal + $orderTax;
+                                                    $computedGrandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
+                                                    $orderFee = (float) ($order->fee_amount > 0 ? $order->fee_amount : round($computedGrandTotal - $preFeeTotal, 2));
+                                                    $orderGrandTotal = (float) ($order->total_paid > 0 ? $order->total_paid : $computedGrandTotal);
+                                                } else {
+                                                    $orderFee = 0.00;
+                                                    $orderGrandTotal = 0.00;
+                                                }
                                             @endphp
 
                                             @if($store->isOnlinePayment())
@@ -967,9 +972,19 @@
                                                     </div>
 
                                                     @if(!$order->isPaid())
-                                                        <form action="{{ route('store.order.pay', ['slug' => $store->slug, 'order' => $order->id]) }}" method="POST" target="_blank" class="mt-4">
+                                                        <form action="{{ route('store.order.pay', ['slug' => $store->slug, 'order' => $order->id]) }}" method="POST" target="_blank" class="mt-4" x-data="{ agreed: false }">
                                                             @csrf
-                                                            <button type="submit" class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-wider text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                                                            <label class="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50/70 border border-amber-200 cursor-pointer select-none mb-3 hover:bg-amber-50 transition-colors">
+                                                                <input type="checkbox" name="policy_agreed" x-model="agreed" required class="mt-0.5 rounded text-primary focus:ring-primary w-4 h-4">
+                                                                <span class="text-xs text-slate-700 leading-snug">
+                                                                    I understand and agree: <strong class="text-slate-900">All sales are final and nonrefundable</strong>. Custom apparel cannot be returned or cancelled once submitted into production.
+                                                                </span>
+                                                            </label>
+
+                                                            <button type="submit" 
+                                                                    :disabled="!agreed"
+                                                                    :class="!agreed ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-emerald-600 hover:bg-emerald-700 shadow-md'"
+                                                                    class="w-full py-3 px-4 text-white font-black uppercase tracking-wider text-xs rounded-xl transition-all flex items-center justify-center gap-2">
                                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                                                                 <span>Pay Now with Credit Card</span>
                                                             </button>

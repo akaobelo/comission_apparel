@@ -58,6 +58,28 @@ class ParentOrder extends Model
         return $this->athlete_first_name . ' ' . $this->athlete_last_name;
     }
 
+    public function getCalculatedSubtotal($store = null): float
+    {
+        if ((float) $this->subtotal > 0) {
+            return (float) $this->subtotal;
+        }
+        if ((float) $this->total_retail_price > 0) {
+            return (float) $this->total_retail_price;
+        }
+
+        $store = $store ?: $this->teamStore;
+        $items = is_array($this->items_json) ? $this->items_json : [];
+        $total = 0.0;
+
+        foreach ($items as $item) {
+            $qty = max(1, (int) ($item['qty'] ?? 1));
+            $prices = self::getItemPrices($item, $store);
+            $total += ($prices['retail_price'] * $qty);
+        }
+
+        return (float) $total;
+    }
+
     protected $casts = [
         'items_json' => 'array',
         'is_edited'  => 'boolean',

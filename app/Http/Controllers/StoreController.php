@@ -215,7 +215,7 @@ class StoreController extends Controller
             'special_notes'       => $request->special_notes,
             'items_json'          => $itemsJson,
             'status'              => 'Submitted',
-            'payment_status'      => 'pending',
+            'payment_status'      => $store->isOnlinePayment() ? 'pending' : 'not_applicable',
             'subtotal'            => $subtotal,
             'tax_amount'          => $taxAmount,
             'fee_amount'          => $feeAmount,
@@ -257,29 +257,30 @@ class StoreController extends Controller
         }
 
         $fullName = $order->athlete_name;
-        $subtotal = (float) ($order->subtotal > 0 ? $order->subtotal : collect($itemsJson)->sum('line_total'));
+        $subtotal = (float) $order->getCalculatedSubtotal($store);
         $isTaxExempt = (bool) ($store->isTaxExempt() || $order->user?->is_tax_exempt);
         $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
-        $taxAmount = (float) $order->tax_amount;
-        $feeAmount = (float) $order->fee_amount;
+        $taxAmount = $isTaxExempt ? 0.00 : (float) ($order->tax_amount > 0 ? $order->tax_amount : round($subtotal * $taxRate, 2));
 
-        // Recalculate tax & fees if tax exempt or not yet computed
-        if ($isTaxExempt || ($taxAmount <= 0 && $feeAmount <= 0)) {
-            $taxAmount = $isTaxExempt ? 0.00 : round($subtotal * $taxRate, 2);
-
+        if ($subtotal > 0) {
             $feePercent = (float) config('services.stripe.fee_percent', 0.029);
             $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
             $preFeeTotal = $subtotal + $taxAmount;
             $grandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
-            $feeAmount = round($grandTotal - $preFeeTotal, 2);
-
-            $order->update([
-                'subtotal'   => $subtotal,
-                'tax_amount' => $taxAmount,
-                'fee_amount' => $feeAmount,
-                'total_paid' => $grandTotal,
-            ]);
+            $feeAmount = (float) ($order->fee_amount > 0 ? $order->fee_amount : round($grandTotal - $preFeeTotal, 2));
+            $totalPaid = (float) ($order->total_paid > 0 ? $order->total_paid : $grandTotal);
+        } else {
+            $feeAmount = 0.00;
+            $grandTotal = 0.00;
+            $totalPaid = 0.00;
         }
+
+        $order->update([
+            'subtotal'   => $subtotal,
+            'tax_amount' => $taxAmount,
+            'fee_amount' => $feeAmount,
+            'total_paid' => $totalPaid,
+        ]);
 
         $stripeSecret = config('services.stripe.secret');
 
@@ -289,7 +290,11 @@ class StoreController extends Controller
 
                 $lineItems = [];
                 foreach ($itemsJson as $itemEntry) {
-                    $unitCents = max(50, intval(round(($itemEntry['unit_price'] ?? 0) * 100)));
+                    $itemPrices = \App\Models\ParentOrder::getItemPrices($itemEntry, $store);
+                    $unitPrice = isset($itemEntry['unit_price']) && (float)$itemEntry['unit_price'] > 0
+                        ? (float) $itemEntry['unit_price']
+                        : (float) $itemPrices['retail_price'];
+                    $unitCents = max(50, intval(round($unitPrice * 100)));
                     $lineItems[] = [
                         'price_data' => [
                             'currency'     => 'usd',

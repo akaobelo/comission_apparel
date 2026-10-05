@@ -1021,6 +1021,16 @@ class AdminController extends Controller
 
         $store->update($validated);
 
+        if ($validated['payment_mode'] === 'online') {
+            $store->parentOrders()->where(function($q) {
+                $q->whereNull('payment_status')
+                  ->orWhere('payment_status', 'not_applicable');
+            })->update(['payment_status' => 'pending']);
+        } else {
+            $store->parentOrders()->where('payment_status', 'pending')
+                  ->update(['payment_status' => 'not_applicable']);
+        }
+
         return redirect()->route('admin.store.edit', $store)
             ->with('success', "Store \"{$store->name}\" has been updated.");
     }
@@ -1032,6 +1042,16 @@ class AdminController extends Controller
         ]);
 
         $store->update(['payment_mode' => $validated['payment_mode']]);
+
+        if ($validated['payment_mode'] === 'online') {
+            $store->parentOrders()->where(function($q) {
+                $q->whereNull('payment_status')
+                  ->orWhere('payment_status', 'not_applicable');
+            })->update(['payment_status' => 'pending']);
+        } else {
+            $store->parentOrders()->where('payment_status', 'pending')
+                  ->update(['payment_status' => 'not_applicable']);
+        }
 
         $label = $validated['payment_mode'] === 'online' ? 'Online Credit Card Payment' : 'Cash Collection (In-House)';
         return back()->with('success', "Store \"{$store->name}\" payment mode updated to: {$label}.");

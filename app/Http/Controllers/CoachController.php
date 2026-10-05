@@ -596,6 +596,15 @@ class CoachController extends Controller
         $updateData = ['description' => $request->description];
         if ($request->filled('payment_mode')) {
             $updateData['payment_mode'] = $request->payment_mode;
+            if ($request->payment_mode === 'online') {
+                $store->parentOrders()->where(function($q) {
+                    $q->whereNull('payment_status')
+                      ->orWhere('payment_status', 'not_applicable');
+                })->update(['payment_status' => 'pending']);
+            } else {
+                $store->parentOrders()->where('payment_status', 'pending')
+                      ->update(['payment_status' => 'not_applicable']);
+            }
         }
 
         $store->update($updateData);
