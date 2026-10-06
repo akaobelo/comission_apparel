@@ -940,17 +940,23 @@
                                                 $isTaxExempt = (bool) ($store->isTaxExempt() || $order->user?->is_tax_exempt);
                                                 $orderSubtotal = (float) $order->getCalculatedSubtotal($store);
                                                 $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
-                                                $orderTax = $isTaxExempt ? 0.00 : (float) ($order->tax_amount > 0 ? $order->tax_amount : round($orderSubtotal * $taxRate, 2));
-                                                if ($orderSubtotal > 0) {
-                                                    $feePercent = (float) config('services.stripe.fee_percent', 0.029);
-                                                    $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
-                                                    $preFeeTotal = $orderSubtotal + $orderTax;
-                                                    $computedGrandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
-                                                    $orderFee = (float) ($order->fee_amount > 0 ? $order->fee_amount : round($computedGrandTotal - $preFeeTotal, 2));
-                                                    $orderGrandTotal = (float) ($order->total_paid > 0 ? $order->total_paid : $computedGrandTotal);
+
+                                                if ($order->isPaid()) {
+                                                    $orderTax = (float) ($order->tax_amount ?? 0);
+                                                    $orderFee = (float) ($order->fee_amount ?? 0);
+                                                    $orderGrandTotal = (float) ($order->total_paid ?? 0);
                                                 } else {
-                                                    $orderFee = 0.00;
-                                                    $orderGrandTotal = 0.00;
+                                                    $orderTax = $isTaxExempt ? 0.00 : round($orderSubtotal * $taxRate, 2);
+                                                    if ($orderSubtotal > 0) {
+                                                        $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+                                                        $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+                                                        $preFeeTotal = $orderSubtotal + $orderTax;
+                                                        $orderGrandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
+                                                        $orderFee = round($orderGrandTotal - $preFeeTotal, 2);
+                                                    } else {
+                                                        $orderFee = 0.00;
+                                                        $orderGrandTotal = 0.00;
+                                                    }
                                                 }
                                             @endphp
 
