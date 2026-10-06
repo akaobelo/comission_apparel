@@ -5,15 +5,15 @@
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 <!-- 1. HERO BANNER SECTION (Dynamic Performance Treatment)                -->
 <!-- ══════════════════════════════════════════════════════════════════════ -->
-<section class="w-full bg-[#08090c] text-white pt-28 md:pt-32 lg:pt-36 pb-16 lg:pb-24 border-b border-slate-900 relative overflow-hidden">
+<section class="w-full bg-[#08090c] text-white pt-24 md:pt-28 pb-10 md:pb-14 border-b border-slate-900 relative overflow-hidden">
     <!-- Stadium Floodlight & Running Track Arena Glows -->
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_75%_40%,rgba(205,32,44,0.22),transparent_70%),radial-gradient(ellipse_60%_50%_at_20%_30%,rgba(255,255,255,0.06),transparent_60%)] pointer-events-none"></div>
     <div class="absolute inset-0 bg-gradient-to-r from-[#08090c] via-[#08090c]/90 to-transparent z-10 pointer-events-none"></div>
 
-    <div class="max-w-[1500px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-20 min-h-[580px]">
+    <div class="max-w-[1500px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-20 min-h-[520px]">
         
         <!-- Left: Athletic Headline, Subtitle, & Glowing Pill CTA -->
-        <div class="lg:col-span-7 space-y-7 text-left py-4">
+        <div class="lg:col-span-7 space-y-6 text-left py-2">
             
             <div class="inline-flex items-center gap-3">
                 <span class="w-6 h-6 rounded-full bg-[#cd202c] text-white font-black text-xs flex items-center justify-center shadow-[0_0_12px_rgba(205,32,44,0.8)]">1</span>
@@ -41,7 +41,7 @@
             </div>
 
             <!-- Trust Stats Bar -->
-            <div class="pt-8 border-t border-slate-800/80 grid grid-cols-3 gap-6 text-left max-w-lg">
+            <div class="pt-6 border-t border-slate-800/80 grid grid-cols-3 gap-6 text-left max-w-lg">
                 <div>
                     <div class="text-2xl lg:text-3xl font-black text-white drop-shadow">1,000+</div>
                     <div class="text-[10px] md:text-xs uppercase font-bold text-slate-400 tracking-wider mt-0.5">Programs Outfitted</div>
@@ -60,7 +60,7 @@
         <!-- Right: Athletic Models Seamlessly Blended on Field -->
         <div class="lg:col-span-5 relative flex justify-center items-end self-end h-full">
             <div class="relative w-full max-w-[520px] flex justify-center items-end">
-                <img src="{{ $heroSettings['media_path'] }}" alt="Commission Apparel Athletes" class="w-full h-auto max-h-[580px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)] hover:scale-105 transition-transform duration-700" fetchpriority="high">
+                <img src="{{ $heroSettings['media_path'] }}" alt="Commission Apparel Athletes" class="w-full h-auto max-h-[540px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)] hover:scale-105 transition-transform duration-700" fetchpriority="high">
             </div>
         </div>
 
@@ -70,10 +70,10 @@
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 <!-- 2. FROM VISION TO VICTORY: CONCEPT TO REALITY                         -->
 <!-- ══════════════════════════════════════════════════════════════════════ -->
-<section id="proof" class="w-full bg-[#0b0c10] text-white py-24 border-b border-slate-900 relative">
+<section id="proof" class="w-full bg-[#0b0c10] text-white py-10 md:py-14 border-b border-slate-900 relative">
     <div class="max-w-[1500px] mx-auto px-6">
         
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-14">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
             <div>
                 <div class="flex items-center gap-3 mb-2">
                     <span class="w-6 h-6 rounded-full bg-[#cd202c] text-white font-black text-xs flex items-center justify-center shadow-[0_0_12px_rgba(205,32,44,0.8)]">2</span>
@@ -89,7 +89,7 @@
         </div>
 
         <!-- High-Octane Concept to Reality Canvas -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch bg-[#11131a] border border-slate-800 rounded-3xl p-6 lg:p-10 shadow-2xl relative overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch bg-[#11131a] border border-slate-800 rounded-3xl p-6 lg:p-8 shadow-2xl relative overflow-hidden">
             
             <!-- Left: 3D Vector Concept Proof -->
             <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07080b] p-6 flex flex-col justify-between group">
@@ -147,7 +147,7 @@
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 <!-- 3. EXPLORE SPORTS CATEGORIES (Spacious Responsive Carousel)           -->
 <!-- ══════════════════════════════════════════════════════════════════════ -->
-<section id="sports" class="w-full bg-[#08090c] text-white py-24 border-b border-slate-900"
+<section id="sports" class="w-full bg-[#08090c] text-white py-10 md:py-14 border-b border-slate-900"
     x-data="{ 
         activePage: 0,
         itemsPerPage: window.innerWidth < 768 ? 1 : (window.innerWidth < 1200 ? 2 : 3),
@@ -254,12 +254,12 @@
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════════════ -->
-<!-- 4. COMMISSION NEWS & STORIES (Option B 3-Card Teaser)                 -->
+<!-- 4. COMMISSION NEWS & STORIES (Balanced 3-Card Teaser)                 -->
 <!-- ══════════════════════════════════════════════════════════════════════ -->
-<section id="news" class="w-full bg-[#0b0c10] text-white py-24 border-b border-slate-900">
+<section id="news" class="w-full bg-[#0b0c10] text-white py-10 md:py-14 border-b border-slate-900">
     <div class="max-w-[1500px] mx-auto px-6">
         
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 md:mb-8">
             <div>
                 <div class="flex items-center gap-3 mb-2">
                     <span class="w-6 h-6 rounded-full bg-[#cd202c] text-white font-black text-xs flex items-center justify-center shadow-[0_0_12px_rgba(205,32,44,0.8)]">4</span>
@@ -275,84 +275,54 @@
         </div>
 
         @if($newsArticles->isNotEmpty())
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-            
-            <!-- Featured Story Card (Left 7 Columns) -->
-            @php $featuredArticle = $newsArticles->first(); @endphp
-            <div class="lg:col-span-7 bg-[#11131a] border border-slate-800 hover:border-[#cd202c]/60 rounded-3xl overflow-hidden shadow-2xl flex flex-col group transition-all duration-500 hover:shadow-[0_0_30px_rgba(205,32,44,0.2)]">
-                <a href="{{ route('news.show', $featuredArticle->slug) }}" class="relative block overflow-hidden flex-1 min-h-[380px] sm:min-h-[440px] lg:min-h-[480px] bg-slate-950">
-                    @if($featuredArticle->cover_image)
-                        <img src="{{ $featuredArticle->cover_image }}" alt="{{ $featuredArticle->title }}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700" loading="lazy">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+            @foreach($newsArticles as $article)
+            <article class="bg-[#11131a] border border-slate-800 hover:border-[#cd202c]/60 rounded-3xl overflow-hidden shadow-2xl flex flex-col group transition-all duration-300 hover:shadow-[0_0_30px_rgba(205,32,44,0.2)]">
+                <!-- Media Card Header -->
+                <a href="{{ route('news.show', $article->slug) }}" class="relative block w-full overflow-hidden aspect-[16/10] bg-slate-950">
+                    @if($article->cover_image)
+                        <img src="{{ $article->cover_image }}" alt="{{ $article->title }}" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" loading="lazy">
                     @endif
-                    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
-                    <div class="absolute top-4 left-4 bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-md shadow-lg">
-                        {{ $featuredArticle->category }}
-                    </div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                     
-                    <!-- Option B Pill Play Button Overlay -->
-                    <div class="absolute bottom-4 left-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/80 backdrop-blur-md border border-white/20 text-white text-xs font-black uppercase tracking-wider group-hover:bg-[#cd202c] group-hover:border-[#cd202c] transition-all shadow-2xl">
-                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        <span>PLAY VIDEO</span>
+                    <div class="absolute top-3.5 left-3.5 bg-[#cd202c] text-white text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-md shadow-lg">
+                        {{ $article->category }}
                     </div>
+
+                    @if($article->video_url)
+                    <div class="absolute bottom-3 left-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/80 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-wider group-hover:bg-[#cd202c] group-hover:border-[#cd202c] transition-all shadow-xl">
+                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <span>WATCH VIDEO</span>
+                    </div>
+                    @endif
                 </a>
-                <div class="p-6 shrink-0 bg-[#11131a] space-y-3">
-                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                        {{ $featuredArticle->published_at ? $featuredArticle->published_at->format('M d, Y') : $featuredArticle->created_at->format('M d, Y') }}
-                    </span>
-                    <h3 class="text-xl md:text-2xl font-black uppercase text-white leading-tight group-hover:text-[#ff4a58] transition-colors">
-                        <a href="{{ route('news.show', $featuredArticle->slug) }}">{{ $featuredArticle->title }}</a>
-                    </h3>
-                    <p class="text-slate-400 text-xs md:text-sm leading-relaxed line-clamp-2">
-                        {{ $featuredArticle->summary }}
-                    </p>
-                    <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-400 uppercase">{{ $featuredArticle->author ?? 'The Commission Editorial' }}</span>
-                        <a href="{{ route('news.show', $featuredArticle->slug) }}" class="text-xs font-black uppercase text-[#ff4a58] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                            Read Full Story <span>&rarr;</span>
+
+                <!-- Card Content -->
+                <div class="p-5 md:p-6 flex flex-col justify-between flex-1 space-y-4">
+                    <div class="space-y-2">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                            {{ $article->published_at ? $article->published_at->format('M d, Y') : $article->created_at->format('M d, Y') }}
+                        </span>
+                        <h3 class="text-lg md:text-xl font-black uppercase text-white leading-snug group-hover:text-[#ff4a58] transition-colors line-clamp-2">
+                            <a href="{{ route('news.show', $article->slug) }}">{{ $article->title }}</a>
+                        </h3>
+                        <p class="text-slate-400 text-xs leading-relaxed line-clamp-3 font-normal">
+                            {{ $article->summary }}
+                        </p>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between mt-auto">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wide">{{ $article->author ?? 'The Commission Editorial' }}</span>
+                        <a href="{{ route('news.show', $article->slug) }}" class="text-xs font-black uppercase text-[#ff4a58] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                            Read Story <span>&rarr;</span>
                         </a>
                     </div>
                 </div>
-            </div>
-
-            <!-- Stacked Secondary Stories (Right 5 Columns with Full-Width Top Images) -->
-            <div class="lg:col-span-5 flex flex-col gap-6 justify-between">
-                @foreach($newsArticles->slice(1, 2) as $sideArticle)
-                <article class="bg-[#11131a] border border-slate-800 hover:border-[#cd202c]/50 rounded-3xl overflow-hidden shadow-xl flex flex-col flex-1 group transition-all duration-300">
-                    <a href="{{ route('news.show', $sideArticle->slug) }}" class="relative block w-full overflow-hidden aspect-[16/9] sm:aspect-[2/1] lg:aspect-[16/9] bg-slate-950">
-                        @if($sideArticle->cover_image)
-                            <img src="{{ $sideArticle->cover_image }}" alt="{{ $sideArticle->title }}" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" loading="lazy">
-                        @endif
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                        <div class="absolute top-3 left-3 bg-[#cd202c] text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md shadow">
-                            {{ $sideArticle->category }}
-                        </div>
-                    </a>
-                    <div class="p-5 flex flex-col justify-between flex-1">
-                        <div>
-                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                                {{ $sideArticle->published_at ? $sideArticle->published_at->format('M d, Y') : $sideArticle->created_at->format('M d, Y') }}
-                            </span>
-                            <h4 class="text-base font-black uppercase text-white leading-snug group-hover:text-[#ff4a58] transition-colors line-clamp-2 mb-1.5">
-                                <a href="{{ route('news.show', $sideArticle->slug) }}">{{ $sideArticle->title }}</a>
-                            </h4>
-                            <p class="text-slate-400 text-xs line-clamp-2 leading-relaxed">
-                                {{ $sideArticle->summary }}
-                            </p>
-                        </div>
-                        <div class="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                            <span class="text-[10px] font-bold text-slate-500 uppercase">{{ $sideArticle->author ?? 'The Commission Editorial' }}</span>
-                            <a href="{{ route('news.show', $sideArticle->slug) }}" class="text-[11px] font-black uppercase text-[#ff4a58] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                                Read Story <span>&rarr;</span>
-                            </a>
-                        </div>
-                    </div>
-                </article>
-                @endforeach
-            </div>
-
+            </article>
+            @endforeach
         </div>
         @else
-        <div class="py-12 text-center text-slate-500 font-bold uppercase">No stories published yet.</div>
+        <div class="py-8 text-center text-slate-500 font-bold uppercase">No stories published yet.</div>
         @endif
 
     </div>
@@ -361,14 +331,14 @@
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 <!-- 5. LAUNCH YOUR TEAM STORE (Original High-Impact Panoramic Setup)       -->
 <!-- ══════════════════════════════════════════════════════════════════════ -->
-<section id="team-store" class="w-full bg-[#08090c] text-white py-24 border-b border-slate-900 relative overflow-hidden">
+<section id="team-store" class="w-full bg-[#08090c] text-white py-10 md:py-14 border-b border-slate-900 relative overflow-hidden">
     <!-- Stadium Glow Atmosphere -->
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_40%,rgba(205,32,44,0.15),transparent_70%)] pointer-events-none"></div>
 
-    <div class="max-w-[1500px] mx-auto px-6 relative z-20 space-y-12">
+    <div class="max-w-[1500px] mx-auto px-6 relative z-20 space-y-8 md:space-y-10">
         
         <!-- Section Header -->
-        <div class="text-center max-w-3xl mx-auto space-y-3">
+        <div class="text-center max-w-3xl mx-auto space-y-2">
             <div class="inline-flex items-center gap-3 justify-center">
                 <span class="w-6 h-6 rounded-full bg-[#cd202c] text-white font-black text-xs flex items-center justify-center shadow-[0_0_12px_rgba(205,32,44,0.8)]">5</span>
                 <span class="text-xs md:text-sm font-black uppercase tracking-widest text-[#ff4a58]">
@@ -380,14 +350,14 @@
                 TEAM <span class="text-secondary ml-1">STORE</span>
             </h2>
             
-            <p class="text-slate-100 text-lg md:text-xl font-medium tracking-wide">
+            <p class="text-slate-100 text-base md:text-lg font-medium tracking-wide">
                 {{ $teamStoreSettings['subheading'] ?? 'Empower your program with a custom online store that eliminates hassle and generates revenue.' }}
             </p>
         </div>
 
         <!-- Full-Width Panoramic Team Store UI Platform Mockup Banner -->
-        <div class="w-full max-w-[1400px] mx-auto rounded-3xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.9)] border border-slate-800 bg-[#11131a] p-3 md:p-4 group">
-            <div class="flex items-center gap-1.5 pb-2.5 px-2 border-b border-slate-800 mb-3">
+        <div class="w-full max-w-[1400px] mx-auto rounded-3xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.9)] border border-slate-800 bg-[#11131a] p-2.5 md:p-3.5 group">
+            <div class="flex items-center gap-1.5 pb-2 px-2 border-b border-slate-800 mb-2.5">
                 <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
                 <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
                 <div class="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
@@ -399,57 +369,57 @@
         </div>
 
         <!-- 4 Core Benefits (2x2 Grid) -->
-        <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12 pt-2">
+        <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-12 md:gap-x-16 gap-y-6 md:gap-y-8 pt-1">
             
             <!-- Feature 1 -->
             <div class="flex gap-4">
-                <div class="shrink-0 mt-1.5">
+                <div class="shrink-0 mt-1">
                     <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
                 </div>
                 <div>
-                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">{{ $teamStoreSettings['bullet_1'] }}</h3>
-                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">No collecting cash or forms. Families simply use your custom team link to order jerseys and fan gear directly online.</p>
+                    <h3 class="text-white text-base md:text-lg font-black uppercase tracking-wide mb-1.5">{{ $teamStoreSettings['bullet_1'] }}</h3>
+                    <p class="text-slate-300 text-xs md:text-sm leading-relaxed font-medium">No collecting cash or forms. Families simply use your custom team link to order jerseys and fan gear directly online.</p>
                 </div>
             </div>
 
             <!-- Feature 2 -->
             <div class="flex gap-4">
-                <div class="shrink-0 mt-1.5">
+                <div class="shrink-0 mt-1">
                     <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
                 </div>
                 <div>
-                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">{{ $teamStoreSettings['bullet_2'] }}</h3>
-                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Exclusive bespoke hoodies, athletic tees, gym bags, and official uniform packages custom tailored for your school.</p>
+                    <h3 class="text-white text-base md:text-lg font-black uppercase tracking-wide mb-1.5">{{ $teamStoreSettings['bullet_2'] }}</h3>
+                    <p class="text-slate-300 text-xs md:text-sm leading-relaxed font-medium">Exclusive bespoke hoodies, athletic tees, gym bags, and official uniform packages custom tailored for your school.</p>
                 </div>
             </div>
 
             <!-- Feature 3 -->
             <div class="flex gap-4">
-                <div class="shrink-0 mt-1.5">
+                <div class="shrink-0 mt-1">
                     <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
                 </div>
                 <div>
-                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">{{ $teamStoreSettings['bullet_3'] }}</h3>
-                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Speedy direct-to-door delivery with orders shipped individually to athletes or batched straight to team practice.</p>
+                    <h3 class="text-white text-base md:text-lg font-black uppercase tracking-wide mb-1.5">{{ $teamStoreSettings['bullet_3'] }}</h3>
+                    <p class="text-slate-300 text-xs md:text-sm leading-relaxed font-medium">Speedy direct-to-door delivery with orders shipped individually to athletes or batched straight to team practice.</p>
                 </div>
             </div>
 
             <!-- Feature 4 -->
             <div class="flex gap-4">
-                <div class="shrink-0 mt-1.5">
+                <div class="shrink-0 mt-1">
                     <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
                 </div>
                 <div>
-                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">{{ $teamStoreSettings['bullet_4'] }}</h3>
-                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Centralized coach & athletic director portal allowing full management of multiple sports teams from one profile.</p>
+                    <h3 class="text-white text-base md:text-lg font-black uppercase tracking-wide mb-1.5">{{ $teamStoreSettings['bullet_4'] }}</h3>
+                    <p class="text-slate-300 text-xs md:text-sm leading-relaxed font-medium">Centralized coach & athletic director portal allowing full management of multiple sports teams from one profile.</p>
                 </div>
             </div>
 
         </div>
 
         <!-- Call to Action Trigger -->
-        <div class="text-center pt-4">
-            <a href="/store/search" class="px-10 py-4 bg-gradient-to-r from-[#e52d27] to-[#b31217] hover:from-[#f5352e] hover:to-[#c7171d] text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-[0_0_30px_rgba(205,32,44,0.65)] hover:shadow-[0_0_45px_rgba(205,32,44,0.9)] hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
+        <div class="text-center pt-2">
+            <a href="/store/search" class="px-9 py-3.5 bg-gradient-to-r from-[#e52d27] to-[#b31217] hover:from-[#f5352e] hover:to-[#c7171d] text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-[0_0_30px_rgba(205,32,44,0.65)] hover:shadow-[0_0_45px_rgba(205,32,44,0.9)] hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
                 Explore Active Team Stores &rarr;
             </a>
         </div>
@@ -460,10 +430,10 @@
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 <!-- 6. COACH & TEAM TESTIMONIALS                                          -->
 <!-- ══════════════════════════════════════════════════════════════════════ -->
-<section id="testimonials" class="w-full bg-[#0b0c10] text-white py-24 border-b border-slate-900">
+<section id="testimonials" class="w-full bg-[#0b0c10] text-white py-10 md:py-14 border-b border-slate-900">
     <div class="max-w-[1500px] mx-auto px-6">
         
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 md:mb-8">
             <div>
                 <div class="flex items-center gap-3 mb-2">
                     <span class="w-6 h-6 rounded-full bg-[#cd202c] text-white font-black text-xs flex items-center justify-center shadow-[0_0_12px_rgba(205,32,44,0.8)]">6</span>
@@ -481,9 +451,9 @@
         @if(isset($testimonials) && $testimonials->isNotEmpty())
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($testimonials as $testimonial)
-            <div class="bg-[#11131a] border border-slate-800 rounded-3xl p-7 flex flex-col justify-between shadow-2xl hover:border-[#cd202c]/40 transition-all duration-300">
-                <div class="mb-6">
-                    <div class="flex items-center justify-between mb-4">
+            <div class="bg-[#11131a] border border-slate-800 rounded-3xl p-6 md:p-7 flex flex-col justify-between shadow-2xl hover:border-[#cd202c]/40 transition-all duration-300">
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-3">
                         <div class="flex gap-1 text-[#ffb703] text-sm">
                             ★ ★ ★ ★ ★
                         </div>
@@ -493,11 +463,11 @@
                         "{{ $testimonial->content }}"
                     </p>
                 </div>
-                <div class="flex items-center gap-3.5 pt-4 border-t border-slate-800/80">
+                <div class="flex items-center gap-3.5 pt-3.5 border-t border-slate-800/80">
                     @if($testimonial->image_path)
-                        <img src="{{ $testimonial->image_path }}" alt="{{ $testimonial->client_name }}" class="w-11 h-11 rounded-full object-cover shrink-0 border-2 border-slate-700">
+                        <img src="{{ $testimonial->image_path }}" alt="{{ $testimonial->client_name }}" class="w-10 h-10 rounded-full object-cover shrink-0 border-2 border-slate-700">
                     @else
-                        <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-[#cd202c] to-[#ff4a58] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#cd202c] to-[#ff4a58] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
                             {{ substr($testimonial->client_name, 0, 1) }}
                         </div>
                     @endif
@@ -519,22 +489,22 @@
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 <!-- 7. FINAL HIGH-CONVERSION CTA BANNER                                   -->
 <!-- ══════════════════════════════════════════════════════════════════════ -->
-<section class="w-full bg-gradient-to-r from-[#7a0f17] via-[#cd202c] to-[#7a0f17] text-white py-24 relative overflow-hidden text-center">
-    <div class="max-w-[1200px] mx-auto px-6 relative z-10 space-y-7">
+<section class="w-full bg-gradient-to-r from-[#7a0f17] via-[#cd202c] to-[#7a0f17] text-white py-12 md:py-16 relative overflow-hidden text-center">
+    <div class="max-w-[1200px] mx-auto px-6 relative z-10 space-y-4 md:space-y-5">
         <span class="inline-block bg-black/50 text-white text-[10px] font-black tracking-widest uppercase px-4 py-1.5 rounded-full border border-white/10 shadow-lg">
             DOMINATE THE FIELD
         </span>
-        <h2 class="text-4xl md:text-6xl font-black uppercase tracking-tight text-white leading-tight drop-shadow-2xl">
+        <h2 class="text-3xl md:text-5xl font-black uppercase tracking-tight text-white leading-tight drop-shadow-2xl">
             READY TO DESIGN YOUR PROGRAM'S LEGACY?
         </h2>
-        <p class="text-red-100 text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
+        <p class="text-red-100 text-xs md:text-sm max-w-2xl mx-auto leading-relaxed">
             Get bespoke 3D custom uniform mockups tailored specifically for your organization within 24 hours.
         </p>
-        <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href="/quote" class="w-full sm:w-auto px-10 py-4 bg-black hover:bg-slate-900 text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-2xl transition-all hover:scale-105">
+        <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a href="/quote" class="w-full sm:w-auto px-9 py-3.5 bg-black hover:bg-slate-900 text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-2xl transition-all hover:scale-105">
                 Request Free Custom Mockup
             </a>
-            <a href="{{ route('store.search') }}" class="w-full sm:w-auto px-10 py-4 bg-white/20 hover:bg-white/30 text-white border border-white/40 font-black text-xs md:text-sm uppercase tracking-widest rounded-full transition-all backdrop-blur-sm">
+            <a href="{{ route('store.search') }}" class="w-full sm:w-auto px-9 py-3.5 bg-white/20 hover:bg-white/30 text-white border border-white/40 font-black text-xs md:text-sm uppercase tracking-widest rounded-full transition-all backdrop-blur-sm">
                 Explore Team Stores
             </a>
         </div>
