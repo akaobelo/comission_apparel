@@ -93,11 +93,11 @@
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-slate-400">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Finalized Orders</p>
-            <div class="text-3xl font-black text-slate-900">{{ $finalizedStoreBatches->count() }}</div>
+            <div class="text-3xl font-black text-slate-900">{{ isset($finalizedStoreBatchesPaginator) ? $finalizedStoreBatchesPaginator->total() : $finalizedStoreBatches->count() }}</div>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-purple-500">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Finalized Direct Orders</p>
-            <div class="text-3xl font-black text-purple-600">{{ $finalizedDirectOrderBatches->count() }}</div>
+            <div class="text-3xl font-black text-purple-600">{{ isset($finalizedDirectBatchesPaginator) ? $finalizedDirectBatchesPaginator->total() : $finalizedDirectOrderBatches->count() }}</div>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-blue-500">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Quote Inquiries</p>
@@ -437,11 +437,12 @@
                             <p class="text-sm text-slate-500 mt-1">Aggregate totals per team store that have reached end of registration.</p>
                         </div>
                         <div class="flex items-center gap-4 text-slate-400">
-                            <span class="text-sm font-bold">{{ $finalizedStoreBatches->count() }} Batches</span>
+                            <span class="text-sm font-bold">{{ isset($finalizedStoreBatchesPaginator) ? $finalizedStoreBatchesPaginator->total() : $finalizedStoreBatches->count() }} Batches</span>
                             <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
                     <div x-show="expanded" x-collapse>
+                        <div id="finalized-master-orders-results">
                         @if($finalizedStoreBatches->isEmpty())
                             <div class="p-12 text-center text-slate-400 text-sm">No finalized store orders yet.</div>
                         @else
@@ -530,7 +531,13 @@
                                 </div>
                                 @endforeach
                             </div>
+                            @if(isset($finalizedStoreBatchesPaginator) && $finalizedStoreBatchesPaginator instanceof \Illuminate\Pagination\LengthAwarePaginator && $finalizedStoreBatchesPaginator->hasPages())
+                                <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#finalized-master-orders-results" hx-select="#finalized-master-orders-results" hx-swap="outerHTML">
+                                    {{ $finalizedStoreBatchesPaginator->links() }}
+                                </div>
+                            @endif
                         @endif
+                        </div>
                     </div>
                 </div>
 
@@ -542,11 +549,12 @@
                             <p class="text-sm text-slate-500 mt-1">Direct order batches submitted by coaches (no storefront).</p>
                         </div>
                         <div class="flex items-center gap-4 text-slate-400">
-                            <span class="text-sm font-bold">{{ $finalizedDirectOrderBatches->count() }} Batches</span>
+                            <span class="text-sm font-bold">{{ isset($finalizedDirectBatchesPaginator) ? $finalizedDirectBatchesPaginator->total() : $finalizedDirectOrderBatches->count() }} Batches</span>
                             <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
                     <div x-show="expanded" x-collapse>
+                        <div id="finalized-direct-orders-results">
                         @if($finalizedDirectOrderBatches->isEmpty())
                             <div class="p-12 text-center text-slate-400 text-sm">No finalized direct orders.</div>
                         @else
@@ -616,7 +624,13 @@
                             </div>
                             @endforeach
                         </div>
+                        @if(isset($finalizedDirectBatchesPaginator) && $finalizedDirectBatchesPaginator instanceof \Illuminate\Pagination\LengthAwarePaginator && $finalizedDirectBatchesPaginator->hasPages())
+                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#finalized-direct-orders-results" hx-select="#finalized-direct-orders-results" hx-swap="outerHTML">
+                                {{ $finalizedDirectBatchesPaginator->links() }}
+                            </div>
                         @endif
+                        @endif
+                        </div>
                     </div>
                 </div>
 

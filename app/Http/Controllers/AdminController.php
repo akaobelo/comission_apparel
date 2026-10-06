@@ -100,15 +100,26 @@ class AdminController extends Controller
 
         $pendingStores = $pendingStoresQuery->latest()->get();
 
-        // Finalized store batches (preserves history even if store is re-opened)
-        $finalizedStoreBatches = ParentOrder::whereNotNull('team_store_id')
+        // Finalized store batches paginated by batch_id
+        $finalizedStoreBatchQuery = ParentOrder::whereNotNull('team_store_id')
             ->whereNotNull('batch_id')
             ->where('status', '!=', 'Pending')
             ->where('is_archived', false)
+            ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(created_at) as latest_batch_date'))
+            ->groupBy('batch_id');
+
+        $finalizedStoreBatchIds = $finalizedStoreBatchQuery->orderByDesc('latest_batch_date')
+            ->paginate(10, ['*'], 'finalized_store_page')
+            ->withQueryString();
+
+        $finalizedStoreBatches = ParentOrder::whereIn('batch_id', $finalizedStoreBatchIds->pluck('batch_id'))
             ->with(['user', 'teamStore', 'teamStore.items'])
             ->latest()
             ->get()
             ->groupBy('batch_id')
+            ->sortByDesc(function ($orders) {
+                return $orders->max('created_at');
+            })
             ->map(function ($orders) {
                 $store = $orders->first()->teamStore;
                 $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, $store);
@@ -117,6 +128,8 @@ class AdminController extends Controller
                     'financials' => $financials,
                 ];
             });
+
+        $finalizedStoreBatchesPaginator = $finalizedStoreBatchIds;
 
         // Unassigned designs paginated
         $unassignedSearch = $request->input('unassigned_search');
@@ -161,21 +174,35 @@ class AdminController extends Controller
         }
         $productionStores = $activeStoresQuery->orderBy('sort_order', 'asc')->orderByDesc('created_at')->orderByDesc('id')->get();
 
-        // Finalized direct orders (no team store)
-        $finalizedDirectOrders = ParentOrder::whereNull('team_store_id')
+        // Finalized direct orders paginated by batch_id
+        $finalizedDirectBatchQuery = ParentOrder::whereNull('team_store_id')
             ->whereNotNull('batch_id')
             ->whereNotIn('status', ['Pending', 'Draft'])
             ->where('is_archived', false)
+            ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(created_at) as latest_batch_date'))
+            ->groupBy('batch_id');
+
+        $finalizedDirectBatchIds = $finalizedDirectBatchQuery->orderByDesc('latest_batch_date')
+            ->paginate(10, ['*'], 'finalized_direct_page')
+            ->withQueryString();
+
+        $finalizedDirectOrderBatches = ParentOrder::whereIn('batch_id', $finalizedDirectBatchIds->pluck('batch_id'))
             ->with('user')
             ->latest()
-            ->get();
-        $finalizedDirectOrderBatches = $finalizedDirectOrders->groupBy('batch_id')->map(function ($orders) {
-            $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, null);
-            return [
-                'orders' => $orders,
-                'financials' => $financials,
-            ];
-        });
+            ->get()
+            ->groupBy('batch_id')
+            ->sortByDesc(function ($orders) {
+                return $orders->max('created_at');
+            })
+            ->map(function ($orders) {
+                $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, null);
+                return [
+                    'orders' => $orders,
+                    'financials' => $financials,
+                ];
+            });
+
+        $finalizedDirectBatchesPaginator = $finalizedDirectBatchIds;
 
         // Archived stores
         $archivedStoresQuery = TeamStore::where('is_archived', true)
@@ -374,9 +401,9 @@ class AdminController extends Controller
         });
 
         return view('admin.dashboard', compact(
-            'coaches', 'pendingStores', 'finalizedStoreBatches',
+            'coaches', 'pendingStores', 'finalizedStoreBatches', 'finalizedStoreBatchesPaginator',
             'unassignedDesigns', 'allCollections', 'productionStores', 'quoteRequests', 'quoteRequestsTotal', 'newQuoteRequestsCount', 'landingCollections', 'allStores', 'allCoaches',
-            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'archivedOrderBatches', 'globalSalesSummary', 'archivedBatchesPaginator',
+            'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'finalizedDirectBatchesPaginator', 'archivedOrderBatches', 'globalSalesSummary', 'archivedBatchesPaginator',
             'salesAgents'
         ));
     }
