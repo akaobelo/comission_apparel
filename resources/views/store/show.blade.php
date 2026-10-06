@@ -759,9 +759,9 @@
                         </div>
 
                         <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-                            <label class="flex items-center gap-2 cursor-pointer text-xs text-emerald-50 select-none bg-emerald-900/60 border border-emerald-600/60 px-3.5 py-2 rounded-lg">
-                                <input type="checkbox" name="policy_agreed" x-model="policyAgreed" required class="rounded text-emerald-600 focus:ring-white w-4 h-4 accent-emerald-500">
-                                <span>I agree: <strong class="text-white underline decoration-emerald-400">All sales final</strong> (no refunds/returns).</span>
+                            <label class="flex items-center gap-2.5 cursor-pointer text-xs md:text-sm text-emerald-50 select-none bg-emerald-900/80 border-2 border-emerald-400 px-4 py-2.5 rounded-xl shadow-sm hover:bg-emerald-900 transition-colors">
+                                <input type="checkbox" name="policy_agreed" x-model="policyAgreed" required class="rounded text-emerald-600 focus:ring-white w-4 h-4 md:w-5 md:h-5 accent-emerald-400 cursor-pointer flex-shrink-0">
+                                <span>I agree: <strong class="text-white font-black text-sm md:text-base uppercase tracking-tight underline decoration-emerald-300">All sales final</strong> (no refunds/returns).</span>
                             </label>
 
                             <button type="submit" 
@@ -1009,10 +1009,10 @@
                                                     @if(!$order->isPaid())
                                                         <form action="{{ route('store.order.pay', ['slug' => $store->slug, 'order' => $order->id]) }}" method="POST" target="_blank" class="mt-4" x-data="{ agreed: false }">
                                                             @csrf
-                                                            <label class="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50/70 border border-amber-200 cursor-pointer select-none mb-3 hover:bg-amber-50 transition-colors">
-                                                                <input type="checkbox" name="policy_agreed" x-model="agreed" required class="mt-0.5 rounded text-primary focus:ring-primary w-4 h-4">
-                                                                <span class="text-xs text-slate-700 leading-snug">
-                                                                    I understand and agree: <strong class="text-slate-900">All sales are final and nonrefundable</strong>. Custom apparel cannot be returned or cancelled once submitted into production.
+                                                            <label class="flex items-start gap-3 p-3.5 md:p-4 rounded-xl bg-amber-50 border-2 border-amber-300 cursor-pointer select-none mb-3 hover:bg-amber-100/70 transition-colors shadow-sm">
+                                                                <input type="checkbox" name="policy_agreed" x-model="agreed" required class="mt-1 rounded text-primary focus:ring-primary w-5 h-5 accent-emerald-600 flex-shrink-0 cursor-pointer">
+                                                                <span class="text-xs md:text-sm text-slate-800 leading-relaxed">
+                                                                    I understand and agree: <strong class="text-slate-950 font-black text-sm md:text-base uppercase tracking-tight text-amber-950 underline decoration-amber-400">All sales are final and nonrefundable.</strong> Custom apparel cannot be returned or cancelled once submitted into production.
                                                                 </span>
                                                             </label>
 
