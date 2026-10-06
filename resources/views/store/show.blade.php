@@ -741,33 +741,34 @@
 
                                 @if(!$isClosed)
                 {{-- STICKY BOTTOM SUBMIT BAR --}}
-                <div class="fixed bottom-0 left-0 right-0 p-3 md:p-4 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] z-40 flex justify-center">
+                <div class="fixed bottom-0 left-0 right-0 p-3 md:p-4 bg-emerald-800 border-t-2 border-emerald-500 shadow-[0_-10px_35px_rgba(6,78,59,0.35)] z-40 flex justify-center text-white transition-all">
                     <div class="max-w-[1400px] w-full flex flex-col md:flex-row items-center justify-between gap-4 px-4">
-                        <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+                        <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs">
                             <div>
-                                <span class="text-slate-400 font-bold uppercase text-[10px] block">Items</span>
-                                <span class="font-black text-slate-900 text-sm"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Selected</span>
+                                <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Items</span>
+                                <span class="font-black text-white text-sm"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Selected</span>
                             </div>
-                            <div x-show="getSubtotal() > 0" class="border-l border-slate-200 pl-4">
-                                <span class="text-slate-400 font-bold uppercase text-[10px] block">Estimated Subtotal</span>
-                                <span class="font-bold text-slate-900 text-sm">$<span x-text="getSubtotal().toFixed(2)">0.00</span></span>
+                            <div x-show="getSubtotal() > 0" class="border-l border-emerald-600/70 pl-5">
+                                <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Estimated Subtotal</span>
+                                <span class="font-black text-white text-base">$<span x-text="getSubtotal().toFixed(2)">0.00</span></span>
                             </div>
-                            <div class="hidden sm:block border-l border-slate-200 pl-4">
-                                <span class="text-slate-400 font-bold uppercase text-[10px] block">Payment Timing</span>
-                                <span class="text-[11px] font-medium text-slate-600">No payment collected today</span>
+                            <div class="hidden sm:block border-l border-emerald-600/70 pl-5">
+                                <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Payment Timing</span>
+                                <span class="text-xs font-semibold text-emerald-100">No payment collected today</span>
                             </div>
                         </div>
 
-                        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                            <label class="flex items-center gap-2 cursor-pointer text-[11px] text-slate-600 select-none">
-                                <input type="checkbox" name="policy_agreed" x-model="policyAgreed" required class="rounded text-primary focus:ring-primary w-4 h-4">
-                                <span>I agree: <strong class="text-slate-900">All sales final</strong> (no refunds/returns).</span>
+                        <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                            <label class="flex items-center gap-2 cursor-pointer text-xs text-emerald-50 select-none bg-emerald-900/60 border border-emerald-600/60 px-3.5 py-2 rounded-lg">
+                                <input type="checkbox" name="policy_agreed" x-model="policyAgreed" required class="rounded text-emerald-600 focus:ring-white w-4 h-4 accent-emerald-500">
+                                <span>I agree: <strong class="text-white underline decoration-emerald-400">All sales final</strong> (no refunds/returns).</span>
                             </label>
 
                             <button type="submit" 
                                     :disabled="!policyAgreed || Object.values(items).filter(i => i.selected).length === 0"
-                                    :class="(!policyAgreed || Object.values(items).filter(i => i.selected).length === 0) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-secondary hover:-translate-y-0.5 hover:shadow-[0_10px_20px_rgba(192,30,46,0.3)]'"
-                                    class="w-full sm:w-auto px-7 py-3 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm flex-shrink-0">
+                                    :class="(!policyAgreed || Object.values(items).filter(i => i.selected).length === 0) ? 'opacity-50 cursor-not-allowed bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-white text-emerald-900 hover:bg-emerald-50 hover:shadow-xl hover:scale-[1.02] active:scale-95 shadow-lg'"
+                                    class="w-full sm:w-auto px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 flex-shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                 <span>Submit My Order</span>
                             </button>
                         </div>
