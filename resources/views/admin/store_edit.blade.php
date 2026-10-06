@@ -542,14 +542,15 @@
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Total Items</span><span class="font-bold text-slate-900">{{ $financials['total_items_sold'] ?? $store->parentOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1)) }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Deadline</span><span class="font-bold text-slate-900">{{ $store->order_deadline?->format('M d, Y') ?? '—' }}</span></div>
                     
-                    <div class="pt-3 mt-3 border-t border-slate-200 space-y-3">
+                    <div class="pt-3 mt-3 border-t border-slate-200 space-y-2.5">
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Total Sales</span><span class="font-bold text-slate-900">${{ number_format($financials['total_sales'] ?? 0, 2) }}</span></div>
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Average Order</span><span class="font-bold text-slate-900">${{ number_format($financials['average_order_value'] ?? 0, 2) }}</span></div>
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Due To TCA (Wholesale)</span><span class="font-bold text-secondary">${{ number_format($financials['total_wholesale'] ?? 0, 2) }}</span></div>
                         @if($store->isOnlinePayment())
-                            <div class="flex justify-between text-sm"><span class="text-slate-500">Online Paid (Stripe)</span><span class="font-bold text-emerald-700">${{ number_format($financials['total_online_paid'] ?? 0, 2) }}</span></div>
                             <div class="flex justify-between text-sm"><span class="text-slate-500">Sales Tax (7.5%)</span><span class="font-bold text-slate-700">${{ number_format($financials['total_tax'] ?? 0, 2) }}</span></div>
-                            <div class="flex justify-between text-sm"><span class="text-slate-500 font-bold text-indigo-900">Coach Profit Owed</span><span class="font-black text-indigo-600">${{ number_format($financials['coach_profit_owed'] ?? 0, 2) }}</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-slate-500">Card Processing Fee</span><span class="font-bold text-slate-600">${{ number_format($financials['total_fees'] ?? 0, 2) }}</span></div>
+                            <div class="flex justify-between text-sm pt-1.5 border-t border-slate-100"><span class="text-slate-600 font-semibold">Online Payment (Stripe)</span><span class="font-black text-emerald-700">${{ number_format($financials['total_online_paid'] ?? 0, 2) }}</span></div>
+                            <div class="flex justify-between text-sm pt-1.5 border-t border-slate-100"><span class="text-indigo-900 font-bold">Coach Profit Owed</span><span class="font-black text-indigo-600">${{ number_format($financials['coach_profit_owed'] ?? 0, 2) }}</span></div>
                         @else
                             <div class="flex justify-between text-sm"><span class="text-slate-500">Net Proceeds</span><span class="font-bold text-green-600">${{ number_format($financials['net_proceeds'] ?? 0, 2) }}</span></div>
                         @endif

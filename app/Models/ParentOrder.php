@@ -194,15 +194,17 @@ class ParentOrder extends Model
                 $orderItemsCount += $qty;
 
                 $prices = self::getItemPrices($orderedItem, $store);
-                $retailPrice = $prices['retail_price'];
+                $retailPrice = (isset($orderedItem['unit_price']) && (float)$orderedItem['unit_price'] > 0)
+                    ? (float)$orderedItem['unit_price']
+                    : $prices['retail_price'];
                 $wholesalePrice = $prices['wholesale_price'];
                 
                 $orderTotal += ($retailPrice * $qty);
                 $orderWholesaleTotal += ($wholesalePrice * $qty);
             }
 
-            // Fallback: if calculated orderTotal is 0 but order has a recorded subtotal snapshot
-            if ($orderTotal == 0 && (float) ($order->subtotal ?? 0) > 0) {
+            // Fallback: if order has a recorded subtotal snapshot and orderTotal is 0 or different
+            if ((float) ($order->subtotal ?? 0) > 0) {
                 $orderTotal = (float) $order->subtotal;
             }
 
