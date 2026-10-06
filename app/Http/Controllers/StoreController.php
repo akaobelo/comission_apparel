@@ -347,6 +347,8 @@ class StoreController extends Controller
                     ];
                 }
 
+                $parentEmail = trim((string) $order->parent_email);
+
                 $sessionParams = [
                     'payment_method_types' => ['card'],
                     'line_items'           => $lineItems,
@@ -356,15 +358,17 @@ class StoreController extends Controller
                         'order_id'     => $order->id,
                         'store_id'     => $store->id,
                         'athlete_name' => $fullName,
+                        'parent_email' => $parentEmail,
                     ],
                     'success_url'          => route('store.checkout.success', ['slug' => $store->slug, 'order' => $order->id]) . '?session_id={CHECKOUT_SESSION_ID}',
                     'cancel_url'           => route('store.checkout.cancel', ['slug' => $store->slug, 'order' => $order->id]),
                 ];
 
-                $parentEmail = trim((string) $order->parent_email);
-                if (!empty($parentEmail) && filter_var($parentEmail, FILTER_VALIDATE_EMAIL)) {
-                    $sessionParams['customer_email'] = $parentEmail;
-                }
+                // Note: We deliberately do NOT prefill 'customer_email' here.
+                // When customer_email is set to the athlete/parent's email, Stripe Link automatically triggers
+                // SMS verification to the parent's phone, which locks out third-party payers (like grandparents
+                // in another state, coaches, or sponsors) who don't have access to that phone.
+                // Omitting it lets the payer enter their own email for authentication and receipt delivery.
 
                 $session = $stripe->checkout->sessions->create($sessionParams);
 
