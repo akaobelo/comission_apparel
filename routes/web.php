@@ -197,6 +197,13 @@ Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request,
 Route::get('/store/search', [StoreController::class, 'search'])->name('store.search');
 Route::get('/store/{slug}', [StoreController::class, 'show'])->name('store.show');
 Route::post('/store/{slug}/order', [StoreController::class, 'submitOrder'])->name('store.order.submit');
+Route::post('/store/{slug}/order/{order}/pay', [StoreController::class, 'payOrder'])->name('store.order.pay');
+Route::get('/store/{slug}/order/success/{order}', [StoreController::class, 'checkoutSuccess'])->name('store.checkout.success');
+Route::get('/store/{slug}/order/cancel/{order}', [StoreController::class, 'checkoutCancel'])->name('store.checkout.cancel');
+Route::get('/store/{slug}/order/receipt/{order}', [StoreController::class, 'orderReceipt'])->name('store.order.receipt');
+
+// Stripe Webhook (CSRF-exempt in bootstrap/app.php)
+Route::post('/stripe/webhook', [\App\Http\Controllers\StripeWebhookController::class, 'handleWebhook'])->name('stripe.webhook');
 
 // ─── Authentication ──────────────────────────────────────────────────────────
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -257,6 +264,8 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
         return redirect()->route('coach.dashboard');
     });
     Route::post('/coach/direct-order/finalize', [CoachController::class, 'finalizeDirectOrders'])->name('coach.direct-order.finalize');
+    Route::get('/coach/direct-order/checkout/success', [CoachController::class, 'directOrderCheckoutSuccess'])->name('coach.direct-order.checkout.success');
+    Route::get('/coach/direct-order/checkout/cancel', [CoachController::class, 'directOrderCheckoutCancel'])->name('coach.direct-order.checkout.cancel');
     Route::get('/coach/direct-order/export/{batchId}', [CoachController::class, 'exportDirectOrderBatch'])->name('coach.direct-order.export');
     Route::post('/coach/direct-order/archive/{batchId}', [CoachController::class, 'archiveDirectOrderBatch'])->name('coach.direct-order.archive');
 });
@@ -319,6 +328,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/store-batch/{batch_id}/mark-addressed', [AdminController::class, 'markStoreBatchAddressed'])->name('admin.store-batch.mark-addressed');
     Route::delete('/admin/archived-orders/{batch_id}', [AdminController::class, 'deleteArchivedOrderBatch'])->name('admin.archived-orders.delete');
     Route::post('/admin/stores/{store}/update', [AdminController::class, 'updateStore'])->name('admin.store.update');
+    Route::post('/admin/stores/{store}/payment-mode', [AdminController::class, 'updateStorePaymentMode'])->name('admin.store.payment-mode');
     Route::post('/admin/stores/{store}/pricing', [AdminController::class, 'updateStorePricing'])->name('admin.store.pricing.update');
     Route::post('/admin/stores/{store}/cover', [AdminController::class, 'updateCoverImage'])->name('admin.store.cover');
     Route::post('/admin/stores/{store}/logo', [AdminController::class, 'updateStoreLogo'])->name('admin.store.logo');

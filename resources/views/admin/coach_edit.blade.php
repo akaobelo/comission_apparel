@@ -69,6 +69,21 @@
                                 <input type="text" name="sales_rep" value="{{ old('sales_rep', $user->sales_rep) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" placeholder="e.g. John Doe">
                                 @error('sales_rep')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                             </div>
+
+                            <div class="md:col-span-2 pt-2">
+                                <label class="flex items-start gap-3.5 p-4 bg-blue-50/60 border border-blue-200 rounded-xl cursor-pointer hover:bg-blue-50 transition-colors">
+                                    <input type="checkbox" name="is_tax_exempt" value="1" {{ old('is_tax_exempt', $user->is_tax_exempt) ? 'checked' : '' }} class="mt-0.5 rounded text-primary focus:ring-primary w-5 h-5">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="block text-xs font-black uppercase tracking-wider text-slate-900">501(c)(3) Nonprofit / Tax-Exempt Organization (Waive Sales Tax)</span>
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">Nonprofit</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                                            Check this box if this school or club is a registered 501(c)(3) nonprofit or tax-exempt entity. When enabled, sales tax (7.5%) will be completely waived ($0.00) on all direct orders and store orders for this organization.
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary py-3 px-8 text-sm uppercase tracking-wider font-bold">Save Changes</button>
                     </form>

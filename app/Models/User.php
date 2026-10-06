@@ -30,6 +30,7 @@ class User extends Authenticatable
         'sport',
         'logo_path',
         'sales_rep',
+        'is_tax_exempt',
     ];
 
     /**
@@ -52,6 +53,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_tax_exempt' => 'boolean',
         ];
     }
 

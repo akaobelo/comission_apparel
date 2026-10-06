@@ -209,10 +209,37 @@
                       previewAlt: '',
                       touchStartX: 0,
                       touchEndX: 0,
+                      policyAgreed: false,
+                      isOnline: {{ $store->isOnlinePayment() ? 'true' : 'false' }},
                       items: {
                           @foreach($store->items as $item)
-                          '{{ $item->id }}': { selected: false, qty: 1 },
+                          '{{ $item->id }}': { selected: false, qty: 1, price: {{ (float) ($item->retail_price ?? 0) }} },
                           @endforeach
+                      },
+                      getSubtotal() {
+                          let total = 0;
+                          for (const [id, item] of Object.entries(this.items)) {
+                              if (item.selected) {
+                                  total += (item.price || 0) * (parseInt(item.qty) || 1);
+                              }
+                          }
+                          return total;
+                      },
+                      getTax() {
+                          return Math.round(this.getSubtotal() * 0.075 * 100) / 100;
+                      },
+                      getGrandTotal() {
+                          const sub = this.getSubtotal();
+                          if (sub <= 0) return 0;
+                          const tax = this.getTax();
+                          const total = (sub + tax + 0.30) / (1 - 0.029);
+                          return Math.round(total * 100) / 100;
+                      },
+                      getProcessingFee() {
+                          const grand = this.getGrandTotal();
+                          if (grand <= 0) return 0;
+                          const fee = grand - (this.getSubtotal() + this.getTax());
+                          return Math.round(fee * 100) / 100;
                       },
                       openPanel(id) {
                           this.activeItemId = id;
@@ -227,13 +254,12 @@
                   }">
                 @csrf
 
-                @if(!empty(trim($store->description ?? '')))
-                {{-- Store Notes / Payment, Production & Delivery Accordion --}}
+                {{-- Store Notes / Production, Payment, and Shipping Accordion --}}
                 <div class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-4 overflow-hidden" id="store-info-section">
                     <button type="button" @click="storeInfoOpen = !storeInfoOpen" class="w-full flex items-center justify-between p-4 md:p-4 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="storeInfoOpen ? 'border-slate-100 bg-slate-50/50' : ''">
                         <div>
-                            <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Payment, Production & Delivery</h2>
-                            <p class="text-xs font-bold text-slate-500 mt-1" x-show="!storeInfoOpen"><span class="text-secondary font-black">CLICK HERE</span> <span class="italic">for details on how to make payment, production time, and delivery process.</span></p>
+                            <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Production, Payment, and Shipping</h2>
+                            <p class="text-xs font-bold text-slate-500 mt-1" x-show="!storeInfoOpen"><span class="text-secondary font-black">CLICK HERE</span> <span class="italic">for details on production time, payment methods, and shipping process.</span></p>
                         </div>
                         <div class="flex items-center gap-4 flex-shrink-0 ml-3">
                             <svg class="w-6 h-6 text-slate-400 transition-transform duration-300" :class="storeInfoOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -241,10 +267,39 @@
                     </button>
 
                     <div x-show="storeInfoOpen" x-transition.opacity class="px-6 md:px-8 pb-6 md:pb-8 pt-6">
-                        <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-medium border-l-4 border-secondary pl-4 py-1">{{ $store->description }}</div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                                    <span class="text-xs font-black uppercase tracking-wider text-slate-900">Production</span>
+                                </div>
+                                <p class="text-xs text-slate-600 leading-relaxed">
+                                    A minimum order of 10 units per item is required. Orders that do not meet this minimum will not be processed.
+                                </p>
+                            </div>
+
+                            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                    <span class="text-xs font-black uppercase tracking-wider text-slate-900">Payment</span>
+                                </div>
+                                <p class="text-xs text-slate-600 leading-relaxed">
+                                    Please contact your store administrator to confirm how payment will be collected. Administrators may choose “Cash Collection,” where all funds are collected directly by the organization and submitted as a single payment, or “Online Credit Card Payment.” Online payment may be enabled after the store deadline has passed and the administrator has reviewed the order details. Once enabled, patrons can return to the store link, locate their order at the bottom of the page, and click to pay.
+                                </p>
+                            </div>
+
+                            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                    <span class="text-xs font-black uppercase tracking-wider text-slate-900">Shipping</span>
+                                </div>
+                                <p class="text-xs text-slate-600 leading-relaxed">
+                                    All items will be shipped to one centralized location provided by the store administrator. We do not ship orders to individual addresses. Items are typically delivered within 21 days of receiving payment.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                @endif
 
                 @if(!$isClosed)
                 {{-- Athlete Info --}}
@@ -686,15 +741,36 @@
 
                                 @if(!$isClosed)
                 {{-- STICKY BOTTOM SUBMIT BAR --}}
-                <div class="fixed bottom-0 left-0 right-0 p-3 md:p-4 bg-white/90 backdrop-blur-md border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-40 flex justify-center">
-                    <div class="max-w-[1400px] w-full flex items-center justify-between gap-6 px-4">
-                        <div class="hidden md:block">
-                            <h4 class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">Ready to complete?</h4>
-                            <p class="text-lg font-black text-slate-900"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Items Selected</p>
+                <div class="fixed bottom-0 left-0 right-0 p-3 md:p-4 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] z-40 flex justify-center">
+                    <div class="max-w-[1400px] w-full flex flex-col md:flex-row items-center justify-between gap-4 px-4">
+                        <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+                            <div>
+                                <span class="text-slate-400 font-bold uppercase text-[10px] block">Items</span>
+                                <span class="font-black text-slate-900 text-sm"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Selected</span>
+                            </div>
+                            <div x-show="getSubtotal() > 0" class="border-l border-slate-200 pl-4">
+                                <span class="text-slate-400 font-bold uppercase text-[10px] block">Estimated Subtotal</span>
+                                <span class="font-bold text-slate-900 text-sm">$<span x-text="getSubtotal().toFixed(2)">0.00</span></span>
+                            </div>
+                            <div class="hidden sm:block border-l border-slate-200 pl-4">
+                                <span class="text-slate-400 font-bold uppercase text-[10px] block">Payment Timing</span>
+                                <span class="text-[11px] font-medium text-slate-600">No payment collected today</span>
+                            </div>
                         </div>
-                        <button type="submit" class="w-full md:w-auto px-8 py-3 md:py-3.5 bg-secondary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(192,30,46,0.3)] transition-all flex-shrink-0">
-                            Submit My Order
-                        </button>
+
+                        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                            <label class="flex items-center gap-2 cursor-pointer text-[11px] text-slate-600 select-none">
+                                <input type="checkbox" name="policy_agreed" x-model="policyAgreed" required class="rounded text-primary focus:ring-primary w-4 h-4">
+                                <span>I agree: <strong class="text-slate-900">All sales final</strong> (no refunds/returns).</span>
+                            </label>
+
+                            <button type="submit" 
+                                    :disabled="!policyAgreed || Object.values(items).filter(i => i.selected).length === 0"
+                                    :class="(!policyAgreed || Object.values(items).filter(i => i.selected).length === 0) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-secondary hover:-translate-y-0.5 hover:shadow-[0_10px_20px_rgba(192,30,46,0.3)]'"
+                                    class="w-full sm:w-auto px-7 py-3 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm flex-shrink-0">
+                                <span>Submit My Order</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 @endif
@@ -788,9 +864,20 @@
                             </div>
                             <div class="flex items-center gap-2 flex-shrink-0">
                                 <button type="button" @click="viewModal = true" class="text-[9px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 px-2 py-1 transition-colors">view order</button>
-                                <span class="w-5 h-5 flex items-center justify-center bg-green-100 text-green-600 rounded-full border border-green-200 flex-shrink-0">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                </span>
+                                @if($order->isPaid())
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                        Paid
+                                    </span>
+                                @elseif($store->isOnlinePayment())
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-700 border border-amber-200">
+                                        Pay Due
+                                    </span>
+                                @else
+                                    <span class="w-5 h-5 flex items-center justify-center bg-green-100 text-green-600 rounded-full border border-green-200 flex-shrink-0">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                    </span>
+                                @endif
                             </div>
 
                             <!-- Modal -->
@@ -814,7 +901,7 @@
                                                         <div class="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Qty: {{ $item['qty'] ?? 1 }}</div>
 
                                                         @if(!empty($item['sizes']) && is_array($item['sizes']))
-                                                            <div class="grid grid-cols-2 gap-2 mt-2">
+                                                             <div class="grid grid-cols-2 gap-2 mt-2">
                                                                 @foreach($item['sizes'] as $type => $size)
                                                                     <div class="bg-white border border-slate-200 rounded text-[11px] px-2 py-1.5 flex justify-between items-center shadow-sm">
                                                                         <span class="text-slate-500 font-bold uppercase">{{ str_replace('_', ' ', $type) }}:</span>
@@ -847,6 +934,101 @@
                                                 <svg class="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                                 <p class="text-xs font-medium text-amber-800">If you spot an error, please contact your coach to adjust the order before production begins.</p>
                                             </div>
+
+                                            {{-- Payment Section inside Placed Orders Modal --}}
+                                            @php
+                                                $isTaxExempt = (bool) ($store->isTaxExempt() || $order->user?->is_tax_exempt);
+                                                $orderSubtotal = (float) $order->getCalculatedSubtotal($store);
+                                                $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
+                                                $orderTax = $isTaxExempt ? 0.00 : (float) ($order->tax_amount > 0 ? $order->tax_amount : round($orderSubtotal * $taxRate, 2));
+                                                if ($orderSubtotal > 0) {
+                                                    $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+                                                    $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+                                                    $preFeeTotal = $orderSubtotal + $orderTax;
+                                                    $computedGrandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
+                                                    $orderFee = (float) ($order->fee_amount > 0 ? $order->fee_amount : round($computedGrandTotal - $preFeeTotal, 2));
+                                                    $orderGrandTotal = (float) ($order->total_paid > 0 ? $order->total_paid : $computedGrandTotal);
+                                                } else {
+                                                    $orderFee = 0.00;
+                                                    $orderGrandTotal = 0.00;
+                                                }
+                                            @endphp
+
+                                            @if($store->isOnlinePayment())
+                                                <div class="mt-5 p-4 rounded-xl border {{ $order->isPaid() ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200' }}">
+                                                    <div class="flex items-center justify-between mb-3">
+                                                        <span class="text-xs font-black uppercase tracking-wider text-slate-700">Payment Status</span>
+                                                        @if($order->isPaid())
+                                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-600 text-white shadow-sm">
+                                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                                Paid Online
+                                                            </span>
+                                                        @else
+                                                            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-500 text-white shadow-sm">
+                                                                Pending Payment
+                                                            </span>
+                                                        @endif
+                                                    </div>
+
+                                                    <div class="space-y-1.5 text-xs border-t border-slate-200/80 pt-3">
+                                                        <div class="flex justify-between text-slate-600">
+                                                            <span>Subtotal:</span>
+                                                            <span class="font-bold text-slate-900">${{ number_format($orderSubtotal, 2) }}</span>
+                                                        </div>
+                                                        @if($isTaxExempt)
+                                                        <div class="flex justify-between text-slate-600">
+                                                            <span class="flex items-center gap-1.5">
+                                                                <span>Sales Tax:</span>
+                                                                <span class="text-[9px] font-black uppercase tracking-wider text-blue-700 bg-blue-100/70 border border-blue-200 px-1.5 py-0.5 rounded">501(c)(3) Waived</span>
+                                                            </span>
+                                                            <span class="font-bold text-slate-900">$0.00</span>
+                                                        </div>
+                                                        @elseif((float) $orderTax > 0)
+                                                        <div class="flex justify-between text-slate-600">
+                                                            <span>Sales Tax (7.5%):</span>
+                                                            <span class="font-bold text-slate-900">${{ number_format($orderTax, 2) }}</span>
+                                                        </div>
+                                                        @endif
+                                                        <div class="flex justify-between text-slate-600">
+                                                            <span>Card Processing Fee:</span>
+                                                            <span class="font-bold text-slate-900">${{ number_format($orderFee, 2) }}</span>
+                                                        </div>
+                                                        <div class="flex justify-between text-sm font-black text-slate-900 border-t border-slate-200 pt-2 mt-2">
+                                                            <span>Total Due:</span>
+                                                            <span class="text-emerald-700 font-black">${{ number_format($orderGrandTotal, 2) }}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    @if(!$order->isPaid())
+                                                        <form action="{{ route('store.order.pay', ['slug' => $store->slug, 'order' => $order->id]) }}" method="POST" target="_blank" class="mt-4" x-data="{ agreed: false }">
+                                                            @csrf
+                                                            <label class="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50/70 border border-amber-200 cursor-pointer select-none mb-3 hover:bg-amber-50 transition-colors">
+                                                                <input type="checkbox" name="policy_agreed" x-model="agreed" required class="mt-0.5 rounded text-primary focus:ring-primary w-4 h-4">
+                                                                <span class="text-xs text-slate-700 leading-snug">
+                                                                    I understand and agree: <strong class="text-slate-900">All sales are final and nonrefundable</strong>. Custom apparel cannot be returned or cancelled once submitted into production.
+                                                                </span>
+                                                            </label>
+
+                                                            <button type="submit" 
+                                                                    :disabled="!agreed"
+                                                                    :class="!agreed ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-emerald-600 hover:bg-emerald-700 shadow-md'"
+                                                                    class="w-full py-3 px-4 text-white font-black uppercase tracking-wider text-xs rounded-xl transition-all flex items-center justify-center gap-2">
+                                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                                <span>Pay Now with Credit Card</span>
+                                                            </button>
+                                                        </form>
+                                                    @else
+                                                        <div class="mt-3 text-[11px] text-emerald-800 font-semibold text-center">
+                                                            Payment received on {{ $order->paid_at ? $order->paid_at->format('M d, Y h:i A') : 'file' }}. Thank you!
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @else
+                                                <div class="mt-5 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                                                    <span class="font-bold text-slate-800 block mb-1 uppercase tracking-wider text-[11px]">Payment Method: Cash Collection</span>
+                                                    Please pay your coach directly for this order. We will invoice your coach for the team manufacturing total.
+                                                </div>
+                                            @endif
                                         @else
                                             <p class="text-sm text-slate-500 text-center py-4">No items recorded.</p>
                                         @endif

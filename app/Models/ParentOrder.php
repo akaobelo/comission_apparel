@@ -28,20 +28,68 @@ class ParentOrder extends Model
         'is_edited',
         'edited_by',
         'total_retail_price',
+        'payment_status',
+        'subtotal',
+        'tax_amount',
+        'fee_amount',
+        'shipping_amount',
+        'shipping_method',
+        'total_paid',
+        'stripe_session_id',
+        'stripe_payment_intent_id',
+        'paid_at',
         'user_id',
         'batch_id',
         'is_archived',
     ];
+
+    public function isPaid(): bool
+    {
+        return $this->payment_status === 'paid';
+    }
+
+    public function isOnlineOrder(): bool
+    {
+        return in_array($this->payment_status, ['pending', 'paid', 'failed']);
+    }
 
     public function getAthleteNameAttribute()
     {
         return $this->athlete_first_name . ' ' . $this->athlete_last_name;
     }
 
+    public function getCalculatedSubtotal($store = null): float
+    {
+        if ((float) $this->subtotal > 0) {
+            return (float) $this->subtotal;
+        }
+        if ((float) $this->total_retail_price > 0) {
+            return (float) $this->total_retail_price;
+        }
+
+        $store = $store ?: $this->teamStore;
+        $items = is_array($this->items_json) ? $this->items_json : [];
+        $total = 0.0;
+
+        foreach ($items as $item) {
+            $qty = max(1, (int) ($item['qty'] ?? 1));
+            $prices = self::getItemPrices($item, $store);
+            $total += ($prices['retail_price'] * $qty);
+        }
+
+        return (float) $total;
+    }
+
     protected $casts = [
         'items_json' => 'array',
         'is_edited'  => 'boolean',
         'total_retail_price' => 'decimal:2',
+        'subtotal'        => 'decimal:2',
+        'tax_amount'      => 'decimal:2',
+        'fee_amount'      => 'decimal:2',
+        'shipping_amount' => 'decimal:2',
+        'total_paid'      => 'decimal:2',
+        'paid_at'         => 'datetime',
         'is_archived' => 'boolean',
     ];
 
@@ -111,6 +159,15 @@ class ParentOrder extends Model
             ];
         }
 
+        // Fallback: check if unit_price or price was stored directly on the item snapshot
+        if (isset($item['unit_price']) || isset($item['price'])) {
+            $savedPrice = (float) ($item['unit_price'] ?? $item['price'] ?? 0);
+            return [
+                'retail_price'    => $savedPrice,
+                'wholesale_price' => 0.0,
+            ];
+        }
+
         return [
             'retail_price'    => 0.0,
             'wholesale_price' => 0.0,
@@ -122,6 +179,9 @@ class ParentOrder extends Model
         $totalSales = 0;
         $totalWholesale = 0;
         $totalItemsSold = 0;
+        $totalTax = 0;
+        $totalFees = 0;
+        $totalOnlinePaid = 0;
 
         foreach ($orders as $order) {
             $orderTotal = 0;
@@ -141,19 +201,31 @@ class ParentOrder extends Model
                 $orderWholesaleTotal += ($wholesalePrice * $qty);
             }
 
+            // Fallback: if calculated orderTotal is 0 but order has a recorded subtotal snapshot
+            if ($orderTotal == 0 && (float) ($order->subtotal ?? 0) > 0) {
+                $orderTotal = (float) $order->subtotal;
+            }
+
             $totalSales += $orderTotal;
             $totalWholesale += $orderWholesaleTotal;
             $totalItemsSold += $orderItemsCount;
+            $totalTax += (float) ($order->tax_amount ?? 0);
+            $totalFees += (float) ($order->fee_amount ?? 0);
+            $totalOnlinePaid += (float) ($order->total_paid ?? 0);
         }
 
         $ordersCount = count($orders);
 
         return [
-            'orders_count' => $ordersCount,
-            'total_sales' => $totalSales,
-            'total_wholesale' => $totalWholesale,
-            'net_proceeds' => $totalSales - $totalWholesale,
-            'total_items_sold' => $totalItemsSold,
+            'orders_count'        => $ordersCount,
+            'total_sales'         => $totalSales,
+            'total_wholesale'     => $totalWholesale,
+            'net_proceeds'        => $totalSales - $totalWholesale,
+            'coach_profit_owed'   => max(0, $totalSales - $totalWholesale),
+            'total_tax'           => $totalTax,
+            'total_fees'          => $totalFees,
+            'total_online_paid'   => $totalOnlinePaid,
+            'total_items_sold'    => $totalItemsSold,
             'average_order_value' => $ordersCount > 0 ? $totalSales / $ordersCount : 0,
         ];
     }

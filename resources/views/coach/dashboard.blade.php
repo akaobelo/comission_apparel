@@ -423,7 +423,13 @@
                                                                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                                                             <div>
                                                                                 <h4 class="font-bold text-slate-900 leading-tight font-heading">{{ $design->name }}</h4>
-                                                                                <div class="text-xs text-slate-500 mt-1 uppercase tracking-wider">{{ implode(', ', $types) }}</div>
+                                                                                <div class="flex items-center gap-2 mt-1">
+                                                                                    <span class="text-xs text-slate-500 uppercase tracking-wider">{{ implode(', ', $types) }}</span>
+                                                                                    @if($design->wholesale_price > 0)
+                                                                                        <span class="text-slate-300">•</span>
+                                                                                        <span class="text-xs font-bold text-slate-900">${{ number_format($design->wholesale_price, 2) }}</span>
+                                                                                    @endif
+                                                                                </div>
                                                                             </div>
                                                                             <div x-show="selected" class="flex items-center gap-3 shrink-0">
                                                                                 <label class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Gender</label>
@@ -504,37 +510,97 @@
                             <p class="text-sm text-slate-500">Your draft is empty.</p>
                         </div>
                     @else
-                        <div class="space-y-3 mb-6 max-h-[300px] overflow-y-auto pr-2">
+                        <div class="space-y-3 mb-6 max-h-[320px] overflow-y-auto pr-2">
                             @foreach($directOrders->where('status', 'Draft') as $draft)
-                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                                @php
+                                    $draftSub = $draft->getCalculatedSubtotal();
+                                @endphp
+                                <div class="bg-slate-50 rounded-lg p-3.5 border border-slate-200">
                                     <div class="flex justify-between items-start mb-2">
-                                        <div class="font-bold text-sm text-slate-900">{{ $draft->athlete_name }}</div>
+                                        <div>
+                                            <div class="font-bold text-sm text-slate-900">{{ $draft->athlete_name }}</div>
+                                            <div class="text-xs font-bold text-primary">${{ number_format($draftSub, 2) }}</div>
+                                        </div>
                                         <div class="flex items-center gap-2">
                                             <a href="{{ route('coach.order.edit', $draft) }}" class="text-[10px] font-bold text-primary hover:text-secondary uppercase">Edit</a>
+                                            <span class="text-slate-300">|</span>
+                                            <form action="{{ route('coach.order.delete', $draft) }}" method="POST" onsubmit="return confirm('Remove this order from your draft?');" class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-[10px] font-bold text-red-500 hover:text-red-700 uppercase">Remove</button>
+                                            </form>
                                         </div>
                                     </div>
                                     <ul class="text-xs text-slate-600 space-y-1">
                                         @foreach($draft->items_json as $item)
-                                            <li>{{ $item['qty'] }}x {{ $item['name'] }} @if(isset($item['gender'])) <span class="text-[10px] text-slate-400 uppercase">({{ $item['gender'] }})</span> @endif</li>
+                                            <li class="flex justify-between items-center text-[11px]">
+                                                <span>{{ $item['qty'] }}x {{ $item['name'] }} @if(isset($item['gender'])) <span class="text-[10px] text-slate-400 uppercase">({{ $item['gender'] }})</span> @endif</span>
+                                                @if(!empty($item['sizes']))
+                                                    <span class="text-[10px] text-slate-500 font-mono">({{ implode(', ', array_map(fn($k, $v) => "$v", array_keys($item['sizes']), $item['sizes'])) }})</span>
+                                                @endif
+                                            </li>
                                         @endforeach
                                     </ul>
                                 </div>
                             @endforeach
                         </div>
-                        <div class="border-t border-slate-100 pt-5">
-                            <form action="{{ route('coach.direct-order.finalize') }}" method="POST" x-data="{ confirming: false }">
+
+                        {{-- Financial Summary Breakdown --}}
+                        @php
+                            $draftSubtotal = $directOrders->where('status', 'Draft')->sum(fn($d) => $d->getCalculatedSubtotal());
+                            $isTaxExempt = (bool) $user->is_tax_exempt;
+                            $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
+                            $draftTax = $isTaxExempt ? 0.00 : round($draftSubtotal * $taxRate, 2);
+                            if ($draftSubtotal > 0) {
+                                $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+                                $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+                                $preFeeTotal = $draftSubtotal + $draftTax;
+                                $draftGrandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
+                                $draftFee = round($draftGrandTotal - $preFeeTotal, 2);
+                            } else {
+                                $draftFee = 0.00;
+                                $draftGrandTotal = 0.00;
+                            }
+                        @endphp
+
+                        <div class="border-t border-slate-200 pt-4 space-y-2 text-xs">
+                            <div class="flex justify-between text-slate-600">
+                                <span>Subtotal</span>
+                                <span class="font-bold text-slate-900">${{ number_format($draftSubtotal, 2) }}</span>
+                            </div>
+                            <div class="flex justify-between text-slate-600">
+                                <span>Sales Tax {{ $isTaxExempt ? '(501(c)(3) Exempt)' : '(7.5%)' }}</span>
+                                <span class="font-bold text-slate-900">${{ number_format($draftTax, 2) }}</span>
+                            </div>
+                            <div class="flex justify-between text-slate-600">
+                                <span>Credit Card Fee</span>
+                                <span class="font-bold text-slate-900">${{ number_format($draftFee, 2) }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
+                                <span>Total Due</span>
+                                <span class="text-primary font-black text-base">${{ number_format($draftGrandTotal, 2) }}</span>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-200 pt-4 mt-4" x-data="{ agreed: false }">
+                            <label class="flex items-start gap-2 cursor-pointer mb-4">
+                                <input type="checkbox" x-model="agreed" class="mt-0.5 rounded border-slate-300 text-primary focus:ring-primary">
+                                <span class="text-[11px] text-slate-600 leading-tight">
+                                    I understand and agree that <strong class="text-slate-900">all sales are final and nonrefundable</strong> once payment is processed. Orders will be submitted to production immediately upon payment.
+                                </span>
+                            </label>
+
+                            <form action="{{ route('coach.direct-order.finalize') }}" method="POST" target="_blank">
                                 @csrf
-                                <button type="button" x-show="!confirming" @click="confirming = true" class="btn bg-secondary hover:bg-[#a11825] text-white w-full py-3 text-xs font-bold uppercase tracking-widest shadow-sm">
-                                    Submit Draft To Production
+                                <button type="submit" :disabled="!agreed" :class="agreed ? 'bg-secondary hover:bg-[#a11825] cursor-pointer' : 'bg-slate-300 cursor-not-allowed opacity-60'" class="btn text-white w-full py-3.5 text-xs font-bold uppercase tracking-widest shadow-sm flex items-center justify-center gap-2 transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                    Pay Online & Submit (${{ number_format($draftGrandTotal, 2) }})
                                 </button>
-                                <div x-show="confirming" x-cloak class="bg-red-50 border border-red-200 p-4 rounded-xl">
-                                    <p class="text-xs text-red-800 font-bold mb-3 text-center">Are you sure? This is a final submission and cannot be undone.</p>
-                                    <div class="flex gap-2">
-                                        <button type="button" @click="confirming = false" class="flex-1 py-2 bg-white border border-slate-300 text-slate-600 rounded-lg text-xs font-bold uppercase">Cancel</button>
-                                        <button type="submit" class="flex-1 py-2 bg-secondary text-white rounded-lg text-xs font-bold uppercase shadow-sm">Confirm Submit</button>
-                                    </div>
-                                </div>
                             </form>
+                            <p class="text-[10px] text-slate-400 text-center mt-2 flex items-center justify-center gap-1">
+                                <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                Secure checkout powered by Stripe
+                            </p>
                         </div>
                     @endif
                 </div>
@@ -574,11 +640,25 @@
                     @error('name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Description (optional)</label>
-                    <textarea name="description" rows="3" placeholder="e.g. Payment details, production turnaround time, delivery or pickup instructions..." class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm text-sm"></textarea>
-                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">
-                        <strong class="text-slate-700">Note:</strong> This description is displayed in the <strong class="text-slate-800">"Payment, Production & Delivery"</strong> section on your team store. If you want details on how to make payment, production time, or the delivery process displayed to parents and athletes, please include that info here.
-                    </p>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Payment Collection Method</label>
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all hover:bg-slate-50 border-slate-300">
+                            <input type="radio" name="payment_mode" value="in_house" checked class="mt-1 text-primary focus:ring-primary">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-900 uppercase tracking-wide">Cash Collection (Default)</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5 leading-relaxed">You collect funds from the parents directly and we send you an invoice for the manufacturing total.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all hover:bg-slate-50 border-slate-300">
+                            <input type="radio" name="payment_mode" value="online" class="mt-1 text-primary focus:ring-primary">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-900 uppercase tracking-wide">Online Credit Card Payment</span>
+                                <span class="block text-[11px] text-slate-500 mt-1 leading-relaxed">This option is available once your store has closed and the total order is reviewed to ensure the minimum order quantity for each item is met.</span>
+                                <span class="block text-[11px] text-slate-500 mt-1 leading-relaxed">Once enabled, parents can go back to store’s link, click their order at the bottom of the page and make payment at that point.</span>
+                                <span class="block text-[11px] text-slate-500 mt-1 leading-relaxed">If you’ve marked up your items, proceeds earned from your sale will be sent to you via Intuit Quickbooks direct deposit once funds have cleared.</span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
                 {{-- <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Package / Order Type</label>
@@ -762,15 +842,32 @@
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2">
+                                        @if($store->isOnlinePayment())
+                                            @if($order->isPaid())
+                                                <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200 tracking-wider">Paid (${{ number_format($order->total_paid, 2) }})</span>
+                                            @elseif($order->payment_status === 'failed')
+                                                <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200 tracking-wider">Pay Failed</span>
+                                            @else
+                                                <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200 tracking-wider">Pending Pay</span>
+                                            @endif
+                                        @else
+                                            <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 tracking-wider">In-House</span>
+                                        @endif
                                         @if($order->is_edited)
                                             <span class="text-[10px] font-bold text-orange-500 uppercase">Edited</span>
                                         @endif
                                         @if(!$isLocked)
                                             <a href="{{ route('coach.order.edit', $order) }}" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 text-[10px] font-bold uppercase rounded hover:bg-slate-50 transition-colors">View/Edit</a>
                                         @endif
-                                        <span class="w-6 h-6 flex items-center justify-center bg-green-100 text-green-600 rounded-full border border-green-200">
+                                        @if(!$store->isOnlinePayment() || $order->isPaid())
+                                        <span class="w-6 h-6 flex items-center justify-center bg-green-100 text-green-600 rounded-full border border-green-200" title="{{ !$store->isOnlinePayment() ? 'In-House Order Confirmed' : 'Paid Online' }}">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                         </span>
+                                        @else
+                                        <span class="w-6 h-6 flex items-center justify-center bg-amber-100 text-amber-600 rounded-full border border-amber-200" title="Awaiting Online Card Payment">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01"/></svg>
+                                        </span>
+                                        @endif
                                     </div>
                                 </div>
                                 @endforeach
@@ -1095,19 +1192,43 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            @endif
 
-                {{-- Payment, Production & Delivery Notes --}}
-                <div class="p-5 border-t border-slate-100">
-                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Payment, Production & Delivery Notes</h4>
-                    <p class="text-[11px] text-slate-500 mb-3">Displayed under the "Payment, Production & Delivery" section on your store page. Include instructions on payment methods, production timelines, and delivery process.</p>
-                    <form action="{{ route('coach.store.description', $store) }}" method="POST">
+            {{-- Payment, Production & Delivery Notes --}}
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
+                <div class="p-5 border-b border-slate-200 bg-slate-50">
+                    <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Payment Collection Method</h3>
+                    <p class="text-xs text-slate-500 mt-1">Choose how parents pay for their orders on this team store.</p>
+                </div>
+                <div class="p-5">
+                    <form action="{{ route('coach.store.description', $store) }}" method="POST" class="space-y-4">
                         @csrf
-                        <textarea name="description" rows="3" placeholder="e.g. Payment due by... Production takes 3-4 weeks... Delivery/pickup instructions..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm leading-relaxed mb-3">{{ old('description', $store->description) }}</textarea>
-                        <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-800 transition-colors">Save Details</button>
+                        <div>
+                            <div class="space-y-3 mb-3">
+                                <label class="flex items-start gap-2.5 p-3.5 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
+                                    <input type="radio" name="payment_mode" value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'checked' : '' }} class="mt-0.5 text-primary focus:ring-primary">
+                                    <div>
+                                        <span class="block text-xs font-bold text-slate-900 uppercase">Cash Collection</span>
+                                        <span class="block text-[11px] text-slate-500 mt-0.5 leading-relaxed">You collect funds from the parents directly and we send you an invoice for the manufacturing total.</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-2.5 p-3.5 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
+                                    <input type="radio" name="payment_mode" value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'checked' : '' }} class="mt-0.5 text-primary focus:ring-primary">
+                                    <div>
+                                        <span class="block text-xs font-bold text-slate-900 uppercase">Online Credit Card Payment</span>
+                                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">This option is available once your store has closed and the total order is reviewed to ensure the minimum order quantity for each item is met.</p>
+                                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Once enabled, parents can go back to store’s link, click their order at the bottom of the page and make payment at that point.</p>
+                                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">If you’ve marked up your items, proceeds earned from your sale will be sent to you via Intuit Quickbooks direct deposit once funds have cleared.</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-800 transition-colors">Save Payment Method</button>
                     </form>
                 </div>
             </div>
-            @endif
 
             {{-- Team Builder: Add Items --}}
             @if(!$isLocked)
@@ -1388,8 +1509,14 @@
                                 <div class="col-span-3 md:col-span-2 text-sm text-slate-600">
                                     {{ $firstOrder->created_at->format('M d, Y') }}
                                 </div>
-                                <div class="col-span-2 md:col-span-2 text-right">
+                                <div class="col-span-2 md:col-span-2 text-right flex flex-col items-end gap-1">
                                     <span class="{{ $badgeColor }} text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border">{{ $statusBadge }}</span>
+                                    @if($firstOrder->payment_status === 'paid')
+                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                                            <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                            PAID
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
 

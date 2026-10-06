@@ -61,14 +61,50 @@
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Order Deadline</label>
                                 <input type="date" name="order_deadline" value="{{ old('order_deadline', $store->order_deadline?->format('Y-m-d')) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                             </div>
+                            <div class="col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="block text-xs font-black uppercase tracking-wider text-slate-900">Payment Collection Method</label>
+                                    @if(($store->payment_mode ?? 'in_house') === 'online')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                            Online Credit Card Active
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                                            Cash Collection Active
+                                        </span>
+                                    @endif
+                                </div>
+                                <select name="payment_mode" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 font-bold focus:border-primary focus:outline-none shadow-sm">
+                                    <option value="in_house" {{ old('payment_mode', $store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash Collection (In-House by Coach)</option>
+                                    <option value="online" {{ old('payment_mode', $store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Online Credit Card Payment (Stripe Checkout)</option>
+                                </select>
+                                <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+                                    <strong>Cash Collection:</strong> Coach collects funds directly from parents; Commission Apparel invoices coach for manufacturing.<br>
+                                    <strong>Online Credit Card Payment:</strong> Enabled post-closure after reviewing MOQ (15 items). Parents visit the store link, view their submitted order at the bottom, and pay via Stripe credit card checkout.
+                                </p>
+                            </div>
                             <div class="col-span-2">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Description</label>
-                                <textarea name="description" rows="3" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm" placeholder="Optional store description for the coach...">{{ old('description', $store->description) }}</textarea>
-                                <p class="text-xs text-slate-500 mt-1.5">Displayed under the "Payment, Production & Delivery" section on the public storefront.</p>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Production, Payment, and Shipping Notes (Super Admin Only)</label>
+                                <textarea name="description" rows="3" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm" placeholder="Optional custom notes for production, payment, or shipping...">{{ old('description', $store->description) }}</textarea>
+                                <p class="text-xs text-slate-500 mt-1.5">Displayed inside the "Production, Payment, and Shipping" dropdown on the public storefront. Only editable by Super Admin.</p>
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Shipping Address</label>
                                 <textarea name="shipping_address" rows="3" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm" placeholder="Shipping Address submitted by Coach...">{{ old('shipping_address', $store->shipping_address) }}</textarea>
+                            </div>
+                            <div class="col-span-2 pt-2">
+                                <label class="flex items-start gap-3 p-4 bg-blue-50/60 border border-blue-200 rounded-xl cursor-pointer hover:bg-blue-50 transition-colors">
+                                    <input type="checkbox" name="is_tax_exempt" value="1" {{ old('is_tax_exempt', $store->is_tax_exempt || $store->user?->is_tax_exempt) ? 'checked' : '' }} class="mt-0.5 rounded text-primary focus:ring-primary w-5 h-5">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="block text-xs font-black uppercase tracking-wider text-slate-900">501(c)(3) Nonprofit / Tax-Exempt Store (Waive Sales Tax)</span>
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">Nonprofit</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                                            Check this box to waive sales tax (7.5%) for this store. All orders placed under this store will have sales tax set to $0.00.
+                                        </p>
+                                    </div>
+                                </label>
                             </div>
                         </div>
                         <div class="flex gap-3">
@@ -410,7 +446,6 @@
                                     <select name="status" class="bg-white border border-slate-300 rounded px-2 py-1 text-[11px] font-bold text-slate-700 focus:border-primary focus:outline-none shadow-sm" onchange="this.form.submit()">
                                         <option value="Submitted to Admin" {{ $firstOrder->status === 'Submitted to Admin' ? 'selected' : '' }}>Submitted to Admin</option>
                                         <option value="Processing" {{ $firstOrder->status === 'Processing' ? 'selected' : '' }}>Processing</option>
-                                        <option value="Design Approved" {{ $firstOrder->status === 'Design Approved' ? 'selected' : '' }}>Design Approved</option>
                                         <option value="In Production" {{ $firstOrder->status === 'In Production' ? 'selected' : '' }}>In Production</option>
                                         <option value="Shipped" {{ $firstOrder->status === 'Shipped' ? 'selected' : '' }}>Shipped</option>
                                         <option value="Delivered" {{ $firstOrder->status === 'Delivered' ? 'selected' : '' }}>Delivered</option>
@@ -441,6 +476,7 @@
                             <tr class="text-xs font-bold uppercase tracking-wider text-slate-500">
                                 <th class="px-5 py-3 text-left">Athlete</th>
                                 <th class="px-5 py-3 text-left">Items</th>
+                                <th class="px-5 py-3 text-left">Payment</th>
                                 <th class="px-5 py-3 text-left">Submitted</th>
                                 <th class="px-5 py-3"></th>
                             </tr>
@@ -455,6 +491,25 @@
                                     @endif
                                 </td>
                                 <td class="px-5 py-3 text-slate-600">{{ collect(is_array($order->items_json) ? $order->items_json : [])->sum(fn($i) => $i['qty'] ?? 1) }} item(s)</td>
+                                <td class="px-5 py-3">
+                                    @if($order->payment_status === 'paid')
+                                        <span class="inline-flex items-center text-[10px] font-black uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                            Paid (${{ number_format($order->total_paid, 2) }})
+                                        </span>
+                                    @elseif($order->payment_status === 'pending')
+                                        <span class="inline-flex items-center text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                            Pending
+                                        </span>
+                                    @elseif($order->payment_status === 'failed')
+                                        <span class="inline-flex items-center text-[10px] font-black uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-200">
+                                            Failed
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center text-[10px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                                            In-House
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3 text-slate-500 text-xs">{{ $order->created_at->format('M d, Y') }}</td>
                                 <td class="px-5 py-3">
                                     <a href="{{ route('admin.order.edit', $order) }}" class="px-3 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
@@ -480,6 +535,9 @@
                             <span class="font-bold text-orange-500 uppercase text-xs inline-block ml-2">Pending</span>
                         @endif
                     </div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Payment Mode</span>
+                        <span class="font-bold text-slate-900 uppercase text-xs">{{ $store->isOnlinePayment() ? 'Online (Stripe)' : 'In-House' }}</span>
+                    </div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Athletes Ordered</span><span class="font-bold text-slate-900">{{ $store->parentOrders->count() }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Total Items</span><span class="font-bold text-slate-900">{{ $financials['total_items_sold'] ?? $store->parentOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1)) }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Deadline</span><span class="font-bold text-slate-900">{{ $store->order_deadline?->format('M d, Y') ?? '—' }}</span></div>
@@ -487,8 +545,14 @@
                     <div class="pt-3 mt-3 border-t border-slate-200 space-y-3">
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Total Sales</span><span class="font-bold text-slate-900">${{ number_format($financials['total_sales'] ?? 0, 2) }}</span></div>
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Average Order</span><span class="font-bold text-slate-900">${{ number_format($financials['average_order_value'] ?? 0, 2) }}</span></div>
-                        <div class="flex justify-between text-sm"><span class="text-slate-500">Due To TCA</span><span class="font-bold text-secondary">${{ number_format($financials['total_wholesale'] ?? 0, 2) }}</span></div>
-                        <div class="flex justify-between text-sm"><span class="text-slate-500">Net Proceeds</span><span class="font-bold text-green-600">${{ number_format($financials['net_proceeds'] ?? 0, 2) }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">Due To TCA (Wholesale)</span><span class="font-bold text-secondary">${{ number_format($financials['total_wholesale'] ?? 0, 2) }}</span></div>
+                        @if($store->isOnlinePayment())
+                            <div class="flex justify-between text-sm"><span class="text-slate-500">Online Paid (Stripe)</span><span class="font-bold text-emerald-700">${{ number_format($financials['total_online_paid'] ?? 0, 2) }}</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-slate-500">Sales Tax (7.5%)</span><span class="font-bold text-slate-700">${{ number_format($financials['total_tax'] ?? 0, 2) }}</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-slate-500 font-bold text-indigo-900">Coach Profit Owed</span><span class="font-black text-indigo-600">${{ number_format($financials['coach_profit_owed'] ?? 0, 2) }}</span></div>
+                        @else
+                            <div class="flex justify-between text-sm"><span class="text-slate-500">Net Proceeds</span><span class="font-bold text-green-600">${{ number_format($financials['net_proceeds'] ?? 0, 2) }}</span></div>
+                        @endif
                     </div>
 
                     <div class="pt-3 mt-3 border-t border-slate-200">

@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'tax_rate' => (float) env('STRIPE_TAX_RATE', 0.075),
+        'fee_percent' => (float) env('STRIPE_FEE_PERCENT', 0.029),
+        'fee_fixed' => (float) env('STRIPE_FEE_FIXED', 0.30),
+    ],
+
 ];

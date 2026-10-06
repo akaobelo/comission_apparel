@@ -164,7 +164,7 @@ class AdminController extends Controller
         // Finalized direct orders (no team store)
         $finalizedDirectOrders = ParentOrder::whereNull('team_store_id')
             ->whereNotNull('batch_id')
-            ->where('status', '!=', 'Pending')
+            ->whereNotIn('status', ['Pending', 'Draft'])
             ->where('is_archived', false)
             ->with('user')
             ->latest()
@@ -407,7 +407,10 @@ class AdminController extends Controller
             'sport'        => ['required', 'string', 'max:100'],
             'status'       => ['required', 'in:active,declined'],
             'sales_rep'    => ['nullable', 'string', 'max:255'],
+            'is_tax_exempt'=> ['nullable', 'boolean'],
         ]);
+
+        $validated['is_tax_exempt'] = $request->boolean('is_tax_exempt');
 
         $user->update($validated);
 
@@ -1018,15 +1021,50 @@ class AdminController extends Controller
             'order_deadline' => ['nullable', 'date'],
             'status'       => ['required', 'in:pending,approved,submitted_to_admin,declined'],
             'pricing_approved' => ['boolean'],
+            'is_tax_exempt'    => ['boolean'],
+            'payment_mode'     => ['required', 'in:in_house,online'],
             'shipping_address' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $validated['pricing_approved'] = $request->boolean('pricing_approved');
+        $validated['is_tax_exempt'] = $request->boolean('is_tax_exempt');
 
         $store->update($validated);
 
+        if ($validated['payment_mode'] === 'online') {
+            $store->parentOrders()->where(function($q) {
+                $q->whereNull('payment_status')
+                  ->orWhere('payment_status', 'not_applicable');
+            })->update(['payment_status' => 'pending']);
+        } else {
+            $store->parentOrders()->where('payment_status', 'pending')
+                  ->update(['payment_status' => 'not_applicable']);
+        }
+
         return redirect()->route('admin.store.edit', $store)
             ->with('success', "Store \"{$store->name}\" has been updated.");
+    }
+
+    public function updateStorePaymentMode(Request $request, TeamStore $store)
+    {
+        $validated = $request->validate([
+            'payment_mode' => ['required', 'in:in_house,online'],
+        ]);
+
+        $store->update(['payment_mode' => $validated['payment_mode']]);
+
+        if ($validated['payment_mode'] === 'online') {
+            $store->parentOrders()->where(function($q) {
+                $q->whereNull('payment_status')
+                  ->orWhere('payment_status', 'not_applicable');
+            })->update(['payment_status' => 'pending']);
+        } else {
+            $store->parentOrders()->where('payment_status', 'pending')
+                  ->update(['payment_status' => 'not_applicable']);
+        }
+
+        $label = $validated['payment_mode'] === 'online' ? 'Online Credit Card Payment' : 'Cash Collection (In-House)';
+        return back()->with('success', "Store \"{$store->name}\" payment mode updated to: {$label}.");
     }
 
     public function updateStorePricing(Request $request, TeamStore $store)
@@ -1328,7 +1366,7 @@ class AdminController extends Controller
         ];
 
         $columns = [
-            'Store Name', 'Order ID', 'Submission Date', 
+            'Store Name', 'Order ID', 'Submission Date', 'Payment Mode', 'Payment Status',
             'Athlete First Name', 'Athlete Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
             'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price', 'Manufacture Price', 'Total Manufacture Price', 'Special Notes', 'Edited?'
@@ -1372,6 +1410,8 @@ class AdminController extends Controller
                             $store->name,
                             $order->id,
                             $order->created_at->format('Y-m-d'),
+                            $store->payment_mode ?? 'in_house',
+                            $order->payment_status ?? 'not_applicable',
                             $order->athlete_first_name,
                             $order->athlete_last_name,
                             $order->parent_email ?? '',
@@ -1417,7 +1457,7 @@ class AdminController extends Controller
         ];
 
         $columns = [
-            'First Name', 'Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
+            'Payment Status', 'First Name', 'Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
             'Item', 'Types', 'Sizes', 'Qty', 'Item Price', 'Total Price', 'Manufacture Price', 'Total Manufacture Price', 'Special Notes', 'Edited?'
         ];
@@ -1460,6 +1500,7 @@ class AdminController extends Controller
                         $totalMfgPrice = $mfgPrice * $qty;
 
                         fputcsv($file, [
+                            $order->payment_status ?? 'not_applicable',
                             $order->athlete_first_name,
                             $order->athlete_last_name,
                             $order->parent_email ?? '',

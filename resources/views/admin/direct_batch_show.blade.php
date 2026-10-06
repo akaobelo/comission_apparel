@@ -33,7 +33,6 @@
                                     <select name="status" class="bg-white border border-slate-300 rounded px-2 py-1 text-[11px] font-bold text-slate-700 focus:border-primary focus:outline-none shadow-sm" onchange="this.form.submit()">
                                         <option value="Submitted to Admin" {{ $firstOrder->status === 'Submitted to Admin' ? 'selected' : '' }}>Submitted to Admin</option>
                                         <option value="Processing" {{ $firstOrder->status === 'Processing' ? 'selected' : '' }}>Processing</option>
-                                        <option value="Design Approved" {{ $firstOrder->status === 'Design Approved' ? 'selected' : '' }}>Design Approved</option>
                                         <option value="In Production" {{ $firstOrder->status === 'In Production' ? 'selected' : '' }}>In Production</option>
                                         <option value="Shipped" {{ $firstOrder->status === 'Shipped' ? 'selected' : '' }}>Shipped</option>
                                         <option value="Delivered" {{ $firstOrder->status === 'Delivered' ? 'selected' : '' }}>Delivered</option>
@@ -129,6 +128,19 @@
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Coach</span><span class="font-bold text-slate-900 text-right">{{ $firstOrder->user->first_name ?? 'Unknown' }} {{ $firstOrder->user->last_name ?? '' }}<br><span class="text-xs font-normal text-slate-500">{{ $firstOrder->user->organization ?? '' }}</span></span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Submitted</span><span class="font-bold text-slate-900">{{ $firstOrder->created_at->format('M d, Y') }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Total Items</span><span class="font-bold text-slate-900">{{ $financials['total_items_sold'] ?? 0 }}</span></div>
+                    <div class="flex justify-between text-sm items-center">
+                        <span class="text-slate-500">Payment</span>
+                        @if($firstOrder->payment_status === 'paid')
+                            <span class="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 px-2.5 py-0.5 rounded-full border border-green-200">
+                                <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                Paid Online
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                                Pending
+                            </span>
+                        @endif
+                    </div>
                     
                     <div class="pt-3 mt-3 border-t border-slate-200 space-y-3">
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Total</span><span class="font-bold text-slate-900">${{ number_format($financials['total_sales'] ?? 0, 2) }}</span></div>
