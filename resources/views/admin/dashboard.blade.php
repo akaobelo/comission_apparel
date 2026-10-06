@@ -125,6 +125,7 @@
             <button @click="setTab('coaches')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'coaches' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Coaches</button>
             <button @click="setTab('catalog')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'catalog' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Design Catalog</button>
             <button @click="setTab('landing')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'landing' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Landing Page Settings</button>
+            <button @click="setTab('news')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'news' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">News & Stories</button>
             <button @click="setTab('testimonials')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'testimonials' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Testimonials</button>
             <button @click="setTab('sizing_charts')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'sizing_charts' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Sizing Charts</button>
             <button @click="setTab('sales_agents')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'sales_agents' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Sales Agents</button>
@@ -651,7 +652,12 @@
                                 <div class="p-4 flex items-center justify-between gap-4 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
                                     <div>
                                         <div class="font-bold text-sm text-slate-700">{{ $store->name }}</div>
-                                        <div class="text-xs text-slate-500">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
+                                        <div class="text-xs text-slate-500">
+                                            {{ $store->user->name }} · {{ $store->parentOrders->count() }} orders
+                                            @if($store->updated_at)
+                                                · Archived {{ $store->updated_at->format('M d, Y') }}
+                                            @endif
+                                        </div>
                                     </div>
                                     <div class="flex items-center gap-2 flex-shrink-0">
                                         <form action="{{ route('admin.stores.unarchive', $store) }}" method="POST" onsubmit="return confirm('Restore this store back to active production?')">
@@ -677,6 +683,7 @@
                                     $orders = $batchData['orders'];
                                     $store = $orders->first()->teamStore;
                                     $coach = $orders->first()->user;
+                                    $latestArchiveDate = $orders->max('updated_at');
                                 @endphp
                                 <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
                                     <div>
@@ -684,6 +691,9 @@
                                         <div class="text-xs text-slate-500">
                                             {{ $coach?->name ?? 'Unknown Coach' }} · {{ $orders->count() }} orders
                                             @if($store) · Team Store @endif
+                                            @if($latestArchiveDate)
+                                                · Archived {{ \Carbon\Carbon::parse($latestArchiveDate)->format('M d, Y') }}
+                                            @endif
                                         </div>
                                         <div class="text-xs text-slate-400 mt-1">Batch ID: {{ $batchId }}</div>
                                     </div>
@@ -829,61 +839,189 @@
         {{-- ═══ LANDING PAGE SETTINGS TAB ═══ --}}
         <div x-show="activeAdminTab === 'landing'" x-cloak class="max-w-4xl">
 
-            {{-- ═══ HERO SECTION CONFIGURATION ═══ --}}
-            <div x-data="{ expanded: false, init() { const k = 'admin_hero_settings'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-8">
-                <div @click="expanded = !expanded" class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
-                    <div>
-                        <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Hero Section Setup</h2>
-                        <p class="text-xs text-slate-500 mt-1">Configure the main landing page text and background media (image or video).</p>
-                    </div>
-                    <div class="text-slate-400">
-                        <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                </div>
-                <div x-show="expanded" x-collapse class="p-6">
-                    <form id="remove-media-form" action="{{ url('/admin/hero-settings/remove-media') }}" method="POST" class="hidden">
-                        @csrf
-                    </form>
-                    <form action="{{ url('/admin/hero-settings') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
-                        @csrf
+            {{-- ═══ DYNAMIC LANDING PAGE SETTINGS FORM ═══ --}}
+            <form action="{{ route('admin.landing.settings.update') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
+                @csrf
+
+                {{-- 1. HERO SECTION CONFIGURATION --}}
+                <div x-data="{ expanded: true, init() { const k = 'admin_hero_settings'; this.expanded = localStorage.getItem(k) !== 'false'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div @click="expanded = !expanded" class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
                         <div>
-                            <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Hero Subtitle</label>
-                            <textarea name="hero_subtitle" required rows="3" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">{{ $heroSettings['subtitle'] }}</textarea>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">1. Hero Section Setup</h2>
+                            <p class="text-xs text-slate-500 mt-1">Customize the top athletic hero banner, headline typography, and call-to-action buttons.</p>
                         </div>
+                        <div class="text-slate-400">
+                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                    <div x-show="expanded" x-collapse class="p-6 space-y-4">
                         <div>
-                            <label class="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">Hero Media (Image or Video)</label>
-                            @if($heroSettings['media_path'])
-                                <div class="mb-3">
-                                    <div class="rounded-lg overflow-hidden border border-slate-200 inline-block">
-                                        @if($heroSettings['media_type'] === 'video')
-                                            @php
-                                                $ext = strtolower(pathinfo($heroSettings['media_path'], PATHINFO_EXTENSION));
-                                                $mime = 'video/mp4';
-                                                if ($ext === 'mov') $mime = 'video/quicktime';
-                                                elseif ($ext === 'webm') $mime = 'video/webm';
-                                                elseif ($ext === 'ogg') $mime = 'video/ogg';
-                                            @endphp
-                                            <video autoplay loop muted playsinline class="h-32 w-auto object-cover">
-                                                <source src="{{ asset($heroSettings['media_path']) }}" type="{{ $mime }}">
-                                            </video>
-                                        @else
-                                            <img src="{{ asset($heroSettings['media_path']) }}" class="h-32 w-auto object-cover">
-                                        @endif
-                                    </div>
-                                    <div class="mt-1">
-                                        <button type="button" class="text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-700 underline" onclick="if(confirm('Are you sure you want to remove the media?')) document.getElementById('remove-media-form').submit();">Remove Media</button>
-                                    </div>
+                            <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Hero Headline Title</label>
+                            <input type="text" name="hero_title" value="{{ $landingSettings['hero_title'] ?? 'CUSTOM GEAR BUILT FOR THE COMMITTED' }}" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm font-bold">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Hero Subtitle</label>
+                            <textarea name="hero_subtitle" rows="3" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">{{ $landingSettings['hero_subtitle'] ?? 'Dominate the competition with elite performance apparel designed for champion athletes.' }}</textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Primary CTA Button Text</label>
+                                <input type="text" name="hero_cta_primary_text" value="{{ $landingSettings['hero_cta_primary_text'] ?? 'START DESIGNING' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Primary CTA Link</label>
+                                <input type="text" name="hero_cta_primary_url" value="{{ $landingSettings['hero_cta_primary_url'] ?? '/quote' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Secondary CTA Button Text</label>
+                                <input type="text" name="hero_cta_secondary_text" value="{{ $landingSettings['hero_cta_secondary_text'] ?? 'VIEW CATALOG' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Secondary CTA Link</label>
+                                <input type="text" name="hero_cta_secondary_url" value="{{ $landingSettings['hero_cta_secondary_url'] ?? '/catalog' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Hero Athlete Image / Banner</label>
+                            @if(!empty($landingSettings['hero_banner_image']))
+                                <div class="mb-3 rounded-lg overflow-hidden border border-slate-200 inline-block bg-black p-1">
+                                    <img src="{{ $landingSettings['hero_banner_image'] }}" class="h-28 w-auto object-contain">
                                 </div>
                             @endif
-                            <input type="file" name="hero_media" accept="image/*,video/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:tracking-wider file:bg-secondary file:text-white hover:file:bg-[#a11825]">
-                            <p class="text-[10px] text-slate-400 mt-1.5 font-medium uppercase tracking-wider">Leave blank to keep current. Max 20MB. Videos will auto-play on mute.</p>
+                            <input type="file" name="hero_banner_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:bg-slate-900 file:text-white hover:file:bg-slate-700 cursor-pointer">
+                            <p class="text-[10px] text-slate-400 mt-1 uppercase">Leave blank to keep existing image. Recommended: High-res PNG/JPG with dark or transparent backdrop.</p>
                         </div>
-                        <button type="submit" class="py-2.5 px-6 bg-slate-900 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">
-                            Save Hero Settings
-                        </button>
-                    </form>
+                    </div>
                 </div>
-            </div>
+
+                {{-- 2. CONCEPT TO REALITY TECHNICAL PROOFING --}}
+                <div x-data="{ expanded: true, init() { const k = 'admin_proof_settings'; this.expanded = localStorage.getItem(k) !== 'false'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div @click="expanded = !expanded" class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
+                        <div>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">2. "Concept to Reality" Proofing Setup</h2>
+                            <p class="text-xs text-slate-500 mt-1">Upload 3D digital vector design mockup vs. actual sublimated uniform photos and feature pins.</p>
+                        </div>
+                        <div class="text-slate-400">
+                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                    <div x-show="expanded" x-collapse class="p-6 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Section Heading</label>
+                                <input type="text" name="proof_heading" value="{{ $landingSettings['proof_heading'] ?? 'From Vision to Victory: Concept to Reality' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Section Subheading</label>
+                                <input type="text" name="proof_subheading" value="{{ $landingSettings['proof_subheading'] ?? 'Precision craftsmanship from 3D digital blueprint to final sublimated uniform.' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                            <div class="p-4 border border-slate-200 rounded-xl bg-slate-50">
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Phase 1: 3D Digital Mockup Image</label>
+                                @if(!empty($landingSettings['proof_concept_image']))
+                                    <div class="mb-2 bg-slate-900 p-2 rounded-lg inline-block">
+                                        <img src="{{ $landingSettings['proof_concept_image'] }}" class="h-24 w-auto object-contain">
+                                    </div>
+                                @endif
+                                <input type="file" name="proof_concept_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:bg-slate-800 file:text-white">
+                            </div>
+
+                            <div class="p-4 border border-slate-200 rounded-xl bg-slate-50">
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Phase 2: Finished Sublimated Jersey Image</label>
+                                @if(!empty($landingSettings['proof_reality_image']))
+                                    <div class="mb-2 bg-slate-900 p-2 rounded-lg inline-block">
+                                        <img src="{{ $landingSettings['proof_reality_image'] }}" class="h-24 w-auto object-contain">
+                                    </div>
+                                @endif
+                                <input type="file" name="proof_reality_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:bg-secondary file:text-white">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Feature Callout 1</label>
+                                <input type="text" name="proof_feature_1" value="{{ $landingSettings['proof_feature_1'] ?? '1. Full Custom Graphics' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Feature Callout 2</label>
+                                <input type="text" name="proof_feature_2" value="{{ $landingSettings['proof_feature_2'] ?? '2. Premium Moisture-Wicking Fabric' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Feature Callout 3</label>
+                                <input type="text" name="proof_feature_3" value="{{ $landingSettings['proof_feature_3'] ?? '3. Reinforced Athletic Stitching' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 3. TEAM STORE PLATFORM SECTION SETUP --}}
+                <div x-data="{ expanded: false, init() { const k = 'admin_team_store_settings'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div @click="expanded = !expanded" class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
+                        <div>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">3. Team Store Platform Setup</h2>
+                            <p class="text-xs text-slate-500 mt-1">Customize the coach/parent storefront feature showcase image and bullet points.</p>
+                        </div>
+                        <div class="text-slate-400">
+                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                    <div x-show="expanded" x-collapse class="p-6 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Section Heading</label>
+                                <input type="text" name="team_store_heading" value="{{ $landingSettings['team_store_heading'] ?? 'LAUNCH YOUR TEAM STORE' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Section Subheading</label>
+                                <input type="text" name="team_store_subheading" value="{{ $landingSettings['team_store_subheading'] ?? 'Empower your program with a custom online store that eliminates coach hassle and generates revenue.' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Platform Laptop Mockup Graphic</label>
+                            @if(!empty($landingSettings['team_store_image']))
+                                <div class="mb-2 bg-slate-900 p-2 rounded-lg inline-block">
+                                    <img src="{{ $landingSettings['team_store_image'] }}" class="h-24 w-auto object-contain">
+                                </div>
+                            @endif
+                            <input type="file" name="team_store_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:bg-slate-900 file:text-white">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Benefit Bullet 1</label>
+                                <input type="text" name="team_store_bullet_1" value="{{ $landingSettings['team_store_bullet_1'] ?? 'Streamlined Direct Ordering for Parents' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Benefit Bullet 2</label>
+                                <input type="text" name="team_store_bullet_2" value="{{ $landingSettings['team_store_bullet_2'] ?? 'Custom Fan Gear & Official Team Packages' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Benefit Bullet 3</label>
+                                <input type="text" name="team_store_bullet_3" value="{{ $landingSettings['team_store_bullet_3'] ?? 'Fast Direct-to-Door Delivery' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Benefit Bullet 4</label>
+                                <input type="text" name="team_store_bullet_4" value="{{ $landingSettings['team_store_bullet_4'] ?? 'Centralized Coach & Athletic Director Portal' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" class="py-3 px-8 bg-[#cd202c] hover:bg-[#a11825] text-white text-xs font-black uppercase tracking-widest rounded-lg shadow-md transition-colors">
+                        Save Landing Page Settings
+                    </button>
+                </div>
+            </form>
 
             {{-- ═══ LANDING PAGE COLLECTIONS ═══ --}}
             <div x-data="{ expanded: true, init() { const k = 'admin_landing_collections'; const val = localStorage.getItem(k); this.expanded = val !== null ? val === 'true' : true; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -1046,6 +1184,198 @@
                 @endif
                 </div>
             </div>
+        </div>
+
+        {{-- ═══ NEWS & STORIES TAB ═══ --}}
+        <div x-show="activeAdminTab === 'news'" x-cloak class="max-w-6xl space-y-8" x-data="{ createNewsModal: false }">
+            
+            <!-- Header with Create Button -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+                <div>
+                    <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">News & Stories Management</h2>
+                    <p class="text-xs text-slate-500 mt-1">Publish team highlights, uniform drop announcements, and embedded videos directly to the homepage and newsroom.</p>
+                </div>
+                <button type="button" @click="createNewsModal = true" class="btn btn-primary inline-flex items-center gap-2 px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-md transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Write New Article
+                </button>
+            </div>
+
+            <!-- Articles List -->
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <h3 class="text-sm font-black uppercase tracking-wide text-slate-900">All Published & Draft Stories ({{ $newsArticles->count() }})</h3>
+                </div>
+
+                @if($newsArticles->isNotEmpty())
+                <div class="divide-y divide-slate-100">
+                    @foreach($newsArticles as $article)
+                    <div x-data="{ editArticleModal: false }" class="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/80 transition-colors">
+                        <div class="flex items-center gap-4">
+                            @if($article->cover_image)
+                                <img src="{{ $article->cover_image }}" class="w-20 h-14 object-cover rounded-lg border border-slate-200 shadow-sm shrink-0">
+                            @else
+                                <div class="w-20 h-14 bg-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-xs font-bold shrink-0">No Img</div>
+                            @endif
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-[#cd202c]/10 text-[#cd202c]">
+                                        {{ $article->category }}
+                                    </span>
+                                    @if($article->is_featured)
+                                        <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-700">Featured</span>
+                                    @endif
+                                    @if($article->video_url)
+                                        <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-700">Video</span>
+                                    @endif
+                                </div>
+                                <h4 class="text-sm font-black uppercase text-slate-900 leading-snug">{{ $article->title }}</h4>
+                                <div class="text-[11px] text-slate-500 mt-0.5">
+                                    By <strong class="text-slate-700">{{ $article->author ?? 'Editorial' }}</strong> · {{ $article->published_at ? $article->published_at->format('M d, Y') : 'Draft' }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 self-end md:self-center">
+                            <a href="{{ route('news.show', $article->slug) }}" target="_blank" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold uppercase rounded-lg transition-colors">
+                                View ↗
+                            </a>
+                            <button type="button" @click="editArticleModal = true" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-700 text-white text-xs font-bold uppercase rounded-lg transition-colors">
+                                Edit
+                            </button>
+                            <form action="{{ route('admin.news.delete', $article) }}" method="POST" onsubmit="return confirm('Permanently delete this news article?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors" title="Delete">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Edit Article Modal -->
+                        <div x-show="editArticleModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                            <div @click.away="editArticleModal = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+                                <div class="p-6 bg-slate-900 text-white flex justify-between items-center sticky top-0 z-10">
+                                    <h3 class="text-base font-black uppercase">Edit Article: {{ $article->title }}</h3>
+                                    <button @click="editArticleModal = false" class="text-slate-400 hover:text-white">✕</button>
+                                </div>
+                                <form action="{{ route('admin.news.update', $article) }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4 text-left">
+                                    @csrf
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Title</label>
+                                        <input type="text" name="title" value="{{ $article->title }}" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Category</label>
+                                            <input type="text" name="category" value="{{ $article->category }}" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Author</label>
+                                            <input type="text" name="author" value="{{ $article->author }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Short Excerpt / Summary</label>
+                                        <textarea name="summary" rows="2" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900">{{ $article->summary }}</textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Video URL (YouTube, Vimeo, or MP4)</label>
+                                        <input type="url" name="video_url" value="{{ $article->video_url }}" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Article Body Write-up (HTML supported)</label>
+                                        <textarea name="content" rows="6" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 font-mono">{{ $article->content }}</textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Replace Cover Image</label>
+                                        <input type="file" name="cover_image" accept="image/*" class="w-full text-xs text-slate-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Add More Gallery Images</label>
+                                        <input type="file" name="gallery[]" multiple accept="image/*" class="w-full text-xs text-slate-500">
+                                    </div>
+                                    <div class="flex items-center gap-6 pt-2">
+                                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" name="is_featured" value="1" {{ $article->is_featured ? 'checked' : '' }} class="rounded border-slate-300 text-secondary focus:ring-secondary">
+                                            <span class="text-xs font-bold text-slate-700 uppercase">Feature on Homepage</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" name="is_active" value="1" {{ $article->is_active ? 'checked' : '' }} class="rounded border-slate-300 text-secondary focus:ring-secondary">
+                                            <span class="text-xs font-bold text-slate-700 uppercase">Published</span>
+                                        </label>
+                                    </div>
+                                    <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                                        <button type="button" @click="editArticleModal = false" class="px-4 py-2 text-xs font-bold uppercase text-slate-600">Cancel</button>
+                                        <button type="submit" class="px-6 py-2 bg-secondary text-white text-xs font-bold uppercase rounded-lg">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @else
+                <div class="p-8 text-center text-slate-400 text-xs font-bold uppercase">No news articles published yet.</div>
+                @endif
+            </div>
+
+            <!-- Create Article Modal -->
+            <div x-show="createNewsModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                <div @click.away="createNewsModal = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+                    <div class="p-6 bg-slate-900 text-white flex justify-between items-center sticky top-0 z-10">
+                        <h3 class="text-base font-black uppercase">Create New Story / Announcement</h3>
+                        <button @click="createNewsModal = false" class="text-slate-400 hover:text-white">✕</button>
+                    </div>
+                    <form action="{{ route('admin.news.create') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4 text-left">
+                        @csrf
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Headline Title <span class="text-red-500">*</span></label>
+                            <input type="text" name="title" required placeholder="e.g. The Journey: Coach Mike's Championship Run" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Category Tag <span class="text-red-500">*</span></label>
+                                <input type="text" name="category" required placeholder="e.g. PROGRAM SPOTLIGHT, UNIFORM REVEAL" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Author</label>
+                                <input type="text" name="author" value="The Commission Editorial" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Short Summary (1–2 sentences for homepage card)</label>
+                            <textarea name="summary" rows="2" placeholder="Brief hook describing the story..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Video URL (YouTube, Vimeo, or MP4 link)</label>
+                            <input type="url" name="video_url" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Cover Photo</label>
+                            <input type="file" name="cover_image" accept="image/*" class="w-full text-xs text-slate-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Photo Gallery (Multiple Uniform Shots)</label>
+                            <input type="file" name="gallery[]" multiple accept="image/*" class="w-full text-xs text-slate-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Full Article Write-up (HTML / Paragraphs)</label>
+                            <textarea name="content" rows="6" placeholder="<p>Full story content here...</p>" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 font-mono"></textarea>
+                        </div>
+                        <div class="flex items-center gap-6 pt-2">
+                            <label class="inline-flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="is_featured" value="1" class="rounded border-slate-300 text-secondary focus:ring-secondary">
+                                <span class="text-xs font-bold text-slate-700 uppercase">Set as Featured Story on Homepage</span>
+                            </label>
+                        </div>
+                        <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                            <button type="button" @click="createNewsModal = false" class="px-4 py-2 text-xs font-bold uppercase text-slate-600">Cancel</button>
+                            <button type="submit" class="btn btn-primary px-6 py-2 bg-[#cd202c] hover:bg-[#a11825] text-white text-xs font-bold uppercase rounded-lg shadow-md">Publish Story</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
         </div>
 
         {{-- ═══ DESIGN CATALOG TAB ═══ --}}

@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CoachController;
 use App\Http\Controllers\QuoteRequestController;
 use App\Http\Controllers\StoreController;
+use App\Http\Controllers\NewsController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\CoachMiddleware;
 
@@ -17,15 +18,50 @@ Route::get('/', function () {
         ->get();
     $testimonials = \App\Models\Testimonial::where('is_active', true)
         ->orderBy('sort_order', 'asc')
-        ->limit(5)
+        ->limit(6)
         ->get();
+    
+    $newsArticles = \App\Models\NewsArticle::where('is_active', true)
+        ->orderBy('is_featured', 'desc')
+        ->orderBy('sort_order', 'asc')
+        ->orderBy('published_at', 'desc')
+        ->limit(3)
+        ->get();
+
     $heroSettings = [
-        'subtitle'   => \App\Models\SiteSetting::where('key', 'hero_subtitle')->value('value') ?? 'Premium armor tailored for programs that demand greatness. Built for the modern athlete, delivered with lightning speed.',
-        'media_path' => \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value') ?? asset('images/hero-models.png'),
-        'media_type' => \App\Models\SiteSetting::where('key', 'hero_media_type')->value('value') ?? 'image',
+        'title'               => \App\Models\SiteSetting::where('key', 'hero_title')->value('value') ?? 'CUSTOM GEAR BUILT FOR THE COMMITTED',
+        'subtitle'            => \App\Models\SiteSetting::where('key', 'hero_subtitle')->value('value') ?? 'Dominate the competition with elite performance apparel designed for champion athletes. Elevate your team\'s game with custom uniforms crafted with speed and precision.',
+        'media_path'          => \App\Models\SiteSetting::where('key', 'hero_banner_image')->value('value') ?? \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value') ?? asset('images/hero-models.png'),
+        'cta_primary_text'    => \App\Models\SiteSetting::where('key', 'hero_cta_primary_text')->value('value') ?? 'START DESIGNING',
+        'cta_primary_url'     => \App\Models\SiteSetting::where('key', 'hero_cta_primary_url')->value('value') ?? '/quote',
+        'cta_secondary_text'  => \App\Models\SiteSetting::where('key', 'hero_cta_secondary_text')->value('value') ?? 'VIEW CATALOG',
+        'cta_secondary_url'   => \App\Models\SiteSetting::where('key', 'hero_cta_secondary_url')->value('value') ?? '/catalog',
     ];
-    return view('welcome', compact('landingCollections', 'testimonials', 'heroSettings')); 
+
+    $proofSettings = [
+        'heading'             => \App\Models\SiteSetting::where('key', 'proof_heading')->value('value') ?? 'From Vision to Victory: Concept to Reality',
+        'subheading'          => \App\Models\SiteSetting::where('key', 'proof_subheading')->value('value') ?? 'Precision craftsmanship from 3D digital blueprint to final sublimated uniform.',
+        'concept_image'       => \App\Models\SiteSetting::where('key', 'proof_concept_image')->value('value') ?? asset('images/concept-spartan.png'),
+        'reality_image'       => \App\Models\SiteSetting::where('key', 'proof_reality_image')->value('value') ?? asset('images/reality-spartan.png'),
+        'feature_1'           => \App\Models\SiteSetting::where('key', 'proof_feature_1')->value('value') ?? '1. Full Custom Graphics',
+        'feature_2'           => \App\Models\SiteSetting::where('key', 'proof_feature_2')->value('value') ?? '2. Premium Moisture-Wicking Fabric',
+        'feature_3'           => \App\Models\SiteSetting::where('key', 'proof_feature_3')->value('value') ?? '3. Reinforced Athletic Stitching',
+    ];
+
+    $teamStoreSettings = [
+        'heading'             => \App\Models\SiteSetting::where('key', 'team_store_heading')->value('value') ?? 'LAUNCH YOUR TEAM STORE',
+        'subheading'          => \App\Models\SiteSetting::where('key', 'team_store_subheading')->value('value') ?? 'Empower your program with a custom online store that eliminates coach hassle and generates revenue.',
+        'image'               => \App\Models\SiteSetting::where('key', 'team_store_image')->value('value') ?? asset('images/team-store-background-v2.png'),
+        'bullet_1'            => \App\Models\SiteSetting::where('key', 'team_store_bullet_1')->value('value') ?? 'Streamlined Direct Ordering for Parents',
+        'bullet_2'            => \App\Models\SiteSetting::where('key', 'team_store_bullet_2')->value('value') ?? 'Custom Fan Gear & Official Team Packages',
+        'bullet_3'            => \App\Models\SiteSetting::where('key', 'team_store_bullet_3')->value('value') ?? 'Fast Direct-to-Door Delivery',
+        'bullet_4'            => \App\Models\SiteSetting::where('key', 'team_store_bullet_4')->value('value') ?? 'Centralized Coach & Athletic Director Portal',
+    ];
+
+    return view('welcome', compact('landingCollections', 'testimonials', 'newsArticles', 'heroSettings', 'proofSettings', 'teamStoreSettings')); 
 });
+Route::get('/news', [NewsController::class, 'index'])->name('news.index');
+Route::get('/news/{slug}', [NewsController::class, 'show'])->name('news.show');
 Route::get('/testimonials', function () {
     $testimonials = \App\Models\Testimonial::where('is_active', true)
         ->orderBy('sort_order', 'asc')
@@ -375,6 +411,14 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
 
     // Quotes
     Route::post('/admin/quote/{quoteRequest}/mark-addressed', [AdminController::class, 'markQuoteAddressed'])->name('admin.quote.mark-addressed');
+
+    // Landing Page CMS Settings
+    Route::post('/admin/landing-settings', [AdminController::class, 'updateLandingSettings'])->name('admin.landing.settings.update');
+
+    // News & Media Management
+    Route::post('/admin/news', [AdminController::class, 'createNewsArticle'])->name('admin.news.create');
+    Route::post('/admin/news/{article}/update', [AdminController::class, 'updateNewsArticle'])->name('admin.news.update');
+    Route::delete('/admin/news/{article}/delete', [AdminController::class, 'deleteNewsArticle'])->name('admin.news.delete');
 
     // Sales Agents Admin CRUD
     Route::post('/admin/sales-agents', [AdminController::class, 'createSalesAgent'])->name('admin.sales-agent.create');

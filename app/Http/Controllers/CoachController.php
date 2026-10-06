@@ -16,13 +16,22 @@ class CoachController extends Controller
     {
         $user = $request->user();
 
-        // Load store with items and orders
-        $store = $user->teamStore()->with(['items' => function($q) {
-            $q->orderBy('sort_order', 'asc');
-        }, 'items.designCatalog'])->first();
+        // Load all stores for this coach
+        $stores = $user->teamStores()->orderBy('created_at', 'desc')->get();
 
-        // Get unbatched orders for the active store roster
+        // Determine the active store (via query param, session, or default to latest)
+        $activeStoreId = $request->query('store_id') 
+            ?? session('active_coach_store_id') 
+            ?? $stores->first()?->id;
+
+        $store = $stores->firstWhere('id', $activeStoreId) ?? $stores->first();
+
         if ($store) {
+            session(['active_coach_store_id' => $store->id]);
+            $store->load(['items' => function($q) {
+                $q->orderBy('sort_order', 'asc');
+            }, 'items.designCatalog', 'rosters']);
+            // Get unbatched orders for the active store roster
             $store->setRelation('parentOrders', $store->parentOrders()->whereNull('batch_id')->get());
         }
 
@@ -106,7 +115,7 @@ class CoachController extends Controller
             ];
         }
 
-        return view('coach.dashboard', compact('user', 'store', 'assignedDesigns', 'packageDesigns', 'salesSummary', 'directOrders', 'directOrderBatches', 'archivedOrderBatches'));
+        return view('coach.dashboard', compact('user', 'stores', 'store', 'assignedDesigns', 'packageDesigns', 'salesSummary', 'directOrders', 'directOrderBatches', 'archivedOrderBatches'));
     }
 
 
@@ -121,28 +130,25 @@ class CoachController extends Controller
 
         $user = $request->user();
 
-        if ($user->teamStore()->exists()) {
-            return redirect()->route('coach.dashboard')
-                ->with('error', 'You already have a team store. Contact admin to create additional stores.');
-        }
-
         $store = TeamStore::create([
             'user_id'      => $user->id,
             'name'         => $request->name,
             'description'  => null,
             'slug'         => Str::slug($request->name) . '-' . strtolower(Str::random(6)),
-            'package_type' => $request->package_type,
+            'package_type' => $request->package_type ?? 'individual',
             'payment_mode' => $request->payment_mode ?? 'in_house',
             'status'       => 'pending',
         ]);
+
+        session(['active_coach_store_id' => $store->id]);
 
         \Illuminate\Support\Facades\Notification::send(
             \App\Models\User::where('role', 'admin')->get(),
             new \App\Notifications\StoreCreated($store)
         );
 
-        return redirect()->route('coach.dashboard')
-            ->with('success', 'Team store request submitted! Awaiting admin approval. You can set it up while you wait.');
+        return redirect()->route('coach.dashboard', ['store_id' => $store->id, 'tab' => 'overview'])
+            ->with('success', 'Store "' . $store->name . '" created! Awaiting admin approval. You can start setting it up.');
     }
 
     public function addStoreItem(Request $request, TeamStore $store)

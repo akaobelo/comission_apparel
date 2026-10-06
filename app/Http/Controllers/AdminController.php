@@ -14,6 +14,8 @@ use App\Models\PasswordResetLog;
 use App\Models\Testimonial;
 use App\Models\SizingChart;
 use App\Models\SalesAgent;
+use App\Models\NewsArticle;
+use App\Models\SiteSetting;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
 
@@ -47,7 +49,14 @@ class AdminController extends Controller
 
             $availableSports = config('sports.categories') ?? [];
             $allCollections = \App\Models\DesignCollection::select('id', 'name')->orderBy('sort_order', 'asc')->get();
-            $allCoaches = User::where('role', 'coach')->with('teamStore')->orderBy('first_name')->get();
+            $allCoaches = User::where('role', 'coach')
+                ->select('id', 'first_name', 'last_name', 'organization')
+                ->with('teamStore:id,user_id,name')
+                ->get()
+                ->sortBy(function($user) {
+                    $club = $user->teamStore?->name ?? $user->organization ?? trim($user->first_name . ' ' . $user->last_name);
+                    return strtolower(trim($club ?: 'zzz'));
+                }, SORT_NATURAL | SORT_FLAG_CASE)->values();
 
             return view('admin.partials.existing_collections_list', compact(
                 'designCollections',
@@ -185,12 +194,12 @@ class AdminController extends Controller
                   });
             });
         }
-        $archivedStores = $archivedStoresQuery->latest()->paginate(10, ['*'], 'archive_store_page')->withQueryString();
+        $archivedStores = $archivedStoresQuery->latest('updated_at')->paginate(10, ['*'], 'archive_store_page')->withQueryString();
 
         // Archived batches
         $archivedBatchQuery = ParentOrder::where('is_archived', true)
             ->whereNotNull('batch_id')
-            ->select('batch_id')
+            ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(updated_at) as latest_archive_date'))
             ->groupBy('batch_id');
 
         if ($request->filled('archive_search')) {
@@ -210,13 +219,16 @@ class AdminController extends Controller
             });
         }
 
-        $archivedBatchIds = $archivedBatchQuery->latest('batch_id')->paginate(10, ['*'], 'archive_batch_page')->withQueryString();
+        $archivedBatchIds = $archivedBatchQuery->orderByDesc('latest_archive_date')->paginate(10, ['*'], 'archive_batch_page')->withQueryString();
 
         $archivedOrderBatches = ParentOrder::whereIn('batch_id', $archivedBatchIds->pluck('batch_id'))
             ->with(['user', 'teamStore'])
-            ->latest()
+            ->latest('updated_at')
             ->get()
             ->groupBy('batch_id')
+            ->sortByDesc(function ($orders) {
+                return $orders->max('updated_at');
+            })
             ->map(function ($orders) {
                 $store = $orders->first()->teamStore;
                 $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, $store);
@@ -253,16 +265,16 @@ class AdminController extends Controller
         // Optimize dropdown payloads: select only necessary columns to avoid loading heavy object trees
         $allStores = TeamStore::select('id', 'name', 'user_id')->with(['user' => function($q) {
             $q->select('id', 'first_name', 'last_name', 'organization');
-        }])->latest()->get();
+        }])->orderBy('name', 'asc')->get();
 
         $allCoaches = User::where('role', 'coach')
             ->select('id', 'first_name', 'last_name', 'organization')
             ->with('teamStore:id,user_id,name')
             ->get()
             ->sortBy(function($user) {
-                $club = $user->teamStore?->name ?? $user->organization ?? '';
-                return strtolower($club);
-            });
+                $club = $user->teamStore?->name ?? $user->organization ?? trim($user->first_name . ' ' . $user->last_name);
+                return strtolower(trim($club ?: 'zzz'));
+            }, SORT_NATURAL | SORT_FLAG_CASE)->values();
 
         $availableSports = config('sports.categories');
 
@@ -363,11 +375,14 @@ class AdminController extends Controller
             return $summary;
         });
 
+        $newsArticles = NewsArticle::orderBy('sort_order', 'asc')->orderBy('published_at', 'desc')->get();
+        $landingSettings = SiteSetting::all()->pluck('value', 'key');
+
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStoreBatches',
             'unassignedDesigns', 'allCollections', 'productionStores', 'quoteRequests', 'quoteRequestsTotal', 'newQuoteRequestsCount', 'landingCollections', 'allStores', 'allCoaches',
             'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'archivedOrderBatches', 'globalSalesSummary', 'archivedBatchesPaginator',
-            'salesAgents'
+            'salesAgents', 'newsArticles', 'landingSettings'
         ));
     }
 
@@ -2086,5 +2101,142 @@ class AdminController extends Controller
         $user->save();
 
         return redirect()->route('admin.dashboard')->with('success', 'Credentials updated successfully.');
+    }
+
+    // ─── DYNAMIC LANDING PAGE SETTINGS ──────────────────────────────────────────
+
+    public function updateLandingSettings(Request $request)
+    {
+        $textFields = [
+            'hero_title', 'hero_subtitle', 'hero_cta_primary_text', 'hero_cta_primary_url',
+            'hero_cta_secondary_text', 'hero_cta_secondary_url',
+            'proof_heading', 'proof_subheading', 'proof_feature_1', 'proof_feature_2', 'proof_feature_3',
+            'team_store_heading', 'team_store_subheading', 'team_store_bullet_1', 'team_store_bullet_2',
+            'team_store_bullet_3', 'team_store_bullet_4'
+        ];
+
+        foreach ($textFields as $field) {
+            if ($request->has($field)) {
+                SiteSetting::updateOrCreate(['key' => $field], ['value' => $request->input($field)]);
+            }
+        }
+
+        // Handle Image File Uploads
+        $fileFields = [
+            'hero_banner_image'   => 'hero_banner_image',
+            'proof_concept_image' => 'proof_concept_image',
+            'proof_reality_image' => 'proof_reality_image',
+            'team_store_image'    => 'team_store_image',
+        ];
+
+        foreach ($fileFields as $inputKey => $settingKey) {
+            if ($request->hasFile($inputKey)) {
+                $file = $request->file($inputKey);
+                $path = $file->store('landing', 'public');
+                SiteSetting::updateOrCreate(['key' => $settingKey], ['value' => '/storage/' . $path]);
+            }
+        }
+
+        return redirect()->route('admin.dashboard', ['tab' => 'landing_settings'])
+            ->with('success', 'Landing page settings updated successfully.');
+    }
+
+    // ─── NEWS & MEDIA MANAGEMENT ────────────────────────────────────────────────
+
+    public function createNewsArticle(Request $request)
+    {
+        $validated = $request->validate([
+            'title'       => 'required|string|max:255',
+            'category'    => 'required|string|max:100',
+            'author'      => 'nullable|string|max:150',
+            'summary'     => 'nullable|string|max:1000',
+            'content'     => 'nullable|string',
+            'video_url'   => 'nullable|url|max:500',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'gallery.*'   => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'cta_text'    => 'nullable|string|max:100',
+            'cta_url'     => 'nullable|string|max:255',
+            'is_featured' => 'nullable|boolean',
+            'sort_order'  => 'nullable|integer',
+        ]);
+
+        $coverImagePath = null;
+        if ($request->hasFile('cover_image')) {
+            $coverImagePath = '/storage/' . $request->file('cover_image')->store('news', 'public');
+        }
+
+        $galleryPaths = [];
+        if ($request->hasFile('gallery')) {
+            foreach ($request->file('gallery') as $file) {
+                $galleryPaths[] = '/storage/' . $file->store('news/gallery', 'public');
+            }
+        }
+
+        $article = NewsArticle::create([
+            'title'          => $validated['title'],
+            'slug'           => Str::slug($validated['title']) . '-' . strtolower(Str::random(5)),
+            'category'       => $validated['category'],
+            'author'         => $validated['author'] ?? 'The Commission Editorial',
+            'summary'        => $validated['summary'] ?? null,
+            'content'        => $validated['content'] ?? null,
+            'cover_image'    => $coverImagePath,
+            'video_url'      => $validated['video_url'] ?? null,
+            'gallery_images' => $galleryPaths,
+            'cta_text'       => $validated['cta_text'] ?? 'Request A Custom Quote',
+            'cta_url'        => $validated['cta_url'] ?? '/quote',
+            'published_at'   => now(),
+            'is_featured'    => $request->boolean('is_featured'),
+            'is_active'      => true,
+            'sort_order'     => $validated['sort_order'] ?? 0,
+        ]);
+
+        return redirect()->route('admin.dashboard', ['tab' => 'news_articles'])
+            ->with('success', 'News article created and published successfully!');
+    }
+
+    public function updateNewsArticle(Request $request, NewsArticle $article)
+    {
+        $validated = $request->validate([
+            'title'       => 'required|string|max:255',
+            'category'    => 'required|string|max:100',
+            'author'      => 'nullable|string|max:150',
+            'summary'     => 'nullable|string|max:1000',
+            'content'     => 'nullable|string',
+            'video_url'   => 'nullable|url|max:500',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'gallery.*'   => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'cta_text'    => 'nullable|string|max:100',
+            'cta_url'     => 'nullable|string|max:255',
+            'is_featured' => 'nullable|boolean',
+            'is_active'   => 'nullable|boolean',
+            'sort_order'  => 'nullable|integer',
+        ]);
+
+        if ($request->hasFile('cover_image')) {
+            $validated['cover_image'] = '/storage/' . $request->file('cover_image')->store('news', 'public');
+        }
+
+        if ($request->hasFile('gallery')) {
+            $gallery = $article->gallery_images ?? [];
+            foreach ($request->file('gallery') as $file) {
+                $gallery[] = '/storage/' . $file->store('news/gallery', 'public');
+            }
+            $validated['gallery_images'] = $gallery;
+        }
+
+        $validated['is_featured'] = $request->boolean('is_featured');
+        $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : $article->is_active;
+
+        $article->update($validated);
+
+        return redirect()->route('admin.dashboard', ['tab' => 'news_articles'])
+            ->with('success', 'News article updated successfully.');
+    }
+
+    public function deleteNewsArticle(NewsArticle $article)
+    {
+        $article->delete();
+        return redirect()->route('admin.dashboard', ['tab' => 'news_articles'])
+            ->with('success', 'News article deleted.');
     }
 }
