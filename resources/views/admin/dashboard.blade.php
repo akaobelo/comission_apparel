@@ -331,8 +331,6 @@
                     </div>
                 </div>
 
-            </div>
-            <div class="space-y-8">
                 {{-- ═══ ACTIVE STORES IN PRODUCTION ═══ --}}
                 <div x-data="{ expanded: false, init() { const k = 'admin_active_team_stores'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                     <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
@@ -429,8 +427,10 @@
                     </div>
                 </div>
 
+            </div>
+            <div class="space-y-8">
                 {{-- ═══ FINALIZED MASTER ORDERS ═══ --}}
-                <div x-data="{ expanded: false, init() { const k = 'admin_finalized_master_orders'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
+                <div x-data="{ expanded: false, init() { const k = 'admin_finalized_master_orders'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                     <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
                         <div>
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Master Orders</h2>
