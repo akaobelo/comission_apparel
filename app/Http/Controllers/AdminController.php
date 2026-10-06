@@ -1031,14 +1031,34 @@ class AdminController extends Controller
 
         $store->update($validated);
 
-        if ($validated['payment_mode'] === 'online') {
-            $store->parentOrders()->where(function($q) {
-                $q->whereNull('payment_status')
-                  ->orWhere('payment_status', 'not_applicable');
-            })->update(['payment_status' => 'pending']);
-        } else {
-            $store->parentOrders()->where('payment_status', 'pending')
-                  ->update(['payment_status' => 'not_applicable']);
+        // Synchronize unpaid orders with the store's tax exemption and payment mode
+        $isTaxExempt = $store->isTaxExempt();
+        $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
+        $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+        $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+
+        foreach ($store->parentOrders()->where(function($q) {
+            $q->whereNull('payment_status')
+              ->orWhereIn('payment_status', ['pending', 'not_applicable']);
+        })->get() as $unpaidOrder) {
+            $subtotal = $unpaidOrder->getCalculatedSubtotal($store);
+            $taxAmount = $isTaxExempt ? 0.00 : round($subtotal * $taxRate, 2);
+            if ($subtotal > 0 && ($store->isOnlinePayment() || $unpaidOrder->isOnlineOrder())) {
+                $preFee = $subtotal + $taxAmount;
+                $grandTotal = round(($preFee + $feeFixed) / (1 - $feePercent), 2);
+                $feeAmount = round($grandTotal - $preFee, 2);
+            } else {
+                $feeAmount = 0.00;
+                $grandTotal = $subtotal + $taxAmount;
+            }
+
+            $unpaidOrder->update([
+                'subtotal'       => $subtotal,
+                'tax_amount'     => $taxAmount,
+                'fee_amount'     => $feeAmount,
+                'total_paid'     => $grandTotal,
+                'payment_status' => $validated['payment_mode'] === 'online' ? 'pending' : 'not_applicable',
+            ]);
         }
 
         return redirect()->route('admin.store.edit', $store)

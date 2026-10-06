@@ -257,18 +257,31 @@ class StoreController extends Controller
         }
 
         $fullName = $order->athlete_name;
-        $subtotal = (float) $order->getCalculatedSubtotal($store);
         $isTaxExempt = (bool) ($store->isTaxExempt() || $order->user?->is_tax_exempt);
         $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
-        $taxAmount = $isTaxExempt ? 0.00 : (float) ($order->tax_amount > 0 ? $order->tax_amount : round($subtotal * $taxRate, 2));
+
+        // Always refresh item prices from current store pricing for unpaid orders
+        $subtotal = 0.0;
+        $refreshedItemsJson = [];
+        foreach ($itemsJson as $itemEntry) {
+            $itemPrices = \App\Models\ParentOrder::getItemPrices($itemEntry, $store);
+            $unitPrice = (float) $itemPrices['retail_price'];
+            $qty = max(1, intval($itemEntry['qty'] ?? 1));
+            $itemEntry['unit_price'] = $unitPrice;
+            $itemEntry['line_total'] = round($unitPrice * $qty, 2);
+            $subtotal += $itemEntry['line_total'];
+            $refreshedItemsJson[] = $itemEntry;
+        }
+
+        $taxAmount = $isTaxExempt ? 0.00 : round($subtotal * $taxRate, 2);
 
         if ($subtotal > 0) {
             $feePercent = (float) config('services.stripe.fee_percent', 0.029);
             $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
             $preFeeTotal = $subtotal + $taxAmount;
             $grandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
-            $feeAmount = (float) ($order->fee_amount > 0 ? $order->fee_amount : round($grandTotal - $preFeeTotal, 2));
-            $totalPaid = (float) ($order->total_paid > 0 ? $order->total_paid : $grandTotal);
+            $feeAmount = round($grandTotal - $preFeeTotal, 2);
+            $totalPaid = $grandTotal;
         } else {
             $feeAmount = 0.00;
             $grandTotal = 0.00;
@@ -276,6 +289,7 @@ class StoreController extends Controller
         }
 
         $order->update([
+            'items_json' => $refreshedItemsJson,
             'subtotal'   => $subtotal,
             'tax_amount' => $taxAmount,
             'fee_amount' => $feeAmount,
@@ -289,11 +303,8 @@ class StoreController extends Controller
                 $stripe = new \Stripe\StripeClient($stripeSecret);
 
                 $lineItems = [];
-                foreach ($itemsJson as $itemEntry) {
-                    $itemPrices = \App\Models\ParentOrder::getItemPrices($itemEntry, $store);
-                    $unitPrice = isset($itemEntry['unit_price']) && (float)$itemEntry['unit_price'] > 0
-                        ? (float) $itemEntry['unit_price']
-                        : (float) $itemPrices['retail_price'];
+                foreach ($refreshedItemsJson as $itemEntry) {
+                    $unitPrice = (float) ($itemEntry['unit_price'] ?? 0);
                     $unitCents = max(50, intval(round($unitPrice * 100)));
                     $lineItems[] = [
                         'price_data' => [

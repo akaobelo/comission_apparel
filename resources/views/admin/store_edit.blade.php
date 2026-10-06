@@ -546,7 +546,10 @@
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Total Sales</span><span class="font-bold text-slate-900">${{ number_format($financials['total_sales'] ?? 0, 2) }}</span></div>
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Average order</span><span class="font-bold text-slate-900">${{ number_format($financials['average_order_value'] ?? 0, 2) }}</span></div>
                         @if($store->isOnlinePayment())
-                            <div class="flex justify-between text-sm"><span class="text-slate-500">Sales Tax (7.5%)</span><span class="font-bold text-slate-700">${{ number_format($financials['total_tax'] ?? 0, 2) }}</span></div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-slate-500">Sales Tax {{ $store->isTaxExempt() ? '(501(c)(3) Waived)' : '(7.5%)' }}</span>
+                                <span class="font-bold {{ $store->isTaxExempt() ? 'text-blue-700' : 'text-slate-700' }}">${{ number_format($financials['total_tax'] ?? 0, 2) }}</span>
+                            </div>
                             <div class="flex justify-between text-sm"><span class="text-slate-500">Processing Fee (Stripe)</span><span class="font-bold text-slate-600">${{ number_format($financials['total_fees'] ?? 0, 2) }}</span></div>
                             <div class="flex justify-between text-sm pt-1 border-t border-slate-100"><span class="font-bold text-emerald-600">Online Payment (Stripe)</span><span class="font-bold text-emerald-600">${{ number_format($financials['total_online_paid'] ?? 0, 2) }}</span></div>
                         @endif

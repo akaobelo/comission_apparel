@@ -60,11 +60,8 @@ class ParentOrder extends Model
 
     public function getCalculatedSubtotal($store = null): float
     {
-        if ((float) $this->subtotal > 0) {
+        if ($this->isPaid() && (float) $this->subtotal > 0) {
             return (float) $this->subtotal;
-        }
-        if ((float) $this->total_retail_price > 0) {
-            return (float) $this->total_retail_price;
         }
 
         $store = $store ?: $this->teamStore;
@@ -77,7 +74,15 @@ class ParentOrder extends Model
             $total += ($prices['retail_price'] * $qty);
         }
 
-        return (float) $total;
+        if ($total > 0) {
+            return (float) $total;
+        }
+
+        if ((float) $this->subtotal > 0) {
+            return (float) $this->subtotal;
+        }
+
+        return (float) ($this->total_retail_price ?? 0);
     }
 
     protected $casts = [
@@ -189,31 +194,54 @@ class ParentOrder extends Model
             $orderItemsCount = 0;
             $items = is_array($order->items_json) ? $order->items_json : [];
 
-            foreach ($items as $orderedItem) {
-                $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
-                $orderItemsCount += $qty;
+            if ($order->isPaid()) {
+                // For PAID orders: use the locked historical financial snapshot
+                $orderTotal = (float) ($order->subtotal ?? 0);
+                foreach ($items as $orderedItem) {
+                    $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
+                    $orderItemsCount += $qty;
+                    $prices = self::getItemPrices($orderedItem, $store);
+                    $orderWholesaleTotal += ($prices['wholesale_price'] * $qty);
+                }
+                $orderTax = (float) ($order->tax_amount ?? 0);
+                $orderFees = (float) ($order->fee_amount ?? 0);
+                $orderOnlinePaid = (float) ($order->total_paid ?? 0);
+            } else {
+                // For UNPAID / PENDING orders: dynamically recalculate from current store item prices
+                foreach ($items as $orderedItem) {
+                    $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
+                    $orderItemsCount += $qty;
 
-                $prices = self::getItemPrices($orderedItem, $store);
-                $retailPrice = (isset($orderedItem['unit_price']) && (float)$orderedItem['unit_price'] > 0)
-                    ? (float)$orderedItem['unit_price']
-                    : $prices['retail_price'];
-                $wholesalePrice = $prices['wholesale_price'];
-                
-                $orderTotal += ($retailPrice * $qty);
-                $orderWholesaleTotal += ($wholesalePrice * $qty);
-            }
+                    $prices = self::getItemPrices($orderedItem, $store);
+                    $retailPrice = (float) $prices['retail_price'];
+                    $wholesalePrice = (float) $prices['wholesale_price'];
 
-            // Fallback: if order has a recorded subtotal snapshot and orderTotal is 0 or different
-            if ((float) ($order->subtotal ?? 0) > 0) {
-                $orderTotal = (float) $order->subtotal;
+                    $orderTotal += ($retailPrice * $qty);
+                    $orderWholesaleTotal += ($wholesalePrice * $qty);
+                }
+
+                $isTaxExempt = (bool) ($store?->isTaxExempt() || $order->user?->is_tax_exempt);
+                $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
+                $orderTax = $isTaxExempt ? 0.00 : round($orderTotal * $taxRate, 2);
+
+                if ($orderTotal > 0 && ($store?->isOnlinePayment() || $order->isOnlineOrder())) {
+                    $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+                    $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+                    $preFeeTotal = $orderTotal + $orderTax;
+                    $orderOnlinePaid = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
+                    $orderFees = round($orderOnlinePaid - $preFeeTotal, 2);
+                } else {
+                    $orderFees = 0.0;
+                    $orderOnlinePaid = 0.0;
+                }
             }
 
             $totalSales += $orderTotal;
             $totalWholesale += $orderWholesaleTotal;
             $totalItemsSold += $orderItemsCount;
-            $totalTax += (float) ($order->tax_amount ?? 0);
-            $totalFees += (float) ($order->fee_amount ?? 0);
-            $totalOnlinePaid += (float) ($order->total_paid ?? 0);
+            $totalTax += $orderTax;
+            $totalFees += $orderFees;
+            $totalOnlinePaid += $orderOnlinePaid;
         }
 
         $ordersCount = count($orders);
