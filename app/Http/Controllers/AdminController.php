@@ -1914,6 +1914,12 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Quote inquiry marked as addressed.');
     }
 
+    public function deleteQuote(\App\Models\QuoteRequest $quoteRequest)
+    {
+        $quoteRequest->delete();
+        return redirect()->back()->with('success', 'Quote inquiry deleted successfully.');
+    }
+
     // ─── PUBLIC OUR TEAM ────────────────────────────────────────────────────────
     public function publicOurTeam(Request $request)
     {

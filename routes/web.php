@@ -365,6 +365,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
 
     // Quotes
     Route::post('/admin/quote/{quoteRequest}/mark-addressed', [AdminController::class, 'markQuoteAddressed'])->name('admin.quote.mark-addressed');
+    Route::delete('/admin/quote/{quoteRequest}', [AdminController::class, 'deleteQuote'])->name('admin.quote.delete');
 
     // Sales Agents Admin CRUD
     Route::post('/admin/sales-agents', [AdminController::class, 'createSalesAgent'])->name('admin.sales-agent.create');

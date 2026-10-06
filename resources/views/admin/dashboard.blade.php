@@ -291,20 +291,31 @@
                                         </div>
                                         <div class="text-xs text-slate-400 flex-shrink-0 flex flex-col items-end gap-2">
                                             <span>{{ $quoteRequest->created_at->diffForHumans() }}</span>
-                                            @if($quoteRequest->status === 'new' || !$quoteRequest->status)
-                                            <form action="{{ route('admin.quote.mark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Mark this quote as addressed?')">
-                                                @csrf
-                                                <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm mt-2">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                                    Mark Addressed
-                                                </button>
-                                            </form>
-                                            @else
-                                            <div class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-500 border border-slate-200 rounded-md text-[10px] font-bold uppercase tracking-wider mt-2 opacity-75 cursor-default">
-                                                <svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                                Addressed
+                                            <div class="flex items-center gap-2 mt-2">
+                                                @if($quoteRequest->status === 'new' || !$quoteRequest->status)
+                                                <form action="{{ route('admin.quote.mark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Mark this quote as addressed?')">
+                                                    @csrf
+                                                    <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                        Mark Addressed
+                                                    </button>
+                                                </form>
+                                                @else
+                                                <div class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-500 border border-slate-200 rounded-md text-[10px] font-bold uppercase tracking-wider opacity-75 cursor-default">
+                                                    <svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                    Addressed
+                                                </div>
+                                                @endif
+
+                                                <form action="{{ route('admin.quote.delete', $quoteRequest) }}" method="POST" onsubmit="return confirm('Permanently delete this quote inquiry? This cannot be undone.')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border border-red-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm" title="Delete Inquiry">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                        Delete
+                                                    </button>
+                                                </form>
                                             </div>
-                                            @endif
                                         </div>
                                     </div>
                                 </div>
