@@ -1012,7 +1012,7 @@
                                                             <label class="flex items-start gap-3 p-3.5 md:p-4 rounded-xl bg-amber-50 border-2 border-amber-300 cursor-pointer select-none mb-3 hover:bg-amber-100/70 transition-colors shadow-sm">
                                                                 <input type="checkbox" name="policy_agreed" x-model="agreed" required class="mt-1 rounded text-primary focus:ring-primary w-5 h-5 accent-emerald-600 flex-shrink-0 cursor-pointer">
                                                                 <span class="text-xs md:text-sm text-slate-800 leading-relaxed">
-                                                                    I understand and agree: <strong class="text-slate-950 font-black text-sm md:text-base uppercase tracking-tight text-amber-950 underline decoration-amber-400">All sales are final and nonrefundable.</strong> Custom apparel cannot be returned or cancelled once submitted into production.
+                                                                    I understand and agree: <strong class="font-black text-sm md:text-base uppercase tracking-tight text-red-700" style="color: #b91c1c !important;">All sales are final and nonrefundable.</strong> Custom apparel cannot be returned or cancelled once submitted into production.
                                                                 </span>
                                                             </label>
 
