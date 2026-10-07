@@ -46,7 +46,7 @@ class AdminController extends Controller
                 ->withQueryString();
 
             $availableSports = config('sports.categories') ?? [];
-            $allCollections = \App\Models\DesignCollection::select('id', 'name')->orderBy('sort_order', 'asc')->get();
+            $allCollections = \App\Models\DesignCollection::select('id', 'name')->orderBy('name', 'asc')->get();
             $allCoaches = User::where('role', 'coach')
                 ->select('id', 'first_name', 'last_name', 'organization')
                 ->with('teamStore:id,user_id,name')
@@ -325,7 +325,7 @@ class AdminController extends Controller
             ->withQueryString();
 
         // Complete list of collections for selection dropdowns
-        $allCollections = \App\Models\DesignCollection::select('id', 'name')->orderBy('sort_order', 'asc')->get();
+        $allCollections = \App\Models\DesignCollection::select('id', 'name')->orderBy('name', 'asc')->get();
 
         // Paginate password reset logs
         $passwordResetLogs = PasswordResetLog::with(['user' => function($q) {

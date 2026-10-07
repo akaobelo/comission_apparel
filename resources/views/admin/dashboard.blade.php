@@ -163,13 +163,12 @@
         </div>
 
         {{-- ═══ STORES & ORDERS TAB ═══ --}}
-        <div x-show="activeAdminTab === 'stores'" x-cloak class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="space-y-8">
-                {{-- ═══ PENDING STORE APPROVALS ═══ --}}
+        <div x-show="activeAdminTab === 'stores'" x-cloak>
+            {{-- ═══ PENDING STORE APPROVALS (Alert banner across full width) ═══ --}}
             @if($pendingStores->isNotEmpty() || request('pending_store_search'))
-            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div class="p-6 border-b border-slate-200 bg-orange-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 flex items-center gap-2">
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
+                <div class="px-5 py-3.5 border-b border-slate-200 bg-orange-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900 flex items-center gap-2">
                         <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Pending Store Approvals
                         <span class="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-500 text-white text-[10px] font-black">{{ $pendingStores->count() }}</span>
@@ -189,29 +188,29 @@
                 </div>
                 <div id="pending-store-results">
                     @if($pendingStores->isEmpty())
-                        <div class="p-8 text-center text-slate-400 text-sm">No pending store approvals found.</div>
+                        <div class="p-6 text-center text-slate-400 text-sm">No pending store approvals found.</div>
                     @else
-                        <div class="divide-y divide-slate-100">
+                        <div class="divide-y divide-slate-100 max-h-[260px] overflow-y-auto">
                             @foreach($pendingStores as $store)
-                            <div class="p-5 flex flex-col md:flex-row md:items-center gap-4 justify-between">
+                            <div class="p-4 flex flex-col md:flex-row md:items-center gap-4 justify-between">
                                 <div>
-                                    <div class="font-bold text-slate-900 uppercase">{{ $store->name }}</div>
-                                    <div class="text-sm text-slate-500 mt-0.5">
+                                    <div class="font-bold text-slate-900 uppercase text-sm">{{ $store->name }}</div>
+                                    <div class="text-xs text-slate-500 mt-0.5">
                                         Coach: <span class="font-semibold text-slate-700">{{ $store->user?->name ?? 'Unknown' }}</span> —
                                         {{ $store->user?->organization ?? 'No Organization' }} — Package: <span class="font-bold text-primary uppercase text-xs">{{ str_replace('_', ' ', $store->package_type ?? 'N/A') }}</span>
                                     </div>
-                                    <div class="text-xs text-slate-400 mt-1">Requested {{ $store->created_at->diffForHumans() }}</div>
+                                    <div class="text-[11px] text-slate-400 mt-1">Requested {{ $store->created_at->diffForHumans() }}</div>
                                 </div>
                                 <div class="flex gap-2 flex-shrink-0">
                                     <form action="{{ route('admin.stores.approve', $store) }}" method="POST">
                                         @csrf
-                                        <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Approve</button>
+                                        <button class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Approve</button>
                                     </form>
                                     <form action="{{ route('admin.stores.decline', $store) }}" method="POST">
                                         @csrf
-                                        <button class="px-4 py-2 bg-white border border-red-300 text-red-600 hover:bg-red-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Decline</button>
+                                        <button class="px-3 py-1.5 bg-white border border-red-300 text-red-600 hover:bg-red-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Decline</button>
                                     </form>
-                                    <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Edit</a>
+                                    <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Edit</a>
                                 </div>
                             </div>
                             @endforeach
@@ -221,537 +220,544 @@
             </div>
             @endif
 
-                <div x-data="{ expanded: false, init() { const k = 'admin_quote_inquiries'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
+            {{-- ═══ 4 SQUARES GRID ═══ --}}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+                {{-- ═══ SQUARE 1: ACTIVE TEAM STORES ═══ --}}
+                <div x-data="{ expanded: false, init() { const k = 'admin_active_team_stores'; this.expanded = localStorage.getItem(k) !== 'false'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                    <div @click="expanded = !expanded" class="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors flex-shrink-0">
                         <div>
-                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Quote Inquiries</h2>
-                            <p class="text-sm text-slate-500 mt-1">Public quote requests submitted from the website.</p>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Active Team Stores</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Currently open stores accepting orders.</p>
                         </div>
-                        <div class="flex items-center gap-4 text-slate-400">
-                            <span class="text-sm font-bold">{{ $quoteRequestsTotal }} Inquiries</span>
-                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </div>
-                    </div>
-                    <div x-show="expanded" x-cloak>
-                        <div class="p-4 border-b border-slate-100 bg-white">
-                            <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md"
-                                  hx-get="{{ route('admin.dashboard') }}"
-                                  hx-target="#quote-inquiries-results"
-                                  hx-select="#quote-inquiries-results"
-                                  hx-swap="outerHTML"
-                                  hx-trigger="input from:input[name='quote_search'] delay:300ms, submit"
-                                  hx-push-url="true">
-                                <input type="text" name="quote_search" value="{{ request('quote_search') }}" placeholder="Search inquiries..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
-                                <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
-                                @if(request('quote_search'))
-                                    <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</a>
-                                @endif
-                            </form>
-                        </div>
-                        <div id="quote-inquiries-results">
-                        @if($quoteRequests->isEmpty())
-                            <div class="p-8 text-center text-slate-400 text-sm">No quote inquiries found.</div>
-                    @else
-                        <div class="divide-y divide-slate-100 max-h-[32rem] overflow-y-auto">
-                            @foreach($quoteRequests as $quoteRequest)
-                                <div class="p-5">
-                                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                                        <div>
-                                            <div class="font-bold text-slate-900">
-                                                {{ $quoteRequest->organization_name }}
-                                                <span class="text-slate-500 font-medium">· {{ $quoteRequest->apparel_category }}</span>
-                                            </div>
-                                            <div class="text-sm text-slate-500 mt-1">
-                                                {{ $quoteRequest->first_name }} {{ $quoteRequest->last_name }} · {{ $quoteRequest->position_title }}
-                                            </div>
-                                            <div class="text-sm text-slate-500">
-                                                {{ $quoteRequest->email }} · {{ $quoteRequest->phone }}
-                                            </div>
-                                            <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Estimated Qty</div>
-                                                    <div class="text-sm font-black text-slate-900">{{ $quoteRequest->estimated_quantity }}</div>
-                                                </div>
-                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Package</div>
-                                                    <div class="text-sm font-black text-primary uppercase">{{ str_replace('_', ' ', $quoteRequest->package_type) }}</div>
-                                                </div>
-                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Target Date</div>
-                                                    <div class="text-sm font-black text-slate-900">{{ $quoteRequest->target_delivery_date?->format('M d, Y') ?? 'Not provided' }}</div>
-                                                </div>
-                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">TCA Sales Rep</div>
-                                                    <div class="text-sm font-black text-secondary">{{ $quoteRequest->sales_rep ?: '—' }}</div>
-                                                </div>
-                                            </div>
-                                            @if($quoteRequest->design_vision)
-                                                <p class="text-sm text-slate-600 mt-3">{{ $quoteRequest->design_vision }}</p>
-                                            @endif
-                                        </div>
-                                        <div class="text-xs text-slate-400 flex-shrink-0 flex flex-col items-end gap-2">
-                                            <span>{{ $quoteRequest->created_at->diffForHumans() }}</span>
-                                            <div class="flex items-center gap-2 mt-2">
-                                                @if($quoteRequest->status === 'new' || !$quoteRequest->status)
-                                                <form action="{{ route('admin.quote.mark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Mark this quote as addressed?')">
-                                                    @csrf
-                                                    <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm">
-                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                                        Mark Addressed
-                                                    </button>
-                                                </form>
-                                                @else
-                                                <div class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-500 border border-slate-200 rounded-md text-[10px] font-bold uppercase tracking-wider opacity-75 cursor-default">
-                                                    <svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                                    Addressed
-                                                </div>
-                                                @endif
-
-                                                <form action="{{ route('admin.quote.delete', $quoteRequest) }}" method="POST" onsubmit="return confirm('Permanently delete this quote inquiry? This cannot be undone.')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border border-red-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm" title="Delete Inquiry">
-                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                                        Delete
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        @if($quoteRequests instanceof \Illuminate\Pagination\LengthAwarePaginator && $quoteRequests->hasPages())
-                        <div class="mt-4 p-4 border-t border-slate-100" hx-boost="true" hx-target="#quote-inquiries-results" hx-select="#quote-inquiries-results" hx-swap="outerHTML">
-                            {{ $quoteRequests->links() }}
-                        </div>
-                        @endif
-                        @endif
-                        </div>
-                    </div>
-                </div>
-
-                {{-- ═══ ACTIVE STORES IN PRODUCTION ═══ --}}
-                <div x-data="{ expanded: false, init() { const k = 'admin_active_team_stores'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
-                        <div>
-                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Active Team Stores</h2>
-                        </div>
-                        <div class="flex items-center gap-4 text-slate-400">
+                        <div class="flex items-center gap-3 text-slate-400">
                             <div @click.stop x-show="expanded" x-cloak>
                                 <form id="bulk-stores-sort-form" action="{{ route('admin.stores.bulk-sort') }}" method="POST">
                                     @csrf
                                 </form>
-                                <button type="button" onclick="submitStoresBulkSort()" class="px-5 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort</button>
+                                <button type="button" onclick="submitStoresBulkSort()" class="px-3 py-1.5 bg-secondary text-white text-[11px] font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort</button>
                             </div>
-                            <span class="text-sm font-bold">{{ $productionStores->count() }} Stores</span>
-                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            <span class="text-xs font-bold text-slate-500">{{ $productionStores->count() }} Stores</span>
+                            <svg class="w-5 h-5 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
                     <div x-show="expanded" x-collapse>
-                        <div class="p-4 border-b border-slate-100 bg-white">
-                            <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md"
-                                  hx-get="{{ route('admin.dashboard') }}"
-                                  hx-target="#active-stores-results"
-                                  hx-select="#active-stores-results"
-                                  hx-swap="outerHTML"
-                                  hx-trigger="input from:input[name='active_store_search'] delay:300ms, submit"
-                                  hx-push-url="true">
-                                <input type="text" name="active_store_search" value="{{ request('active_store_search') }}" placeholder="Search active stores..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
-                                <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
-                                @if(request('active_store_search'))
-                                    <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</a>
-                                @endif
-                            </form>
-                        </div>
-                        <div id="active-stores-results">
-                        @if($productionStores->isEmpty())
-                            <div class="p-8 text-center text-slate-400 text-sm">No active stores.</div>
-                        @else
-                            <div id="update-active-stores-sortable-list" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
-                                @foreach($productionStores as $store)
-                                <div class="p-4 flex items-center justify-between gap-4 visible-sortable-item bg-white">
-                                    <div class="flex items-center gap-3">
-                                        <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1" title="Drag to reorder">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
-                                        </div>
-                                        <div>
-                                            <div class="font-bold text-sm text-slate-900">{{ $store->name }}</div>
-                                            <div class="text-xs text-slate-500">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
-                                            @if($store->order_deadline || $store->isTaxExempt())
-                                            <div class="flex items-center gap-2 mt-1 flex-wrap">
-                                                @if($store->order_deadline)
-                                                    <span class="text-[10px] font-bold text-{{ $store->order_deadline->isPast() ? 'red' : 'slate' }}-500 uppercase tracking-wide">
-                                                        Deadline: {{ $store->order_deadline->format('M d, Y') }}
-                                                    </span>
-                                                @endif
-                                                @if($store->isTaxExempt())
-                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">
-                                                        501(c)(3) Exempt
-                                                    </span>
+                        <div class="h-[380px] flex flex-col bg-white">
+                            <div class="p-3 border-b border-slate-100 bg-white flex-shrink-0">
+                                <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md"
+                                      hx-get="{{ route('admin.dashboard') }}"
+                                      hx-target="#active-stores-results"
+                                      hx-select="#active-stores-results"
+                                      hx-swap="outerHTML"
+                                      hx-trigger="input from:input[name='active_store_search'] delay:300ms, submit"
+                                      hx-push-url="true">
+                                    <input type="text" name="active_store_search" value="{{ request('active_store_search') }}" placeholder="Search active stores..." class="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                                    <button type="submit" class="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
+                                    @if(request('active_store_search'))
+                                        <a href="{{ route('admin.dashboard') }}" class="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</a>
+                                    @endif
+                                </form>
+                            </div>
+                            <div id="active-stores-results" class="flex-1 min-h-0 flex flex-col">
+                            @if($productionStores->isEmpty())
+                                <div class="flex-1 flex items-center justify-center p-8 text-center text-slate-400 text-sm">No active stores.</div>
+                            @else
+                                <div id="update-active-stores-sortable-list" class="divide-y divide-slate-100 flex-1 overflow-y-auto">
+                                    @foreach($productionStores as $store)
+                                    <div class="p-3.5 flex items-center justify-between gap-3 visible-sortable-item bg-white">
+                                        <div class="flex items-center gap-2.5 min-w-0">
+                                            <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-0.5 flex-shrink-0" title="Drag to reorder">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <div class="font-bold text-xs sm:text-sm text-slate-900 truncate">{{ $store->name }}</div>
+                                                <div class="text-[11px] text-slate-500 truncate">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
+                                                @if($store->order_deadline || $store->isTaxExempt())
+                                                <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                                    @if($store->order_deadline)
+                                                        <span class="text-[9px] font-bold text-{{ $store->order_deadline->isPast() ? 'red' : 'slate' }}-500 uppercase tracking-wide">
+                                                            Deadline: {{ $store->order_deadline->format('M d, Y') }}
+                                                        </span>
+                                                    @endif
+                                                    @if($store->isTaxExempt())
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">
+                                                            501(c)(3)
+                                                        </span>
+                                                    @endif
+                                                </div>
                                                 @endif
                                             </div>
-                                            @endif
+                                        </div>
+                                        <div class="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
+                                            <div class="flex items-center gap-1 mr-0.5">
+                                                <span class="text-[9px] font-black uppercase text-slate-400">Sort:</span>
+                                                <input type="number" 
+                                                       name="items[{{ $loop->index }}][order]" 
+                                                       value="{{ $store->sort_order }}" 
+                                                       class="w-12 bg-white border border-slate-300 rounded px-1.5 py-0.5 text-xs text-slate-900 text-center font-bold focus:border-primary focus:outline-none shadow-sm">
+                                            </div>
+                                            <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $store->id }}">
+
+                                            {{-- Quick Payment Mode Switcher --}}
+                                            <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="inline-block">
+                                                @csrf
+                                                <select name="payment_mode" onchange="this.form.submit()" title="Change payment collection method" class="text-[11px] font-bold rounded-md px-2 py-1 border shadow-sm cursor-pointer outline-none transition-colors {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100' }}">
+                                                    <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash</option>
+                                                    <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Stripe</option>
+                                                </select>
+                                            </form>
+
+                                            <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this active store?')">
+                                                @csrf
+                                                <button type="submit" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded-md hover:bg-slate-100 transition-colors">Archive</button>
+                                            </form>
+                                            <a href="{{ route('admin.store.edit', $store) }}" class="px-2.5 py-1 bg-white border border-secondary text-secondary text-[11px] font-bold rounded-md hover:bg-secondary hover:text-white transition-colors">Edit</a>
                                         </div>
                                     </div>
-                                    <div class="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-                                        <div class="flex items-center gap-1.5 mr-1">
-                                            <span class="text-[10px] font-black uppercase text-slate-400">Sort:</span>
-                                            <input type="number" 
-                                                   name="items[{{ $loop->index }}][order]" 
-                                                   value="{{ $store->sort_order }}" 
-                                                   class="w-14 bg-white border border-slate-300 rounded px-2 py-1 text-xs text-slate-900 text-center font-bold focus:border-primary focus:outline-none shadow-sm">
-                                        </div>
-                                        <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $store->id }}">
-
-                                        {{-- Quick Payment Mode Switcher --}}
-                                        <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="inline-block">
-                                            @csrf
-                                            <select name="payment_mode" onchange="this.form.submit()" title="Change payment collection method" class="text-xs font-bold rounded-lg px-2.5 py-1.5 border shadow-sm cursor-pointer outline-none transition-colors {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100' }}">
-                                                <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash Collection</option>
-                                                <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Online (Stripe)</option>
-                                            </select>
-                                        </form>
-
-                                        <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this active store?')">
-                                            @csrf
-                                            <button type="submit" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors">Archive</button>
-                                        </form>
-                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
-                                    </div>
+                                    @endforeach
                                 </div>
-                                @endforeach
+                            @endif
                             </div>
-                        @endif
                         </div>
                     </div>
                 </div>
 
-            </div>
-            <div class="space-y-8">
-                {{-- ═══ FINALIZED MASTER ORDERS ═══ --}}
-                <div x-data="{ expanded: false, init() { const k = 'admin_finalized_master_orders'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
+                {{-- ═══ SQUARE 2: FINALIZED MASTER ORDERS ═══ --}}
+                <div x-data="{ expanded: false, init() { const k = 'admin_finalized_master_orders'; this.expanded = localStorage.getItem(k) !== 'false'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                    <div @click="expanded = !expanded" class="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors flex-shrink-0">
                         <div>
-                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Master Orders</h2>
-                            <p class="text-sm text-slate-500 mt-1">Aggregate totals per team store that have reached end of registration.</p>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Finalized Master Orders</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Aggregate totals per team store that have reached end of registration.</p>
                         </div>
-                        <div class="flex items-center gap-4 text-slate-400">
-                            <span class="text-sm font-bold">{{ isset($finalizedStoreBatchesPaginator) ? $finalizedStoreBatchesPaginator->total() : $finalizedStoreBatches->count() }} Batches</span>
-                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <div class="flex items-center gap-3 text-slate-400">
+                            <span class="text-xs font-bold text-slate-500">{{ isset($finalizedStoreBatchesPaginator) ? $finalizedStoreBatchesPaginator->total() : $finalizedStoreBatches->count() }} Batches</span>
+                            <svg class="w-5 h-5 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
                     <div x-show="expanded" x-collapse>
-                        <div id="finalized-master-orders-results">
-                        @if($finalizedStoreBatches->isEmpty())
-                            <div class="p-12 text-center text-slate-400 text-sm">No finalized store orders yet.</div>
-                        @else
-                            <div class="divide-y divide-slate-100">
-                                @foreach($finalizedStoreBatches as $batchId => $batchData)
+                        <div class="h-[380px] flex flex-col bg-white">
+                            <div id="finalized-master-orders-results" class="flex-1 min-h-0 flex flex-col">
+                            @if($finalizedStoreBatches->isEmpty())
+                                <div class="flex-1 flex items-center justify-center p-8 text-center text-slate-400 text-sm">No finalized store orders yet.</div>
+                            @else
+                                <div class="divide-y divide-slate-100 flex-1 overflow-y-auto">
+                                    @foreach($finalizedStoreBatches as $batchId => $batchData)
+                                    @php
+                                        $batchOrders = $batchData['orders'] ?? collect();
+                                        $store = $batchOrders->first()?->teamStore;
+                                        $coach = $store ? $store->user : null;
+                                        $totalAthletes = $batchOrders->count();
+                                        $totalItems = $batchOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
+                                    @endphp
+                                    <div class="p-4">
+                                        <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <div class="font-black text-slate-900 uppercase text-sm truncate">{{ $store ? $store->name : 'Unknown Store' }}</div>
+                                                <div class="text-xs text-slate-500 mt-0.5 truncate">
+                                                    Coach: {{ $coach ? $coach->name : 'Unknown' }} — {{ $coach ? $coach->organization : '—' }}
+                                                </div>
+                                                <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                                    <span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md border border-slate-200">
+                                                        Status: {{ $batchOrders->first()?->status ?? 'Submitted' }}
+                                                    </span>
+                                                    @if($store && $store->isTaxExempt())
+                                                        <span class="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[9px] font-black uppercase tracking-wider rounded border border-blue-200">
+                                                            501(c)(3)
+                                                        </span>
+                                                    @endif
+                                                    <span class="text-[11px] text-slate-400 uppercase tracking-wide font-bold">Batch: {{ $batchOrders->first()?->created_at?->format('M d, Y') ?? 'Unknown' }}</span>
+                                                </div>
+                                                <div class="mt-2.5 grid grid-cols-3 gap-2">
+                                                    <div class="bg-slate-50 rounded-lg p-2 border border-slate-200 text-center">
+                                                        <div class="text-lg font-black text-primary">{{ $totalAthletes }}</div>
+                                                        <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Athletes</div>
+                                                    </div>
+                                                    <div class="bg-slate-50 rounded-lg p-2 border border-slate-200 text-center">
+                                                        <div class="text-lg font-black text-slate-900">{{ $totalItems }}</div>
+                                                        <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
+                                                    </div>
+                                                    <div class="bg-slate-50 rounded-lg p-2 border border-slate-200 text-center">
+                                                        <div class="text-xs font-bold text-slate-900 mt-1">{{ $store && $store->order_deadline ? $store->order_deadline->format('M d') : '—' }}</div>
+                                                        <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Deadline</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-col gap-1.5 flex-shrink-0 w-full md:w-auto">
+                                                @if($store)
+                                                    <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review Store</a>
+                                                    <div class="flex gap-1.5">
+                                                        <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-50 transition-colors text-center">Roster</a>
+                                                        <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-2.5 py-1 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate</a>
+                                                    </div>
+                                                    <form action="{{ route('admin.store-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
+                                                        @csrf
+                                                        <button type="submit" class="w-full px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-[11px] font-bold uppercase tracking-wide rounded-md transition-colors text-center">Mark Addressed</button>
+                                                    </form>
+                                                    <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this closed store?')" class="w-full">
+                                                        @csrf
+                                                        <button type="submit" class="w-full px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-100 transition-colors text-center">Archive</button>
+                                                    </form>
+                                                    <form action="{{ route('admin.batch.status.update', $batchId) }}" method="POST" class="flex items-center justify-between bg-white border border-slate-200 rounded-md p-1.5 gap-1.5 shadow-sm">
+                                                        @csrf
+                                                        <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status:</span>
+                                                        <select name="status" onchange="this.form.submit()" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full max-w-[125px]">
+                                                            <option value="Submitted to Admin" @if(($batchOrders->first()?->status ?? '') == 'Submitted to Admin') selected @endif>Submitted to Admin</option>
+                                                            <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
+                                                            <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
+                                                            <option value="Shipped" @if(($batchOrders->first()?->status ?? '') == 'Shipped') selected @endif>Shipped</option>
+                                                            <option value="Delivered" @if(($batchOrders->first()?->status ?? '') == 'Delivered') selected @endif>Delivered</option>
+                                                            <option value="Completed" @if(($batchOrders->first()?->status ?? '') == 'Completed') selected @endif>Completed</option>
+                                                        </select>
+                                                    </form>
+
+                                                    <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="flex items-center justify-between bg-white border border-slate-200 rounded-md p-1.5 gap-1.5 shadow-sm">
+                                                        @csrf
+                                                        <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Payment:</span>
+                                                        <select name="payment_mode" onchange="this.form.submit()" class="text-xs font-bold rounded px-1.5 py-0.5 outline-none border transition-colors w-full max-w-[125px] {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-300' }}">
+                                                            <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash</option>
+                                                            <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Stripe</option>
+                                                        </select>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                                @if(isset($finalizedStoreBatchesPaginator) && $finalizedStoreBatchesPaginator instanceof \Illuminate\Pagination\LengthAwarePaginator && $finalizedStoreBatchesPaginator->hasPages())
+                                    <div class="p-3 border-t border-slate-100 bg-white flex-shrink-0 mt-auto" hx-boost="true" hx-target="#finalized-master-orders-results" hx-select="#finalized-master-orders-results" hx-swap="outerHTML">
+                                        {{ $finalizedStoreBatchesPaginator->links() }}
+                                    </div>
+                                @endif
+                            @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- ═══ SQUARE 3: QUOTE INQUIRIES ═══ --}}
+                <div x-data="{ expanded: false, init() { const k = 'admin_quote_inquiries'; this.expanded = localStorage.getItem(k) !== 'false'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                    <div @click="expanded = !expanded" class="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors flex-shrink-0">
+                        <div>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Quote Inquiries</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Public quote requests submitted from the website.</p>
+                        </div>
+                        <div class="flex items-center gap-3 text-slate-400">
+                            <span class="text-xs font-bold text-slate-500">{{ $quoteRequestsTotal }} Inquiries</span>
+                            <svg class="w-5 h-5 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                    <div x-show="expanded" x-collapse>
+                        <div class="h-[380px] flex flex-col bg-white">
+                            <div class="p-3 border-b border-slate-100 bg-white flex-shrink-0">
+                                <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md"
+                                      hx-get="{{ route('admin.dashboard') }}"
+                                      hx-target="#quote-inquiries-results"
+                                      hx-select="#quote-inquiries-results"
+                                      hx-swap="outerHTML"
+                                      hx-trigger="input from:input[name='quote_search'] delay:300ms, submit"
+                                      hx-push-url="true">
+                                    <input type="text" name="quote_search" value="{{ request('quote_search') }}" placeholder="Search inquiries..." class="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                                    <button type="submit" class="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
+                                    @if(request('quote_search'))
+                                        <a href="{{ route('admin.dashboard') }}" class="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</a>
+                                    @endif
+                                </form>
+                            </div>
+                            <div id="quote-inquiries-results" class="flex-1 min-h-0 flex flex-col">
+                            @if($quoteRequests->isEmpty())
+                                <div class="flex-1 flex items-center justify-center p-8 text-center text-slate-400 text-sm">No quote inquiries found.</div>
+                            @else
+                                <div class="divide-y divide-slate-100 flex-1 overflow-y-auto">
+                                    @foreach($quoteRequests as $quoteRequest)
+                                        <div class="p-4">
+                                            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <div class="font-bold text-slate-900 text-sm">
+                                                        {{ $quoteRequest->organization_name }}
+                                                        <span class="text-slate-500 font-medium">· {{ $quoteRequest->apparel_category }}</span>
+                                                    </div>
+                                                    <div class="text-xs text-slate-500 mt-0.5">
+                                                        {{ $quoteRequest->first_name }} {{ $quoteRequest->last_name }} · {{ $quoteRequest->position_title }}
+                                                    </div>
+                                                    <div class="text-xs text-slate-500">
+                                                        {{ $quoteRequest->email }} · {{ $quoteRequest->phone }}
+                                                    </div>
+                                                    <div class="mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                        <div class="bg-slate-50 rounded-lg p-2 border border-slate-200">
+                                                            <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Estimated Qty</div>
+                                                            <div class="text-xs font-black text-slate-900">{{ $quoteRequest->estimated_quantity }}</div>
+                                                        </div>
+                                                        <div class="bg-slate-50 rounded-lg p-2 border border-slate-200">
+                                                            <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Package</div>
+                                                            <div class="text-xs font-black text-primary uppercase truncate">{{ str_replace('_', ' ', $quoteRequest->package_type) }}</div>
+                                                        </div>
+                                                        <div class="bg-slate-50 rounded-lg p-2 border border-slate-200">
+                                                            <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Target Date</div>
+                                                            <div class="text-xs font-black text-slate-900">{{ $quoteRequest->target_delivery_date?->format('M d, Y') ?? 'Not provided' }}</div>
+                                                        </div>
+                                                        <div class="bg-slate-50 rounded-lg p-2 border border-slate-200">
+                                                            <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">TCA Sales Rep</div>
+                                                            <div class="text-xs font-black text-secondary">{{ $quoteRequest->sales_rep ?: '—' }}</div>
+                                                        </div>
+                                                    </div>
+                                                    @if($quoteRequest->design_vision)
+                                                        <p class="text-xs text-slate-600 mt-2 line-clamp-2">{{ $quoteRequest->design_vision }}</p>
+                                                    @endif
+                                                </div>
+                                                <div class="text-xs text-slate-400 flex-shrink-0 flex flex-col items-end gap-1.5">
+                                                    <span class="text-[11px]">{{ $quoteRequest->created_at->diffForHumans() }}</span>
+                                                    <div class="flex items-center gap-1.5 mt-1">
+                                                        @if($quoteRequest->status === 'new' || !$quoteRequest->status)
+                                                        <form action="{{ route('admin.quote.mark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Mark this quote as addressed?')">
+                                                            @csrf
+                                                            <button type="submit" class="flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                                Addressed
+                                                            </button>
+                                                        </form>
+                                                        @else
+                                                        <div class="flex items-center gap-1 px-2.5 py-1 bg-slate-50 text-slate-500 border border-slate-200 rounded-md text-[10px] font-bold uppercase tracking-wider opacity-75 cursor-default">
+                                                            <svg class="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                            Addressed
+                                                        </div>
+                                                        @endif
+
+                                                        <form action="{{ route('admin.quote.delete', $quoteRequest) }}" method="POST" onsubmit="return confirm('Permanently delete this quote inquiry? This cannot be undone.')">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border border-red-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm" title="Delete Inquiry">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                                Delete
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                @if($quoteRequests instanceof \Illuminate\Pagination\LengthAwarePaginator && $quoteRequests->hasPages())
+                                <div class="p-3 border-t border-slate-100 bg-white flex-shrink-0 mt-auto" hx-boost="true" hx-target="#quote-inquiries-results" hx-select="#quote-inquiries-results" hx-swap="outerHTML">
+                                    {{ $quoteRequests->links() }}
+                                </div>
+                                @endif
+                            @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- ═══ SQUARE 4: FINALIZED DIRECT ORDERS ═══ --}}
+                <div x-data="{ expanded: false, init() { const k = 'admin_finalized_direct_orders'; this.expanded = localStorage.getItem(k) !== 'false'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                    <div @click="expanded = !expanded" class="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors flex-shrink-0">
+                        <div>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Finalized Direct Orders</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Direct order batches submitted by coaches (no storefront).</p>
+                        </div>
+                        <div class="flex items-center gap-3 text-slate-400">
+                            <span class="text-xs font-bold text-slate-500">{{ isset($finalizedDirectBatchesPaginator) ? $finalizedDirectBatchesPaginator->total() : $finalizedDirectOrderBatches->count() }} Batches</span>
+                            <svg class="w-5 h-5 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                    <div x-show="expanded" x-collapse>
+                        <div class="h-[380px] flex flex-col bg-white">
+                            <div id="finalized-direct-orders-results" class="flex-1 min-h-0 flex flex-col">
+                            @if($finalizedDirectOrderBatches->isEmpty())
+                                <div class="flex-1 flex items-center justify-center p-8 text-center text-slate-400 text-sm">No finalized direct orders.</div>
+                            @else
+                            <div class="divide-y divide-slate-100 flex-1 overflow-y-auto">
+                                @foreach($finalizedDirectOrderBatches as $batchId => $batchData)
                                 @php
                                     $batchOrders = $batchData['orders'] ?? collect();
-                                    $store = $batchOrders->first()?->teamStore;
-                                    $coach = $store ? $store->user : null;
-                                    $totalAthletes = $batchOrders->count();
                                     $totalItems = $batchOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
+                                    $coach = $batchOrders->first()?->user;
                                 @endphp
-                                <div class="p-5">
-                                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                                        <div>
-                                            <div class="font-black text-slate-900 uppercase text-base">{{ $store ? $store->name : 'Unknown Store' }}</div>
-                                            <div class="text-sm text-slate-500 mt-0.5">
-                                                Coach: {{ $coach ? $coach->name : 'Unknown' }} — {{ $coach ? $coach->organization : '—' }}
+                                <div class="p-4">
+                                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <div class="font-black text-slate-900 uppercase text-sm truncate">Direct Order Batch</div>
+                                            <div class="text-xs text-slate-500 mt-0.5 truncate">
+                                                Coach: {{ $coach?->name ?? 'Unknown' }} — {{ $coach?->organization ?? '—' }}
                                             </div>
-                                            <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                            <div class="mt-1 flex items-center gap-2 flex-wrap">
                                                 <span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md border border-slate-200">
                                                     Status: {{ $batchOrders->first()?->status ?? 'Submitted' }}
                                                 </span>
-                                                @if($store && $store->isTaxExempt())
-                                                    <span class="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[9px] font-black uppercase tracking-wider rounded border border-blue-200">
-                                                        501(c)(3) Exempt
+                                                @if($batchOrders->first()?->payment_status === 'paid')
+                                                    <span class="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold uppercase tracking-wider rounded-md border border-green-200">
+                                                        ✓ Paid Online
                                                     </span>
                                                 @endif
-                                                <div class="text-xs text-slate-400 uppercase tracking-wide font-bold">Batch Submitted: {{ $batchOrders->first()?->created_at?->format('M d, Y') ?? 'Unknown' }}</div>
                                             </div>
-                                            <div class="mt-3 grid grid-cols-3 gap-4">
-                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
-                                                    <div class="text-2xl font-black text-primary">{{ $totalAthletes }}</div>
-                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Athletes</div>
+                                            <div class="mt-2.5 grid grid-cols-3 gap-2">
+                                                <div class="bg-slate-50 rounded-lg p-2 border border-slate-200 text-center">
+                                                    <div class="text-lg font-black text-primary">{{ $batchOrders->count() }}</div>
+                                                    <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Orders</div>
                                                 </div>
-                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
-                                                    <div class="text-2xl font-black text-slate-900">{{ $totalItems }}</div>
-                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
+                                                <div class="bg-slate-50 rounded-lg p-2 border border-slate-200 text-center">
+                                                    <div class="text-lg font-black text-slate-900">{{ $totalItems }}</div>
+                                                    <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
                                                 </div>
-                                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
-                                                    <div class="text-xs font-bold text-slate-900">{{ $store && $store->order_deadline ? $store->order_deadline->format('M d') : '—' }}</div>
-                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Deadline</div>
+                                                <div class="bg-slate-50 rounded-lg p-2 border border-slate-200 text-center">
+                                                    <div class="text-xs font-bold text-slate-900 mt-1">{{ $batchOrders->first()?->created_at?->format('M d') ?? 'Unknown' }}</div>
+                                                    <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Submitted</div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="flex flex-col gap-2 flex-shrink-0">
-                                            @if($store)
-                                                <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review / Edit Store</a>
-                                                <div class="flex gap-2">
-                                                    <!-- We can reuse admin batch export for batches -->
-                                                    <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Roster CSV</a>
-                                                    <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate CSV</a>
-                                                </div>
-                                                <form action="{{ route('admin.store-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
-                                                    @csrf
-                                                    <button type="submit" class="w-full px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors text-center">Mark Addressed</button>
-                                                </form>
-                                                <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this closed store?')" class="w-full">
-                                                    @csrf
-                                                    <button type="submit" class="w-full px-4 py-2 bg-white border border-slate-300 text-slate-500 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-100 transition-colors text-center">Archive Store</button>
-                                                </form>
-                                                <form action="{{ route('admin.batch.status.update', $batchId) }}" method="POST" class="mt-2 flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2 gap-2 shadow-sm">
-                                                    @csrf
-                                                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Production Status:</span>
-                                                    <select name="status" onchange="this.form.submit()" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full max-w-[130px]">
-                                                        <option value="Submitted to Admin" @if(($batchOrders->first()?->status ?? '') == 'Submitted to Admin') selected @endif>Submitted to Admin</option>
-                                                        <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
-                                                        <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
-                                                        <option value="Shipped" @if(($batchOrders->first()?->status ?? '') == 'Shipped') selected @endif>Shipped</option>
-                                                        <option value="Delivered" @if(($batchOrders->first()?->status ?? '') == 'Delivered') selected @endif>Delivered</option>
-                                                        <option value="Completed" @if(($batchOrders->first()?->status ?? '') == 'Completed') selected @endif>Completed</option>
-                                                    </select>
-                                                </form>
-
-                                                <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2 gap-2 shadow-sm">
-                                                    @csrf
-                                                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Payment Mode:</span>
-                                                    <select name="payment_mode" onchange="this.form.submit()" class="text-xs font-bold rounded px-2 py-1 outline-none border transition-colors w-full max-w-[150px] {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-300' }}">
-                                                        <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash Collection</option>
-                                                        <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Online (Stripe)</option>
-                                                    </select>
-                                                </form>
-                                            @endif
+                                        <div class="flex flex-col gap-1.5 flex-shrink-0 w-full md:w-auto">
+                                            <a href="{{ route('admin.direct-batch.show', $batchId) }}" class="px-3 py-1.5 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-primary/90 transition-colors text-center">Review Order</a>
+                                            <div class="flex gap-1.5">
+                                                <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-50 transition-colors text-center">Roster</a>
+                                                <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-2.5 py-1 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate</a>
+                                            </div>
+                                            <form action="{{ route('admin.direct-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
+                                                @csrf
+                                                <button type="submit" class="w-full px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-[11px] font-bold uppercase tracking-wide rounded-md transition-colors text-center">Mark Addressed</button>
+                                            </form>
+                                            <form action="{{ route('admin.batch.status.update', $batchId) }}" method="POST" class="flex items-center justify-between bg-white border border-slate-200 rounded-md p-1.5 gap-1.5 shadow-sm">
+                                                @csrf
+                                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status:</span>
+                                                <select name="status" onchange="this.form.submit()" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full max-w-[125px]">
+                                                    <option value="Submitted to Admin" @if(($batchOrders->first()?->status ?? '') == 'Submitted to Admin') selected @endif>Submitted to Admin</option>
+                                                    <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
+                                                    <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
+                                                    <option value="Shipped" @if(($batchOrders->first()?->status ?? '') == 'Shipped') selected @endif>Shipped</option>
+                                                    <option value="Delivered" @if(($batchOrders->first()?->status ?? '') == 'Delivered') selected @endif>Delivered</option>
+                                                    <option value="Completed" @if(($batchOrders->first()?->status ?? '') == 'Completed') selected @endif>Completed</option>
+                                                </select>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
                                 @endforeach
                             </div>
-                            @if(isset($finalizedStoreBatchesPaginator) && $finalizedStoreBatchesPaginator instanceof \Illuminate\Pagination\LengthAwarePaginator && $finalizedStoreBatchesPaginator->hasPages())
-                                <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#finalized-master-orders-results" hx-select="#finalized-master-orders-results" hx-swap="outerHTML">
-                                    {{ $finalizedStoreBatchesPaginator->links() }}
+                            @if(isset($finalizedDirectBatchesPaginator) && $finalizedDirectBatchesPaginator instanceof \Illuminate\Pagination\LengthAwarePaginator && $finalizedDirectBatchesPaginator->hasPages())
+                                <div class="p-3 border-t border-slate-100 bg-white flex-shrink-0 mt-auto" hx-boost="true" hx-target="#finalized-direct-orders-results" hx-select="#finalized-direct-orders-results" hx-swap="outerHTML">
+                                    {{ $finalizedDirectBatchesPaginator->links() }}
                                 </div>
                             @endif
-                        @endif
+                            @endif
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                {{-- ═══ FINALIZED DIRECT ORDERS ═══ --}}
-                <div x-data="{ expanded: false, init() { const k = 'admin_finalized_direct_orders'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
-                    <div @click="expanded = !expanded" class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
-                        <div>
-                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Finalized Direct Orders</h2>
-                            <p class="text-sm text-slate-500 mt-1">Direct order batches submitted by coaches (no storefront).</p>
-                        </div>
-                        <div class="flex items-center gap-4 text-slate-400">
-                            <span class="text-sm font-bold">{{ isset($finalizedDirectBatchesPaginator) ? $finalizedDirectBatchesPaginator->total() : $finalizedDirectOrderBatches->count() }} Batches</span>
-                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </div>
+            </div>
+{{-- ═══ ARCHIVED STORES & ORDERS (Full width accordion below 4 squares) ═══ --}}
+            <div x-data="{ expanded: false, init() { const k = 'admin_archived_stores'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-6">
+                <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-200 transition-colors" @click="expanded = !expanded">
+                    <div>
+                        <h2 class="text-base font-black uppercase tracking-tight text-slate-500">Archived Stores & Orders</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Past orders that have been archived for production auditing.</p>
                     </div>
-                    <div x-show="expanded" x-collapse>
-                        <div id="finalized-direct-orders-results">
-                        @if($finalizedDirectOrderBatches->isEmpty())
-                            <div class="p-12 text-center text-slate-400 text-sm">No finalized direct orders.</div>
-                        @else
-                        <div class="divide-y divide-slate-100">
-                            @foreach($finalizedDirectOrderBatches as $batchId => $batchData)
-                            @php
-                                $batchOrders = $batchData['orders'] ?? collect();
-                                $totalItems = $batchOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
-                                $coach = $batchOrders->first()?->user;
-                            @endphp
-                            <div class="p-5">
-                                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                                    <div>
-                                        <div class="font-black text-slate-900 uppercase text-base">Direct Order Batch</div>
-                                        <div class="text-sm text-slate-500 mt-0.5">
-                                            Coach: {{ $coach?->name ?? 'Unknown' }} — {{ $coach?->organization ?? '—' }}
-                                        </div>
-                                        <div class="mt-1 flex items-center gap-2 flex-wrap">
-                                            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md border border-slate-200">
-                                                Status: {{ $batchOrders->first()?->status ?? 'Submitted' }}
-                                            </span>
-                                            @if($batchOrders->first()?->payment_status === 'paid')
-                                                <span class="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold uppercase tracking-wider rounded-md border border-green-200">
-                                                    ✓ Paid Online
-                                                </span>
-                                            @endif
-                                        </div>
-                                        <div class="mt-3 grid grid-cols-3 gap-4">
-                                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
-                                                <div class="text-2xl font-black text-primary">{{ $batchOrders->count() }}</div>
-                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Orders</div>
-                                            </div>
-                                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
-                                                <div class="text-2xl font-black text-slate-900">{{ $totalItems }}</div>
-                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
-                                            </div>
-                                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
-                                                <div class="text-xs font-bold text-slate-900">{{ $batchOrders->first()?->created_at?->format('M d') ?? 'Unknown' }}</div>
-                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Submitted</div>
-                                            </div>
-                                        </div>
+                    <div class="flex items-center gap-3 text-slate-400">
+                        <span class="text-xs font-bold text-slate-500">{{ $archivedStores->total() }} Stores</span>
+                        <span class="text-xs font-bold text-slate-500">{{ $archivedBatchesPaginator->total() }} Batches</span>
+                        <svg class="w-5 h-5 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                </div>
+                <div x-show="expanded" x-collapse>
+                    <div class="p-3 border-b border-slate-100 bg-white">
+                        <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md"
+                              hx-get="{{ route('admin.dashboard') }}"
+                              hx-target="#archive-results"
+                              hx-select="#archive-results"
+                              hx-swap="outerHTML"
+                              hx-trigger="input from:input[name='archive_search'] delay:300ms, submit"
+                              hx-push-url="true">
+                            <input type="text" name="archive_search" value="{{ request('archive_search') }}" placeholder="Search archived stores and batches..." class="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                            <button type="submit" class="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
+                            @if(request('archive_search'))
+                                <a href="{{ route('admin.dashboard') }}" class="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</a>
+                            @endif
+                        </form>
+                    </div>
+                    <div id="archive-results">
+                    <div class="divide-y divide-slate-100 max-h-[300px] overflow-y-auto">
+                    @if($archivedStores->isEmpty() && $archivedOrderBatches->isEmpty())
+                        <div class="p-8 text-center text-slate-400 text-sm">No archived stores or orders.</div>
+                    @else
+                        @if($archivedStores->isNotEmpty())
+                            <div class="p-3 border-b border-slate-100 bg-slate-50">
+                                <div class="text-xs font-bold uppercase tracking-wide text-slate-500">Archived Stores</div>
+                            </div>
+                            @foreach($archivedStores as $store)
+                            <div class="p-3.5 flex items-center justify-between gap-3 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
+                                <div>
+                                    <div class="font-bold text-xs sm:text-sm text-slate-700">{{ $store->name }}</div>
+                                    <div class="text-[11px] text-slate-500">
+                                        {{ $store->user->name }} · {{ $store->parentOrders->count() }} orders
+                                        @if($store->updated_at)
+                                            · Archived {{ $store->updated_at->format('M d, Y') }}
+                                        @endif
                                     </div>
-                                    <div class="flex flex-col gap-2 flex-shrink-0">
-                                        <a href="{{ route('admin.direct-batch.show', $batchId) }}" class="px-4 py-2 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-primary/90 transition-colors text-center">Review / Edit Order</a>
-                                        <div class="flex gap-2">
-                                            <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-50 transition-colors text-center">Roster CSV</a>
-                                            <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate CSV</a>
-                                        </div>
-                                        <form action="{{ route('admin.direct-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
-                                            @csrf
-                                            <button type="submit" class="w-full px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors text-center">Mark Addressed</button>
-                                        </form>
-                                        <form action="{{ route('admin.batch.status.update', $batchId) }}" method="POST" class="mt-2 flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2 gap-2 shadow-sm">
-                                            @csrf
-                                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Production Status:</span>
-                                            <select name="status" onchange="this.form.submit()" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full max-w-[130px]">
-                                                <option value="Submitted to Admin" @if(($batchOrders->first()?->status ?? '') == 'Submitted to Admin') selected @endif>Submitted to Admin</option>
-                                                <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
-                                                <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
-                                                <option value="Shipped" @if(($batchOrders->first()?->status ?? '') == 'Shipped') selected @endif>Shipped</option>
-                                                <option value="Delivered" @if(($batchOrders->first()?->status ?? '') == 'Delivered') selected @endif>Delivered</option>
-                                                <option value="Completed" @if(($batchOrders->first()?->status ?? '') == 'Completed') selected @endif>Completed</option>
-                                            </select>
-                                        </form>
-                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1.5 flex-shrink-0">
+                                    <form action="{{ route('admin.stores.unarchive', $store) }}" method="POST" onsubmit="return confirm('Restore this store back to active production?')">
+                                        @csrf
+                                        <button type="submit" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">Unarchive</button>
+                                    </form>
+                                    <form action="{{ route('admin.stores.delete', $store) }}" method="POST" onsubmit="return confirm('Delete this archived store and all related data? This cannot be undone.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="px-2.5 py-1 bg-white border border-red-300 text-red-600 text-[11px] font-bold rounded hover:bg-red-50 transition-colors">Delete</button>
+                                    </form>
+                                    <a href="{{ route('admin.store.edit', $store) }}" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">View</a>
                                 </div>
                             </div>
                             @endforeach
-                        </div>
-                        @if(isset($finalizedDirectBatchesPaginator) && $finalizedDirectBatchesPaginator instanceof \Illuminate\Pagination\LengthAwarePaginator && $finalizedDirectBatchesPaginator->hasPages())
-                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#finalized-direct-orders-results" hx-select="#finalized-direct-orders-results" hx-swap="outerHTML">
-                                {{ $finalizedDirectBatchesPaginator->links() }}
+                        @endif
+                        @if($archivedOrderBatches->isNotEmpty())
+                            <div class="p-3 border-b border-slate-100 bg-slate-50">
+                                <div class="text-xs font-bold uppercase tracking-wide text-slate-500">Archived Order Batches</div>
                             </div>
-                        @endif
-                        @endif
-                        </div>
-                    </div>
-                </div>
-
-                {{-- ═══ ARCHIVED STORES & ORDERS ═══ --}}
-                <div x-data="{ expanded: false, init() { const k = 'admin_archived_stores'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
-                    <div class="p-6 border-b border-slate-200 bg-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-200 transition-colors" @click="expanded = !expanded">
-                        <div>
-                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-500">Archived Stores & Orders</h2>
-                            <p class="text-sm text-slate-400 mt-1">Past orders that have been archived for production auditing.</p>
-                        </div>
-                        <div class="flex items-center gap-4 text-slate-400">
-                            <span class="text-sm font-bold">{{ $archivedStores->total() }} Stores</span>
-                            <span class="text-sm font-bold">{{ $archivedBatchesPaginator->total() }} Batches</span>
-                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </div>
-                    </div>
-                    <div x-show="expanded" x-collapse>
-                        <div class="p-4 border-b border-slate-100 bg-white">
-                            <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md"
-                                  hx-get="{{ route('admin.dashboard') }}"
-                                  hx-target="#archive-results"
-                                  hx-select="#archive-results"
-                                  hx-swap="outerHTML"
-                                  hx-trigger="input from:input[name='archive_search'] delay:300ms, submit"
-                                  hx-push-url="true">
-                                <input type="text" name="archive_search" value="{{ request('archive_search') }}" placeholder="Search archived stores and batches..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
-                                <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
-                                @if(request('archive_search'))
-                                    <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</a>
-                                @endif
-                            </form>
-                        </div>
-                        <div id="archive-results">
-                        <div class="divide-y divide-slate-100">
-                        @if($archivedStores->isEmpty() && $archivedOrderBatches->isEmpty())
-                            <div class="p-8 text-center text-slate-400 text-sm">No archived stores or orders.</div>
-                        @else
-                            @if($archivedStores->isNotEmpty())
-                                <div class="p-4 border-b border-slate-100 bg-slate-50">
-                                    <div class="text-sm font-bold uppercase tracking-wide text-slate-500">Archived Stores</div>
-                                </div>
-                                @foreach($archivedStores as $store)
-                                <div class="p-4 flex items-center justify-between gap-4 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
-                                    <div>
-                                        <div class="font-bold text-sm text-slate-700">{{ $store->name }}</div>
-                                        <div class="text-xs text-slate-500">
-                                            {{ $store->user->name }} · {{ $store->parentOrders->count() }} orders
-                                            @if($store->updated_at)
-                                                · Archived {{ $store->updated_at->format('M d, Y') }}
-                                            @endif
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-2 flex-shrink-0">
-                                        <form action="{{ route('admin.stores.unarchive', $store) }}" method="POST" onsubmit="return confirm('Restore this store back to active production?')">
-                                            @csrf
-                                            <button type="submit" class="px-3 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded hover:bg-slate-200 transition-colors">Unarchive</button>
-                                        </form>
-                                        <form action="{{ route('admin.stores.delete', $store) }}" method="POST" onsubmit="return confirm('Delete this archived store and all related data? This cannot be undone.')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="px-3 py-1 bg-white border border-red-300 text-red-600 text-xs font-bold rounded hover:bg-red-50 transition-colors">Delete</button>
-                                        </form>
-                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded hover:bg-slate-200 transition-colors">View</a>
-                                    </div>
-                                </div>
-                                @endforeach
-                            @endif
-                            @if($archivedOrderBatches->isNotEmpty())
-                                <div class="p-4 border-b border-slate-100 bg-slate-50">
-                                    <div class="text-sm font-bold uppercase tracking-wide text-slate-500">Archived Order Batches</div>
-                                </div>
-                                @foreach($archivedOrderBatches as $batchId => $batchData)
-                                @php
-                                    $orders = $batchData['orders'];
-                                    $store = $orders->first()->teamStore;
-                                    $coach = $orders->first()->user;
-                                    $latestArchiveDate = $orders->max('updated_at');
-                                @endphp
-                                <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
-                                    <div>
-                                        <div class="font-bold text-sm text-slate-700">{{ $store ? $store->name : 'Direct Order Batch' }}</div>
-                                        <div class="text-xs text-slate-500">
-                                            {{ $coach?->name ?? 'Unknown Coach' }} · {{ $orders->count() }} orders
-                                            @if($store) · Team Store @endif
-                                            @if($latestArchiveDate)
-                                                · Archived {{ \Carbon\Carbon::parse($latestArchiveDate)->format('M d, Y') }}
-                                            @endif
-                                        </div>
-                                        <div class="text-xs text-slate-400 mt-1">Batch ID: {{ $batchId }}</div>
-                                    </div>
-                                    <div class="flex items-center gap-2 flex-shrink-0">
-                                        @if($store)
-                                            <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded hover:bg-slate-200 transition-colors">View Store</a>
-                                        @else
-                                            <a href="{{ route('admin.direct-batch.show', $batchId) }}" class="px-3 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded hover:bg-slate-200 transition-colors">View Batch</a>
+                            @foreach($archivedOrderBatches as $batchId => $batchData)
+                            @php
+                                $orders = $batchData['orders'];
+                                $store = $orders->first()->teamStore;
+                                $coach = $orders->first()->user;
+                                $latestArchiveDate = $orders->max('updated_at');
+                            @endphp
+                            <div class="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
+                                <div>
+                                    <div class="font-bold text-xs sm:text-sm text-slate-700">{{ $store ? $store->name : 'Direct Order Batch' }}</div>
+                                    <div class="text-[11px] text-slate-500">
+                                        {{ $coach?->name ?? 'Unknown Coach' }} · {{ $orders->count() }} orders
+                                        @if($store) · Team Store @endif
+                                        @if($latestArchiveDate)
+                                            · Archived {{ \Carbon\Carbon::parse($latestArchiveDate)->format('M d, Y') }}
                                         @endif
-                                        <form action="{{ route('admin.archived-orders.delete', $batchId) }}" method="POST" onsubmit="return confirm('Permanently delete this archived order batch? This cannot be undone.')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="px-3 py-1 bg-white border border-red-300 text-red-600 text-xs font-bold rounded hover:bg-red-50 transition-colors">Delete</button>
-                                        </form>
                                     </div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Batch ID: {{ $batchId }}</div>
                                 </div>
-                                @endforeach
-                            @endif
-                        @endif
-                        </div>
-                        @if($archivedStores instanceof \Illuminate\Pagination\LengthAwarePaginator && $archivedStores->hasPages())
-                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#archive-results" hx-select="#archive-results" hx-swap="outerHTML">
-                                {{ $archivedStores->links() }}
+                                <div class="flex items-center gap-1.5 flex-shrink-0">
+                                    @if($store)
+                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">View Store</a>
+                                    @else
+                                        <a href="{{ route('admin.direct-batch.show', $batchId) }}" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">View Batch</a>
+                                    @endif
+                                    <form action="{{ route('admin.archived-orders.delete', $batchId) }}" method="POST" onsubmit="return confirm('Permanently delete this archived order batch? This cannot be undone.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="px-2.5 py-1 bg-white border border-red-300 text-red-600 text-[11px] font-bold rounded hover:bg-red-50 transition-colors">Delete</button>
+                                    </form>
+                                </div>
                             </div>
+                            @endforeach
                         @endif
-                        @if($archivedBatchesPaginator instanceof \Illuminate\Pagination\LengthAwarePaginator && $archivedBatchesPaginator->hasPages())
-                            <div class="p-4 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#archive-results" hx-select="#archive-results" hx-swap="outerHTML">
-                                {{ $archivedBatchesPaginator->links() }}
-                            </div>
-                        @endif
+                    @endif
+                    </div>
+                    @if($archivedStores instanceof \Illuminate\Pagination\LengthAwarePaginator && $archivedStores->hasPages())
+                        <div class="p-3 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#archive-results" hx-select="#archive-results" hx-swap="outerHTML">
+                            {{ $archivedStores->links() }}
                         </div>
+                    @endif
+                    @if($archivedBatchesPaginator instanceof \Illuminate\Pagination\LengthAwarePaginator && $archivedBatchesPaginator->hasPages())
+                        <div class="p-3 border-t border-slate-100 bg-white" hx-boost="true" hx-target="#archive-results" hx-select="#archive-results" hx-swap="outerHTML">
+                            {{ $archivedBatchesPaginator->links() }}
+                        </div>
+                    @endif
                     </div>
                 </div>
-
             </div>
         </div>
 
@@ -1203,7 +1209,7 @@
                                 <div class="relative">
                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
                                         <option value="">Select a Collection...</option>
-                                        @foreach($allCollections as $col)
+                                        @foreach($allCollections->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE) as $col)
                                             <option value="{{ $col->id }}">{{ $col->name }}</option>
                                         @endforeach
                                     </select>
@@ -1325,7 +1331,7 @@
                                 <div class="relative">
                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
                                         <option value="">Select a Collection...</option>
-                                        @foreach($allCollections as $col)
+                                        @foreach($allCollections->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE) as $col)
                                             <option value="{{ $col->id }}">{{ $col->name }}</option>
                                         @endforeach
                                     </select>
@@ -1599,7 +1605,7 @@
                                                 <div class="relative">
                                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none appearance-none">
                                                         <option value="">No Collection</option>
-                                                        @foreach($allCollections as $col)
+                                                        @foreach($allCollections->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE) as $col)
                                                             <option value="{{ $col->id }}" {{ $design->design_collection_id == $col->id ? 'selected' : '' }}>{{ $col->name }}</option>
                                                         @endforeach
                                                     </select>
