@@ -768,7 +768,7 @@
                         <a href="{{ route('store.show', $store->slug) }}" target="_blank" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase rounded-lg transition-colors">Share Link</a>
                         <a href="{{ route('coach.store.export', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase rounded-lg transition-colors">Export CSV</a>
                         @if(!$isLocked && $totalAthletes > 0)
-                        <div x-data="{ openSubmitModal: false }">
+                        <div x-data="{ openSubmitModal: false, agreedUnpaid: false }">
                             <button @click="openSubmitModal = true" type="button" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors">Approve/Submit</button>
 
                             <!-- Submit Confirmation Modal -->
@@ -797,9 +797,36 @@
                                             <textarea name="shipping_address" required rows="3" class="w-full bg-slate-100 border border-slate-200 rounded-lg p-3 text-sm focus:bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-inner text-slate-900" placeholder="Street Address&#10;City, State ZIP"></textarea>
                                         </div>
 
+                                        {{-- Required Unpaid Orders Acknowledgment Checkbox --}}
+                                        <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 mb-6">
+                                            @php
+                                                $pendingPaymentCount = $store->parentOrders->whereNull('batch_id')->where('payment_status', 'pending')->count();
+                                            @endphp
+                                            @if($pendingPaymentCount > 0)
+                                                <div class="mb-2.5 flex items-center gap-2 text-xs font-bold text-amber-900 bg-amber-100/80 px-2.5 py-1.5 rounded-lg border border-amber-300/60">
+                                                    <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                                    <span>Attention: {{ $pendingPaymentCount }} order(s) currently marked as "Pending Payment".</span>
+                                                </div>
+                                            @endif
+                                            <label class="flex items-start gap-3 cursor-pointer select-none">
+                                                <input type="checkbox" 
+                                                       name="acknowledge_unpaid" 
+                                                       x-model="agreedUnpaid"
+                                                       required
+                                                       value="1" 
+                                                       class="mt-0.5 w-4 h-4 rounded text-secondary border-slate-300 focus:ring-secondary cursor-pointer">
+                                                <span class="text-xs text-slate-700 leading-relaxed font-medium">
+                                                    Please note: orders within this batch that are "Pending Payment" will not be processed. Be sure you have reviewed the order to ensure all is cleared for production.
+                                                </span>
+                                            </label>
+                                        </div>
+
                                         <div class="flex gap-3">
-                                            <button @click="openSubmitModal = false" type="button" class="flex-1 py-3 bg-white border border-slate-300 text-slate-700 font-bold uppercase text-xs tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Review Again</button>
-                                            <button type="submit" class="flex-1 py-3 bg-secondary text-white font-bold uppercase text-xs tracking-wider rounded-lg hover:bg-[#a11825] transition-colors">Submit Final</button>
+                                            <button @click="openSubmitModal = false; agreedUnpaid = false" type="button" class="flex-1 py-3 bg-white border border-slate-300 text-slate-700 font-bold uppercase text-xs tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Review Again</button>
+                                            <button type="submit" 
+                                                    :disabled="!agreedUnpaid" 
+                                                    :class="agreedUnpaid ? 'bg-secondary hover:bg-[#a11825] cursor-pointer' : 'bg-slate-300 text-slate-500 cursor-not-allowed'"
+                                                    class="flex-1 py-3 text-white font-bold uppercase text-xs tracking-wider rounded-lg transition-colors">Submit Final</button>
                                         </div>
                                     </form>
                                 </div>

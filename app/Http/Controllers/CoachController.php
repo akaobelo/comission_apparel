@@ -275,7 +275,10 @@ class CoachController extends Controller
         if ($store->user_id !== $request->user()->id) abort(403);
 
         $request->validate([
-            'shipping_address' => 'required|string|max:1000',
+            'shipping_address'   => 'required|string|max:1000',
+            'acknowledge_unpaid' => 'accepted',
+        ], [
+            'acknowledge_unpaid.accepted' => 'You must acknowledge that orders with "Pending Payment" will not be processed before submitting.',
         ]);
 
         $unbatchedOrders = $store->parentOrders()
