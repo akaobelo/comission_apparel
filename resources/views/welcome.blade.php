@@ -3,12 +3,143 @@
 @section('content')
 
 <!-- ══════════════════════════════════════════════════════════════════════ -->
-<!-- HERO BANNER (Full-Width Panoramic Visual with Navigation Clearance)    -->
+<!-- HERO SECTION (Light, High-Energy, Adidas Athletic Aesthetic)           -->
 <!-- ══════════════════════════════════════════════════════════════════════ -->
-<section class="w-full bg-black border-b border-slate-200" style="padding-top: 85px;">
-    <div class="relative w-full overflow-hidden">
-        <h1 class="sr-only">{{ $heroSettings['title'] ?? 'CUSTOM GEAR BUILT FOR THE COMMITTED' }}</h1>
-        <img src="{{ asset('images/hero-banner.jpeg') }}" alt="{{ $heroSettings['title'] ?? 'Elite Custom Apparel' }}" class="w-full h-auto object-cover block" fetchpriority="high">
+<section class="w-full bg-gradient-to-b from-white via-slate-50/60 to-white border-b border-slate-200 relative overflow-hidden" style="padding-top: 85px;">
+    <!-- Subtle athletic grid lines in background -->
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-40 pointer-events-none"></div>
+
+    <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 relative z-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            
+            <!-- Left: High-Impact Typography & Action CTAs -->
+            <div class="lg:col-span-7 space-y-6 text-left">
+                
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-200/80 text-[#cd202c] shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-[#cd202c] animate-pulse"></span>
+                    <span class="text-[11px] font-black uppercase tracking-widest">
+                        Official Team Uniforms & Fan Gear
+                    </span>
+                </div>
+
+                <h1 class="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-black uppercase tracking-tight text-slate-950 leading-[0.95]">
+                    CUSTOM GEAR BUILT FOR THE <span class="text-[#cd202c]">COMMITTED.</span>
+                </h1>
+
+                <p class="text-slate-600 text-sm md:text-base lg:text-lg max-w-xl font-normal leading-relaxed">
+                    {{ $heroSettings['subtitle'] ?? 'Dominate the competition with elite performance apparel designed for champion athletes. Precision craftsmanship, fast 2–3 week turnaround, and dedicated online team stores.' }}
+                </p>
+
+                <!-- Dual Action CTAs -->
+                <div class="pt-2 flex flex-wrap items-center gap-4">
+                    <a href="/quote" class="px-8 py-4 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-lg shadow-red-500/20 hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
+                        <span>Request Free 3D Mockup</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </a>
+                    <a href="{{ route('store.search') }}" class="px-8 py-4 bg-white hover:bg-slate-900 hover:text-white text-slate-900 border-2 border-slate-900 font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-sm hover:shadow-md transition-all inline-flex items-center justify-center gap-2">
+                        <span>Find Your Team Store</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </a>
+                </div>
+
+                <!-- Proof points snippet -->
+                <div class="pt-6 border-t border-slate-200 flex flex-wrap items-center gap-6 text-xs text-slate-600 font-bold uppercase tracking-wider">
+                    <div class="flex items-center gap-1.5 text-amber-500">
+                        <span class="text-sm">★ ★ ★ ★ ★</span>
+                        <span class="text-slate-900 font-black ml-1">5.0</span>
+                        <span class="text-slate-400 font-normal lowercase">rated by coaches</span>
+                    </div>
+                    <span class="text-slate-300">•</span>
+                    <div class="flex items-center gap-1.5 text-slate-700">
+                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        <span>Zero Design Fees</span>
+                    </div>
+                    <span class="text-slate-300">•</span>
+                    <div class="flex items-center gap-1.5 text-slate-700">
+                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        <span>2–3 Wk Turnaround</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right: Athlete Visual with Floating Quality Badges -->
+            <div class="lg:col-span-5 relative flex justify-center items-center">
+                <div class="relative w-full max-w-[540px] rounded-3xl overflow-hidden bg-white border border-slate-200 shadow-xl p-3 group">
+                    <div class="rounded-2xl overflow-hidden bg-slate-100 aspect-[4/3] sm:aspect-[16/11] relative">
+                        <img src="{{ asset('images/hero-banner.jpeg') }}" alt="{{ $heroSettings['title'] ?? 'The Commission Apparel Athletes' }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 block" fetchpriority="high">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent pointer-events-none"></div>
+
+                        <!-- Floating Badge 1 (Top Left) -->
+                        <div class="absolute top-3 left-3 bg-white/95 backdrop-blur-md border border-slate-200 shadow-md px-3 py-1.5 rounded-xl flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-[#cd202c]"></span>
+                            <span class="text-[10px] font-black uppercase tracking-wider text-slate-900">100% Custom Sublimation</span>
+                        </div>
+
+                        <!-- Floating Badge 2 (Bottom Right) -->
+                        <div class="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md border border-slate-200 shadow-md px-3.5 py-2 rounded-xl flex items-center gap-2.5">
+                            <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">✓</div>
+                            <div>
+                                <div class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Guaranteed</div>
+                                <div class="text-[11px] font-black uppercase text-slate-900 leading-none">2–3 Wk Delivery</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- VALUE PROPOSITIONS / TRUST BAR (Wooter Features + Adidas Clean)        -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section class="w-full bg-white border-b border-slate-200 py-6 sm:py-8 shadow-sm">
+    <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            
+            <div class="flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-red-50 text-[#cd202c] border border-red-100 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <div>
+                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">2–3 Week Turnaround</h4>
+                    <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 leading-relaxed">Fastest guaranteed production cycle in custom team sports.</p>
+                </div>
+            </div>
+
+            <div class="flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-red-50 text-[#cd202c] border border-red-100 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+                </div>
+                <div>
+                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">Free 3D Design Proofs</h4>
+                    <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 leading-relaxed">Professional 3D vector artwork rendered in 24 hours.</p>
+                </div>
+            </div>
+
+            <div class="flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-red-50 text-[#cd202c] border border-red-100 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                </div>
+                <div>
+                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">Full Dye-Sublimation</h4>
+                    <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 leading-relaxed">Colors, logos & numbers infused into fabric. Never peels or fades.</p>
+                </div>
+            </div>
+
+            <div class="flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-red-50 text-[#cd202c] border border-red-100 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                </div>
+                <div>
+                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">Turnkey Team Stores</h4>
+                    <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 leading-relaxed">Direct parent ordering online. Zero paperwork or cash handling.</p>
+                </div>
+            </div>
+
+        </div>
     </div>
 </section>
 
@@ -54,12 +185,12 @@
                     <img src="{{ $proofSettings['concept_image'] }}" alt="3D Jersey Concept" class="max-h-full w-auto object-contain group-hover:scale-105 transition-transform duration-500" loading="lazy">
                     
                     <!-- Callout Pin 1 -->
-                    <div class="absolute top-1/4 right-4 bg-slate-900/90 backdrop-blur border border-slate-700 px-3 py-1 rounded-lg text-[10px] font-bold text-white uppercase hidden sm:flex items-center gap-1.5 shadow-lg">
+                    <div class="absolute top-1/4 right-4 bg-white/95 backdrop-blur-md border border-slate-200 px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-900 uppercase hidden sm:flex items-center gap-1.5 shadow-md">
                         <span class="w-2 h-2 rounded-full bg-[#cd202c]"></span> {{ $proofSettings['feature_1'] ?? '1. Full Custom Graphics' }}
                     </div>
                     
                     <!-- Callout Pin 2 -->
-                    <div class="absolute bottom-1/4 right-4 bg-slate-900/90 backdrop-blur border border-slate-700 px-3 py-1 rounded-lg text-[10px] font-bold text-white uppercase hidden sm:flex items-center gap-1.5 shadow-lg">
+                    <div class="absolute bottom-1/4 right-4 bg-white/95 backdrop-blur-md border border-slate-200 px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-900 uppercase hidden sm:flex items-center gap-1.5 shadow-md">
                         <span class="w-2 h-2 rounded-full bg-[#cd202c]"></span> {{ $proofSettings['feature_2'] ?? '2. Premium Moisture-Wicking Fabric' }}
                     </div>
                 </div>
@@ -298,15 +429,21 @@
                 </p>
             </div>
 
-            <!-- Full-Width Panoramic Team Store UI Platform Mockup Banner -->
-            <div class="w-full max-w-[1300px] mx-auto rounded-2xl overflow-hidden shadow-md border border-slate-200 bg-slate-900 p-2.5 md:p-3 group">
-                <div class="flex items-center gap-1.5 pb-2 px-2 border-b border-slate-800 mb-2">
-                    <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
-                    <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
-                    <div class="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
-                    <span class="text-[10px] font-mono text-slate-400 ml-2 tracking-wide">thecommissionapparel.com/store/live</span>
+            <!-- Clean Light Browser Mockup (Like Adidas modern tech) -->
+            <div class="w-full max-w-[1300px] mx-auto rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-slate-50 p-2.5 md:p-3.5 group">
+                <div class="flex items-center justify-between pb-2.5 px-3 border-b border-slate-200 mb-2.5">
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                        <div class="w-3 h-3 rounded-full bg-amber-400"></div>
+                        <div class="w-3 h-3 rounded-full bg-emerald-400"></div>
+                    </div>
+                    <div class="bg-white border border-slate-200 text-slate-600 text-[11px] font-mono px-4 py-1 rounded-full shadow-inner tracking-wide flex items-center gap-2">
+                        <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        <span>thecommissionapparel.com/store/your-school</span>
+                    </div>
+                    <div class="w-12"></div>
                 </div>
-                <div class="w-full rounded-xl overflow-hidden relative bg-black">
+                <div class="w-full rounded-xl overflow-hidden relative bg-white border border-slate-100">
                     <img src="{{ $teamStoreSettings['image'] }}" alt="Team Store Digital Platform" class="w-full h-auto object-contain block transition-transform duration-700 group-hover:scale-[1.01]" loading="lazy">
                 </div>
             </div>
@@ -431,22 +568,26 @@
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- 6. FINAL HIGH-CONVERSION CTA BANNER                               -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <section class="bg-gradient-to-r from-[#8b111a] via-[#cd202c] to-[#8b111a] border border-red-800/80 rounded-2xl md:rounded-3xl text-white py-10 md:py-14 px-6 md:px-12 relative overflow-hidden text-center shadow-lg">
-        <div class="max-w-[1200px] mx-auto space-y-4">
-            <span class="inline-block bg-black/40 text-white text-[10px] font-black tracking-widest uppercase px-3.5 py-1.5 rounded-full border border-white/10 shadow-sm">
-                DOMINATE THE FIELD
+    <section class="bg-[#cd202c] border border-red-700 rounded-2xl md:rounded-3xl text-white py-12 md:py-16 px-6 md:px-12 relative overflow-hidden text-center shadow-xl">
+        <!-- Subtle athletic diagonal stripe background -->
+        <div class="absolute inset-0 bg-[linear-gradient(45deg,rgba(0,0,0,0.06)_25%,transparent_25%,transparent_50%,rgba(0,0,0,0.06)_50%,rgba(0,0,0,0.06)_75%,transparent_75%,transparent)] bg-[size:3rem_3rem] pointer-events-none"></div>
+
+        <div class="max-w-[1200px] mx-auto space-y-5 relative z-10">
+            <span class="inline-block bg-white/20 text-white text-[11px] font-black tracking-widest uppercase px-4 py-1.5 rounded-full border border-white/30 shadow-sm backdrop-blur-sm">
+                DOMINATE THE COMPETITION
             </span>
-            <h2 class="text-2xl md:text-4xl lg:text-5xl font-black uppercase tracking-tight text-white leading-tight drop-shadow-md">
+            <h2 class="text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white leading-tight drop-shadow-sm">
                 READY TO DESIGN YOUR PROGRAM'S LEGACY?
             </h2>
-            <p class="text-red-100 text-xs md:text-sm max-w-2xl mx-auto leading-relaxed font-normal">
-                Get bespoke 3D custom uniform mockups tailored specifically for your organization within 24 hours.
+            <p class="text-red-50 text-sm md:text-base max-w-2xl mx-auto leading-relaxed font-medium">
+                Get bespoke 3D custom uniform mockups tailored specifically for your organization within 24 hours. Zero risk, 100% free.
             </p>
-            <div class="pt-3 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <a href="/quote" class="w-full sm:w-auto px-8 py-3.5 bg-black hover:bg-slate-900 text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-lg transition-all hover:scale-105">
-                    Request Free Custom Mockup
+            <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="/quote" class="w-full sm:w-auto px-9 py-4 bg-white hover:bg-slate-100 text-slate-950 font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-xl hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
+                    <span>Request Free Custom Mockup</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </a>
-                <a href="{{ route('store.search') }}" class="w-full sm:w-auto px-8 py-3.5 bg-white/20 hover:bg-white/30 text-white border border-white/40 font-black text-xs md:text-sm uppercase tracking-widest rounded-full transition-all backdrop-blur-sm">
+                <a href="{{ route('store.search') }}" class="w-full sm:w-auto px-8 py-4 bg-transparent hover:bg-white hover:text-slate-950 text-white border-2 border-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full transition-all inline-flex items-center justify-center">
                     Explore Team Stores
                 </a>
             </div>
