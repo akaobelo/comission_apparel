@@ -560,13 +560,13 @@
 
                     <!-- Visual Tech Frame -->
                     <div class="lg:col-span-6">
-                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-4 shadow-inner">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-3 shadow-inner">
                             <div class="flex items-center justify-between pb-3 px-2 border-b border-slate-800/80 mb-3 text-slate-400 text-xs font-mono">
                                 <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span> 3D Digital Concept Stage</span>
                                 <span class="text-slate-500">24-48 HR DELIVERABLE</span>
                             </div>
-                            <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-b from-[#131620] to-[#0a0c10] flex items-center justify-center p-4">
-                                <img src="{{ $teamStoreSettings['step_1_image'] ?? asset('images/concept-spartan.png') }}" alt="3D Uniform Digital Blueprint" class="w-full h-full object-contain max-h-[340px] drop-shadow-[0_20px_25px_rgba(0,0,0,0.8)]" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/concept-spartan.png') }}'">
+                            <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-black/60 border border-slate-800/60">
+                                <img src="{{ $teamStoreSettings['step_1_image'] ?? asset('images/design.jpeg') }}" alt="3D Uniform Digital Blueprint" class="w-full h-full object-cover object-center" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/design.jpeg') }}'">
                                 <div class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md border border-slate-700 text-white text-[10px] font-mono px-3 py-1.5 rounded-lg shadow-lg">
                                     Unlimited Revisions &bull; Free
                                 </div>
@@ -716,8 +716,8 @@
                                 <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Live Order Ingestion</span>
                                 <span class="text-emerald-400 font-bold">100% SECURE CHECKOUT</span>
                             </div>
-                            <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[16/10]">
-                                <img src="{{ $teamStoreSettings['step_3_image'] ?? asset('images/Coach Dashboard.png') }}" alt="Coach Team Store Dashboard" class="w-full h-full object-cover object-top" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/Coach Dashboard.png') }}'">
+                            <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[4/3]">
+                                <img src="{{ $teamStoreSettings['step_3_image'] ?? asset('images/direct order.jpeg') }}" alt="Direct Parent Ordering Storefront" class="w-full h-full object-cover object-top" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/direct order.jpeg') }}'">
                             </div>
                         </div>
                     </div>
@@ -781,13 +781,13 @@
                     </div>
 
                     <div class="lg:col-span-6">
-                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-4 shadow-inner">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-3 shadow-inner">
                             <div class="flex items-center justify-between pb-3 px-2 border-b border-slate-800/80 mb-3 text-slate-400 text-xs font-mono">
                                 <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Sublimation Production Line</span>
                                 <span class="text-slate-400">PHYSICAL SAMPLE</span>
                             </div>
-                            <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-b from-[#131620] to-[#0a0c10] flex items-center justify-center p-2">
-                                <img src="{{ $teamStoreSettings['step_4_image'] ?? asset('images/reality-spartan.png') }}" alt="Manufactured Sublimated Uniform Reality" class="w-full h-full object-contain max-h-[340px] drop-shadow-[0_20px_25px_rgba(0,0,0,0.8)]" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/reality-spartan.png') }}'">
+                            <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-black/60 border border-slate-800/60">
+                                <img src="{{ $teamStoreSettings['step_4_image'] ?? asset('images/week production.jpeg') }}" alt="Manufactured Sublimated Uniform Reality" class="w-full h-full object-cover object-center" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/week production.jpeg') }}'">
                                 <div class="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md border border-slate-700 text-white text-[10px] font-mono px-3 py-1.5 rounded-lg shadow-lg">
                                     Infused Sublimation &bull; Zero Cracking
                                 </div>

@@ -1072,7 +1072,7 @@
                                         <span class="text-[10px] font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700">Digital Concept</span>
                                     </div>
                                     <div class="bg-slate-900 p-2 rounded-lg flex items-center justify-center h-28 overflow-hidden">
-                                        <img src="{{ $landingSettings['team_store_step_1_image'] ?? asset('images/concept-spartan.png') }}" class="h-full w-auto object-contain" onerror="this.src='{{ asset('images/concept-spartan.png') }}'">
+                                        <img src="{{ $landingSettings['team_store_step_1_image'] ?? asset('images/design.jpeg') }}" class="h-full w-auto object-contain" onerror="this.src='{{ asset('images/design.jpeg') }}'">
                                     </div>
                                     <label class="block text-[11px] font-bold text-slate-600">Replace Image:</label>
                                     <input type="file" name="team_store_step_1_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-bold file:uppercase file:bg-slate-900 file:text-white">
@@ -1098,7 +1098,7 @@
                                         <span class="text-[10px] font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700">Coach Dashboard</span>
                                     </div>
                                     <div class="bg-slate-900 p-2 rounded-lg flex items-center justify-center h-28 overflow-hidden">
-                                        <img src="{{ $landingSettings['team_store_step_3_image'] ?? asset('images/Coach Dashboard.png') }}" class="h-full w-auto object-contain" onerror="this.src='{{ asset('images/Coach Dashboard.png') }}'">
+                                        <img src="{{ $landingSettings['team_store_step_3_image'] ?? asset('images/direct order.jpeg') }}" class="h-full w-auto object-contain" onerror="this.src='{{ asset('images/direct order.jpeg') }}'">
                                     </div>
                                     <label class="block text-[11px] font-bold text-slate-600">Replace Image:</label>
                                     <input type="file" name="team_store_step_3_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-bold file:uppercase file:bg-slate-900 file:text-white">
@@ -1111,7 +1111,7 @@
                                         <span class="text-[10px] font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700">Production Craft</span>
                                     </div>
                                     <div class="bg-slate-900 p-2 rounded-lg flex items-center justify-center h-28 overflow-hidden">
-                                        <img src="{{ $landingSettings['team_store_step_4_image'] ?? asset('images/reality-spartan.png') }}" class="h-full w-auto object-contain" onerror="this.src='{{ asset('images/reality-spartan.png') }}'">
+                                        <img src="{{ $landingSettings['team_store_step_4_image'] ?? asset('images/week production.jpeg') }}" class="h-full w-auto object-contain" onerror="this.src='{{ asset('images/week production.jpeg') }}'">
                                     </div>
                                     <label class="block text-[11px] font-bold text-slate-600">Replace Image:</label>
                                     <input type="file" name="team_store_step_4_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-bold file:uppercase file:bg-slate-900 file:text-white">
