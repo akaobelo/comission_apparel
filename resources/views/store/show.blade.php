@@ -944,22 +944,31 @@
 
             <div x-show="rosterOpen" x-transition.opacity class="p-6 md:p-8">
                 <div class="mb-6 flex justify-between items-center gap-4">
-                    <div class="relative flex-1 max-w-md">
+                    <form autocomplete="off" onsubmit="return false;" class="relative flex-1 max-w-md" role="search">
+                        <!-- Trap browser autofill heuristics -->
+                        <input type="text" style="display:none" aria-hidden="true" tabindex="-1">
+                        <input type="password" style="display:none" aria-hidden="true" tabindex="-1">
+
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         </div>
                         <input type="search"
-                               name="placed_orders_search"
-                               id="placed_orders_search"
-                               autocomplete="off"
+                               name="search_roster_name"
+                               id="search_roster_name"
+                               autocomplete="new-password"
+                               readonly
+                               onfocus="this.removeAttribute('readonly');"
+                               onclick="this.removeAttribute('readonly');"
+                               ontouchstart="this.removeAttribute('readonly');"
                                autocorrect="off"
                                autocapitalize="off"
                                spellcheck="false"
                                role="searchbox"
                                x-model="search"
+                               x-init="search = ''; $el.value = ''; setTimeout(() => { if (!search) $el.value = ''; }, 200); setTimeout(() => { if (!search) $el.value = ''; }, 800);"
                                placeholder="Search by name..."
                                class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
-                    </div>
+                    </form>
                 </div>
 
                 @if($store->parentOrders->isEmpty())
