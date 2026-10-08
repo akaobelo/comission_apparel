@@ -144,5 +144,8 @@ class StorefrontPrivacyAndSortingTest extends TestCase
         
         $batchKeys = $finalizedDirectOrderBatches->keys()->toArray();
         $this->assertEquals($batchNewId, $batchKeys[0], 'The newly paid batch must appear first at the top');
+
+        // Check that the batch card displays the payment/finalized date, not the 10-days-ago draft creation date
+        $response->assertSee(now()->format('M d'));
     }
 }

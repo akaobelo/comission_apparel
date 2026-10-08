@@ -571,6 +571,8 @@
                                     $batchOrders = $batchData['orders'] ?? collect();
                                     $totalItems = $batchOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
                                     $coach = $batchOrders->first()?->user;
+                                    $batchSubmittedDate = $batchOrders->first(fn($o) => !empty($o->paid_at))?->paid_at
+                                        ?? $batchOrders->max(fn($o) => $o->updated_at ?? $o->created_at);
                                 @endphp
                                 <div class="p-4">
                                     <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
@@ -599,7 +601,7 @@
                                                     <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
                                                 </div>
                                                 <div class="bg-slate-50 rounded-lg p-2 border border-slate-200 text-center">
-                                                    <div class="text-xs font-bold text-slate-900 mt-1">{{ $batchOrders->first()?->created_at?->format('M d') ?? 'Unknown' }}</div>
+                                                    <div class="text-xs font-bold text-slate-900 mt-1">{{ $batchSubmittedDate?->format('M d') ?? 'Unknown' }}</div>
                                                     <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Submitted</div>
                                                 </div>
                                             </div>

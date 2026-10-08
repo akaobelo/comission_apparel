@@ -115,14 +115,12 @@ class AdminController extends Controller
 
         $finalizedStoreBatches = ParentOrder::whereIn('batch_id', $finalizedStoreBatchIds->pluck('batch_id'))
             ->with(['user', 'teamStore', 'teamStore.items'])
-            ->latest()
             ->get()
-            ->groupBy('batch_id')
-            ->sortByDesc(function ($orders) {
-                $latestTime = $orders->max(function ($o) {
-                    return $o->paid_at ?? $o->updated_at ?? $o->created_at;
-                });
-                return [$latestTime, $orders->max('id')];
+            ->groupBy('batch_id');
+
+        $storeBatchIdOrder = array_flip($finalizedStoreBatchIds->pluck('batch_id')->toArray());
+        $finalizedStoreBatches = $finalizedStoreBatches->sortBy(function ($orders, $batchId) use ($storeBatchIdOrder) {
+                return $storeBatchIdOrder[$batchId] ?? 999999;
             })
             ->map(function ($orders) {
                 $store = $orders->first()->teamStore;
@@ -193,14 +191,12 @@ class AdminController extends Controller
 
         $finalizedDirectOrderBatches = ParentOrder::whereIn('batch_id', $finalizedDirectBatchIds->pluck('batch_id'))
             ->with('user')
-            ->latest()
             ->get()
-            ->groupBy('batch_id')
-            ->sortByDesc(function ($orders) {
-                $latestTime = $orders->max(function ($o) {
-                    return $o->paid_at ?? $o->updated_at ?? $o->created_at;
-                });
-                return [$latestTime, $orders->max('id')];
+            ->groupBy('batch_id');
+
+        $directBatchIdOrder = array_flip($finalizedDirectBatchIds->pluck('batch_id')->toArray());
+        $finalizedDirectOrderBatches = $finalizedDirectOrderBatches->sortBy(function ($orders, $batchId) use ($directBatchIdOrder) {
+                return $directBatchIdOrder[$batchId] ?? 999999;
             })
             ->map(function ($orders) {
                 $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, null);
