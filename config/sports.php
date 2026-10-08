@@ -5,6 +5,7 @@ return [
         'Badminton',
         'Baseball',
         'Basketball',
+        'Cheer',
         'Cheerleading',
         'Cricket',
         'Cross Country',

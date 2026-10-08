@@ -21,10 +21,9 @@ class StoreController extends Controller
             $keyword = trim($request->q);
             $query->where(function ($q) use ($keyword) {
                 $q->where('name', 'like', "%{$keyword}%")
+                    ->orWhere('sport', 'like', "%{$keyword}%")
                     ->orWhereHas('user', function ($userQuery) use ($keyword) {
                         $userQuery->where('organization', 'like', "%{$keyword}%")
-                            ->orWhere('first_name', 'like', "%{$keyword}%")
-                            ->orWhere('last_name', 'like', "%{$keyword}%")
                             ->orWhere('sport', 'like', "%{$keyword}%");
                     });
             });

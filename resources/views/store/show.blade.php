@@ -4,7 +4,7 @@
 
 @section('meta')
     <meta property="og:title" content="{{ $store->name }} | The Commission Apparel">
-    <meta property="og:description" content="Official Custom Apparel Storefront for {{ $store->user->organization ?? 'Team' }}. Order before the deadline!">
+    <meta property="og:description" content="Official Custom Apparel Storefront for {{ $store->name }}. Order before the deadline!">
     @php
         $ogImage = null;
         // Prioritize the store's cover image (which is wide and creates a large preview card)
@@ -79,18 +79,18 @@
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $store->name }} | The Commission Apparel">
-    <meta name="twitter:description" content="Official Custom Apparel Storefront for {{ $store->user->organization ?? 'Team' }}. Order before the deadline!">
+    <meta name="twitter:description" content="Official Custom Apparel Storefront for {{ $store->name }}. Order before the deadline!">
 @endsection
 
 @section('content')
 {{-- Spacer to prevent the fixed header from overlapping the cover image --}}
 <div class="w-full bg-black h-[12px] md:h-[20px] lg:h-[84px]"></div>
 
-{{-- Hero Banner --}}
-<div class="relative w-full aspect-[4/1] flex flex-col overflow-hidden">
+{{-- Hero Banner (Slim 1200x100 Banner Display) --}}
+<div class="relative w-full h-[80px] sm:h-[95px] md:h-[100px] flex flex-col overflow-hidden bg-slate-950">
     <div class="absolute inset-0 bg-slate-950"></div>
     @if($store->cover_image_path)
-        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ Storage::url($store->cover_image_path) }}')"></div>
+        <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('{{ Storage::url($store->cover_image_path) }}')"></div>
     @else
         <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=2500')] bg-cover bg-center"></div>
     @endif
@@ -106,11 +106,11 @@
         @endif
         <div class="flex-1 min-w-0">
             <div class="inline-flex items-center gap-1.5 px-2 md:px-3 py-0.5 md:py-1 bg-slate-100 border border-slate-200 text-slate-600 text-[9px] md:text-xs font-bold uppercase tracking-widest rounded-full mb-1 md:mb-2">
-                {{ $store->user->sport ?? 'Team Athletics' }}
+                {{ $store->sport ?: ($store->user->sport ?? 'Team Athletics') }}
             </div>
             <h1 class="text-xl sm:text-2xl md:text-5xl font-black uppercase tracking-tight text-slate-900 leading-tight md:leading-none truncate md:overflow-visible md:whitespace-normal">{{ $store->name }}</h1>
             <p class="text-slate-500 text-[10px] md:text-[1rem] mt-0.5 md:mt-2 truncate md:overflow-visible md:whitespace-normal">
-                Official Custom Apparel Storefront <span class="mx-1 md:mx-4 text-slate-300">|</span> Coach {{ $store->user->name }} <span class="mx-1 md:mx-4 text-slate-300">
+                Official Custom Apparel Storefront
             </p>
         </div>
     </div>
@@ -1287,9 +1287,6 @@
                                                     Please pay your coach directly for this order. We will invoice your coach for the team manufacturing total.
                                                 </div>
                                             @endif
-                                        @else
-                                            <p class="text-sm text-slate-500 text-center py-4">No items recorded.</p>
-                                        @endif
                                     </div>
                                 </div>
                             </div>

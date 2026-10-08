@@ -46,8 +46,18 @@ class CoachController extends Controller
         $directOrders = $user->parentOrders()->whereNull('team_store_id')->where('status', 'Draft')->where('is_archived', false)->latest()->get();
 
         // Group batched orders by batch
-        $directOrderBatches = $batchedOrders->groupBy('batch_id');
-        $archivedOrderBatches = $archivedBatchedOrders->groupBy('batch_id');
+        $directOrderBatches = $batchedOrders->groupBy('batch_id')->sortByDesc(function ($orders) {
+            $latestTime = $orders->max(function ($o) {
+                return $o->paid_at ?? $o->updated_at ?? $o->created_at;
+            });
+            return [$latestTime, $orders->max('id')];
+        });
+        $archivedOrderBatches = $archivedBatchedOrders->groupBy('batch_id')->sortByDesc(function ($orders) {
+            $latestTime = $orders->max(function ($o) {
+                return $o->paid_at ?? $o->updated_at ?? $o->created_at;
+            });
+            return [$latestTime, $orders->max('id')];
+        });
 
         // Organize assigned designs by category for package selection
         $packageDesigns = [
@@ -123,17 +133,20 @@ class CoachController extends Controller
     {
         $request->validate([
             'name'         => 'required|string|max:255',
+            'sport'        => 'nullable|string|max:100',
             'description'  => 'nullable|string|max:1000',
             'package_type' => 'nullable|in:package_a,package_b,package_c,individual',
             'payment_mode' => 'nullable|in:in_house,online',
         ]);
 
         $user = $request->user();
+        $sport = $request->filled('sport') ? trim($request->sport) : ($user->sport ?: null);
 
         $store = TeamStore::create([
             'user_id'      => $user->id,
             'name'         => $request->name,
-            'description'  => null,
+            'sport'        => $sport,
+            'description'  => $request->description,
             'slug'         => Str::slug($request->name) . '-' . strtolower(Str::random(6)),
             'package_type' => $request->package_type ?? 'individual',
             'payment_mode' => $request->payment_mode ?? 'in_house',

@@ -9,6 +9,7 @@ class TeamStore extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'sport',
         'description',
         'slug',
         'cover_image_path',

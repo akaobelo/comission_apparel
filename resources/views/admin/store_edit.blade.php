@@ -31,6 +31,15 @@
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Store Name</label>
                                 <input type="text" name="name" value="{{ old('name', $store->name) }}" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Sport / Category</label>
+                                <select name="sport" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                    <option value="">Default (Inherited: {{ $store->user->sport ?? 'None' }})</option>
+                                    @foreach(config('sports.categories') as $cat)
+                                        <option value="{{ $cat }}" {{ old('sport', $store->sport) === $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Package Type</label>
                                 <select name="package_type" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm">

@@ -59,8 +59,7 @@
                 <div>
                     <h4 class="font-black uppercase tracking-widest text-slate-400 text-[10px] mb-2">Team Store & Delivery</h4>
                     <p class="font-bold text-slate-900 text-sm">{{ $store->name }}</p>
-                    <p class="text-slate-600 mt-1">Coach: <span class="font-medium text-slate-900">{{ $store->user->first_name ?? '' }} {{ $store->user->last_name ?? '' }}</span></p>
-                    <p class="text-slate-600">Fulfillment: <span class="font-bold text-secondary">Batch Shipped to Coach</span></p>
+                    <p class="text-slate-600 mt-1">Fulfillment: <span class="font-bold text-secondary">Batch Shipped with Team Order</span></p>
                     @if($order->parent_email)
                         <p class="text-slate-600">Email: <span class="font-medium text-slate-900">{{ $order->parent_email }}</span></p>
                     @endif

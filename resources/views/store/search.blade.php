@@ -25,7 +25,7 @@
                 type="text"
                 name="q"
                 value="{{ request('q') }}"
-                placeholder="Search by store, coach, organization, or sport"
+                placeholder="Search by team store, school, or sport"
                 class="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm"
             >
             <button type="submit" class="btn btn-primary py-3 px-7 text-xs uppercase tracking-wider font-bold">Search</button>
@@ -45,12 +45,8 @@
                 <a href="{{ route('store.show', $store->slug) }}" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-primary/40 transition-all flex flex-col h-full">
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex-1">
-                            <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-1">{{ $store->user->sport ?? 'Team Athletics' }}</p>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-1">{{ $store->sport ?: ($store->user->sport ?? 'Team Athletics') }}</p>
                             <h2 class="text-lg font-black text-slate-900 leading-tight">{{ $store->name }}</h2>
-                            <p class="text-sm text-slate-600 mt-1">
-                                {{ $store->user->organization ?? 'Organization not set' }}
-                            </p>
-                            <p class="text-xs text-slate-500 mt-0.5">Coach {{ $store->user->name }}</p>
                         </div>
                         <div class="flex flex-col items-end gap-2 shrink-0">
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">Open</span>

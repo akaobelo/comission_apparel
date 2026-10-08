@@ -105,10 +105,11 @@ class AdminController extends Controller
             ->whereNotNull('batch_id')
             ->where('status', '!=', 'Pending')
             ->where('is_archived', false)
-            ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(created_at) as latest_batch_date'))
+            ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(COALESCE(paid_at, updated_at, created_at)) as latest_batch_date'), \Illuminate\Support\Facades\DB::raw('MAX(id) as latest_order_id'))
             ->groupBy('batch_id');
 
         $finalizedStoreBatchIds = $finalizedStoreBatchQuery->orderByDesc('latest_batch_date')
+            ->orderByDesc('latest_order_id')
             ->paginate(10, ['*'], 'finalized_store_page')
             ->withQueryString();
 
@@ -118,7 +119,10 @@ class AdminController extends Controller
             ->get()
             ->groupBy('batch_id')
             ->sortByDesc(function ($orders) {
-                return $orders->max('created_at');
+                $latestTime = $orders->max(function ($o) {
+                    return $o->paid_at ?? $o->updated_at ?? $o->created_at;
+                });
+                return [$latestTime, $orders->max('id')];
             })
             ->map(function ($orders) {
                 $store = $orders->first()->teamStore;
@@ -179,10 +183,11 @@ class AdminController extends Controller
             ->whereNotNull('batch_id')
             ->whereNotIn('status', ['Pending', 'Draft'])
             ->where('is_archived', false)
-            ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(created_at) as latest_batch_date'))
+            ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(COALESCE(paid_at, updated_at, created_at)) as latest_batch_date'), \Illuminate\Support\Facades\DB::raw('MAX(id) as latest_order_id'))
             ->groupBy('batch_id');
 
         $finalizedDirectBatchIds = $finalizedDirectBatchQuery->orderByDesc('latest_batch_date')
+            ->orderByDesc('latest_order_id')
             ->paginate(10, ['*'], 'finalized_direct_page')
             ->withQueryString();
 
@@ -192,7 +197,10 @@ class AdminController extends Controller
             ->get()
             ->groupBy('batch_id')
             ->sortByDesc(function ($orders) {
-                return $orders->max('created_at');
+                $latestTime = $orders->max(function ($o) {
+                    return $o->paid_at ?? $o->updated_at ?? $o->created_at;
+                });
+                return [$latestTime, $orders->max('id')];
             })
             ->map(function ($orders) {
                 $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, null);
@@ -1043,6 +1051,7 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'name'         => ['required', 'string', 'max:255'],
+            'sport'        => ['nullable', 'string', 'max:100'],
             'description'  => ['nullable', 'string'],
             'package_type' => ['nullable', 'in:package_a,package_b,package_c,individual'],
             'order_deadline' => ['nullable', 'date'],
