@@ -371,10 +371,19 @@
                             <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Name on Backpack (if applicable)</label>
                             <input type="text" name="backpack_name" placeholder="e.g. Jordan Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
                         </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Parent Phone Number <span class="text-slate-400 lowercase tracking-normal font-medium ml-1">(Optional - for text alerts)</span></label>
-                            <input type="tel" name="parent_phone" placeholder="e.g. 555-123-4567" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
-                            @error('parent_phone')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                        <div class="md:col-span-2 p-4 bg-amber-50/80 border border-amber-200/90 rounded-2xl">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-800 mb-1.5 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                                <span>Create 4-Digit Sizing Edit PIN <span class="text-red-500">*</span></span>
+                            </label>
+                            <div class="max-w-xs">
+                                <input type="text" name="edit_pin" required maxlength="4" pattern="[0-9]{4}" inputmode="numeric" placeholder="e.g. 1234" value="{{ old('edit_pin') }}" class="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-base tracking-[0.3em] font-mono font-black text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:tracking-normal placeholder:font-normal placeholder:text-slate-400 shadow-sm transition-all">
+                            </div>
+                            <p class="text-xs text-amber-900 mt-2 font-medium flex items-start gap-1.5">
+                                <svg class="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span><strong>Important:</strong> You can use this 4-digit PIN to edit your order sizing anytime until the team store closes.</span>
+                            </p>
+                            @error('edit_pin')<p class="text-red-500 text-xs mt-1.5 font-bold">{{ $message }}</p>@enderror
                         </div>
 
                     </div>
@@ -853,18 +862,109 @@
                 @else
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         @foreach($store->parentOrders as $order)
-                        <div x-data="{ viewModal: false, name: '{{ strtolower(addslashes($order->athlete_name)) }}' }"
+                        <div x-data="{
+                            viewModal: false,
+                            name: '{{ strtolower(addslashes($order->athlete_name)) }}',
+                            editMode: false,
+                            pinPrompt: false,
+                            enteredPin: '',
+                            pinError: '',
+                            isVerifying: false,
+                            isSaving: false,
+                            saveSuccess: false,
+                            saveMessage: '',
+                            editItems: JSON.parse(JSON.stringify(@json(is_array($order->items_json) ? $order->items_json : []))),
+                            customFields: {
+                                jersey_name: '{{ addslashes($order->jersey_name ?? '') }}',
+                                jersey_number: '{{ addslashes($order->jersey_number ?? '') }}',
+                                backpack_name: '{{ addslashes($order->backpack_name ?? '') }}',
+                                special_notes: '{{ addslashes($order->special_notes ?? '') }}'
+                            },
+                            verifyPin() {
+                                if (!this.enteredPin || this.enteredPin.trim().length !== 4) {
+                                    this.pinError = 'Please enter a valid 4-digit PIN.';
+                                    return;
+                                }
+                                this.isVerifying = true;
+                                this.pinError = '';
+                                fetch('{{ route('store.order.verify-pin', ['slug' => $store->slug, 'order' => $order->id]) }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'Accept': 'application/json'
+                                    },
+                                    body: JSON.stringify({ pin: this.enteredPin.trim() })
+                                })
+                                .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                                .then(({ status, body }) => {
+                                    this.isVerifying = false;
+                                    if (status === 200 && body.success) {
+                                        this.pinPrompt = false;
+                                        this.editMode = true;
+                                        this.pinError = '';
+                                    } else {
+                                        this.pinError = body.message || 'Incorrect 4-digit PIN.';
+                                    }
+                                })
+                                .catch(() => {
+                                    this.isVerifying = false;
+                                    this.pinError = 'Verification error. Please try again.';
+                                });
+                            },
+                            saveSizes() {
+                                this.isSaving = true;
+                                this.pinError = '';
+                                fetch('{{ route('store.order.update-sizes', ['slug' => $store->slug, 'order' => $order->id]) }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'Accept': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        pin: this.enteredPin.trim(),
+                                        items: this.editItems,
+                                        jersey_name: this.customFields.jersey_name,
+                                        jersey_number: this.customFields.jersey_number,
+                                        backpack_name: this.customFields.backpack_name,
+                                        special_notes: this.customFields.special_notes
+                                    })
+                                })
+                                .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                                .then(({ status, body }) => {
+                                    this.isSaving = false;
+                                    if (status === 200 && body.success) {
+                                        this.saveSuccess = true;
+                                        this.saveMessage = body.message;
+                                        this.editMode = false;
+                                        setTimeout(() => { window.location.reload(); }, 1200);
+                                    } else {
+                                        this.pinError = body.message || 'Unable to update sizing.';
+                                    }
+                                })
+                                .catch(() => {
+                                    this.isSaving = false;
+                                    this.pinError = 'Server error while saving sizing. Please try again.';
+                                });
+                            }
+                        }"
                              x-show="search === '' || name.includes(search.toLowerCase())"
                              class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between shadow-sm hover:border-primary/40 transition-colors">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center font-black text-primary text-xs flex-shrink-0">{{ substr($order->athlete_name, 0, 1) }}</div>
                                 <div class="min-w-0">
                                     <div class="font-bold text-slate-900 text-xs truncate max-w-[120px] sm:max-w-[150px]">{{ $order->athlete_name }}</div>
-                                    <div class="text-[9px] text-slate-500 font-black uppercase tracking-widest">{{ collect(is_array($order->items_json) ? $order->items_json : [])->sum(fn($i) => $i['qty'] ?? 1) }} items</div>
+                                    <div class="flex items-center gap-1.5 mt-0.5">
+                                        <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest">{{ collect(is_array($order->items_json) ? $order->items_json : [])->sum(fn($i) => $i['qty'] ?? 1) }} items</span>
+                                        @if($order->is_edited)
+                                            <span class="text-[8px] font-black uppercase tracking-wider text-orange-600 bg-orange-50 px-1 rounded border border-orange-200">Edited</span>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 flex-shrink-0">
-                                <button type="button" @click="viewModal = true" class="text-[9px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 px-2 py-1 transition-colors">view order</button>
+                                <button type="button" @click="viewModal = true; editMode = false; pinPrompt = false; pinError = ''" class="text-[9px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 px-2 py-1 transition-colors">view order</button>
                                 @if($order->isPaid())
                                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 border border-emerald-200">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
@@ -883,10 +983,15 @@
 
                             <!-- Modal -->
                             <div x-show="viewModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-                                <div @click.away="viewModal = false" class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in relative max-h-[90vh] flex flex-col text-left">
+                                <div @click.away="viewModal = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in relative max-h-[90vh] flex flex-col text-left">
                                     <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                                         <div>
-                                            <h3 class="font-black uppercase tracking-tight text-slate-900">Order Details</h3>
+                                            <div class="flex items-center gap-2">
+                                                <h3 class="font-black uppercase tracking-tight text-slate-900">Order Details</h3>
+                                                @if($order->is_edited)
+                                                    <span class="text-[9px] font-black uppercase px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded border border-orange-200">Updated</span>
+                                                @endif
+                                            </div>
                                             <p class="text-xs font-bold text-slate-500">{{ $order->athlete_name }}</p>
                                         </div>
                                         <button @click="viewModal = false" class="text-slate-400 hover:text-slate-600 transition-colors">
@@ -894,47 +999,193 @@
                                         </button>
                                     </div>
                                     <div class="p-5 overflow-y-auto flex-1 bg-white">
-                                        @if(is_array($order->items_json) && count($order->items_json) > 0)
-                                            <div class="space-y-4">
-                                                @foreach($order->items_json as $item)
-                                                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50">
-                                                        <div class="font-bold text-slate-900 text-sm mb-1">{{ $item['name'] ?? 'Unknown Item' }}</div>
-                                                        <div class="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Qty: {{ $item['qty'] ?? 1 }}</div>
+                                        {{-- Success message if just updated --}}
+                                        <div x-show="saveSuccess" class="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                            <span x-text="saveMessage"></span>
+                                        </div>
 
-                                                        @if(!empty($item['sizes']) && is_array($item['sizes']))
-                                                             <div class="grid grid-cols-2 gap-2 mt-2">
-                                                                @foreach($item['sizes'] as $type => $size)
-                                                                    <div class="bg-white border border-slate-200 rounded text-[11px] px-2 py-1.5 flex justify-between items-center shadow-sm">
-                                                                        <span class="text-slate-500 font-bold uppercase">{{ str_replace('_', ' ', $type) }}:</span>
-                                                                        <span class="text-slate-900 font-black">{{ $size }}</span>
-                                                                    </div>
-                                                                @endforeach
-                                                            </div>
-                                                        @endif
+                                        {{-- Normal View Mode --}}
+                                        <div x-show="!editMode">
+                                            @if(is_array($order->items_json) && count($order->items_json) > 0)
+                                                <div class="space-y-4">
+                                                    @foreach($order->items_json as $item)
+                                                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50">
+                                                            <div class="font-bold text-slate-900 text-sm mb-1">{{ $item['name'] ?? 'Unknown Item' }}</div>
+                                                            <div class="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Qty: {{ $item['qty'] ?? 1 }}</div>
 
-                                                        @if(!empty($item['components']) && is_array($item['components']))
-                                                            <div class="space-y-1.5 mt-2">
-                                                                @foreach($item['components'] as $comp)
-                                                                    <div class="bg-white border border-slate-200 rounded p-2 text-xs">
-                                                                        <div class="font-bold text-slate-800 text-[11px]">{{ $comp['name'] ?? 'Component' }}</div>
-                                                                        @if(!empty($comp['sizes']) && is_array($comp['sizes']))
-                                                                            <div class="flex gap-2 flex-wrap mt-1">
-                                                                                @foreach($comp['sizes'] as $type => $size)
-                                                                                    <span class="text-slate-500 font-bold uppercase text-[10px]">{{ str_replace('_', ' ', $type) }}: <strong class="text-slate-900">{{ $size }}</strong></span>
-                                                                                @endforeach
-                                                                            </div>
-                                                                        @endif
-                                                                    </div>
-                                                                @endforeach
-                                                            </div>
-                                                        @endif
+                                                            @if(!empty($item['sizes']) && is_array($item['sizes']))
+                                                                 <div class="grid grid-cols-2 gap-2 mt-2">
+                                                                    @foreach($item['sizes'] as $type => $size)
+                                                                        <div class="bg-white border border-slate-200 rounded text-[11px] px-2 py-1.5 flex justify-between items-center shadow-sm">
+                                                                            <span class="text-slate-500 font-bold uppercase">{{ str_replace('_', ' ', $type) }}:</span>
+                                                                            <span class="text-slate-900 font-black">{{ $size }}</span>
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+
+                                                            @if(!empty($item['components']) && is_array($item['components']))
+                                                                <div class="space-y-1.5 mt-2">
+                                                                    @foreach($item['components'] as $comp)
+                                                                        <div class="bg-white border border-slate-200 rounded p-2 text-xs">
+                                                                            <div class="font-bold text-slate-800 text-[11px]">{{ $comp['name'] ?? 'Component' }}</div>
+                                                                            @if(!empty($comp['sizes']) && is_array($comp['sizes']))
+                                                                                <div class="flex gap-2 flex-wrap mt-1">
+                                                                                    @foreach($comp['sizes'] as $type => $size)
+                                                                                        <span class="text-slate-500 font-bold uppercase text-[10px]">{{ str_replace('_', ' ', $type) }}: <strong class="text-slate-900">{{ $size }}</strong></span>
+                                                                                    @endforeach
+                                                                                </div>
+                                                                            @endif
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+
+                                            {{-- Self-Service Size Edit Controls --}}
+                                            @if(!$isClosed)
+                                                <div x-show="!pinPrompt" class="mt-5 p-4 rounded-xl bg-amber-50/80 border border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                                    <div>
+                                                        <div class="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                                                            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                                                            <span>Need to edit your sizes?</span>
+                                                        </div>
+                                                        <p class="text-[11px] text-amber-900 font-medium mt-0.5">Use your 4-digit PIN to adjust sizes until the store closes.</p>
                                                     </div>
-                                                @endforeach
+                                                    <button type="button" @click="pinPrompt = true; pinError = ''" class="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-wider text-xs rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 flex-shrink-0">
+                                                        <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                        <span>Edit Sizing</span>
+                                                    </button>
+                                                </div>
+
+                                                {{-- PIN Unlock Prompt --}}
+                                                <div x-show="pinPrompt" x-cloak class="mt-5 p-4 rounded-xl bg-amber-50 border-2 border-amber-300">
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <span class="text-xs font-black uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
+                                                            <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                            Enter Your 4-Digit Order PIN
+                                                        </span>
+                                                        <button type="button" @click="pinPrompt = false; pinError = ''" class="text-xs font-bold text-amber-800 hover:text-amber-950 underline">Cancel</button>
+                                                    </div>
+                                                    <p class="text-xs text-amber-900 mb-3">Please enter the 4-digit PIN you created at checkout to unlock order sizing edits.</p>
+                                                    <div class="flex items-center gap-2">
+                                                        <input type="password" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" x-model="enteredPin" @keydown.enter.prevent="verifyPin()" placeholder="••••" class="w-28 bg-white border border-amber-300 rounded-xl px-3 py-2 text-center text-xl font-mono font-black tracking-[0.3em] text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm">
+                                                        <button type="button" @click="verifyPin()" :disabled="isVerifying" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-black uppercase tracking-wider text-xs rounded-xl shadow-sm transition-colors flex items-center gap-1.5">
+                                                            <span x-show="!isVerifying">Unlock Sizing</span>
+                                                            <span x-show="isVerifying">Verifying...</span>
+                                                        </button>
+                                                    </div>
+                                                    <div x-show="pinError" class="text-xs font-bold text-red-600 mt-2" x-text="pinError"></div>
+                                                    <p class="text-[10px] text-amber-800/90 mt-2 font-medium">Forgot your PIN? Please contact your coach — they have your order PIN on file in their coach portal.</p>
+                                                </div>
+                                            @else
+                                                <div class="mt-5 p-3 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-600 flex items-center gap-2">
+                                                    <svg class="w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                    <span>This team store is now closed for production. Sizing edits are locked.</span>
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        {{-- Interactive Edit Mode (Unlocked via PIN) --}}
+                                        <div x-show="editMode" x-cloak class="space-y-4">
+                                            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-800 font-bold">
+                                                <span class="flex items-center gap-1.5">
+                                                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                    PIN Verified — Adjust your sizes below:
+                                                </span>
+                                                <button type="button" @click="editMode = false" class="text-slate-500 hover:text-slate-800 underline font-normal">Cancel</button>
                                             </div>
-                                            <div class="mt-5 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
-                                                <svg class="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                                <p class="text-xs font-medium text-amber-800">If you spot an error, please contact your coach to adjust the order before production begins.</p>
+
+                                            <template x-for="(item, idx) in editItems" :key="idx">
+                                                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50">
+                                                    <div class="font-bold text-slate-900 text-sm mb-1" x-text="item.name || 'Custom Item'"></div>
+                                                    <div class="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Qty: <span x-text="item.qty || 1"></span></div>
+
+                                                    <template x-if="item.sizes && Object.keys(item.sizes).length > 0">
+                                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                                            <template x-for="(size, type) in item.sizes" :key="type">
+                                                                <div class="bg-white border border-slate-200 rounded-lg p-2.5 shadow-sm">
+                                                                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1" x-text="type.replace(/_/g, ' ') + ' Size'"></label>
+                                                                    <select x-model="item.sizes[type]" class="w-full bg-slate-50 border border-slate-300 rounded text-xs px-2 py-1.5 font-black text-slate-900 focus:outline-none focus:border-primary">
+                                                                        @foreach($sizeChart as $sz)
+                                                                            <option value="{{ $sz }}">{{ $sz }}</option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+
+                                                    <template x-if="item.components && item.components.length > 0">
+                                                        <div class="space-y-2 mt-2">
+                                                            <template x-for="(comp, cIdx) in item.components" :key="cIdx">
+                                                                <div class="bg-white border border-slate-200 rounded-lg p-2.5">
+                                                                    <div class="font-bold text-slate-800 text-xs mb-1.5" x-text="comp.name || 'Component'"></div>
+                                                                    <template x-if="comp.sizes && Object.keys(comp.sizes).length > 0">
+                                                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                                            <template x-for="(cSize, cType) in comp.sizes" :key="cType">
+                                                                                <div>
+                                                                                    <label class="block text-[9px] font-bold uppercase text-slate-500 mb-0.5" x-text="cType.replace(/_/g, ' ')"></label>
+                                                                                    <select x-model="comp.sizes[cType]" class="w-full bg-slate-50 border border-slate-300 rounded text-xs px-2 py-1 font-bold text-slate-900 focus:outline-none focus:border-primary">
+                                                                                        @foreach($sizeChart as $sz)
+                                                                                            <option value="{{ $sz }}">{{ $sz }}</option>
+                                                                                        @endforeach
+                                                                                    </select>
+                                                                                </div>
+                                                                            </template>
+                                                                        </div>
+                                                                    </template>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+
+                                            {{-- Optional personalization fields --}}
+                                            @if($order->jersey_name || $order->jersey_number || $order->backpack_name)
+                                            <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                                                <div class="text-xs font-black uppercase tracking-wider text-slate-700">Personalization Details</div>
+                                                <div class="grid grid-cols-2 gap-3">
+                                                    @if($order->jersey_name !== null)
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Jersey Name</label>
+                                                        <input type="text" x-model="customFields.jersey_name" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-900 font-bold focus:outline-none focus:border-primary">
+                                                    </div>
+                                                    @endif
+                                                    @if($order->jersey_number !== null)
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Jersey Number</label>
+                                                        <input type="text" x-model="customFields.jersey_number" maxlength="3" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-900 font-bold focus:outline-none focus:border-primary">
+                                                    </div>
+                                                    @endif
+                                                    @if($order->backpack_name !== null)
+                                                    <div class="col-span-2">
+                                                        <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Backpack Name</label>
+                                                        <input type="text" x-model="customFields.backpack_name" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-900 font-bold focus:outline-none focus:border-primary">
+                                                    </div>
+                                                    @endif
+                                                </div>
                                             </div>
+                                            @endif
+
+                                            <div x-show="pinError" class="text-xs font-bold text-red-600" x-text="pinError"></div>
+
+                                            <div class="flex items-center gap-3 pt-2">
+                                                <button type="button" @click="saveSizes()" :disabled="isSaving" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black uppercase tracking-wider text-xs rounded-xl shadow-md transition-colors flex items-center justify-center gap-2">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                    <span x-show="!isSaving">Save Size Changes</span>
+                                                    <span x-show="isSaving">Saving Changes...</span>
+                                                </button>
+                                                <button type="button" @click="editMode = false" class="py-3 px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold uppercase tracking-wider text-xs rounded-xl transition-colors">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
 
                                             {{-- Payment Section inside Placed Orders Modal --}}
                                             @php

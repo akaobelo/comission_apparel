@@ -24,6 +24,7 @@ class ParentOrder extends Model
         'shipping_address',
         'items_json',
         'special_notes',
+        'edit_pin',
         'status',
         'is_edited',
         'edited_by',

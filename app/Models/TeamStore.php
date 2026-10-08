@@ -38,6 +38,15 @@ class TeamStore extends Model
         return (bool) ($this->is_tax_exempt || $this->user?->is_tax_exempt);
     }
 
+    public function isClosed(): bool
+    {
+        if ($this->status === 'submitted_to_admin') return true;
+        if ($this->status !== 'approved') return true;
+        if (!$this->pricing_approved) return true;
+        if ($this->order_deadline && $this->order_deadline->isPast()) return true;
+        return false;
+    }
+
     protected $casts = [
         'order_deadline' => 'datetime',
         'pricing_approved' => 'boolean',

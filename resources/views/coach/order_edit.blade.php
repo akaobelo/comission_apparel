@@ -19,6 +19,14 @@
         <div class="p-6 border-b border-slate-200 bg-slate-50">
             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Edit Parent Order</h2>
             <p class="text-sm text-slate-500 mt-1">{{ $store ? 'Store: ' . $store->name : 'Direct Order' }} · Submitted {{ $order->created_at->format('M d, Y') }}</p>
+            <div class="mt-3 flex flex-wrap items-center gap-3">
+                <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-300 text-amber-900 rounded-lg text-xs font-black uppercase tracking-wider shadow-sm">
+                    <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                    <span>Parent 4-Digit PIN:</span>
+                    <strong class="font-mono text-sm tracking-widest text-slate-900">{{ $order->edit_pin ?: 'None Set' }}</strong>
+                </span>
+                <span class="text-xs text-slate-500 font-medium">You can give this PIN to the parent or update it below if they forgot it.</span>
+            </div>
             <p class="text-xs text-orange-600 font-bold mt-2">⚠ You are editing this order on behalf of the parent. Changes are logged.</p>
         </div>
         <div class="p-6">
@@ -35,6 +43,12 @@
                     </div>
 
                     <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Parent 4-Digit PIN</label>
+                        <input type="text" name="edit_pin" value="{{ old('edit_pin', $order->edit_pin) }}" maxlength="4" pattern="\d{4}" placeholder="e.g. 1234" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 font-mono tracking-widest font-black focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                        <p class="text-[10px] text-slate-400 mt-1">Used by parents to self-edit sizing on the storefront.</p>
+                    </div>
+
+                    <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Jersey Name</label>
                         <input type="text" name="jersey_name" value="{{ old('jersey_name', $order->jersey_name) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                     </div>
@@ -47,7 +61,7 @@
                         <input type="text" name="backpack_name" value="{{ old('backpack_name', $order->backpack_name) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                     </div>
 
-                    <div class="col-span-2">
+                    <div class="col-span-2 md:col-span-3">
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Special Notes</label>
                         <input type="text" name="special_notes" value="{{ old('special_notes', $order->special_notes) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                     </div>

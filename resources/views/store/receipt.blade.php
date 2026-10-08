@@ -29,6 +29,19 @@
                     <span>•</span>
                     <span>{{ $order->isPaid() ? 'PAID ONLINE' : 'COLLECTED IN-HOUSE' }}</span>
                 </div>
+
+                @if($order->edit_pin)
+                <div class="mt-6 p-4 sm:p-5 bg-amber-50 border-2 border-amber-300 rounded-2xl flex items-start gap-4 text-left max-w-lg mx-auto shadow-sm">
+                    <div class="w-10 h-10 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center font-black flex-shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-black uppercase tracking-widest text-amber-800">Your Sizing Edit PIN</div>
+                        <div class="text-2xl font-black font-mono tracking-[0.25em] text-slate-900 my-0.5">{{ $order->edit_pin }}</div>
+                        <p class="text-xs text-amber-900 font-medium leading-relaxed">Save this PIN! You can use it on the team store page to adjust your athlete's sizing anytime until the store deadline.</p>
+                    </div>
+                </div>
+                @endif
             </div>
 
             {{-- Summary Grid --}}

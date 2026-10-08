@@ -76,12 +76,12 @@ class StoreController extends Controller
             'parent_email'        => 'required|email|max:255',
             'parent_phone'        => 'required|string|max:50',
             'gender'              => 'required|string|max:50',
+            'edit_pin'            => 'required|string|digits:4',
             'shipping_address'    => 'nullable|string|max:1000',
             'jersey_name'         => 'nullable|string|max:255',
             'jersey_number'       => 'nullable|string|max:10',
             'backpack_name'       => 'nullable|string|max:255',
             'special_notes'       => 'nullable|string|max:1000',
-            'parent_phone'        => 'nullable|string|max:50',
             'items'               => 'required|array|min:1',
         ]);
 
@@ -213,6 +213,7 @@ class StoreController extends Controller
             'backpack_name'       => $request->backpack_name,
             'shipping_address'    => $request->shipping_address ? trim($request->shipping_address) : null,
             'special_notes'       => $request->special_notes,
+            'edit_pin'            => trim($request->edit_pin),
             'items_json'          => $itemsJson,
             'status'              => 'Submitted',
             'payment_status'      => $store->isOnlinePayment() ? 'pending' : 'not_applicable',
@@ -451,5 +452,122 @@ class StoreController extends Controller
         $order = ParentOrder::where('id', $orderId)->where('team_store_id', $store->id)->firstOrFail();
 
         return view('store.receipt', compact('store', 'order'));
+    }
+
+    public function verifyOrderPin(Request $request, $slug, $orderId)
+    {
+        $store = TeamStore::where('slug', $slug)->firstOrFail();
+        $order = ParentOrder::where('id', $orderId)->where('team_store_id', $store->id)->firstOrFail();
+
+        if ($store->status === 'submitted_to_admin' || $store->isClosed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This team store is now closed for production. Order sizing is locked and can no longer be edited.',
+            ], 422);
+        }
+
+        $pin = trim((string) $request->input('pin', ''));
+        if (empty($order->edit_pin) || (string) $order->edit_pin !== $pin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The 4-digit PIN entered does not match our records. If you forgot your PIN, please contact your coach.',
+            ], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'PIN verified successfully.',
+        ]);
+    }
+
+    public function updateOrderSizes(Request $request, $slug, $orderId)
+    {
+        $store = TeamStore::where('slug', $slug)->firstOrFail();
+        $order = ParentOrder::where('id', $orderId)->where('team_store_id', $store->id)->firstOrFail();
+
+        if ($store->status === 'submitted_to_admin' || $store->isClosed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This team store is now closed for production. Order sizing is locked.',
+            ], 422);
+        }
+
+        $pin = trim((string) $request->input('pin', ''));
+        if (empty($order->edit_pin) || (string) $order->edit_pin !== $pin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid PIN. Please enter your correct 4-digit PIN to save size changes.',
+            ], 403);
+        }
+
+        $submittedItems = $request->input('items', []);
+        $itemsJson = is_array($order->items_json) ? $order->items_json : [];
+
+        foreach ($itemsJson as $idx => &$item) {
+            if (isset($submittedItems[$idx])) {
+                $subItem = $submittedItems[$idx];
+
+                // Update standalone item sizes
+                if (isset($subItem['sizes']) && is_array($subItem['sizes'])) {
+                    if (!isset($item['sizes']) || !is_array($item['sizes'])) {
+                        $item['sizes'] = [];
+                    }
+                    foreach ($subItem['sizes'] as $type => $newSize) {
+                        if (!empty($newSize)) {
+                            $item['sizes'][$type] = trim($newSize);
+                        }
+                    }
+                }
+
+                // Update package component sizes
+                if (isset($subItem['components']) && is_array($subItem['components']) && isset($item['components']) && is_array($item['components'])) {
+                    foreach ($item['components'] as $cIdx => &$comp) {
+                        if (isset($subItem['components'][$cIdx]['sizes']) && is_array($subItem['components'][$cIdx]['sizes'])) {
+                            if (!isset($comp['sizes']) || !is_array($comp['sizes'])) {
+                                $comp['sizes'] = [];
+                            }
+                            foreach ($subItem['components'][$cIdx]['sizes'] as $type => $newSize) {
+                                if (!empty($newSize)) {
+                                    $comp['sizes'][$type] = trim($newSize);
+                                }
+                            }
+                        }
+                    }
+                    unset($comp);
+                }
+            }
+        }
+        unset($item);
+
+        $order->items_json = $itemsJson;
+        $order->is_edited = true;
+        $order->edited_by = 'parent (via PIN)';
+
+        if ($request->has('jersey_name')) {
+            $order->jersey_name = trim((string) $request->jersey_name) ?: null;
+        }
+        if ($request->has('jersey_number')) {
+            $order->jersey_number = trim((string) $request->jersey_number) ?: null;
+        }
+        if ($request->has('backpack_name')) {
+            $order->backpack_name = trim((string) $request->backpack_name) ?: null;
+        }
+        if ($request->has('special_notes')) {
+            $order->special_notes = trim((string) $request->special_notes) ?: null;
+        }
+
+        $order->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Your order sizing has been updated successfully!',
+            'items'   => $order->items_json,
+            'order'   => [
+                'jersey_name'   => $order->jersey_name,
+                'jersey_number' => $order->jersey_number,
+                'backpack_name' => $order->backpack_name,
+                'special_notes' => $order->special_notes,
+            ]
+        ]);
     }
 }

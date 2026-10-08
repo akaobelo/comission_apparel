@@ -476,6 +476,7 @@ class CoachController extends Controller
         $request->validate([
             'athlete_first_name'  => ['required', 'string', 'max:255'],
             'athlete_last_name'   => ['required', 'string', 'max:255'],
+            'edit_pin'            => ['nullable', 'string', 'digits:4'],
             'gender'              => ['nullable', 'string', 'max:50'],
             'jersey_name'         => ['nullable', 'string', 'max:255'],
             'jersey_number'       => ['nullable', 'string', 'max:10'],
@@ -503,6 +504,7 @@ class CoachController extends Controller
         $order->update([
             'athlete_first_name'  => $request->athlete_first_name,
             'athlete_last_name'   => $request->athlete_last_name,
+            'edit_pin'            => $request->filled('edit_pin') ? trim($request->edit_pin) : $order->edit_pin,
             'gender'              => $request->gender,
             'jersey_name'         => $request->jersey_name,
             'jersey_number'       => $request->jersey_number,

@@ -485,7 +485,12 @@
                             @foreach($store->parentOrders as $order)
                             <tr class="hover:bg-slate-50">
                                 <td class="px-5 py-3">
-                                    <div class="font-bold text-slate-900">{{ $order->athlete_name }}</div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-900">{{ $order->athlete_name }}</span>
+                                        @if($order->edit_pin)
+                                            <span class="text-[9px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-200 px-1 rounded" title="Parent Sizing Edit PIN">PIN: {{ $order->edit_pin }}</span>
+                                        @endif
+                                    </div>
                                     @if($order->is_edited)
                                         <div class="text-[10px] font-bold uppercase tracking-wide text-orange-500">Edited by {{ $order->edited_by }}</div>
                                     @endif

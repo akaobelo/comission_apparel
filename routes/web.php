@@ -198,6 +198,8 @@ Route::get('/store/search', [StoreController::class, 'search'])->name('store.sea
 Route::get('/store/{slug}', [StoreController::class, 'show'])->name('store.show');
 Route::post('/store/{slug}/order', [StoreController::class, 'submitOrder'])->name('store.order.submit');
 Route::post('/store/{slug}/order/{order}/pay', [StoreController::class, 'payOrder'])->name('store.order.pay');
+Route::post('/store/{slug}/order/{order}/verify-pin', [StoreController::class, 'verifyOrderPin'])->name('store.order.verify-pin');
+Route::post('/store/{slug}/order/{order}/update-sizes', [StoreController::class, 'updateOrderSizes'])->name('store.order.update-sizes');
 Route::get('/store/{slug}/order/success/{order}', [StoreController::class, 'checkoutSuccess'])->name('store.checkout.success');
 Route::get('/store/{slug}/order/cancel/{order}', [StoreController::class, 'checkoutCancel'])->name('store.checkout.cancel');
 Route::get('/store/{slug}/order/receipt/{order}', [StoreController::class, 'orderReceipt'])->name('store.order.receipt');

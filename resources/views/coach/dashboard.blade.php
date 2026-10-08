@@ -865,7 +865,12 @@
                                         <div class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center font-black text-primary text-sm">{{ substr($order->athlete_name, 0, 1) }}</div>
                                         <div>
                                             <div class="font-bold text-slate-900 text-sm">{{ $order->athlete_name }}</div>
-                                            <div class="text-[10px] text-slate-500 uppercase tracking-wide">{{ collect(is_array($order->items_json) ? $order->items_json : [])->sum(fn($i) => $i['qty'] ?? 1) }} item(s)</div>
+                                            <div class="flex items-center gap-2 mt-0.5">
+                                                <span class="text-[10px] text-slate-500 uppercase tracking-wide">{{ collect(is_array($order->items_json) ? $order->items_json : [])->sum(fn($i) => $i['qty'] ?? 1) }} item(s)</span>
+                                                @if($order->edit_pin)
+                                                    <span class="text-[9px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-200 px-1 rounded" title="Parent Sizing Edit PIN">PIN: {{ $order->edit_pin }}</span>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2">
