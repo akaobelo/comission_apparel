@@ -862,93 +862,19 @@
                 @else
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         @foreach($store->parentOrders as $order)
-                        <div x-data="{
-                            viewModal: false,
+                        <div x-data="orderItemManager({
                             name: '{{ strtolower(addslashes($order->athlete_name)) }}',
-                            editMode: false,
-                            pinPrompt: false,
-                            enteredPin: '',
-                            pinError: '',
-                            isVerifying: false,
-                            isSaving: false,
-                            saveSuccess: false,
-                            saveMessage: '',
-                            editItems: JSON.parse(JSON.stringify(@json(is_array($order->items_json) ? $order->items_json : []))),
+                            verifyPinUrl: '{{ route('store.order.verify-pin', ['slug' => $store->slug, 'order' => $order->id]) }}',
+                            updateSizesUrl: '{{ route('store.order.update-sizes', ['slug' => $store->slug, 'order' => $order->id]) }}',
+                            csrfToken: '{{ csrf_token() }}',
+                            items: @json(is_array($order->items_json) ? $order->items_json : []),
                             customFields: {
                                 jersey_name: '{{ addslashes($order->jersey_name ?? '') }}',
                                 jersey_number: '{{ addslashes($order->jersey_number ?? '') }}',
                                 backpack_name: '{{ addslashes($order->backpack_name ?? '') }}',
                                 special_notes: '{{ addslashes($order->special_notes ?? '') }}'
-                            },
-                            verifyPin() {
-                                if (!this.enteredPin || this.enteredPin.trim().length !== 4) {
-                                    this.pinError = 'Please enter a valid 4-digit PIN.';
-                                    return;
-                                }
-                                this.isVerifying = true;
-                                this.pinError = '';
-                                fetch('{{ route('store.order.verify-pin', ['slug' => $store->slug, 'order' => $order->id]) }}', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                        'Accept': 'application/json'
-                                    },
-                                    body: JSON.stringify({ pin: this.enteredPin.trim() })
-                                })
-                                .then(res => res.json().then(data => ({ status: res.status, body: data })))
-                                .then(({ status, body }) => {
-                                    this.isVerifying = false;
-                                    if (status === 200 && body.success) {
-                                        this.pinPrompt = false;
-                                        this.editMode = true;
-                                        this.pinError = '';
-                                    } else {
-                                        this.pinError = body.message || 'Incorrect 4-digit PIN.';
-                                    }
-                                })
-                                .catch(() => {
-                                    this.isVerifying = false;
-                                    this.pinError = 'Verification error. Please try again.';
-                                });
-                            },
-                            saveSizes() {
-                                this.isSaving = true;
-                                this.pinError = '';
-                                fetch('{{ route('store.order.update-sizes', ['slug' => $store->slug, 'order' => $order->id]) }}', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                        'Accept': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        pin: this.enteredPin.trim(),
-                                        items: this.editItems,
-                                        jersey_name: this.customFields.jersey_name,
-                                        jersey_number: this.customFields.jersey_number,
-                                        backpack_name: this.customFields.backpack_name,
-                                        special_notes: this.customFields.special_notes
-                                    })
-                                })
-                                .then(res => res.json().then(data => ({ status: res.status, body: data })))
-                                .then(({ status, body }) => {
-                                    this.isSaving = false;
-                                    if (status === 200 && body.success) {
-                                        this.saveSuccess = true;
-                                        this.saveMessage = body.message;
-                                        this.editMode = false;
-                                        setTimeout(() => { window.location.reload(); }, 1200);
-                                    } else {
-                                        this.pinError = body.message || 'Unable to update sizing.';
-                                    }
-                                })
-                                .catch(() => {
-                                    this.isSaving = false;
-                                    this.pinError = 'Server error while saving sizing. Please try again.';
-                                });
                             }
-                        }"
+                        })"
                              x-show="search === '' || name.includes(search.toLowerCase())"
                              class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between shadow-sm hover:border-primary/40 transition-colors">
                             <div class="flex items-center gap-3">
@@ -1303,5 +1229,90 @@
 </div>
 
 
+
+<script>
+function orderItemManager(config) {
+    return {
+        viewModal: false,
+        name: config.name || '',
+        editMode: false,
+        pinPrompt: false,
+        enteredPin: '',
+        pinError: '',
+        isVerifying: false,
+        isSaving: false,
+        saveSuccess: false,
+        saveMessage: '',
+        editItems: JSON.parse(JSON.stringify(config.items || [])),
+        customFields: config.customFields || {},
+        async verifyPin() {
+            if (!this.enteredPin || this.enteredPin.trim().length !== 4) {
+                this.pinError = 'Please enter a valid 4-digit PIN.';
+                return;
+            }
+            this.isVerifying = true;
+            this.pinError = '';
+            try {
+                const res = await fetch(config.verifyPinUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': config.csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ pin: this.enteredPin.trim() })
+                });
+                const body = await res.json();
+                this.isVerifying = false;
+                if (res.ok && body.success) {
+                    this.pinPrompt = false;
+                    this.editMode = true;
+                    this.pinError = '';
+                } else {
+                    this.pinError = body.message || 'Incorrect 4-digit PIN.';
+                }
+            } catch (err) {
+                this.isVerifying = false;
+                this.pinError = 'Verification error. Please try again.';
+            }
+        },
+        async saveSizes() {
+            this.isSaving = true;
+            this.pinError = '';
+            try {
+                const res = await fetch(config.updateSizesUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': config.csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pin: this.enteredPin.trim(),
+                        items: this.editItems,
+                        jersey_name: this.customFields.jersey_name,
+                        jersey_number: this.customFields.jersey_number,
+                        backpack_name: this.customFields.backpack_name,
+                        special_notes: this.customFields.special_notes
+                    })
+                });
+                const body = await res.json();
+                this.isSaving = false;
+                if (res.ok && body.success) {
+                    this.saveSuccess = true;
+                    this.saveMessage = body.message;
+                    this.editMode = false;
+                    setTimeout(function() { window.location.reload(); }, 1200);
+                } else {
+                    this.pinError = body.message || 'Unable to update sizing.';
+                }
+            } catch (err) {
+                this.isSaving = false;
+                this.pinError = 'Server error while saving sizing. Please try again.';
+            }
+        }
+    };
+}
+</script>
 
 @endsection
