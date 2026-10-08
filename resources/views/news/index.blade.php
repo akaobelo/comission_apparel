@@ -13,7 +13,7 @@
             <h1 class="text-3xl md:text-5xl font-black uppercase tracking-tight text-slate-900 mb-4">
                 LATEST NEWS & STORIES
             </h1>
-            <p class="text-slate-600 text-sm md:text-base max-w-2xl mx-auto font-normal leading-relaxed">
+            <p class="text-slate-700 text-sm md:text-base max-w-2xl mx-auto font-normal leading-relaxed" style="color: #475569;">
                 Explore program spotlights, championship moments, athlete interviews, and exclusive custom uniform reveals from across the nation.
             </p>
         </div>
@@ -56,17 +56,17 @@
 
                 <!-- Content -->
                 <div class="p-6 flex flex-col flex-1">
-                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2" style="color: #64748b;">
                         {{ $article->published_at ? $article->published_at->format('M d, Y') : $article->created_at->format('M d, Y') }}
                     </div>
                     <h2 class="text-base md:text-lg font-black uppercase text-slate-900 leading-tight mb-2.5 group-hover:text-[#cd202c] transition-colors line-clamp-2">
                         <a href="{{ route('news.show', $article->slug) }}">{{ $article->title }}</a>
                     </h2>
-                    <p class="text-slate-600 text-xs leading-relaxed line-clamp-3 mb-6 flex-1 font-normal">
+                    <p class="text-slate-700 text-xs leading-relaxed line-clamp-3 mb-6 flex-1 font-normal" style="color: #475569;">
                         {{ $article->summary }}
                     </p>
                     <div class="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto">
-                        <span class="text-[11px] font-bold text-slate-500 uppercase">{{ $article->author ?? 'Commission Apparel' }}</span>
+                        <span class="text-[11px] font-bold text-slate-500 uppercase" style="color: #64748b;">{{ $article->author ?? 'Commission Apparel' }}</span>
                         <a href="{{ route('news.show', $article->slug) }}" class="text-xs font-black uppercase text-[#cd202c] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                             Read Story <span>&rarr;</span>
                         </a>
@@ -75,7 +75,7 @@
             </article>
             @empty
             <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                <p class="text-slate-500 text-sm font-bold uppercase tracking-wider">No articles published yet in this category.</p>
+                <p class="text-slate-600 text-sm font-bold uppercase tracking-wider" style="color: #475569;">No articles published yet in this category.</p>
             </div>
             @endforelse
         </div>
