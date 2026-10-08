@@ -26,7 +26,7 @@
     </div>
     
     <div class="relative max-w-5xl mx-auto rounded-2xl overflow-hidden shadow-2xl border border-slate-200" style="aspect-ratio: 3.2 / 1;">
-        <img src="{{ asset('images/team-store-background-v2.png') }}" alt="Our Coach Dashboard" class="absolute w-full max-w-none h-auto left-0 -top-[9%] md:-top-[12%] lg:-top-[15%]">
+        <img src="{{ asset('images/Coach Dashboard.png') }}" alt="Our Coach Dashboard" class="absolute w-full max-w-none h-auto left-0 -top-[9%] md:-top-[12%] lg:-top-[15%]">
     </div>
 </div>
 @endsection

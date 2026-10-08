@@ -21,6 +21,15 @@ Route::get('/', function () {
         ->limit(6)
         ->get();
     
+    // Ensure default articles exist so visitors always see live interactive stories
+    if (\Illuminate\Support\Facades\Schema::hasTable('news_articles') && \App\Models\NewsArticle::count() === 0) {
+        try {
+            (new \Database\Seeders\LandingPageSeeder())->run();
+        } catch (\Throwable $e) {
+            // Silently fallback
+        }
+    }
+
     $newsArticles = \App\Models\NewsArticle::where('is_active', true)
         ->orderBy('is_featured', 'desc')
         ->orderBy('sort_order', 'asc')
@@ -51,7 +60,7 @@ Route::get('/', function () {
     $teamStoreSettings = [
         'heading'             => \App\Models\SiteSetting::where('key', 'team_store_heading')->value('value') ?? 'LAUNCH YOUR TEAM STORE',
         'subheading'          => \App\Models\SiteSetting::where('key', 'team_store_subheading')->value('value') ?? 'Empower your program with a custom online store that eliminates coach hassle and generates revenue.',
-        'image'               => \App\Models\SiteSetting::where('key', 'team_store_image')->value('value') ?? asset('images/team-store-background-v2.png'),
+        'image'               => \App\Models\SiteSetting::where('key', 'team_store_image')->value('value') ?? asset('images/team store.png'),
         'bullet_1'            => \App\Models\SiteSetting::where('key', 'team_store_bullet_1')->value('value') ?? 'Streamlined Direct Ordering for Parents',
         'bullet_2'            => \App\Models\SiteSetting::where('key', 'team_store_bullet_2')->value('value') ?? 'Custom Fan Gear & Official Team Packages',
         'bullet_3'            => \App\Models\SiteSetting::where('key', 'team_store_bullet_3')->value('value') ?? 'Fast Direct-to-Door Delivery',

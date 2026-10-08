@@ -7,11 +7,24 @@ use App\Models\NewsArticle;
 
 class NewsController extends Controller
 {
+    protected function ensureArticlesExist(): void
+    {
+        if (\Illuminate\Support\Facades\Schema::hasTable('news_articles') && NewsArticle::count() === 0) {
+            try {
+                (new \Database\Seeders\LandingPageSeeder())->run();
+            } catch (\Throwable $e) {
+                // Silently fallback
+            }
+        }
+    }
+
     /**
      * Public Newsroom / Stories Archive
      */
     public function index(Request $request)
     {
+        $this->ensureArticlesExist();
+
         $query = NewsArticle::where('is_active', true)
             ->orderBy('is_featured', 'desc')
             ->orderBy('sort_order', 'asc')
@@ -32,6 +45,8 @@ class NewsController extends Controller
      */
     public function show($slug)
     {
+        $this->ensureArticlesExist();
+
         $article = NewsArticle::where('slug', $slug)
             ->where('is_active', true)
             ->firstOrFail();

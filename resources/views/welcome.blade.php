@@ -347,9 +347,46 @@
             </a>
         </div>
 
-        @if($newsArticles->isNotEmpty())
+        @php
+            $displayArticles = ($newsArticles && $newsArticles->isNotEmpty()) ? $newsArticles : collect([
+                (object)[
+                    'title' => "The Journey: Coach Mike's Championship Run",
+                    'slug' => 'the-journey-coach-mikes-championship-run',
+                    'category' => 'CHAMPIONSHIP RUN',
+                    'author' => 'The Commission Editorial',
+                    'summary' => 'How Coach Mike led his program to a historic state championship victory wearing bespoke Commission performance uniforms.',
+                    'cover_image' => '/images/showcase/item_46_2026-09-05_23-49-42_3979582608923175071_48532943110_1.jpg',
+                    'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                    'published_at' => \Carbon\Carbon::now()->subDays(2),
+                    'created_at' => \Carbon\Carbon::now()->subDays(2),
+                ],
+                (object)[
+                    'title' => 'Legacy Athletics: Modernizing High School Programs',
+                    'slug' => 'legacy-athletics-modernizing-high-school-programs',
+                    'category' => 'PROGRAM SPOTLIGHT',
+                    'author' => 'The Commission Editorial',
+                    'summary' => 'Discover how Legacy Athletics equipped over 400 student-athletes across 6 varsity sports without a single paper order form.',
+                    'cover_image' => '/images/showcase/item_68_2026-09-29_01-11-27_3996294216890271917_48532943110_1.jpg',
+                    'video_url' => null,
+                    'published_at' => \Carbon\Carbon::now()->subDays(5),
+                    'created_at' => \Carbon\Carbon::now()->subDays(5),
+                ],
+                (object)[
+                    'title' => 'Justin Gatlin Signature Track & Field Collection Revealed',
+                    'slug' => 'justin-gatlin-signature-track-collection',
+                    'category' => 'UNIFORM REVEAL',
+                    'author' => 'The Commission Editorial',
+                    'summary' => 'Olympic gold medalist Justin Gatlin partners with The Commission to introduce ultra-aerodynamic singlets and speed suits for youth track clubs.',
+                    'cover_image' => '/images/speedcapital/sc_66_speedcapital_2026-09-29_07-25-31_3996475974495891108_5520807274_1.jpg',
+                    'video_url' => null,
+                    'published_at' => \Carbon\Carbon::now()->subDays(8),
+                    'created_at' => \Carbon\Carbon::now()->subDays(8),
+                ],
+            ]);
+        @endphp
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 items-stretch">
-            @foreach($newsArticles as $article)
+            @foreach($displayArticles as $article)
             <article class="bg-slate-50 hover:bg-white border border-slate-200 hover:border-[#cd202c]/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg flex flex-col group transition-all duration-300">
                 <!-- Media Card Header -->
                 <a href="{{ route('news.show', $article->slug) }}" class="relative block w-full overflow-hidden aspect-[16/10] bg-slate-100">
@@ -394,16 +431,50 @@
             </article>
             @endforeach
         </div>
-        @else
-        <div class="py-8 text-center text-slate-400 font-bold uppercase text-xs">No stories published yet.</div>
-        @endif
 
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- 4. LAUNCH YOUR TEAM STORE                                         -->
+    <!-- 4. TURNKEY TEAM STORE: INTERACTIVE PROCESS SLIDER                 -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <section id="team-store" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden">
+    <section id="team-store" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden"
+        x-data="{
+            activeStep: 0,
+            totalSteps: 5,
+            autoPlay: true,
+            timer: null,
+            init() {
+                this.startTimer();
+            },
+            startTimer() {
+                this.timer = setInterval(() => {
+                    if (this.autoPlay) {
+                        this.activeStep = (this.activeStep + 1) % this.totalSteps;
+                    }
+                }, 7500);
+            },
+            pause() {
+                this.autoPlay = false;
+            },
+            resume() {
+                this.autoPlay = true;
+            },
+            setStep(idx) {
+                this.activeStep = idx;
+                this.pause();
+            },
+            next() {
+                this.activeStep = (this.activeStep + 1) % this.totalSteps;
+                this.pause();
+            },
+            prev() {
+                this.activeStep = (this.activeStep - 1 + this.totalSteps) % this.totalSteps;
+                this.pause();
+            }
+        }"
+        @mouseenter="pause()"
+        @mouseleave="resume()"
+    >
         
         <div class="space-y-8">
             <!-- Section Header -->
@@ -416,86 +487,506 @@
                 </div>
                 
                 <h2 class="text-3xl md:text-5xl font-black tracking-tight uppercase text-slate-900 leading-tight">
-                    TEAM <span class="text-[#cd202c] ml-1">STORE</span>
+                    HOW THE TEAM STORE WORKS <span class="text-[#cd202c]">STEP-BY-STEP</span>
                 </h2>
                 
                 <p class="text-slate-700 text-sm md:text-base font-normal max-w-2xl mx-auto" style="color: #475569;">
-                    {{ $teamStoreSettings['subheading'] ?? 'Empower your program with a custom online store that eliminates hassle and generates revenue.' }}
+                    {{ $teamStoreSettings['subheading'] ?? 'Empower your program with a custom online store that eliminates coach paperwork and generates automatic fundraising revenue.' }}
                 </p>
             </div>
 
-            <!-- Sleek Modern Platform Showcase Frame (High-Contrast Tech Presentation) -->
-            <div class="w-full max-w-[1300px] mx-auto rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl border border-slate-800 bg-[#0e1017] p-2.5 md:p-4 group">
-                <div class="flex items-center justify-between pb-3 px-3 border-b border-slate-800/80 mb-3">
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
-                        <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
-                        <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
-                    </div>
-                    <div class="bg-black/60 border border-slate-800 text-slate-400 text-[11px] font-mono px-5 py-1.5 rounded-full shadow-inner tracking-wide flex items-center gap-2">
-                        <svg class="w-3.5 h-3.5 text-[#cd202c]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                        <span>thecommissionapparel.com/store/your-school</span>
-                    </div>
-                    <div class="w-12"></div>
-                </div>
-                <div class="w-full rounded-xl overflow-hidden relative bg-black/40 border border-slate-800/60">
-                    <img src="{{ $teamStoreSettings['image'] }}" alt="Team Store Digital Platform" class="w-full h-auto object-contain block transition-transform duration-700 group-hover:scale-[1.01]" loading="lazy">
+            <!-- Interactive Stepper Navigation Bar -->
+            <div class="w-full max-w-[1300px] mx-auto overflow-x-auto pb-2 scrollbar-none">
+                <div class="flex items-center justify-between gap-2 md:gap-3 min-w-[720px] lg:min-w-0 p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200">
+                    
+                    <!-- Step 0 Tab -->
+                    <button type="button" @click="setStep(0)"
+                        class="flex-1 py-3 px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2.5 group"
+                        :class="activeStep === 0 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
+                        <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                            :class="activeStep === 0 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">01</span>
+                        <div class="truncate">
+                            <span class="block text-[11px] font-black uppercase tracking-wider truncate">3D Artwork</span>
+                            <span class="block text-[9px] font-semibold opacity-80 uppercase tracking-tight truncate">Free 24-48h Mockup</span>
+                        </div>
+                    </button>
+
+                    <!-- Step 1 Tab -->
+                    <button type="button" @click="setStep(1)"
+                        class="flex-1 py-3 px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2.5 group"
+                        :class="activeStep === 1 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
+                        <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                            :class="activeStep === 1 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">02</span>
+                        <div class="truncate">
+                            <span class="block text-[11px] font-black uppercase tracking-wider truncate">Store Launch</span>
+                            <span class="block text-[9px] font-semibold opacity-80 uppercase tracking-tight truncate">Custom School Link</span>
+                        </div>
+                    </button>
+
+                    <!-- Step 2 Tab -->
+                    <button type="button" @click="setStep(2)"
+                        class="flex-1 py-3 px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2.5 group"
+                        :class="activeStep === 2 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
+                        <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                            :class="activeStep === 2 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">03</span>
+                        <div class="truncate">
+                            <span class="block text-[11px] font-black uppercase tracking-wider truncate">Direct Orders</span>
+                            <span class="block text-[9px] font-semibold opacity-80 uppercase tracking-tight truncate">Parents Pay Online</span>
+                        </div>
+                    </button>
+
+                    <!-- Step 3 Tab -->
+                    <button type="button" @click="setStep(3)"
+                        class="flex-1 py-3 px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2.5 group"
+                        :class="activeStep === 3 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
+                        <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                            :class="activeStep === 3 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">04</span>
+                        <div class="truncate">
+                            <span class="block text-[11px] font-black uppercase tracking-wider truncate">Sublimation</span>
+                            <span class="block text-[9px] font-semibold opacity-80 uppercase tracking-tight truncate">2-3 Week Craft</span>
+                        </div>
+                    </button>
+
+                    <!-- Step 4 Tab -->
+                    <button type="button" @click="setStep(4)"
+                        class="flex-1 py-3 px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2.5 group"
+                        :class="activeStep === 4 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
+                        <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                            :class="activeStep === 4 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">05</span>
+                        <div class="truncate">
+                            <span class="block text-[11px] font-black uppercase tracking-wider truncate">Pack & Payout</span>
+                            <span class="block text-[9px] font-semibold opacity-80 uppercase tracking-tight truncate">Athlete Bags & Rebate</span>
+                        </div>
+                    </button>
+
                 </div>
             </div>
 
-            <!-- 4 Core Benefits (2x2 Grid) -->
-            <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-12 md:gap-x-16 gap-y-6 md:gap-y-8 pt-2">
+            <!-- Main Interactive Slider Showcase Frame -->
+            <div class="w-full max-w-[1300px] mx-auto rounded-2xl md:rounded-3xl shadow-2xl border border-slate-800 bg-[#0e1017] p-6 md:p-10 relative overflow-hidden text-white">
                 
-                <!-- Feature 1 -->
-                <div class="flex gap-4">
-                    <div class="shrink-0 mt-0.5">
-                        <span class="w-6 h-6 rounded bg-[#cd202c] text-white text-xs font-black flex items-center justify-center shadow-sm">✓</span>
+                <!-- Ambient Subtle Glow Effect -->
+                <div class="absolute -top-32 -right-32 w-96 h-96 bg-[#cd202c]/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+                <!-- SLIDE 0: 3D Artwork & Store Creation -->
+                <div x-show="activeStep === 0" x-cloak
+                    x-transition:enter="transition ease-out duration-300 transform"
+                    x-transition:enter-start="opacity-0 translate-y-3"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                    
+                    <div class="lg:col-span-6 space-y-6">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+                                STEP 01 OF 05 &bull; ZERO COST
+                            </span>
+                            <span class="text-xs font-mono text-slate-400">DESIGN &amp; LAUNCH</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+                                CUSTOM 3D ARTWORK &amp; STORE SETUP
+                            </h3>
+                            <p class="text-amber-400 font-semibold text-sm uppercase tracking-wide">
+                                100% Free Mockups &bull; Unlimited Revisions &bull; Live in 24–48 Hours
+                            </p>
+                        </div>
+
+                        <p class="text-slate-300 text-sm md:text-base leading-relaxed font-normal" style="color: #cbd5e1;">
+                            Send us your school colors, team mascot, and uniform vision. Our dedicated in-house graphic designers build photorealistic 3D uniform mockups and configure your custom branded online store completely free of charge.
+                        </p>
+
+                        <!-- Key Benefits List -->
+                        <div class="space-y-3 pt-2">
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">24–48 Hour Turnaround:</strong> Photorealistic 3D uniform renders ready for team approval.</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Full Team Catalog:</strong> Official uniforms, shooting shirts, travel hoodies, bags &amp; fan apparel.</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Zero Financial Commitment:</strong> Free setup with no deposit or credit card required.</p>
+                            </div>
+                        </div>
+
+                        <!-- Action Bar -->
+                        <div class="pt-4 flex flex-wrap items-center gap-3">
+                            <a href="/quote" class="px-6 py-3 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                                Request Free 3D Mockup <span>&rarr;</span>
+                            </a>
+                            <button type="button" @click="next()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                Next: Step 02 <span>&rarr;</span>
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="text-slate-900 text-base font-black uppercase tracking-wide mb-1">{{ $teamStoreSettings['bullet_1'] }}</h3>
-                        <p class="text-slate-700 text-xs md:text-sm leading-relaxed font-normal" style="color: #475569;">No collecting cash or forms. Families simply use your custom team link to order jerseys and fan gear directly online.</p>
+
+                    <!-- Visual Tech Frame -->
+                    <div class="lg:col-span-6">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-4 shadow-inner">
+                            <div class="flex items-center justify-between pb-3 px-2 border-b border-slate-800/80 mb-3 text-slate-400 text-xs font-mono">
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span> 3D Digital Concept Stage</span>
+                                <span class="text-slate-500">24-48 HR DELIVERABLE</span>
+                            </div>
+                            <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-b from-[#131620] to-[#0a0c10] flex items-center justify-center p-4">
+                                <img src="/images/concept-spartan.png" alt="3D Uniform Digital Blueprint" class="w-full h-full object-contain max-h-[340px] drop-shadow-[0_20px_25px_rgba(0,0,0,0.8)]" loading="lazy">
+                                <div class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md border border-slate-700 text-white text-[10px] font-mono px-3 py-1.5 rounded-lg shadow-lg">
+                                    Unlimited Revisions &bull; Free
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- SLIDE 1: Dedicated Store Launch & Parent Link -->
+                <div x-show="activeStep === 1" x-cloak
+                    x-transition:enter="transition ease-out duration-300 transform"
+                    x-transition:enter-start="opacity-0 translate-y-3"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                    
+                    <div class="lg:col-span-6 space-y-6">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+                                STEP 02 OF 05 &bull; TURNKEY PLATFORM
+                            </span>
+                            <span class="text-xs font-mono text-slate-400">ONLINE STOREFRONT</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+                                SHARE CUSTOM LINK WITH PARENTS
+                            </h3>
+                            <p class="text-amber-400 font-semibold text-sm uppercase tracking-wide">
+                                Zero Paper Forms &bull; Zero Cash Handling &bull; Mobile-First
+                            </p>
+                        </div>
+
+                        <p class="text-slate-300 text-sm md:text-base leading-relaxed font-normal" style="color: #cbd5e1;">
+                            We publish a dedicated, mobile-optimized online team store customized with your school branding. Coaches receive a single shareable link to text or email directly to athletes, parents, and booster clubs.
+                        </p>
+
+                        <div class="space-y-3 pt-2">
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Custom Web URL:</strong> Dedicated storefront link tailored for your school program.</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Parent &amp; Fan Gear:</strong> Fans, alumni, and families can order matching gear alongside player uniforms.</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">No Coach Liability:</strong> Never handle envelopes of cash or balance checks again.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex flex-wrap items-center gap-3">
+                            <button type="button" @click="prev()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                <span>&larr;</span> Step 01
+                            </button>
+                            <a href="/store/search" class="px-6 py-3 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                                Search Active Stores <span>&rarr;</span>
+                            </a>
+                            <button type="button" @click="next()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                Next: Step 03 <span>&rarr;</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-6">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-3 shadow-inner">
+                            <div class="flex items-center justify-between pb-3 px-3 border-b border-slate-800/80 mb-3">
+                                <div class="flex items-center gap-1.5">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                                    <div class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
+                                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
+                                </div>
+                                <div class="bg-black/80 border border-slate-800 text-slate-400 text-[10px] font-mono px-4 py-1 rounded-full flex items-center gap-1.5">
+                                    <svg class="w-3 h-3 text-[#cd202c]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                    thecommissionapparel.com/store/your-school
+                                </div>
+                                <div class="w-8"></div>
+                            </div>
+                            <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[16/10]">
+                                <img src="/images/team%20store.png" alt="Custom Team Store Platform" class="w-full h-full object-cover object-top" loading="lazy">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- SLIDE 2: Direct Parent Ordering & Personalization -->
+                <div x-show="activeStep === 2" x-cloak
+                    x-transition:enter="transition ease-out duration-300 transform"
+                    x-transition:enter-start="opacity-0 translate-y-3"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                    
+                    <div class="lg:col-span-6 space-y-6">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+                                STEP 03 OF 05 &bull; EASY CHECKOUT
+                            </span>
+                            <span class="text-xs font-mono text-slate-400">ONLINE ORDERING</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+                                PARENTS ORDER DIRECTLY ONLINE
+                            </h3>
+                            <p class="text-amber-400 font-semibold text-sm uppercase tracking-wide">
+                                Apple Pay &bull; Custom Jersey Numbers &bull; Accurate Sizing
+                            </p>
+                        </div>
+
+                        <p class="text-slate-300 text-sm md:text-base leading-relaxed font-normal" style="color: #cbd5e1;">
+                            Forget deciphering handwritten size charts and chasing unpaid orders. Every parent selects their athlete's size, enters their custom roster number, and pays securely online in seconds.
+                        </p>
+
+                        <div class="space-y-3 pt-2">
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Player Personalization:</strong> Athletes select exact jersey numbers and custom back names.</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Instant Order Confirmation:</strong> Parents receive real-time email receipts and tracking updates.</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Coach Dashboard Tracking:</strong> Watch orders roll in live from your coach portal.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex flex-wrap items-center gap-3">
+                            <button type="button" @click="prev()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                <span>&larr;</span> Step 02
+                            </button>
+                            <a href="/sizing-charts" class="px-6 py-3 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                                View Sizing Charts <span>&rarr;</span>
+                            </a>
+                            <button type="button" @click="next()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                Next: Step 04 <span>&rarr;</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-6">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-3 shadow-inner">
+                            <div class="flex items-center justify-between pb-3 px-3 border-b border-slate-800/80 mb-3 text-slate-400 text-xs font-mono">
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Live Order Ingestion</span>
+                                <span class="text-emerald-400 font-bold">100% SECURE CHECKOUT</span>
+                            </div>
+                            <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[16/10]">
+                                <img src="/images/Coach%20Dashboard.png" alt="Coach Team Store Dashboard" class="w-full h-full object-cover object-top" loading="lazy">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- SLIDE 3: Rapid Dye-Sublimation Production -->
+                <div x-show="activeStep === 3" x-cloak
+                    x-transition:enter="transition ease-out duration-300 transform"
+                    x-transition:enter-start="opacity-0 translate-y-3"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                    
+                    <div class="lg:col-span-6 space-y-6">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+                                STEP 04 OF 05 &bull; CRAFTSMANSHIP
+                            </span>
+                            <span class="text-xs font-mono text-slate-400">RAPID SUBLIMATION</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+                                RAPID 2–3 WEEK PRODUCTION
+                            </h3>
+                            <p class="text-amber-400 font-semibold text-sm uppercase tracking-wide">
+                                Never Peels, Cracks, or Fades &bull; Guaranteed Turnaround
+                            </p>
+                        </div>
+
+                        <p class="text-slate-300 text-sm md:text-base leading-relaxed font-normal" style="color: #cbd5e1;">
+                            Once your ordering window closes, our automated production pipeline begins immediately. High-tensile moisture-wicking fabrics are dye-sublimated at high heat so colors and numbers are permanently infused into the fabric.
+                        </p>
+
+                        <div class="space-y-3 pt-2">
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">2–3 Week Turnaround:</strong> Guaranteed delivery so your squad takes the field fully equipped.</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Dye-Sublimated Durability:</strong> Permanent inks will never crack, peel, or fade in the wash.</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Reinforced Athletic Seams:</strong> 4-way stretch flex threading built for brutal game contact.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex flex-wrap items-center gap-3">
+                            <button type="button" @click="prev()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                <span>&larr;</span> Step 03
+                            </button>
+                            <a href="/catalog" class="px-6 py-3 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                                Browse Uniform Styles <span>&rarr;</span>
+                            </a>
+                            <button type="button" @click="next()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                Next: Step 05 <span>&rarr;</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-6">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-4 shadow-inner">
+                            <div class="flex items-center justify-between pb-3 px-2 border-b border-slate-800/80 mb-3 text-slate-400 text-xs font-mono">
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Sublimation Production Line</span>
+                                <span class="text-slate-400">PHYSICAL SAMPLE</span>
+                            </div>
+                            <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-b from-[#131620] to-[#0a0c10] flex items-center justify-center p-2">
+                                <img src="/images/reality-spartan.png" alt="Manufactured Sublimated Uniform Reality" class="w-full h-full object-contain max-h-[340px] drop-shadow-[0_20px_25px_rgba(0,0,0,0.8)]" loading="lazy">
+                                <div class="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md border border-slate-700 text-white text-[10px] font-mono px-3 py-1.5 rounded-lg shadow-lg">
+                                    Infused Sublimation &bull; Zero Cracking
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- SLIDE 4: Pack & Ship + Team Fundraising Kickback -->
+                <div x-show="activeStep === 4" x-cloak
+                    x-transition:enter="transition ease-out duration-300 transform"
+                    x-transition:enter-start="opacity-0 translate-y-3"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                    
+                    <div class="lg:col-span-6 space-y-6">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+                                STEP 05 OF 05 &bull; DELIVERY &amp; REVENUE
+                            </span>
+                            <span class="text-xs font-mono text-slate-400">PACK &amp; FUNDRAISE</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+                                PLAYER-LABELED DELIVERY &amp; KICKBACKS
+                            </h3>
+                            <p class="text-emerald-400 font-semibold text-sm uppercase tracking-wide">
+                                Individually Bagged by Athlete &bull; 10%–20% Program Rebate
+                            </p>
+                        </div>
+
+                        <p class="text-slate-300 text-sm md:text-base leading-relaxed font-normal" style="color: #cbd5e1;">
+                            Say goodbye to chaotic gym floor sorting. Every single athlete's order arrives individually packaged and labeled with their name. Plus, earn an automatic 10%–20% cash rebate kickback on all store sales sent directly to your athletic budget!
+                        </p>
+
+                        <div class="space-y-3 pt-2">
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Individually Bagged &amp; Labeled:</strong> Distribute uniforms to your team in under 5 minutes.</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Direct-to-Door or Team Batch:</strong> Ship directly to parents' homes or bulk to practice.</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Automatic Cash Rebate:</strong> Receive 10%–20% cash back payouts to fund travel and tournaments.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex flex-wrap items-center gap-3">
+                            <button type="button" @click="prev()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                <span>&larr;</span> Step 04
+                            </button>
+                            <a href="/quote" class="px-6 py-3 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                                Launch Your Team Store &rarr;
+                            </a>
+                            <button type="button" @click="setStep(0)" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                Back to Step 01
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-6">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-3 shadow-inner">
+                            <div class="flex items-center justify-between pb-3 px-3 border-b border-slate-800/80 mb-3 text-slate-400 text-xs font-mono">
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Admin Operations &amp; Payouts</span>
+                                <span class="text-emerald-400 font-bold">REBATES DIRECT DEPOSIT</span>
+                            </div>
+                            <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[16/10]">
+                                <img src="/images/admin%20dashboard.png" alt="Admin Operations & Financial Dashboard" class="w-full h-full object-cover object-top" loading="lazy">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Slider Bottom Indicator & Manual Controls -->
+                <div class="pt-8 mt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-2">
+                        <template x-for="i in totalSteps" :key="i">
+                            <button type="button" @click="setStep(i - 1)"
+                                class="h-2 rounded-full transition-all duration-300"
+                                :class="activeStep === (i - 1) ? 'w-8 bg-[#cd202c]' : 'w-2 bg-slate-700 hover:bg-slate-500'">
+                            </button>
+                        </template>
+                        <span class="text-xs font-mono text-slate-400 ml-3">
+                            STEP <span x-text="'0' + (activeStep + 1)" class="text-white font-bold"></span> / 05
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" @click="prev()" aria-label="Previous Step" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors border border-slate-700">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <button type="button" @click="next()" aria-label="Next Step" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors border border-slate-700">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Feature 2 -->
-                <div class="flex gap-4">
-                    <div class="shrink-0 mt-0.5">
-                        <span class="w-6 h-6 rounded bg-[#cd202c] text-white text-xs font-black flex items-center justify-center shadow-sm">✓</span>
-                    </div>
-                    <div>
-                        <h3 class="text-slate-900 text-base font-black uppercase tracking-wide mb-1">{{ $teamStoreSettings['bullet_2'] }}</h3>
-                        <p class="text-slate-700 text-xs md:text-sm leading-relaxed font-normal" style="color: #475569;">Exclusive bespoke hoodies, athletic tees, gym bags, and official uniform packages custom tailored for your school.</p>
-                    </div>
-                </div>
+            </div>
 
-                <!-- Feature 3 -->
-                <div class="flex gap-4">
-                    <div class="shrink-0 mt-0.5">
-                        <span class="w-6 h-6 rounded bg-[#cd202c] text-white text-xs font-black flex items-center justify-center shadow-sm">✓</span>
-                    </div>
-                    <div>
-                        <h3 class="text-slate-900 text-base font-black uppercase tracking-wide mb-1">{{ $teamStoreSettings['bullet_3'] }}</h3>
-                        <p class="text-slate-700 text-xs md:text-sm leading-relaxed font-normal" style="color: #475569;">Speedy direct-to-door delivery with orders shipped individually to athletes or batched straight to team practice.</p>
-                    </div>
+            <!-- 4 Quick Proof Metrics (Clean Strip) -->
+            <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 pt-4">
+                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center">
+                    <div class="text-2xl md:text-3xl font-black text-[#cd202c] font-heading tracking-tight">$0</div>
+                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">Setup Fee</div>
+                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">100% Free Store Creation</div>
                 </div>
-
-                <!-- Feature 4 -->
-                <div class="flex gap-4">
-                    <div class="shrink-0 mt-0.5">
-                        <span class="w-6 h-6 rounded bg-[#cd202c] text-white text-xs font-black flex items-center justify-center shadow-sm">✓</span>
-                    </div>
-                    <div>
-                        <h3 class="text-slate-900 text-base font-black uppercase tracking-wide mb-1">{{ $teamStoreSettings['bullet_4'] }}</h3>
-                        <p class="text-slate-700 text-xs md:text-sm leading-relaxed font-normal" style="color: #475569;">Centralized coach & athletic director portal allowing full management of multiple sports teams from one profile.</p>
-                    </div>
+                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center">
+                    <div class="text-2xl md:text-3xl font-black text-slate-900 font-heading tracking-tight">24-48h</div>
+                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">Rapid Mockups</div>
+                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">Photorealistic 3D concepts</div>
                 </div>
-
+                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center">
+                    <div class="text-2xl md:text-3xl font-black text-slate-900 font-heading tracking-tight">2-3 WKS</div>
+                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">Production</div>
+                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">Guaranteed game-ready</div>
+                </div>
+                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center">
+                    <div class="text-2xl md:text-3xl font-black text-emerald-600 font-heading tracking-tight">10-20%</div>
+                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">Team Kickback</div>
+                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">Direct program fundraising</div>
+                </div>
             </div>
 
             <!-- Call to Action Trigger -->
             <div class="text-center pt-2">
-                <a href="/store/search" class="px-8 py-3.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-md hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
-                    Explore Active Team Stores &rarr;
+                <a href="/quote" class="px-8 py-4 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-lg hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
+                    Start Your Custom Team Store Today &rarr;
                 </a>
             </div>
 
