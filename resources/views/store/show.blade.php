@@ -831,6 +831,105 @@
         @endif
 
         {{-- Placed Orders Accordion --}}
+        <script>
+        function orderItemManager(configOrId) {
+            let config = {};
+            if (typeof configOrId === 'string') {
+                const el = document.getElementById(configOrId);
+                if (el) {
+                    try {
+                        config = JSON.parse(el.textContent);
+                    } catch (e) {
+                        console.error('Error parsing order JSON:', e);
+                    }
+                }
+            } else if (typeof configOrId === 'object' && configOrId !== null) {
+                config = configOrId;
+            }
+
+            return {
+                viewModal: false,
+                name: config.name || '',
+                editMode: false,
+                pinPrompt: false,
+                enteredPin: '',
+                pinError: '',
+                isVerifying: false,
+                isSaving: false,
+                saveSuccess: false,
+                saveMessage: '',
+                editItems: JSON.parse(JSON.stringify(config.items || [])),
+                customFields: config.customFields || {},
+                async verifyPin() {
+                    if (!this.enteredPin || this.enteredPin.trim().length !== 4) {
+                        this.pinError = 'Please enter a valid 4-digit PIN.';
+                        return;
+                    }
+                    this.isVerifying = true;
+                    this.pinError = '';
+                    try {
+                        const res = await fetch(config.verifyPinUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': config.csrfToken,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ pin: this.enteredPin.trim() })
+                        });
+                        const body = await res.json();
+                        this.isVerifying = false;
+                        if (res.ok && body.success) {
+                            this.pinPrompt = false;
+                            this.editMode = true;
+                            this.pinError = '';
+                        } else {
+                            this.pinError = body.message || 'Incorrect 4-digit PIN.';
+                        }
+                    } catch (err) {
+                        this.isVerifying = false;
+                        this.pinError = 'Verification error. Please try again.';
+                    }
+                },
+                async saveSizes() {
+                    this.isSaving = true;
+                    this.pinError = '';
+                    try {
+                        const res = await fetch(config.updateSizesUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': config.csrfToken,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                pin: this.enteredPin.trim(),
+                                items: this.editItems,
+                                jersey_name: this.customFields.jersey_name,
+                                jersey_number: this.customFields.jersey_number,
+                                backpack_name: this.customFields.backpack_name,
+                                special_notes: this.customFields.special_notes
+                            })
+                        });
+                        const body = await res.json();
+                        this.isSaving = false;
+                        if (res.ok && body.success) {
+                            this.saveSuccess = true;
+                            this.saveMessage = body.message;
+                            this.editMode = false;
+                            setTimeout(function() { window.location.reload(); }, 1200);
+                        } else {
+                            this.pinError = body.message || 'Unable to update sizing.';
+                        }
+                    } catch (err) {
+                        this.isSaving = false;
+                        this.pinError = 'Server error while saving sizing. Please try again.';
+                    }
+                }
+            };
+        }
+        </script>
+
         <div x-data="{ rosterOpen: true, search: '' }" class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-24 overflow-hidden">
             <button type="button" @click="rosterOpen = !rosterOpen" class="w-full flex items-center justify-between p-4 md:p-6 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="rosterOpen ? 'border-slate-100 bg-slate-50/50' : ''">
                 <div>
@@ -872,19 +971,22 @@
                 @else
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         @foreach($store->parentOrders as $order)
-                        <div x-data="orderItemManager({
-                            name: '{{ strtolower(addslashes($order->athlete_name)) }}',
-                            verifyPinUrl: '{{ route('store.order.verify-pin', ['slug' => $store->slug, 'order' => $order->id]) }}',
-                            updateSizesUrl: '{{ route('store.order.update-sizes', ['slug' => $store->slug, 'order' => $order->id]) }}',
-                            csrfToken: '{{ csrf_token() }}',
-                            items: @json(is_array($order->items_json) ? $order->items_json : []),
-                            customFields: {
-                                jersey_name: '{{ addslashes($order->jersey_name ?? '') }}',
-                                jersey_number: '{{ addslashes($order->jersey_number ?? '') }}',
-                                backpack_name: '{{ addslashes($order->backpack_name ?? '') }}',
-                                special_notes: '{{ addslashes($order->special_notes ?? '') }}'
-                            }
-                        })"
+                        <script type="application/json" id="order-data-{{ $order->id }}">
+                        {!! json_encode([
+                            'name' => strtolower($order->athlete_name),
+                            'verifyPinUrl' => route('store.order.verify-pin', ['slug' => $store->slug, 'order' => $order->id]),
+                            'updateSizesUrl' => route('store.order.update-sizes', ['slug' => $store->slug, 'order' => $order->id]),
+                            'csrfToken' => csrf_token(),
+                            'items' => is_array($order->items_json) ? $order->items_json : [],
+                            'customFields' => [
+                                'jersey_name' => (string)($order->jersey_name ?? ''),
+                                'jersey_number' => (string)($order->jersey_number ?? ''),
+                                'backpack_name' => (string)($order->backpack_name ?? ''),
+                                'special_notes' => (string)($order->special_notes ?? ''),
+                            ]
+                        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}
+                        </script>
+                        <div x-data="orderItemManager('order-data-{{ $order->id }}')"
                              x-show="search === '' || name.includes(search.toLowerCase())"
                              class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between shadow-sm hover:border-primary/40 transition-colors">
                             <div class="flex items-center gap-3">
@@ -900,7 +1002,7 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 flex-shrink-0">
-                                <button type="button" @click="viewModal = true; editMode = false; pinPrompt = false; pinError = ''" class="text-[9px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 px-2 py-1 transition-colors">view order</button>
+                                <button type="button" @click.stop="viewModal = true; editMode = false; pinPrompt = false; pinError = ''" class="text-[9px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 px-2 py-1 transition-colors">view order</button>
                                 @if($order->isPaid())
                                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 border border-emerald-200">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
@@ -1237,92 +1339,4 @@
         </div>
     </div>
 </div>
-
-
-
-<script>
-function orderItemManager(config) {
-    return {
-        viewModal: false,
-        name: config.name || '',
-        editMode: false,
-        pinPrompt: false,
-        enteredPin: '',
-        pinError: '',
-        isVerifying: false,
-        isSaving: false,
-        saveSuccess: false,
-        saveMessage: '',
-        editItems: JSON.parse(JSON.stringify(config.items || [])),
-        customFields: config.customFields || {},
-        async verifyPin() {
-            if (!this.enteredPin || this.enteredPin.trim().length !== 4) {
-                this.pinError = 'Please enter a valid 4-digit PIN.';
-                return;
-            }
-            this.isVerifying = true;
-            this.pinError = '';
-            try {
-                const res = await fetch(config.verifyPinUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': config.csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ pin: this.enteredPin.trim() })
-                });
-                const body = await res.json();
-                this.isVerifying = false;
-                if (res.ok && body.success) {
-                    this.pinPrompt = false;
-                    this.editMode = true;
-                    this.pinError = '';
-                } else {
-                    this.pinError = body.message || 'Incorrect 4-digit PIN.';
-                }
-            } catch (err) {
-                this.isVerifying = false;
-                this.pinError = 'Verification error. Please try again.';
-            }
-        },
-        async saveSizes() {
-            this.isSaving = true;
-            this.pinError = '';
-            try {
-                const res = await fetch(config.updateSizesUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': config.csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        pin: this.enteredPin.trim(),
-                        items: this.editItems,
-                        jersey_name: this.customFields.jersey_name,
-                        jersey_number: this.customFields.jersey_number,
-                        backpack_name: this.customFields.backpack_name,
-                        special_notes: this.customFields.special_notes
-                    })
-                });
-                const body = await res.json();
-                this.isSaving = false;
-                if (res.ok && body.success) {
-                    this.saveSuccess = true;
-                    this.saveMessage = body.message;
-                    this.editMode = false;
-                    setTimeout(function() { window.location.reload(); }, 1200);
-                } else {
-                    this.pinError = body.message || 'Unable to update sizing.';
-                }
-            } catch (err) {
-                this.isSaving = false;
-                this.pinError = 'Server error while saving sizing. Please try again.';
-            }
-        }
-    };
-}
-</script>
-
 @endsection
