@@ -1193,22 +1193,22 @@
 
                 {{-- Store Cover --}}
                 <div class="p-5">
-                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Store Cover Image (1200×100 Slim Banner)</h4>
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Store Cover Image (Wide Display)</h4>
                     @if($store->cover_image_path)
-                        <div class="w-full h-[80px] md:h-[100px] rounded-xl border-2 border-slate-200 overflow-hidden relative group mb-4 bg-slate-950">
+                        <div class="w-full aspect-[4/1] rounded-xl border-2 border-slate-200 overflow-hidden relative group mb-4 bg-slate-950">
                             <img src="{{ Storage::url($store->cover_image_path) }}" alt="Cover" class="w-full h-full object-cover">
                             <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                 <span class="text-white text-xs font-bold uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">Current Cover</span>
                             </div>
                         </div>
                     @endif
-                    <div x-data="imageCropper('{{ route('coach.store.cover', $store) }}', 12 / 1)">
+                    <div x-data="imageCropper('{{ route('coach.store.cover', $store) }}', 4 / 1)">
                                             <form x-ref="form" action="{{ route('coach.store.cover', $store) }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
                                                 @csrf
                                                 <input type="file" name="cover_image" x-ref="fileInput" @change="fileSelected" accept="image/jpeg,image/png,image/jpg,image/webp" required class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-colors">
                                                 <button type="submit" x-show="!isCropping" class="px-5 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm whitespace-nowrap">Upload Cover</button>
                                             </form>
-                                            <p class="text-[10px] text-slate-400 mt-2">Recommended: 1200×100 banner (12:1 aspect ratio). Max 5MB. You can crop it after selecting.</p>
+                                            <p class="text-[10px] text-slate-400 mt-2">Recommended: Wide 4:1 banner (e.g. 1200×300 or 1600×400). Max 5MB. You can crop it after selecting.</p>
                                             @error('cover_image')<p class="text-red-500 text-[10px] mt-1 font-bold">{{ $message }}</p>@enderror
 
                         <!-- Cropper Modal -->

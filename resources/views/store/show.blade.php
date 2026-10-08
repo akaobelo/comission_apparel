@@ -86,8 +86,8 @@
 {{-- Spacer to prevent the fixed header from overlapping the cover image --}}
 <div class="w-full bg-black h-[12px] md:h-[20px] lg:h-[84px]"></div>
 
-{{-- Hero Banner (Slim 1200x100 Banner Display) --}}
-<div class="relative w-full h-[80px] sm:h-[95px] md:h-[100px] flex flex-col overflow-hidden bg-slate-950">
+{{-- Hero Banner --}}
+<div class="relative w-full aspect-[4/1] max-h-[360px] flex flex-col overflow-hidden bg-slate-950">
     <div class="absolute inset-0 bg-slate-950"></div>
     @if($store->cover_image_path)
         <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('{{ Storage::url($store->cover_image_path) }}')"></div>
