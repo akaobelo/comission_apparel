@@ -8,10 +8,11 @@
 <section class="w-full relative min-h-[640px] md:min-h-[720px] lg:min-h-[780px] xl:min-h-[820px] flex items-center overflow-hidden border-b border-slate-900 bg-[#08090c] pt-[64px] md:pt-[72px]">
     <!-- Unified Full-Bleed Background Image (Athletes on Track in Stadium) -->
     <div class="absolute inset-x-0 bottom-0 top-[64px] md:top-[72px] z-0">
-        <img src="{{ asset('images/hero-banner.jpeg') }}" 
+        <img src="{{ $heroSettings['banner_image'] ?? asset('images/hero-banner.jpeg') }}" 
              alt="{{ $heroSettings['title'] ?? 'The Commission Apparel Athletes' }}" 
              class="w-full h-full object-cover object-[80%_top] lg:object-[right_top]" 
-             fetchpriority="high">
+             fetchpriority="high"
+             onerror="this.onerror=null; this.src='{{ asset('images/hero-banner.jpeg') }}';">
         
         <!-- Athletic Directional Gradient Overlays (Text Legibility + Atmospheric Mood) -->
         <div class="absolute inset-0 bg-gradient-to-r from-[#08090c] via-[#08090c]/90 sm:via-[#08090c]/75 md:via-[#08090c]/50 lg:via-[#08090c]/25 to-transparent pointer-events-none"></div>
@@ -27,13 +28,23 @@
             <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-[#cd202c]/50 text-white shadow-lg">
                 <span class="w-2 h-2 rounded-full bg-[#cd202c] animate-pulse"></span>
                 <span class="text-[11px] font-black uppercase tracking-widest text-red-100">
-                    Official Team Uniforms & Fan Gear
+                    {{ $heroSettings['badge'] ?? 'Official Team Uniforms & Fan Gear' }}
                 </span>
             </div>
 
             <!-- Main Headline -->
             <h1 class="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-black uppercase tracking-tight text-white leading-[0.95] drop-shadow-2xl">
-                CUSTOM GEAR BUILT FOR THE <span class="text-[#ff3b49] drop-shadow-[0_0_30px_rgba(205,32,44,0.8)]">COMMITTED.</span>
+                @php
+                    $hTitle = $heroSettings['title'] ?? 'CUSTOM GEAR BUILT FOR THE COMMITTED';
+                    $words = explode(' ', trim($hTitle));
+                    $lastWord = array_pop($words);
+                    $firstPart = implode(' ', $words);
+                @endphp
+                @if($firstPart)
+                    {{ $firstPart }} <span class="text-[#ff3b49] drop-shadow-[0_0_30px_rgba(205,32,44,0.8)]">{{ $lastWord }}</span>
+                @else
+                    <span class="text-[#ff3b49] drop-shadow-[0_0_30px_rgba(205,32,44,0.8)]">{{ $lastWord }}</span>
+                @endif
             </h1>
 
             <!-- Subtitle -->
@@ -43,12 +54,12 @@
 
             <!-- Dual Action CTAs -->
             <div class="pt-2 flex flex-wrap items-center gap-4">
-                <a href="/quote" class="px-8 py-4 bg-[#cd202c] hover:bg-[#b01621] text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-[0_0_25px_rgba(205,32,44,0.6)] hover:shadow-[0_0_35px_rgba(205,32,44,0.9)] hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
-                    <span>Request Free 3D Mockup</span>
+                <a href="{{ $heroSettings['cta_primary_url'] ?? '/quote' }}" class="px-8 py-4 bg-[#cd202c] hover:bg-[#b01621] text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-[0_0_25px_rgba(205,32,44,0.6)] hover:shadow-[0_0_35px_rgba(205,32,44,0.9)] hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
+                    <span>{{ $heroSettings['cta_primary_text'] ?? 'Request Free 3D Mockup' }}</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </a>
-                <a href="{{ route('store.search') }}" class="px-8 py-4 bg-black/50 hover:bg-white/15 text-white border border-white/30 hover:border-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-lg backdrop-blur-md transition-all inline-flex items-center justify-center gap-2">
-                    <span>Find Your Team Store</span>
+                <a href="{{ $heroSettings['cta_secondary_url'] ?? route('store.search') }}" class="px-8 py-4 bg-black/50 hover:bg-white/15 text-white border border-white/30 hover:border-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-lg backdrop-blur-md transition-all inline-flex items-center justify-center gap-2">
+                    <span>{{ $heroSettings['cta_secondary_text'] ?? 'Find Your Team Store' }}</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </a>
             </div>
@@ -57,18 +68,18 @@
             <div class="pt-6 border-t border-white/15 flex flex-wrap items-center gap-6 text-xs text-slate-300 font-bold uppercase tracking-wider">
                 <div class="flex items-center gap-1.5 text-amber-400">
                     <span class="text-sm">★ ★ ★ ★ ★</span>
-                    <span class="text-white font-black ml-1">5.0</span>
-                    <span class="text-slate-300 font-normal lowercase">rated by coaches</span>
+                    <span class="text-white font-black ml-1">{{ $landingSettings['hero_proof_1_rating'] ?? '5.0' }}</span>
+                    <span class="text-slate-300 font-normal lowercase">{{ $landingSettings['hero_proof_1_text'] ?? 'rated by coaches' }}</span>
                 </div>
                 <span class="text-white/20">•</span>
                 <div class="flex items-center gap-1.5 text-slate-200">
                     <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                    <span>Zero Design Fees</span>
+                    <span>{{ $landingSettings['hero_proof_2'] ?? 'Zero Design Fees' }}</span>
                 </div>
                 <span class="text-white/20">•</span>
                 <div class="flex items-center gap-1.5 text-slate-200">
                     <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                    <span>2–3 Wk Turnaround</span>
+                    <span>{{ $landingSettings['hero_proof_3'] ?? '2–3 Wk Turnaround' }}</span>
                 </div>
             </div>
 
@@ -88,8 +99,8 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 </div>
                 <div>
-                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">2–3 Week Turnaround</h4>
-                    <p class="text-[11px] sm:text-xs text-slate-600 mt-0.5 leading-relaxed" style="color: #475569;">Fastest guaranteed production cycle in custom team sports.</p>
+                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">{{ $landingSettings['trust_1_title'] ?? '2–3 Week Turnaround' }}</h4>
+                    <p class="text-[11px] sm:text-xs text-slate-600 mt-0.5 leading-relaxed" style="color: #475569;">{{ $landingSettings['trust_1_desc'] ?? 'Fastest guaranteed production cycle in custom team sports.' }}</p>
                 </div>
             </div>
 
@@ -98,8 +109,8 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
                 </div>
                 <div>
-                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">Free 3D Design Proofs</h4>
-                    <p class="text-[11px] sm:text-xs text-slate-600 mt-0.5 leading-relaxed" style="color: #475569;">Professional 3D vector artwork rendered in 24 hours.</p>
+                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">{{ $landingSettings['trust_2_title'] ?? 'Free 3D Design Proofs' }}</h4>
+                    <p class="text-[11px] sm:text-xs text-slate-600 mt-0.5 leading-relaxed" style="color: #475569;">{{ $landingSettings['trust_2_desc'] ?? 'Professional 3D vector artwork rendered in 24 hours.' }}</p>
                 </div>
             </div>
 
@@ -108,8 +119,8 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
                 </div>
                 <div>
-                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">Full Dye-Sublimation</h4>
-                    <p class="text-[11px] sm:text-xs text-slate-600 mt-0.5 leading-relaxed" style="color: #475569;">Colors, logos & numbers infused into fabric. Never peels or fades.</p>
+                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">{{ $landingSettings['trust_3_title'] ?? 'Full Dye-Sublimation' }}</h4>
+                    <p class="text-[11px] sm:text-xs text-slate-600 mt-0.5 leading-relaxed" style="color: #475569;">{{ $landingSettings['trust_3_desc'] ?? 'Colors, logos & numbers infused into fabric. Never peels or fades.' }}</p>
                 </div>
             </div>
 
@@ -118,8 +129,8 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                 </div>
                 <div>
-                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">Turnkey Team Stores</h4>
-                    <p class="text-[11px] sm:text-xs text-slate-600 mt-0.5 leading-relaxed" style="color: #475569;">Direct parent ordering online. Zero paperwork or cash handling.</p>
+                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">{{ $landingSettings['trust_4_title'] ?? 'Turnkey Team Stores' }}</h4>
+                    <p class="text-[11px] sm:text-xs text-slate-600 mt-0.5 leading-relaxed" style="color: #475569;">{{ $landingSettings['trust_4_desc'] ?? 'Direct parent ordering online. Zero paperwork or cash handling.' }}</p>
                 </div>
             </div>
 
@@ -156,16 +167,16 @@
             <div>
                 <div class="flex items-center gap-2.5 mb-1.5">
                     <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">1</span>
-                    <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">EXPLORE OUR SPORTS CATEGORIES</span>
+                    <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">{{ $landingSettings['collections_badge'] ?? 'EXPLORE OUR SPORTS CATEGORIES' }}</span>
                 </div>
                 <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
-                    CUSTOM UNIFORM COLLECTIONS
+                    {{ $landingSettings['collections_heading'] ?? 'CUSTOM UNIFORM COLLECTIONS' }}
                 </h2>
             </div>
             
             <div class="flex items-center gap-4">
                 <a href="{{ route('catalog.index') }}" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#cd202c] hover:text-slate-900 transition-colors mr-2">
-                    View Full Catalog <span>&rarr;</span>
+                    {{ $landingSettings['collections_cta_text'] ?? 'View Full Catalog' }} <span>&rarr;</span>
                 </a>
                 
                 <!-- Prev / Next Navigation Buttons -->
@@ -249,14 +260,14 @@
             <div>
                 <div class="flex items-center gap-2.5 mb-1.5">
                     <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">2</span>
-                    <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">COMMISSION NEWS & STORIES</span>
+                    <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">{{ $landingSettings['news_badge'] ?? 'COMMISSION NEWS & STORIES' }}</span>
                 </div>
                 <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
-                    PROGRAM SPOTLIGHTS & MEDIA
+                    {{ $landingSettings['news_heading'] ?? 'PROGRAM SPOTLIGHTS & MEDIA' }}
                 </h2>
             </div>
             <a href="{{ route('news.index') }}" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#cd202c] hover:text-slate-900 transition-colors">
-                View All News & Stories <span>&rarr;</span>
+                {{ $landingSettings['news_cta_text'] ?? 'View All News & Stories' }} <span>&rarr;</span>
             </a>
         </div>
 
@@ -395,12 +406,22 @@
                 <div class="inline-flex items-center gap-2.5 justify-center">
                     <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">3</span>
                     <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">
-                        COACH & PROGRAM PLATFORM
+                        {{ $teamStoreSettings['badge'] ?? 'COACH & PROGRAM PLATFORM' }}
                     </span>
                 </div>
                 
                 <h2 class="text-3xl md:text-5xl font-black tracking-tight uppercase text-slate-900 leading-tight">
-                    HOW THE TEAM STORE WORKS <span class="text-[#cd202c]">STEP-BY-STEP</span>
+                    @php
+                        $tsHeading = $teamStoreSettings['heading'] ?? 'HOW THE TEAM STORE WORKS STEP-BY-STEP';
+                        $tsWords = explode(' ', trim($tsHeading));
+                        $tsLastWord = array_pop($tsWords);
+                        $tsFirstPart = implode(' ', $tsWords);
+                    @endphp
+                    @if($tsFirstPart)
+                        {{ $tsFirstPart }} <span class="text-[#cd202c]">{{ $tsLastWord }}</span>
+                    @else
+                        <span class="text-[#cd202c]">{{ $tsLastWord }}</span>
+                    @endif
                 </h2>
                 
                 <p class="text-slate-700 text-sm md:text-base font-normal max-w-2xl mx-auto" style="color: #475569;">
@@ -545,7 +566,7 @@
                                 <span class="text-slate-500">24-48 HR DELIVERABLE</span>
                             </div>
                             <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-b from-[#131620] to-[#0a0c10] flex items-center justify-center p-4">
-                                <img src="/images/concept-spartan.png" alt="3D Uniform Digital Blueprint" class="w-full h-full object-contain max-h-[340px] drop-shadow-[0_20px_25px_rgba(0,0,0,0.8)]" loading="lazy">
+                                <img src="{{ $teamStoreSettings['step_1_image'] ?? asset('images/concept-spartan.png') }}" alt="3D Uniform Digital Blueprint" class="w-full h-full object-contain max-h-[340px] drop-shadow-[0_20px_25px_rgba(0,0,0,0.8)]" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/concept-spartan.png') }}'">
                                 <div class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md border border-slate-700 text-white text-[10px] font-mono px-3 py-1.5 rounded-lg shadow-lg">
                                     Unlimited Revisions &bull; Free
                                 </div>
@@ -626,7 +647,7 @@
                                 <div class="w-8"></div>
                             </div>
                             <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[16/10]">
-                                <img src="/images/team%20store.png" alt="Custom Team Store Platform" class="w-full h-full object-cover object-top" loading="lazy">
+                                <img src="{{ $teamStoreSettings['step_2_image'] ?? asset('images/team store.png') }}" alt="Custom Team Store Platform" class="w-full h-full object-cover object-top" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/team store.png') }}'">
                             </div>
                         </div>
                     </div>
@@ -696,7 +717,7 @@
                                 <span class="text-emerald-400 font-bold">100% SECURE CHECKOUT</span>
                             </div>
                             <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[16/10]">
-                                <img src="/images/Coach%20Dashboard.png" alt="Coach Team Store Dashboard" class="w-full h-full object-cover object-top" loading="lazy">
+                                <img src="{{ $teamStoreSettings['step_3_image'] ?? asset('images/Coach Dashboard.png') }}" alt="Coach Team Store Dashboard" class="w-full h-full object-cover object-top" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/Coach Dashboard.png') }}'">
                             </div>
                         </div>
                     </div>
@@ -766,7 +787,7 @@
                                 <span class="text-slate-400">PHYSICAL SAMPLE</span>
                             </div>
                             <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-b from-[#131620] to-[#0a0c10] flex items-center justify-center p-2">
-                                <img src="/images/reality-spartan.png" alt="Manufactured Sublimated Uniform Reality" class="w-full h-full object-contain max-h-[340px] drop-shadow-[0_20px_25px_rgba(0,0,0,0.8)]" loading="lazy">
+                                <img src="{{ $teamStoreSettings['step_4_image'] ?? asset('images/reality-spartan.png') }}" alt="Manufactured Sublimated Uniform Reality" class="w-full h-full object-contain max-h-[340px] drop-shadow-[0_20px_25px_rgba(0,0,0,0.8)]" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/reality-spartan.png') }}'">
                                 <div class="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md border border-slate-700 text-white text-[10px] font-mono px-3 py-1.5 rounded-lg shadow-lg">
                                     Infused Sublimation &bull; Zero Cracking
                                 </div>
@@ -839,7 +860,7 @@
                                 <span class="text-emerald-400 font-bold">REBATES DIRECT DEPOSIT</span>
                             </div>
                             <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[16/10]">
-                                <img src="/images/admin%20dashboard.png" alt="Admin Operations & Financial Dashboard" class="w-full h-full object-cover object-top" loading="lazy">
+                                <img src="{{ $teamStoreSettings['step_5_image'] ?? asset('images/admin dashboard.png') }}" alt="Admin Operations & Financial Dashboard" class="w-full h-full object-cover object-top" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/admin dashboard.png') }}'">
                             </div>
                         </div>
                     </div>
@@ -875,31 +896,31 @@
             <!-- 4 Quick Proof Metrics (Clean Strip) -->
             <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 pt-4">
                 <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center">
-                    <div class="text-2xl md:text-3xl font-black text-[#cd202c] font-heading tracking-tight">$0</div>
-                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">Setup Fee</div>
-                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">100% Free Store Creation</div>
+                    <div class="text-2xl md:text-3xl font-black text-[#cd202c] font-heading tracking-tight">{{ $landingSettings['slider_metric_1_val'] ?? '$0' }}</div>
+                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">{{ $landingSettings['slider_metric_1_label'] ?? 'Setup Fee' }}</div>
+                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">{{ $landingSettings['slider_metric_1_sub'] ?? '100% Free Store Creation' }}</div>
                 </div>
                 <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center">
-                    <div class="text-2xl md:text-3xl font-black text-slate-900 font-heading tracking-tight">24-48h</div>
-                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">Rapid Mockups</div>
-                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">Photorealistic 3D concepts</div>
+                    <div class="text-2xl md:text-3xl font-black text-slate-900 font-heading tracking-tight">{{ $landingSettings['slider_metric_2_val'] ?? '24-48h' }}</div>
+                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">{{ $landingSettings['slider_metric_2_label'] ?? 'Rapid Mockups' }}</div>
+                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">{{ $landingSettings['slider_metric_2_sub'] ?? 'Photorealistic 3D concepts' }}</div>
                 </div>
                 <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center">
-                    <div class="text-2xl md:text-3xl font-black text-slate-900 font-heading tracking-tight">2-3 WKS</div>
-                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">Production</div>
-                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">Guaranteed game-ready</div>
+                    <div class="text-2xl md:text-3xl font-black text-slate-900 font-heading tracking-tight">{{ $landingSettings['slider_metric_3_val'] ?? '2-3 WKS' }}</div>
+                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">{{ $landingSettings['slider_metric_3_label'] ?? 'Production' }}</div>
+                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">{{ $landingSettings['slider_metric_3_sub'] ?? 'Guaranteed game-ready' }}</div>
                 </div>
                 <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center">
-                    <div class="text-2xl md:text-3xl font-black text-emerald-600 font-heading tracking-tight">10-20%</div>
-                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">Team Kickback</div>
-                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">Direct program fundraising</div>
+                    <div class="text-2xl md:text-3xl font-black text-emerald-600 font-heading tracking-tight">{{ $landingSettings['slider_metric_4_val'] ?? '10-20%' }}</div>
+                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">{{ $landingSettings['slider_metric_4_label'] ?? 'Team Kickback' }}</div>
+                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">{{ $landingSettings['slider_metric_4_sub'] ?? 'Direct program fundraising' }}</div>
                 </div>
             </div>
 
             <!-- Call to Action Trigger -->
             <div class="text-center pt-2">
-                <a href="/quote" class="px-8 py-4 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-lg hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
-                    Start Your Custom Team Store Today &rarr;
+                <a href="{{ $landingSettings['team_store_cta_url'] ?? '/quote' }}" class="px-8 py-4 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-lg hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
+                    {{ $landingSettings['team_store_cta_text'] ?? 'Start Your Custom Team Store Today →' }}
                 </a>
             </div>
 
@@ -916,14 +937,14 @@
             <div>
                 <div class="flex items-center gap-2.5 mb-1.5">
                     <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">4</span>
-                    <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">COACH TESTIMONIALS</span>
+                    <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">{{ $landingSettings['testimonials_badge'] ?? 'COACH TESTIMONIALS' }}</span>
                 </div>
                 <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
-                    WHAT COACHES & TEAMS SAY
+                    {{ $landingSettings['testimonials_heading'] ?? 'WHAT COACHES & TEAMS SAY' }}
                 </h2>
             </div>
             <a href="{{ route('testimonials.index') }}" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#cd202c] hover:text-slate-900 transition-colors">
-                Read All Testimonials <span>&rarr;</span>
+                {{ $landingSettings['testimonials_cta_text'] ?? 'Read All Testimonials' }} <span>&rarr;</span>
             </a>
         </div>
 
@@ -973,21 +994,21 @@
 
         <div class="max-w-[1200px] mx-auto space-y-5 relative z-10">
             <span class="inline-block bg-white/20 text-white text-[11px] font-black tracking-widest uppercase px-4 py-1.5 rounded-full border border-white/30 shadow-sm backdrop-blur-sm">
-                DOMINATE THE COMPETITION
+                {{ $landingSettings['final_cta_badge'] ?? 'DOMINATE THE COMPETITION' }}
             </span>
             <h2 class="text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white leading-tight drop-shadow-sm">
-                READY TO DESIGN YOUR PROGRAM'S LEGACY?
+                {{ $landingSettings['final_cta_title'] ?? "READY TO DESIGN YOUR PROGRAM'S LEGACY?" }}
             </h2>
             <p class="text-red-50 text-sm md:text-base max-w-2xl mx-auto leading-relaxed font-medium">
-                Get bespoke 3D custom uniform mockups tailored specifically for your organization within 24 hours. Zero risk, 100% free.
+                {{ $landingSettings['final_cta_subtitle'] ?? 'Get bespoke 3D custom uniform mockups tailored specifically for your organization within 24 hours. Zero risk, 100% free.' }}
             </p>
             <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <a href="/quote" class="w-full sm:w-auto px-9 py-4 bg-white hover:bg-slate-100 text-slate-950 font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-xl hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
-                    <span>Request Free Custom Mockup</span>
+                <a href="{{ $landingSettings['final_cta_primary_url'] ?? '/quote' }}" class="w-full sm:w-auto px-9 py-4 bg-white hover:bg-slate-100 text-slate-950 font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-xl hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
+                    <span>{{ $landingSettings['final_cta_primary_text'] ?? 'Request Free Custom Mockup' }}</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </a>
-                <a href="{{ route('store.search') }}" class="w-full sm:w-auto px-8 py-4 bg-transparent hover:bg-white hover:text-slate-950 text-white border-2 border-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full transition-all inline-flex items-center justify-center">
-                    Explore Team Stores
+                <a href="{{ $landingSettings['final_cta_secondary_url'] ?? route('store.search') }}" class="w-full sm:w-auto px-8 py-4 bg-transparent hover:bg-white hover:text-slate-950 text-white border-2 border-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full transition-all inline-flex items-center justify-center">
+                    {{ $landingSettings['final_cta_secondary_text'] ?? 'Explore Team Stores' }}
                 </a>
             </div>
         </div>

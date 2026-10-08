@@ -2107,33 +2107,19 @@ class AdminController extends Controller
 
     public function updateLandingSettings(Request $request)
     {
-        $textFields = [
-            'hero_title', 'hero_subtitle', 'hero_cta_primary_text', 'hero_cta_primary_url',
-            'hero_cta_secondary_text', 'hero_cta_secondary_url',
-            'proof_heading', 'proof_subheading', 'proof_feature_1', 'proof_feature_2', 'proof_feature_3',
-            'team_store_heading', 'team_store_subheading', 'team_store_bullet_1', 'team_store_bullet_2',
-            'team_store_bullet_3', 'team_store_bullet_4'
-        ];
-
-        foreach ($textFields as $field) {
-            if ($request->has($field)) {
-                SiteSetting::updateOrCreate(['key' => $field], ['value' => $request->input($field)]);
+        // 1. Process all text and select inputs (excluding CSRF and internal keys)
+        $excludedKeys = ['_token', '_method'];
+        foreach ($request->except($excludedKeys) as $key => $value) {
+            if (!$request->hasFile($key) && is_string($value)) {
+                SiteSetting::updateOrCreate(['key' => $key], ['value' => $value]);
             }
         }
 
-        // Handle Image File Uploads
-        $fileFields = [
-            'hero_banner_image'   => 'hero_banner_image',
-            'proof_concept_image' => 'proof_concept_image',
-            'proof_reality_image' => 'proof_reality_image',
-            'team_store_image'    => 'team_store_image',
-        ];
-
-        foreach ($fileFields as $inputKey => $settingKey) {
-            if ($request->hasFile($inputKey)) {
-                $file = $request->file($inputKey);
+        // 2. Process all uploaded file inputs dynamically
+        foreach ($request->allFiles() as $fileKey => $file) {
+            if ($file->isValid()) {
                 $path = $file->store('landing', 'public');
-                SiteSetting::updateOrCreate(['key' => $settingKey], ['value' => '/storage/' . $path]);
+                SiteSetting::updateOrCreate(['key' => $fileKey], ['value' => '/storage/' . $path]);
             }
         }
 

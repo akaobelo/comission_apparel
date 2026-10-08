@@ -37,37 +37,46 @@ Route::get('/', function () {
         ->limit(3)
         ->get();
 
+    $landingSettings = \App\Models\SiteSetting::all()->pluck('value', 'key')->toArray();
+
     $heroSettings = [
-        'title'               => \App\Models\SiteSetting::where('key', 'hero_title')->value('value') ?? 'CUSTOM GEAR BUILT FOR THE COMMITTED',
-        'subtitle'            => \App\Models\SiteSetting::where('key', 'hero_subtitle')->value('value') ?? 'Dominate the competition with elite performance apparel designed for champion athletes. Elevate your team\'s game with custom uniforms crafted with speed and precision.',
-        'media_path'          => \App\Models\SiteSetting::where('key', 'hero_banner_image')->value('value') ?? \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value') ?? asset('images/hero-models.png'),
-        'cta_primary_text'    => \App\Models\SiteSetting::where('key', 'hero_cta_primary_text')->value('value') ?? 'START DESIGNING',
-        'cta_primary_url'     => \App\Models\SiteSetting::where('key', 'hero_cta_primary_url')->value('value') ?? '/quote',
-        'cta_secondary_text'  => \App\Models\SiteSetting::where('key', 'hero_cta_secondary_text')->value('value') ?? 'VIEW CATALOG',
-        'cta_secondary_url'   => \App\Models\SiteSetting::where('key', 'hero_cta_secondary_url')->value('value') ?? '/catalog',
+        'badge'               => $landingSettings['hero_badge'] ?? 'Official Team Uniforms & Fan Gear',
+        'title'               => $landingSettings['hero_title'] ?? 'CUSTOM GEAR BUILT FOR THE COMMITTED',
+        'subtitle'            => $landingSettings['hero_subtitle'] ?? 'Dominate the competition with elite performance apparel designed for champion athletes. Precision craftsmanship, fast 2–3 week turnaround, and dedicated online team stores.',
+        'banner_image'        => $landingSettings['hero_banner_image'] ?? $landingSettings['hero_media_path'] ?? asset('images/hero-banner.jpeg'),
+        'cta_primary_text'    => $landingSettings['hero_cta_primary_text'] ?? 'Request Free 3D Mockup',
+        'cta_primary_url'     => $landingSettings['hero_cta_primary_url'] ?? '/quote',
+        'cta_secondary_text'  => $landingSettings['hero_cta_secondary_text'] ?? 'Find Your Team Store',
+        'cta_secondary_url'   => $landingSettings['hero_cta_secondary_url'] ?? route('store.search'),
     ];
 
     $proofSettings = [
-        'heading'             => \App\Models\SiteSetting::where('key', 'proof_heading')->value('value') ?? 'From Vision to Victory: Concept to Reality',
-        'subheading'          => \App\Models\SiteSetting::where('key', 'proof_subheading')->value('value') ?? 'Precision craftsmanship from 3D digital blueprint to final sublimated uniform.',
-        'concept_image'       => \App\Models\SiteSetting::where('key', 'proof_concept_image')->value('value') ?? asset('images/concept-spartan.png'),
-        'reality_image'       => \App\Models\SiteSetting::where('key', 'proof_reality_image')->value('value') ?? asset('images/reality-spartan.png'),
-        'feature_1'           => \App\Models\SiteSetting::where('key', 'proof_feature_1')->value('value') ?? '1. Full Custom Graphics',
-        'feature_2'           => \App\Models\SiteSetting::where('key', 'proof_feature_2')->value('value') ?? '2. Premium Moisture-Wicking Fabric',
-        'feature_3'           => \App\Models\SiteSetting::where('key', 'proof_feature_3')->value('value') ?? '3. Reinforced Athletic Stitching',
+        'heading'             => $landingSettings['proof_heading'] ?? 'From Vision to Victory: Concept to Reality',
+        'subheading'          => $landingSettings['proof_subheading'] ?? 'Precision craftsmanship from 3D digital blueprint to final sublimated uniform.',
+        'concept_image'       => $landingSettings['proof_concept_image'] ?? asset('images/concept-spartan.png'),
+        'reality_image'       => $landingSettings['proof_reality_image'] ?? asset('images/reality-spartan.png'),
+        'feature_1'           => $landingSettings['proof_feature_1'] ?? '1. Full Custom Graphics',
+        'feature_2'           => $landingSettings['proof_feature_2'] ?? '2. Premium Moisture-Wicking Fabric',
+        'feature_3'           => $landingSettings['proof_feature_3'] ?? '3. Reinforced Athletic Stitching',
     ];
 
     $teamStoreSettings = [
-        'heading'             => \App\Models\SiteSetting::where('key', 'team_store_heading')->value('value') ?? 'LAUNCH YOUR TEAM STORE',
-        'subheading'          => \App\Models\SiteSetting::where('key', 'team_store_subheading')->value('value') ?? 'Empower your program with a custom online store that eliminates coach hassle and generates revenue.',
-        'image'               => \App\Models\SiteSetting::where('key', 'team_store_image')->value('value') ?? asset('images/team store.png'),
-        'bullet_1'            => \App\Models\SiteSetting::where('key', 'team_store_bullet_1')->value('value') ?? 'Streamlined Direct Ordering for Parents',
-        'bullet_2'            => \App\Models\SiteSetting::where('key', 'team_store_bullet_2')->value('value') ?? 'Custom Fan Gear & Official Team Packages',
-        'bullet_3'            => \App\Models\SiteSetting::where('key', 'team_store_bullet_3')->value('value') ?? 'Fast Direct-to-Door Delivery',
-        'bullet_4'            => \App\Models\SiteSetting::where('key', 'team_store_bullet_4')->value('value') ?? 'Centralized Coach & Athletic Director Portal',
+        'badge'               => $landingSettings['team_store_badge'] ?? 'COACH & PROGRAM PLATFORM',
+        'heading'             => $landingSettings['team_store_heading'] ?? 'HOW THE TEAM STORE WORKS STEP-BY-STEP',
+        'subheading'          => $landingSettings['team_store_subheading'] ?? 'Empower your program with a custom online store that eliminates coach paperwork and generates automatic fundraising revenue.',
+        'image'               => $landingSettings['team_store_image'] ?? asset('images/team store.png'),
+        'step_1_image'        => $landingSettings['team_store_step_1_image'] ?? asset('images/concept-spartan.png'),
+        'step_2_image'        => $landingSettings['team_store_step_2_image'] ?? asset('images/team store.png'),
+        'step_3_image'        => $landingSettings['team_store_step_3_image'] ?? asset('images/Coach Dashboard.png'),
+        'step_4_image'        => $landingSettings['team_store_step_4_image'] ?? asset('images/reality-spartan.png'),
+        'step_5_image'        => $landingSettings['team_store_step_5_image'] ?? asset('images/admin dashboard.png'),
+        'bullet_1'            => $landingSettings['team_store_bullet_1'] ?? 'Streamlined Direct Ordering for Parents',
+        'bullet_2'            => $landingSettings['team_store_bullet_2'] ?? 'Custom Fan Gear & Official Team Packages',
+        'bullet_3'            => $landingSettings['team_store_bullet_3'] ?? 'Fast Direct-to-Door Delivery',
+        'bullet_4'            => $landingSettings['team_store_bullet_4'] ?? 'Centralized Coach & Athletic Director Portal',
     ];
 
-    return view('welcome', compact('landingCollections', 'testimonials', 'newsArticles', 'heroSettings', 'proofSettings', 'teamStoreSettings')); 
+    return view('welcome', compact('landingCollections', 'testimonials', 'newsArticles', 'heroSettings', 'proofSettings', 'teamStoreSettings', 'landingSettings'));
 });
 Route::get('/news', [NewsController::class, 'index'])->name('news.index');
 Route::get('/news/{slug}', [NewsController::class, 'show'])->name('news.show');

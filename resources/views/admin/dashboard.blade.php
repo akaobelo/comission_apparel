@@ -855,9 +855,15 @@
                         </div>
                     </div>
                     <div x-show="expanded" x-collapse class="p-6 space-y-4">
-                        <div>
-                            <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Hero Headline Title</label>
-                            <input type="text" name="hero_title" value="{{ $landingSettings['hero_title'] ?? 'CUSTOM GEAR BUILT FOR THE COMMITTED' }}" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm font-bold">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Hero Pill Badge</label>
+                                <input type="text" name="hero_badge" value="{{ $landingSettings['hero_badge'] ?? 'Official Team Uniforms & Fan Gear' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Hero Headline Title</label>
+                                <input type="text" name="hero_title" value="{{ $landingSettings['hero_title'] ?? 'CUSTOM GEAR BUILT FOR THE COMMITTED' }}" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm font-bold">
+                            </div>
                         </div>
 
                         <div>
@@ -868,7 +874,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Primary CTA Button Text</label>
-                                <input type="text" name="hero_cta_primary_text" value="{{ $landingSettings['hero_cta_primary_text'] ?? 'START DESIGNING' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <input type="text" name="hero_cta_primary_text" value="{{ $landingSettings['hero_cta_primary_text'] ?? 'Request Free 3D Mockup' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Primary CTA Link</label>
@@ -879,11 +885,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Secondary CTA Button Text</label>
-                                <input type="text" name="hero_cta_secondary_text" value="{{ $landingSettings['hero_cta_secondary_text'] ?? 'VIEW CATALOG' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <input type="text" name="hero_cta_secondary_text" value="{{ $landingSettings['hero_cta_secondary_text'] ?? 'Find Your Team Store' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Secondary CTA Link</label>
-                                <input type="text" name="hero_cta_secondary_url" value="{{ $landingSettings['hero_cta_secondary_url'] ?? '/catalog' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <input type="text" name="hero_cta_secondary_url" value="{{ $landingSettings['hero_cta_secondary_url'] ?? '/store/search' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                             </div>
                         </div>
 
@@ -897,15 +903,338 @@
                             <input type="file" name="hero_banner_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:bg-slate-900 file:text-white hover:file:bg-slate-700 cursor-pointer">
                             <p class="text-[10px] text-slate-400 mt-1 uppercase">Leave blank to keep existing image. Recommended: High-res PNG/JPG with dark or transparent backdrop.</p>
                         </div>
+
+                        <div class="pt-2 border-t border-slate-200">
+                            <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">Proof Points (Under CTAs)</label>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-1">Point 1 (Rating Text)</label>
+                                    <input type="text" name="hero_proof_1_text" value="{{ $landingSettings['hero_proof_1_text'] ?? 'rated by coaches' }}" class="w-full bg-slate-50 border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-1">Point 2</label>
+                                    <input type="text" name="hero_proof_2" value="{{ $landingSettings['hero_proof_2'] ?? 'Zero Design Fees' }}" class="w-full bg-slate-50 border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-1">Point 3</label>
+                                    <input type="text" name="hero_proof_3" value="{{ $landingSettings['hero_proof_3'] ?? '2–3 Wk Turnaround' }}" class="w-full bg-slate-50 border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {{-- 2. CONCEPT TO REALITY TECHNICAL PROOFING --}}
-                <div x-data="{ expanded: true, init() { const k = 'admin_proof_settings'; this.expanded = localStorage.getItem(k) !== 'false'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                {{-- 2. VALUE PROPOSITIONS & TRUST BAR --}}
+                <div x-data="{ expanded: false, init() { const k = 'admin_trust_settings'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                     <div @click="expanded = !expanded" class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
                         <div>
-                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">2. "Concept to Reality" Proofing Setup</h2>
-                            <p class="text-xs text-slate-500 mt-1">Upload 3D digital vector design mockup vs. actual sublimated uniform photos and feature pins.</p>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">2. Value Propositions / Trust Bar Highlights</h2>
+                            <p class="text-xs text-slate-500 mt-1">Customize the 4 horizontal guarantee highlights shown right below the hero banner.</p>
+                        </div>
+                        <div class="text-slate-400">
+                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                    <div x-show="expanded" x-collapse class="p-6 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+                                <span class="text-[11px] font-black uppercase text-slate-800">Highlight 1</span>
+                                <input type="text" name="trust_1_title" value="{{ $landingSettings['trust_1_title'] ?? '2–3 Week Turnaround' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs font-bold text-slate-900">
+                                <input type="text" name="trust_1_desc" value="{{ $landingSettings['trust_1_desc'] ?? 'Fastest guaranteed production cycle in custom team sports.' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-700">
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+                                <span class="text-[11px] font-black uppercase text-slate-800">Highlight 2</span>
+                                <input type="text" name="trust_2_title" value="{{ $landingSettings['trust_2_title'] ?? 'Free 3D Design Proofs' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs font-bold text-slate-900">
+                                <input type="text" name="trust_2_desc" value="{{ $landingSettings['trust_2_desc'] ?? 'Professional 3D vector artwork rendered in 24 hours.' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-700">
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+                                <span class="text-[11px] font-black uppercase text-slate-800">Highlight 3</span>
+                                <input type="text" name="trust_3_title" value="{{ $landingSettings['trust_3_title'] ?? 'Full Dye-Sublimation' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs font-bold text-slate-900">
+                                <input type="text" name="trust_3_desc" value="{{ $landingSettings['trust_3_desc'] ?? 'Colors, logos & numbers infused into fabric. Never peels or fades.' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-700">
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+                                <span class="text-[11px] font-black uppercase text-slate-800">Highlight 4</span>
+                                <input type="text" name="trust_4_title" value="{{ $landingSettings['trust_4_title'] ?? 'Turnkey Team Stores' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs font-bold text-slate-900">
+                                <input type="text" name="trust_4_desc" value="{{ $landingSettings['trust_4_desc'] ?? 'Direct parent ordering online. Zero paperwork or cash handling.' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-700">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 3. SECTION HEADINGS & BADGES --}}
+                <div x-data="{ expanded: false, init() { const k = 'admin_section_titles'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div @click="expanded = !expanded" class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
+                        <div>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">3. Section Headings, Badges &amp; CTA Labels</h2>
+                            <p class="text-xs text-slate-500 mt-1">Customize section numbers, badges, main headings, and top-right navigation links.</p>
+                        </div>
+                        <div class="text-slate-400">
+                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                    <div x-show="expanded" x-collapse class="p-6 space-y-6">
+                        <!-- Section 1 (Sports Collections) -->
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                            <span class="text-xs font-black uppercase text-slate-900">Section 1: Custom Uniform Collections Header</span>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-1">Badge Text</label>
+                                    <input type="text" name="collections_badge" value="{{ $landingSettings['collections_badge'] ?? 'EXPLORE OUR SPORTS CATEGORIES' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-1">Section Heading</label>
+                                    <input type="text" name="collections_heading" value="{{ $landingSettings['collections_heading'] ?? 'CUSTOM UNIFORM COLLECTIONS' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-1">Header Link Text</label>
+                                    <input type="text" name="collections_cta_text" value="{{ $landingSettings['collections_cta_text'] ?? 'View Full Catalog' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2 (News & Stories) -->
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                            <span class="text-xs font-black uppercase text-slate-900">Section 2: Commission News & Stories Header</span>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-1">Badge Text</label>
+                                    <input type="text" name="news_badge" value="{{ $landingSettings['news_badge'] ?? 'COMMISSION NEWS & STORIES' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-1">Section Heading</label>
+                                    <input type="text" name="news_heading" value="{{ $landingSettings['news_heading'] ?? 'PROGRAM SPOTLIGHTS & MEDIA' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-1">Header Link Text</label>
+                                    <input type="text" name="news_cta_text" value="{{ $landingSettings['news_cta_text'] ?? 'View All News & Stories' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 4 (Testimonials) -->
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                            <span class="text-xs font-black uppercase text-slate-900">Section 4: Coach Testimonials Header</span>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-1">Badge Text</label>
+                                    <input type="text" name="testimonials_badge" value="{{ $landingSettings['testimonials_badge'] ?? 'COACH TESTIMONIALS' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-1">Section Heading</label>
+                                    <input type="text" name="testimonials_heading" value="{{ $landingSettings['testimonials_heading'] ?? 'WHAT COACHES & TEAMS SAY' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-1">Header Link Text</label>
+                                    <input type="text" name="testimonials_cta_text" value="{{ $landingSettings['testimonials_cta_text'] ?? 'Read All Testimonials' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 4. TEAM STORE PLATFORM & PROCESS SLIDER SETUP --}}
+                <div x-data="{ expanded: false, init() { const k = 'admin_team_store_settings'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div @click="expanded = !expanded" class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
+                        <div>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">4. Team Store Platform &amp; Process Slider</h2>
+                            <p class="text-xs text-slate-500 mt-1">Customize the process slider headings, upload images for all 5 steps, and adjust bottom metrics.</p>
+                        </div>
+                        <div class="text-slate-400">
+                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                    <div x-show="expanded" x-collapse class="p-6 space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Section Badge</label>
+                                <input type="text" name="team_store_badge" value="{{ $landingSettings['team_store_badge'] ?? 'COACH & PROGRAM PLATFORM' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Section Heading</label>
+                                <input type="text" name="team_store_heading" value="{{ $landingSettings['team_store_heading'] ?? 'HOW THE TEAM STORE WORKS STEP-BY-STEP' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Section Subheading</label>
+                                <input type="text" name="team_store_subheading" value="{{ $landingSettings['team_store_subheading'] ?? 'Empower your program with a custom online store that eliminates coach paperwork and generates automatic fundraising revenue.' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                        </div>
+
+                        <!-- 5 Process Step Slider Graphics Uploads -->
+                        <div class="pt-2">
+                            <h3 class="text-xs font-black uppercase tracking-wider text-slate-800 mb-1">Process Slider Step Images (5 Steps)</h3>
+                            <p class="text-xs text-slate-500 mb-4">Upload custom mockups or screenshots for each step of the interactive slider on the home page.</p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <!-- Step 1 -->
+                                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-black uppercase text-slate-900">Step 01: 3D Artwork</span>
+                                        <span class="text-[10px] font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700">Digital Concept</span>
+                                    </div>
+                                    <div class="bg-slate-900 p-2 rounded-lg flex items-center justify-center h-28 overflow-hidden">
+                                        <img src="{{ $landingSettings['team_store_step_1_image'] ?? asset('images/concept-spartan.png') }}" class="h-full w-auto object-contain" onerror="this.src='{{ asset('images/concept-spartan.png') }}'">
+                                    </div>
+                                    <label class="block text-[11px] font-bold text-slate-600">Replace Image:</label>
+                                    <input type="file" name="team_store_step_1_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-bold file:uppercase file:bg-slate-900 file:text-white">
+                                </div>
+
+                                <!-- Step 2 -->
+                                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-black uppercase text-slate-900">Step 02: Store Launch</span>
+                                        <span class="text-[10px] font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700">Online Storefront</span>
+                                    </div>
+                                    <div class="bg-slate-900 p-2 rounded-lg flex items-center justify-center h-28 overflow-hidden">
+                                        <img src="{{ $landingSettings['team_store_step_2_image'] ?? asset('images/team store.png') }}" class="h-full w-auto object-contain" onerror="this.src='{{ asset('images/team store.png') }}'">
+                                    </div>
+                                    <label class="block text-[11px] font-bold text-slate-600">Replace Image:</label>
+                                    <input type="file" name="team_store_step_2_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-bold file:uppercase file:bg-slate-900 file:text-white">
+                                </div>
+
+                                <!-- Step 3 -->
+                                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-black uppercase text-slate-900">Step 03: Direct Orders</span>
+                                        <span class="text-[10px] font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700">Coach Dashboard</span>
+                                    </div>
+                                    <div class="bg-slate-900 p-2 rounded-lg flex items-center justify-center h-28 overflow-hidden">
+                                        <img src="{{ $landingSettings['team_store_step_3_image'] ?? asset('images/Coach Dashboard.png') }}" class="h-full w-auto object-contain" onerror="this.src='{{ asset('images/Coach Dashboard.png') }}'">
+                                    </div>
+                                    <label class="block text-[11px] font-bold text-slate-600">Replace Image:</label>
+                                    <input type="file" name="team_store_step_3_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-bold file:uppercase file:bg-slate-900 file:text-white">
+                                </div>
+
+                                <!-- Step 4 -->
+                                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-black uppercase text-slate-900">Step 04: Sublimation</span>
+                                        <span class="text-[10px] font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700">Production Craft</span>
+                                    </div>
+                                    <div class="bg-slate-900 p-2 rounded-lg flex items-center justify-center h-28 overflow-hidden">
+                                        <img src="{{ $landingSettings['team_store_step_4_image'] ?? asset('images/reality-spartan.png') }}" class="h-full w-auto object-contain" onerror="this.src='{{ asset('images/reality-spartan.png') }}'">
+                                    </div>
+                                    <label class="block text-[11px] font-bold text-slate-600">Replace Image:</label>
+                                    <input type="file" name="team_store_step_4_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-bold file:uppercase file:bg-slate-900 file:text-white">
+                                </div>
+
+                                <!-- Step 5 -->
+                                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-black uppercase text-slate-900">Step 05: Pack & Payout</span>
+                                        <span class="text-[10px] font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700">Admin Operations</span>
+                                    </div>
+                                    <div class="bg-slate-900 p-2 rounded-lg flex items-center justify-center h-28 overflow-hidden">
+                                        <img src="{{ $landingSettings['team_store_step_5_image'] ?? asset('images/admin dashboard.png') }}" class="h-full w-auto object-contain" onerror="this.src='{{ asset('images/admin dashboard.png') }}'">
+                                    </div>
+                                    <label class="block text-[11px] font-bold text-slate-600">Replace Image:</label>
+                                    <input type="file" name="team_store_step_5_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-bold file:uppercase file:bg-slate-900 file:text-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4 Quick Proof Metrics (Underneath Slider) -->
+                        <div class="pt-2 border-t border-slate-200">
+                            <h3 class="text-xs font-black uppercase tracking-wider text-slate-800 mb-1">Quick Proof Metrics (Underneath Slider)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
+                                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5">
+                                    <span class="text-[10px] font-black uppercase text-slate-500">Metric 1</span>
+                                    <input type="text" name="slider_metric_1_val" value="{{ $landingSettings['slider_metric_1_val'] ?? '$0' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-black text-[#cd202c]">
+                                    <input type="text" name="slider_metric_1_label" value="{{ $landingSettings['slider_metric_1_label'] ?? 'Setup Fee' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-bold text-slate-900">
+                                    <input type="text" name="slider_metric_1_sub" value="{{ $landingSettings['slider_metric_1_sub'] ?? '100% Free Store Creation' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-[11px] text-slate-600">
+                                </div>
+                                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5">
+                                    <span class="text-[10px] font-black uppercase text-slate-500">Metric 2</span>
+                                    <input type="text" name="slider_metric_2_val" value="{{ $landingSettings['slider_metric_2_val'] ?? '24-48h' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-black text-slate-900">
+                                    <input type="text" name="slider_metric_2_label" value="{{ $landingSettings['slider_metric_2_label'] ?? 'Rapid Mockups' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-bold text-slate-900">
+                                    <input type="text" name="slider_metric_2_sub" value="{{ $landingSettings['slider_metric_2_sub'] ?? 'Photorealistic 3D concepts' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-[11px] text-slate-600">
+                                </div>
+                                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5">
+                                    <span class="text-[10px] font-black uppercase text-slate-500">Metric 3</span>
+                                    <input type="text" name="slider_metric_3_val" value="{{ $landingSettings['slider_metric_3_val'] ?? '2-3 WKS' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-black text-slate-900">
+                                    <input type="text" name="slider_metric_3_label" value="{{ $landingSettings['slider_metric_3_label'] ?? 'Production' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-bold text-slate-900">
+                                    <input type="text" name="slider_metric_3_sub" value="{{ $landingSettings['slider_metric_3_sub'] ?? 'Guaranteed game-ready' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-[11px] text-slate-600">
+                                </div>
+                                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5">
+                                    <span class="text-[10px] font-black uppercase text-slate-500">Metric 4</span>
+                                    <input type="text" name="slider_metric_4_val" value="{{ $landingSettings['slider_metric_4_val'] ?? '10-20%' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-black text-emerald-600">
+                                    <input type="text" name="slider_metric_4_label" value="{{ $landingSettings['slider_metric_4_label'] ?? 'Team Kickback' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-bold text-slate-900">
+                                    <input type="text" name="slider_metric_4_sub" value="{{ $landingSettings['slider_metric_4_sub'] ?? 'Direct program fundraising' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-[11px] text-slate-600">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slider Trigger CTA -->
+                        <div class="pt-2 border-t border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Bottom Trigger CTA Text</label>
+                                <input type="text" name="team_store_cta_text" value="{{ $landingSettings['team_store_cta_text'] ?? 'Start Your Custom Team Store Today →' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Bottom Trigger CTA Link</label>
+                                <input type="text" name="team_store_cta_url" value="{{ $landingSettings['team_store_cta_url'] ?? '/quote' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 5. FINAL HIGH-CONVERSION CTA BANNER --}}
+                <div x-data="{ expanded: false, init() { const k = 'admin_final_cta_settings'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div @click="expanded = !expanded" class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
+                        <div>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">5. Final High-Conversion CTA Banner Setup</h2>
+                            <p class="text-xs text-slate-500 mt-1">Customize the large red call-to-action banner at the very bottom of the landing page.</p>
+                        </div>
+                        <div class="text-slate-400">
+                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                    <div x-show="expanded" x-collapse class="p-6 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Banner Pill Badge</label>
+                                <input type="text" name="final_cta_badge" value="{{ $landingSettings['final_cta_badge'] ?? 'DOMINATE THE COMPETITION' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Headline Title</label>
+                                <input type="text" name="final_cta_title" value="{{ $landingSettings['final_cta_title'] ?? "READY TO DESIGN YOUR PROGRAM'S LEGACY?" }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm font-bold">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Subtitle / Description</label>
+                            <textarea name="final_cta_subtitle" rows="2" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">{{ $landingSettings['final_cta_subtitle'] ?? 'Get bespoke 3D custom uniform mockups tailored specifically for your organization within 24 hours. Zero risk, 100% free.' }}</textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Primary Button Text</label>
+                                <input type="text" name="final_cta_primary_text" value="{{ $landingSettings['final_cta_primary_text'] ?? 'Request Free Custom Mockup' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Primary Button Link</label>
+                                <input type="text" name="final_cta_primary_url" value="{{ $landingSettings['final_cta_primary_url'] ?? '/quote' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Secondary Button Text</label>
+                                <input type="text" name="final_cta_secondary_text" value="{{ $landingSettings['final_cta_secondary_text'] ?? 'Explore Team Stores' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Secondary Button Link</label>
+                                <input type="text" name="final_cta_secondary_url" value="{{ $landingSettings['final_cta_secondary_url'] ?? '/store/search' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 6. CONCEPT TO REALITY TECHNICAL PROOFING (ARCHIVED / OPTIONAL) --}}
+                <div x-data="{ expanded: false, init() { const k = 'admin_proof_settings'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div @click="expanded = !expanded" class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
+                        <div>
+                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">6. "Concept to Reality" Proofing Setup (Optional)</h2>
+                            <p class="text-xs text-slate-500 mt-1">Manage mockup comparison assets and specifications.</p>
                         </div>
                         <div class="text-slate-400">
                             <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -957,60 +1286,6 @@
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Feature Callout 3</label>
                                 <input type="text" name="proof_feature_3" value="{{ $landingSettings['proof_feature_3'] ?? '3. Reinforced Athletic Stitching' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- 3. TEAM STORE PLATFORM SECTION SETUP --}}
-                <div x-data="{ expanded: false, init() { const k = 'admin_team_store_settings'; this.expanded = localStorage.getItem(k) === 'true'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div @click="expanded = !expanded" class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors">
-                        <div>
-                            <h2 class="text-base font-black uppercase tracking-tight text-slate-900">3. Team Store Platform Setup</h2>
-                            <p class="text-xs text-slate-500 mt-1">Customize the coach/parent storefront feature showcase image and bullet points.</p>
-                        </div>
-                        <div class="text-slate-400">
-                            <svg class="w-6 h-6 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </div>
-                    </div>
-                    <div x-show="expanded" x-collapse class="p-6 space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Section Heading</label>
-                                <input type="text" name="team_store_heading" value="{{ $landingSettings['team_store_heading'] ?? 'LAUNCH YOUR TEAM STORE' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Section Subheading</label>
-                                <input type="text" name="team_store_subheading" value="{{ $landingSettings['team_store_subheading'] ?? 'Empower your program with a custom online store that eliminates coach hassle and generates revenue.' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">Platform Laptop Mockup Graphic</label>
-                            @if(!empty($landingSettings['team_store_image']))
-                                <div class="mb-2 bg-slate-900 p-2 rounded-lg inline-block">
-                                    <img src="{{ $landingSettings['team_store_image'] }}" class="h-24 w-auto object-contain">
-                                </div>
-                            @endif
-                            <input type="file" name="team_store_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:bg-slate-900 file:text-white">
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Benefit Bullet 1</label>
-                                <input type="text" name="team_store_bullet_1" value="{{ $landingSettings['team_store_bullet_1'] ?? 'Streamlined Direct Ordering for Parents' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Benefit Bullet 2</label>
-                                <input type="text" name="team_store_bullet_2" value="{{ $landingSettings['team_store_bullet_2'] ?? 'Custom Fan Gear & Official Team Packages' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Benefit Bullet 3</label>
-                                <input type="text" name="team_store_bullet_3" value="{{ $landingSettings['team_store_bullet_3'] ?? 'Fast Direct-to-Door Delivery' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Benefit Bullet 4</label>
-                                <input type="text" name="team_store_bullet_4" value="{{ $landingSettings['team_store_bullet_4'] ?? 'Centralized Coach & Athletic Director Portal' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900">
                             </div>
                         </div>
                     </div>
