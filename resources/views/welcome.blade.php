@@ -133,94 +133,7 @@
 <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 space-y-8">
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- 1. FROM VISION TO VICTORY: CONCEPT TO REALITY                     -->
-    <!-- ══════════════════════════════════════════════════════════════════ -->
-    <section id="proof" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden">
-        
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-slate-100">
-            <div>
-                <div class="flex items-center gap-2.5 mb-1.5">
-                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">1</span>
-                    <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">PRECISION CRAFTSMANSHIP</span>
-                </div>
-                <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
-                    {{ $proofSettings['heading'] ?? 'From Vision to Victory: Concept to Reality' }}
-                </h2>
-            </div>
-            <p class="text-slate-600 text-xs md:text-sm max-w-md text-left md:text-right font-normal" style="color: #475569;">
-                {{ $proofSettings['subheading'] ?? 'Precision craftsmanship from 3D digital blueprint to final sublimated uniform.' }}
-            </p>
-        </div>
-
-        <!-- High-Octane Concept to Reality Canvas (Athletic Dark Showcase Containers) -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-stretch">
-            
-            <!-- Left: 3D Vector Concept Proof -->
-            <div class="relative rounded-2xl md:rounded-3xl overflow-hidden border border-slate-800 bg-[#0e1017] p-6 lg:p-8 flex flex-col justify-between group shadow-xl">
-                <!-- Subtle grid background -->
-                <div class="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none"></div>
-
-                <div class="flex items-center justify-between z-10 mb-4 relative">
-                    <span class="bg-white/10 backdrop-blur-md border border-white/15 text-white text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-lg shadow-sm">
-                        Phase 1: 3D Vector Design Proof
-                    </span>
-                    <span class="text-[10px] font-mono text-slate-400 font-bold tracking-wider">DIGITAL SPEC</span>
-                </div>
-                
-                <div class="aspect-[4/3] sm:aspect-square flex items-center justify-center overflow-hidden my-4 relative min-h-[360px] sm:min-h-[440px]">
-                    <!-- Subtle spotlight glow behind mockup -->
-                    <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.08),transparent_70%)] pointer-events-none"></div>
-
-                    <img src="{{ $proofSettings['concept_image'] }}" alt="3D Jersey Concept" class="max-h-full max-w-full w-auto h-auto object-contain group-hover:scale-105 transition-transform duration-500 relative z-10 drop-shadow-[0_15px_30px_rgba(0,0,0,0.8)]" loading="lazy">
-                    
-                    <!-- Callout Pin 1 -->
-                    <div class="absolute top-1/4 right-3 bg-black/80 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-lg text-[10px] font-black text-white uppercase hidden sm:flex items-center gap-1.5 shadow-xl z-20">
-                        <span class="w-2 h-2 rounded-full bg-[#cd202c]"></span> {{ $proofSettings['feature_1'] ?? '1. Full Custom Graphics' }}
-                    </div>
-                    
-                    <!-- Callout Pin 2 -->
-                    <div class="absolute bottom-1/4 right-3 bg-black/80 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-lg text-[10px] font-black text-white uppercase hidden sm:flex items-center gap-1.5 shadow-xl z-20">
-                        <span class="w-2 h-2 rounded-full bg-[#cd202c]"></span> {{ $proofSettings['feature_2'] ?? '2. Premium Moisture-Wicking Fabric' }}
-                    </div>
-                </div>
-
-                <div class="pt-4 border-t border-slate-800/80 flex justify-around text-[11px] font-bold text-slate-300 uppercase tracking-wider relative z-10">
-                    <span class="flex items-center gap-1.5"><span class="text-emerald-400 font-black">✓</span> Exact Pantone Matching</span>
-                    <span class="flex items-center gap-1.5"><span class="text-emerald-400 font-black">✓</span> Unlimited Custom Details</span>
-                </div>
-            </div>
-
-            <!-- Right: Actual Finished Sublimated Uniform in Action -->
-            <div class="relative rounded-2xl md:rounded-3xl overflow-hidden border-2 border-[#cd202c]/50 bg-[#0e1017] p-6 lg:p-8 flex flex-col justify-between group shadow-2xl shadow-red-950/20">
-                <!-- Red atmospheric arena glow -->
-                <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(205,32,44,0.2),transparent_70%)] pointer-events-none"></div>
-
-                <div class="flex items-center justify-between z-10 mb-4 relative">
-                    <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-lg shadow-[0_0_15px_rgba(205,32,44,0.6)] flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span> Phase 2: Live Production Jersey
-                    </span>
-                    <span class="text-[10px] font-mono text-[#ff4a58] font-bold tracking-wider">100% SUBLIMATED</span>
-                </div>
-
-                <div class="aspect-[4/3] sm:aspect-square flex items-center justify-center overflow-hidden my-4 relative rounded-2xl bg-gradient-to-b from-[#181a24] via-[#10121a] to-[#0c0d12] min-h-[360px] sm:min-h-[440px]">
-                    <img src="{{ $proofSettings['reality_image'] }}" alt="Actual Sublimated Jersey" class="max-h-full max-w-full w-auto h-auto object-contain rounded-xl group-hover:scale-105 transition-transform duration-500 relative z-10 drop-shadow-[0_15px_35px_rgba(0,0,0,0.9)]" loading="lazy">
-                    <!-- Edge blend: dissolve the bottom of the studio photo into the dark showcase background -->
-                    <div class="absolute inset-0 bg-gradient-to-t from-[#0c0d12] via-transparent to-transparent pointer-events-none"></div>
-                </div>
-
-                <div class="pt-4 border-t border-slate-800/80 flex justify-around text-[11px] font-black text-[#ff4a58] uppercase tracking-wider relative z-10">
-                    <span class="flex items-center gap-1.5"><span class="text-white font-bold">✓</span> {{ $proofSettings['feature_1'] ?? '1. Full Custom Graphics' }}</span>
-                    <span class="flex items-center gap-1.5"><span class="text-white font-bold">✓</span> {{ $proofSettings['feature_3'] ?? '3. Reinforced Athletic Stitching' }}</span>
-                </div>
-            </div>
-
-        </div>
-
-    </section>
-
-    <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- 2. EXPLORE SPORTS CATEGORIES (Responsive Carousel)                -->
+    <!-- 1. EXPLORE SPORTS CATEGORIES: CUSTOM UNIFORM COLLECTIONS          -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <section id="sports" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden"
         x-data="{ 
@@ -242,7 +155,7 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-slate-100">
             <div>
                 <div class="flex items-center gap-2.5 mb-1.5">
-                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">2</span>
+                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">1</span>
                     <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">EXPLORE OUR SPORTS CATEGORIES</span>
                 </div>
                 <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
@@ -284,7 +197,7 @@
                                 NEWEST ARRIVAL
                             </div>
                             @endif
-                            <img src="{{ $collection->image_path }}" alt="{{ $collection->tab_name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            <img src="{{ asset(ltrim($collection->image_path, '/')) }}" alt="{{ $collection->tab_name }}" onerror="this.onerror=null; this.src='{{ asset('images/basketball.png') }}';" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                         </a>
 
                         <!-- Card Body -->
@@ -327,7 +240,7 @@
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- 3. COMMISSION NEWS & STORIES (Balanced 3-Card Spotlight)          -->
+    <!-- 2. COMMISSION NEWS & STORIES (Balanced 3-Card Spotlight)          -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <section id="news" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden">
         
@@ -335,7 +248,7 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-slate-100">
             <div>
                 <div class="flex items-center gap-2.5 mb-1.5">
-                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">3</span>
+                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">2</span>
                     <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">COMMISSION NEWS & STORIES</span>
                 </div>
                 <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
@@ -435,7 +348,7 @@
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- 4. TURNKEY TEAM STORE: INTERACTIVE PROCESS SLIDER                 -->
+    <!-- 3. TURNKEY TEAM STORE: INTERACTIVE PROCESS SLIDER                 -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <section id="team-store" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden"
         x-data="{
@@ -480,7 +393,7 @@
             <!-- Section Header -->
             <div class="text-center max-w-3xl mx-auto space-y-2">
                 <div class="inline-flex items-center gap-2.5 justify-center">
-                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">4</span>
+                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">3</span>
                     <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">
                         COACH & PROGRAM PLATFORM
                     </span>
@@ -994,7 +907,7 @@
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- 5. COACH & TEAM TESTIMONIALS                                      -->
+    <!-- 4. COACH & TEAM TESTIMONIALS                                      -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <section id="testimonials" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden">
         
@@ -1002,7 +915,7 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-slate-100">
             <div>
                 <div class="flex items-center gap-2.5 mb-1.5">
-                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">5</span>
+                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">4</span>
                     <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">COACH TESTIMONIALS</span>
                 </div>
                 <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">

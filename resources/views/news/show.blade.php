@@ -65,13 +65,15 @@
                 <hr class="border-slate-100 my-6">
                 @endif
 
-                <div class="article-body prose max-w-none text-slate-700 text-base md:text-lg leading-relaxed font-sans space-y-6">
+                <div class="article-body prose max-w-none text-slate-700 text-base md:text-lg leading-relaxed font-sans space-y-6 text-justify">
                     {!! $article->content !!}
                 </div>
 
                 <style>
                     .article-body p, .article-body span, .article-body li, .article-body div {
                         color: #334155 !important; /* slate-700 */
+                        text-align: justify !important;
+                        text-justify: inter-word;
                     }
                     .article-body h1, .article-body h2, .article-body h3, .article-body h4, .article-body h5, .article-body h6, .article-body strong {
                         color: #0f172a !important; /* slate-900 */
@@ -85,9 +87,11 @@
                         margin: 2rem 0 !important;
                         border: 1px solid #e2e8f0;
                         border-left-width: 4px;
+                        text-align: justify !important;
                     }
                     .article-body blockquote p {
                         color: #0f172a !important;
+                        text-align: justify !important;
                     }
                 </style>
 
