@@ -49,7 +49,7 @@
         </div>
         @elseif($article->cover_image)
         <div class="rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-slate-100 max-h-[600px]">
-            <img src="{{ $article->cover_image }}" alt="{{ $article->title }}" class="w-full h-full object-cover">
+            <img src="{{ asset(ltrim($article->cover_image, '/')) }}" alt="{{ $article->title }}" onerror="this.onerror=null; this.src='{{ asset('images/group.jpg') }}';" class="w-full h-full object-cover">
         </div>
         @endif
 
@@ -132,7 +132,7 @@
                         @foreach($relatedArticles as $rel)
                         <a href="{{ route('news.show', $rel->slug) }}" class="flex gap-3 group items-center">
                             @if($rel->cover_image)
-                            <img src="{{ $rel->cover_image }}" alt="{{ $rel->title }}" class="w-14 h-14 rounded-lg object-cover shrink-0 border border-slate-200 shadow-sm">
+                            <img src="{{ asset(ltrim($rel->cover_image, '/')) }}" alt="{{ $rel->title }}" onerror="this.onerror=null; this.src='{{ asset('images/group.jpg') }}';" class="w-14 h-14 rounded-lg object-cover shrink-0 border border-slate-200 shadow-sm">
                             @endif
                             <div>
                                 <span class="text-[9px] font-black uppercase text-[#cd202c] tracking-widest block mb-0.5">{{ $rel->category }}</span>

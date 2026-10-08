@@ -39,7 +39,7 @@
                 <!-- Thumbnail -->
                 <a href="{{ route('news.show', $article->slug) }}" class="relative block overflow-hidden aspect-[16/10] bg-slate-100">
                     @if($article->cover_image)
-                        <img src="{{ $article->cover_image }}" alt="{{ $article->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                        <img src="{{ asset(ltrim($article->cover_image, '/')) }}" alt="{{ $article->title }}" onerror="this.onerror=null; this.src='{{ asset('images/group.jpg') }}';" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                     @else
                         <div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 font-bold">COMMISSION APPAREL</div>
                     @endif

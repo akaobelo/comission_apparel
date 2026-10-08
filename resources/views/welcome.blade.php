@@ -355,7 +355,7 @@
                     'category' => 'CHAMPIONSHIP RUN',
                     'author' => 'The Commission Editorial',
                     'summary' => 'How Coach Mike led his program to a historic state championship victory wearing bespoke Commission performance uniforms.',
-                    'cover_image' => '/images/showcase/item_46_2026-09-05_23-49-42_3979582608923175071_48532943110_1.jpg',
+                    'cover_image' => '/images/basketball.png',
                     'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
                     'published_at' => \Carbon\Carbon::now()->subDays(2),
                     'created_at' => \Carbon\Carbon::now()->subDays(2),
@@ -366,7 +366,7 @@
                     'category' => 'PROGRAM SPOTLIGHT',
                     'author' => 'The Commission Editorial',
                     'summary' => 'Discover how Legacy Athletics equipped over 400 student-athletes across 6 varsity sports without a single paper order form.',
-                    'cover_image' => '/images/showcase/item_68_2026-09-29_01-11-27_3996294216890271917_48532943110_1.jpg',
+                    'cover_image' => '/images/group.jpg',
                     'video_url' => null,
                     'published_at' => \Carbon\Carbon::now()->subDays(5),
                     'created_at' => \Carbon\Carbon::now()->subDays(5),
@@ -377,7 +377,7 @@
                     'category' => 'UNIFORM REVEAL',
                     'author' => 'The Commission Editorial',
                     'summary' => 'Olympic gold medalist Justin Gatlin partners with The Commission to introduce ultra-aerodynamic singlets and speed suits for youth track clubs.',
-                    'cover_image' => '/images/speedcapital/sc_66_speedcapital_2026-09-29_07-25-31_3996475974495891108_5520807274_1.jpg',
+                    'cover_image' => '/images/gatlin.png',
                     'video_url' => null,
                     'published_at' => \Carbon\Carbon::now()->subDays(8),
                     'created_at' => \Carbon\Carbon::now()->subDays(8),
@@ -391,7 +391,7 @@
                 <!-- Media Card Header -->
                 <a href="{{ route('news.show', $article->slug) }}" class="relative block w-full overflow-hidden aspect-[16/10] bg-slate-100">
                     @if($article->cover_image)
-                        <img src="{{ $article->cover_image }}" alt="{{ $article->title }}" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                        <img src="{{ asset(ltrim($article->cover_image, '/')) }}" alt="{{ $article->title }}" onerror="this.onerror=null; this.src='{{ asset('images/group.jpg') }}';" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" loading="lazy">
                     @endif
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                     
