@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="SMruXj4lIpdiWQnrh5dLgMlkI1fzvlfHkgCXqKMp">
+    <title>The Commission Apparel | Elite Custom Uniforms</title>
+        <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" type="image/x-icon" href="https://thecommissionapparel.com/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+    
+    <!-- Cropper.js -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <link rel="preload" as="style" href="https://thecommissionapparel.com/build/assets/app-BDVtL8NC.css" /><link rel="modulepreload" as="script" href="https://thecommissionapparel.com/build/assets/app-BbzB21r_.js" /><link rel="stylesheet" href="https://thecommissionapparel.com/build/assets/app-BDVtL8NC.css" /><script type="module" src="https://thecommissionapparel.com/build/assets/app-BbzB21r_.js"></script></head>
+<body class="bg-base text-slate-900 font-sans antialiased selection:bg-primary selection:text-white">
+    <header class="fixed top-0 left-0 w-full z-50 bg-black backdrop-blur-xl border-b border-slate-800 transition-all duration-300" x-data="{ scrolled: false, mobileMenuOpen: false }" @scroll.window="scrolled = (window.pageYOffset > 20)" :class="{ 'py-1.5 shadow-sm': scrolled, 'py-2.5': !scrolled }">
+        <div class="max-w-[1500px] mx-auto px-6 flex items-center justify-between transition-all duration-300" :class="{ 'h-12': scrolled, 'h-14 md:h-16': !scrolled }">
+            <!-- Logo -->
+            <a href="/" class="flex items-center group z-50 relative">
+                <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-10 md:h-[2.2rem] w-auto group-hover:opacity-80 transition-opacity" fetchpriority="high">
+            </a>
+
+            <!-- Desktop Navigation -->
+            <nav class="hidden lg:flex items-center gap-8 font-medium text-sm tracking-wide">
+                <a href="https://thecommissionapparel.com/catalog" class="text-white hover:text-secondary transition-colors">Design Collections</a>
+                <a href="https://thecommissionapparel.com/store/search" class="text-white hover:text-secondary transition-colors">Team Stores</a>
+                <a href="https://thecommissionapparel.com/sizing-charts" class="text-white hover:text-secondary transition-colors">Sizing Charts</a>
+                <a href="https://thecommissionapparel.com/how-it-works" class="text-white hover:text-secondary transition-colors">How It Works</a>
+                <a href="https://thecommissionapparel.com/our-team" class="text-white hover:text-secondary transition-colors">Our Team</a>
+                <a href="/quote" class="text-white hover:text-secondary transition-colors">Request A Quote</a>
+                <div class="h-6 w-px bg-slate-700"></div>
+                <a href="/coach/dashboard" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
+                    <span class="relative z-10 flex items-center gap-2">
+                        <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
+                        Dashboard Sign-in
+                    </span>
+                </a>
+            </nav>
+
+            <!-- Mobile Menu Button -->
+            <button class="lg:hidden z-50 relative p-2 text-white hover:text-secondary focus:outline-none" @click="mobileMenuOpen = !mobileMenuOpen">
+                <svg x-show="!mobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                <svg x-show="mobileMenuOpen" x-cloak class="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <!-- Mobile Navigation Dropdown -->
+        <div x-show="mobileMenuOpen" x-transition.opacity.duration.200ms class="lg:hidden fixed inset-0 z-40 bg-white/95 backdrop-blur-3xl pt-28 px-6 pb-6 h-screen overflow-y-auto" style="display: none;" x-cloak>
+            <nav class="flex flex-col gap-6 font-medium text-lg tracking-wide uppercase">
+                <a href="https://thecommissionapparel.com/catalog" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Design Collections</a>
+                <a href="https://thecommissionapparel.com/store/search" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Team Stores</a>
+                <a href="https://thecommissionapparel.com/sizing-charts" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Sizing Charts</a>
+                <a href="https://thecommissionapparel.com/how-it-works" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">How It Works</a>
+                <a href="https://thecommissionapparel.com/our-team" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Our Team</a>
+                <a href="/quote" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Request A Quote</a>
+                <div class="flex flex-col gap-4 mt-4">
+                    <a href="/coach/dashboard" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-4 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">
+                        <img src="/images/LR.png" alt="LR Logo" class="h-5 w-auto object-contain" loading="lazy">
+                        Dashboard Sign-in
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="w-full relative mt-16 lg:mt-0"> <!-- lg mt 0 because hero is absolutely positioned and taking full screen -->
+        
+<!-- Hero Section -->
+<section class="w-full bg-black" style="padding-top: 85px;">
+    <img src="https://thecommissionapparel.com/images/hero-banner.jpeg" alt="Elite Custom Apparel" class="w-full h-auto object-cover" fetchpriority="high">
+</section>
+
+<!-- Content Container -->
+<div class="max-w-[1500px] mx-auto px-6 py-8 space-y-6">
+
+    <!-- Sports Tabs / Uniform Gallery -->
+    <section id="sports" class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative overflow-hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+                <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">VIEW OUR CUSTOM <span class="text-secondary">COLLECTIONS</span></h2>
+                <p class="text-slate-500 text-xs font-medium mt-1">Stand out with fully custom designs crafted to capture the essence of your program or organization</p>
+            </div>
+            <a href="https://thecommissionapparel.com/catalog" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold bg-[#cd202c] hover:bg-[#a11825] transition-colors">View Design Collection</a>
+        </div>
+
+        <!-- Gallery Carousel -->
+        <div x-data="{ 
+            activePage: 0,
+            itemsPerPage: window.innerWidth < 768 ? 1 : (window.innerWidth < 1024 ? 3 : 5),
+            get totalPages() { return Math.max(1, Math.ceil(15 / this.itemsPerPage)) },
+            next() { this.activePage = (this.activePage + 1) % this.totalPages },
+            prev() { this.activePage = (this.activePage - 1 + this.totalPages) % this.totalPages },
+            init() {
+                window.addEventListener('resize', () => {
+                    this.itemsPerPage = window.innerWidth < 768 ? 1 : (window.innerWidth < 1024 ? 3 : 5);
+                    if (this.activePage >= this.totalPages) this.activePage = Math.max(0, this.totalPages - 1);
+                });
+            }
+        }" class="relative w-full">
+            
+            <div class="overflow-hidden relative w-full -mx-2 px-2 pb-4">
+                <div class="flex transition-transform duration-500 ease-out"
+                     :style="'transform: translateX(-' + (activePage * 100) + '%)'">
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <div class="absolute top-3 left-3 bg-[#cd202c] text-white text-[9px] font-black tracking-widest uppercase px-2.5 py-1 rounded shadow-md z-10 animate-pulse">
+                                    NEWEST ARRIVAL
+                                </div>
+                                                                <img src="/storage/collections/z1n7DutpJLnWHvaF7A5OCRvRanL5ZhRadiQeETFJ.png" alt="Track &amp; Field" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Track &amp; Field</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="Lakeside High School">Lakeside High School</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">The reigning region champion Vikings have their brand new collection by LR, will they repeat? Will they take states? Tune in to find out.</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/c54NOrwudt777cBLLhJk9GXwQ9UQ2Z1s04XwCcwA.png" alt="Track &amp; Field" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Track &amp; Field</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="PAP Sports Evolution">PAP Sports Evolution</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Greenville, SC — PAP Sports Evolution continues its pursuit of becoming one of the nation&#039;s premier youth track &amp; field programs. We&#039;re proud to partner with their team, delivering custom performance apparel that ensures they look as elite as they compete. Every race. Every meet. Every time they step on the track.</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/DyGnKpMx5z4UFXhYOEliiLygf0n5paYFbxrCoGI5.png" alt="Track &amp; Field" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Track &amp; Field</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="Milwaukee Mustangs Track Club">Milwaukee Mustangs Track Club</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Milwaukee, WI - The Milwaukee Mustangs, a track &amp; field powerhouse in the Midwest, is getting a fresh new look created by The Commission Apparel.</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/mlAi5WL9olemqLPX1N3VfsMSpUs5MjSzzE5YlKrj.png" alt="Track &amp; Field" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Track &amp; Field</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="Legacy Elite Runners">Legacy Elite Runners</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Manhattan, IL – Legacy Elite Runners represent the highest standard of track &amp; field excellence in Illinois. Their championship-caliber performances are matched by a bold premium apparel collection.</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/WgMnMyaJH7Y2ihGLjBodthz3PzkW3NhWK4tcA6zT.png" alt="Track &amp; Field" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Track &amp; Field</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="Ohio Heat Track Club">Ohio Heat Track Club</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Columbus, OH – Legendary Ohio Heat Track Club will be lightning up the tracks in their 2026 custom apparel</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/aiQDWamYKqaZZrUdNv49Vf6EHGzprYTdeGAPB2LD.png" alt="Nesbitt Fitness" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Nesbitt Fitness</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="Fitness Training">Fitness Training</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Freeport, GB - Orick Nesbitt is renowned for his ability to transform his clients&#039; physiques, now he will also transform their style! Grab your Nesbitt Fitness gear here..</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/bTW3WMdqIcK4qPOYLTmMM839TlfdyfciiX0292TC.png" alt="Baseball" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Baseball</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="SAVAGE EAGLES">SAVAGE EAGLES</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Savage Eagles uniforms: built for players who compete with confidence, intensity, and style.</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/wgaUxnFdeuLf1M2bZRJEgzln7jd2E0DAbtnQrSxd.png" alt="Track &amp; Field" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Track &amp; Field</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="Tampa Xpress Track Club">Tampa Xpress Track Club</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Tampa, FL – The undeniable blue and gold of Tampa Xpress will be on full display this year as they look to march their way to the Junior Olympic podium.</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/sVKhPQuNoJbUWSJnbk3EDuwvWwhNbHNakfd5KmMt.png" alt="Track &amp; Field" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Track &amp; Field</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="Hermitage High School">Hermitage High School</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Richmond, VA - Hermitage&#039;s latest Warmup, Polos, Varsity Jacket are next Level</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/TSkZf5B7WpwWWE8VsPu2TGkEdqwPHbti0RJc93kV.png" alt="Track &amp; Field" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Track &amp; Field</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="Ohio Velocity Track &amp; Field">Ohio Velocity Track &amp; Field</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Columbus, OH – Ohio Velocity Track Club is set to make a bold statement in 2026 with the debut of its all-new competition and lifestyle apparel collection. Inspired by the signature LR design aesthetic and professionally produced by The Commission Apparel.</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/ppC9GpObe3X8IqIM8lqQ6GV7NsRAtJcrjpwkwYWi.jpg" alt="Track &amp; Field" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Track &amp; Field</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="Down South Xtreme (DSX)">Down South Xtreme (DSX)</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Miami, FL — Down South Xtreme (DSX) continues to set the standard, unveiling its 2026 Collection—a high-performance lineup engineered for speed, built with purpose, and designed to make a statement on every stage.</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/yJEvb2h0RUV45nFtqAl7b3M9URqQ3W0aoSFA5rVH.png" alt="Soccer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Soccer</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="St. Ann&#039;e School (SAS)">St. Ann&#039;e School (SAS)</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Nassau, Bahamas — St. Anne&#039;s School, proudly known as “SAS,” is set to electrify the pitch in their all-new 2026 soccer uniforms—a bold blend of style, identity, and competitive energy.</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/66p6QFY49qWteEgJsrmkKpjc6mrZU6UCz6puSopC.jpg" alt="Basketball" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Basketball</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="Tabernacle Baptist Christian Academy">Tabernacle Baptist Christian Academy</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Freeport, Grand Bahama — Tabernacle Baptist has long been a powerhouse on the hardwood, known for its sharpshooting and championship pedigree. In 2026, they’re doing it in style with a fresh new look that matches their elite level of play.</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/yJzf13G9Mr5VlAnBeoiZUSJwXN8ajmeoblSxzFOT.png" alt="Track &amp; Field" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Track &amp; Field</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="Lane 4 Track Club">Lane 4 Track Club</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Augusta, GA — Lane 4 Track Club has built its name on results, athlete development, and a proven pathway to the collegiate ranks. In 2026, they’re continuing that legacy—only this time, they’re doing it with undeniable style.</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
+                            <a href="https://thecommissionapparel.com/catalog" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                                                <img src="/storage/collections/GquLtJVZpJEIdYROqdPVWOeFGsKdJinYO040uWSL.png" alt="Track &amp; Field" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">Track &amp; Field</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="Titans Track Club">Titans Track Club</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">Spartanburg, SC – Titans Track Club is a fierce and disciplined program led by an exceptional coaching staff. Their 2026 battle armor was designed to reflect the club’s warrior spirit — bold &amp; relentless!</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                    </div>
+            </div>
+
+            <!-- Arrows -->
+            <button @click="prev()" x-show="totalPages > 1" x-cloak class="absolute -left-3 md:-left-5 top-[35%] -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-white border border-slate-200 shadow-lg text-slate-700 flex items-center justify-center hover:bg-slate-50 hover:text-secondary transition-colors z-10" aria-label="Previous">
+                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button @click="next()" x-show="totalPages > 1" x-cloak class="absolute -right-3 md:-right-5 top-[35%] -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-white border border-slate-200 shadow-lg text-slate-700 flex items-center justify-center hover:bg-slate-50 hover:text-secondary transition-colors z-10" aria-label="Next">
+                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+        </div>
+    </section>
+
+    <!-- Team Store Section -->
+  <section id="team-store" class="py-24 bg-[#0a0a0a] border-y border-slate-900">
+    <div class="max-w-[90rem] mx-auto px-6">
+        
+        <!-- UI Mockup Image -->
+        <div class="mb-6 md:mb-10 px-4 lg:px-6 max-w-[85rem] mx-auto">
+             <div class="w-full rounded-xl overflow-hidden shadow-2xl relative" style="aspect-ratio: 3.2 / 1;">
+                 <img src="/images/team-store-background-v2.png" alt="Team Store UI Previews" class="absolute w-full max-w-none h-auto left-0 -top-[9%] md:-top-[12%] lg:-top-[15%]" loading="lazy">
+             </div>
+        </div>
+
+        <!-- Text Content -->
+        <div class="max-w-4xl mx-auto text-center mb-16">
+            <h2 class="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase text-white mb-6">TEAM <span class="text-secondary ml-1">STORE</span></h2>
+            <p class="text-slate-100 text-lg md:text-xl font-medium tracking-wide">Empower your program with a custom online store that eliminates hassle and generates revenue.</p>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12">
+            
+            <!-- Feature 1 -->
+            <div class="flex gap-4">
+                <div class="shrink-0 mt-1.5">
+                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">?</span>
+                </div>
+                <div>
+                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">CUSTOM DESIGNS THAT DRIVE DEMAND</h3>
+                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">We create high-quality, exclusive apparel designs tailored to your team—making your store something people actually want to shop from, not just another generic merch page.</p>
+                </div>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="flex gap-4">
+                <div class="shrink-0 mt-1.5">
+                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">?</span>
+                </div>
+                <div>
+                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">PARENTS ORDER DIRECTLY</h3>
+                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Families simply use your team store link to place their own orders, eliminating the need for coaches to collect forms, track sizes, or manage money.</p>
+                </div>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="flex gap-4">
+                <div class="shrink-0 mt-1.5">
+                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">?</span>
+                </div>
+                <div>
+                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">TURN YOUR PROGRAM INTO A REVENUE STREAM</h3>
+                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Your custom team store allows you to generate ongoing income from every purchase—helping fund travel, equipment, and program growth without additional fundraising efforts.</p>
+                </div>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="flex gap-4">
+                <div class="shrink-0 mt-1.5">
+                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">?</span>
+                </div>
+                <div>
+                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">PROFESSIONAL, BRANDED EXPERIENCE</h3>
+                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Your athletes, parents, and supporters get access to a clean, custom-designed online store that reflects your team's identity and elevates your brand.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+    <!-- Powerful Features (Team Stores & Dashboard Teaser) -->
+    <!-- <section id="system" class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative overflow-hidden">
+        <div class="mb-6">
+            <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">More Than Gear. <span class="text-secondary">A Platform.</span></h2>
+            <p class="text-slate-500 text-xs font-medium mt-1">Automated workflow entirely centralized.</p>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <div class="order-2 lg:order-1 relative rounded-xl overflow-hidden shadow-sm border border-slate-200">
+                <img src="/images/group.jpg" alt="Dashboard Concept" class="w-full h-auto object-cover" loading="lazy">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 w-full p-6">
+                    <div class="bg-white rounded-lg p-3 shadow-md border border-slate-100 flex items-center gap-3">
+                        <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200 shrink-0">
+                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-black tracking-wider uppercase text-slate-900 text-xs">Coach Dashboard</h4>
+                            <p class="text-[10px] text-slate-500 font-medium">Automated workflow entirely centralized.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="order-1 lg:order-2">
+                <div class="space-y-6">
+                    <div class="flex gap-4 box-border">
+                        <div class="mt-0.5 w-8 h-8 rounded bg-white shadow-sm flex items-center justify-center shrink-0 border border-slate-200">
+                            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-black uppercase mb-1 text-slate-900">Automated Team Stores</h4>
+                            <p class="text-slate-600 font-medium leading-relaxed text-xs max-w-sm">Coaches create a store, parents order directly. No messy spreadsheets, no collecting cash. We manage the logistics.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 box-border">
+                        <div class="mt-0.5 w-8 h-8 rounded bg-white shadow-sm flex items-center justify-center shrink-0 border border-slate-200">
+                            <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-black uppercase mb-1 text-slate-900">Order Deadlines & Tracking</h4>
+                            <p class="text-slate-600 font-medium leading-relaxed text-xs max-w-sm">Set a firm deadline. Parents get email reminders. Once closed, track production visually until shipping.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex flex-wrap items-center gap-4 pt-4 border-t border-slate-200">
+                    <a href="/coach/dashboard" class="btn btn-primary px-4 py-2 font-bold rounded text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-colors">
+                        <img src="/images/LR.png" alt="LR Logo" class="h-3 w-auto object-contain">
+                        Dashboard Sign-in
+                    </a>
+                    <a href="/sales-agents" class="font-bold text-[10px] uppercase tracking-wide text-secondary hover:text-[#a11825] transition-colors">EMPLOYEE SIGN-IN &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </section> -->
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative overflow-hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+                <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">
+                    <span class="text-secondary">"</span> TESTIMONIALS <span class="text-secondary">"</span>
+                </h2>
+                <p class="text-slate-500 text-xs font-medium mt-1">What our clients have to say about working with us.</p>
+            </div>
+            <a href="https://thecommissionapparel.com/testimonials" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold inline-flex items-center gap-2 bg-[#cd202c] hover:bg-[#a11825] transition-colors">
+                More Testimonials
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </a>
+        </div>
+
+                <div x-data="{ 
+            activePage: 0,
+            itemsPerPage: window.innerWidth < 768 ? 1 : (2 > 1 ? 2 : 1),
+            get totalPages() { return Math.ceil(2 / this.itemsPerPage) },
+            next() { this.activePage = (this.activePage + 1) % this.totalPages },
+            prev() { this.activePage = (this.activePage - 1 + this.totalPages) % this.totalPages },
+            init() {
+                window.addEventListener('resize', () => {
+                    this.itemsPerPage = window.innerWidth < 768 ? 1 : (2 > 1 ? 2 : 1);
+                    if (this.activePage >= this.totalPages) this.activePage = 0;
+                });
+                
+                $watch('totalPages', (val) => {
+                    if (val > 1 && !this.interval) {
+                        this.interval = setInterval(() => { this.next() }, 6000);
+                    } else if (val <= 1 && this.interval) {
+                        clearInterval(this.interval);
+                        this.interval = null;
+                    }
+                });
+                
+                if (this.totalPages > 1) {
+                    this.interval = setInterval(() => { this.next() }, 6000);
+                }
+            }
+        }" class="relative w-full">
+            <div class="overflow-hidden relative w-full -mx-3">
+                <div class="flex transition-transform duration-500 ease-out"
+                     :style="'transform: translateX(-' + (activePage * 100) + '%)'">
+                                        <div class="shrink-0 p-3 flex" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <article class="bg-slate-50 border border-slate-100 rounded-xl p-6 w-full flex flex-col justify-between shadow-sm">
+                            <p class="text-black text-xs font-medium leading-relaxed mb-6" style="color: #000000;">
+                                "The Commission Apparel has managed our apparel needs for the last several years, their customer service, designs, production and delivery time is unmatched. The team store feature has virtually eliminated the stress associated with the uniform ordering process."
+                            </p>
+                            <div class="flex items-center gap-4 mt-auto">
+                                                                    <img src="/storage/testimonials/w0LInC4dBouS2rmVBM5qY3Hw5fagJVjWPf6xsAY1.jpg" alt="Michael McCovery" class="w-10 h-10 rounded-full object-cover shrink-0" loading="lazy">
+                                                                <div class="border-l-[3px] border-secondary pl-3">
+                                    <p class="font-black text-slate-900 text-[10px] uppercase tracking-wide">Michael McCovery</p>
+                                                                            <p class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mt-0.5">Lane 4 Track Club</p>
+                                                                    </div>
+                            </div>
+                        </article>
+                    </div>
+                                        <div class="shrink-0 p-3 flex" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <article class="bg-slate-50 border border-slate-100 rounded-xl p-6 w-full flex flex-col justify-between shadow-sm">
+                            <p class="text-black text-xs font-medium leading-relaxed mb-6" style="color: #000000;">
+                                "ABSOLUTELY LOVE IT!"
+                            </p>
+                            <div class="flex items-center gap-4 mt-auto">
+                                                                    <img src="/storage/testimonials/0rkuj4hZVKig8ZfmevnGHwNb45J7XjAAAhItRD1f.png" alt="Shanell McMiller-Brown" class="w-10 h-10 rounded-full object-cover shrink-0" loading="lazy">
+                                                                <div class="border-l-[3px] border-secondary pl-3">
+                                    <p class="font-black text-slate-900 text-[10px] uppercase tracking-wide">Shanell McMiller-Brown</p>
+                                                                            <p class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mt-0.5">Tampa Xpress Track Club</p>
+                                                                    </div>
+                            </div>
+                        </article>
+                    </div>
+                                    </div>
+            </div>
+            
+            <!-- Carousel Controls -->
+            <div class="flex items-center gap-2 mt-4" x-show="totalPages > 1" x-cloak>
+                <template x-for="i in totalPages" :key="i">
+                    <button @click="activePage = i - 1" class="h-2 rounded-full transition-all" :class="activePage === i - 1 ? 'bg-secondary w-5' : 'bg-slate-200 hover:bg-slate-300 w-2'"></button>
+                </template>
+            </div>
+        </div>
+            </section>
+
+</div>
+
+    </main>
+
+    <footer class="bg-slate-950 border-t border-slate-800 py-12 lg:py-16 relative overflow-hidden">
+        <div class="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
+        <div class="max-w-[1500px] mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
+            <div class="col-span-1 md:col-span-2">
+                <div class="mb-6 mix-blend-screen">
+                    <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" class="h-14 w-auto mix-blend-screen" loading="lazy">
+                </div>
+                <p class="text-slate-400 max-w-sm mb-6">Elite Custom Uniforms for Teams Worldwide. We build powerful visual identities for programs that expect to win.</p>
+                <div class="flex gap-4">
+                    <!-- Social icons -->
+                    <!-- Facebook -->
+                    <a href="https://www.facebook.com/Speedcapitaltc/" target="_blank" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-secondary/20 hover:text-secondary text-slate-300 transition-all"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M22.675 0h-21.35C.593 0 0 .593 0 1.325v21.351C0 23.407.593 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116c.73 0 1.323-.593 1.323-1.325V1.325C24 .593 23.407 0 22.675 0z"/></svg></a>
+                    <!-- Instagram -->
+                    <a href="https://www.instagram.com/speedcapital" target="_blank" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-secondary/20 hover:text-secondary text-slate-300 transition-all"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></a>
+                    <!-- Threads -->
+                    <a href="#" target="_blank" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-secondary/20 hover:text-secondary text-slate-300 transition-all"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm-.5 14c-1.4 0-2.5-1.1-2.5-2.5S10.1 11 11.5 11s2.5 1.1 2.5 2.5-1.1 2.5-2.5 2.5zm4.8-1.5h-1c-.1-1.6-1.5-2.8-3.1-2.8-1.7 0-3.1 1.3-3.1 3s1.4 3 3.1 3c.7 0 1.4-.2 1.9-.6v1.1c-.5.3-1.2.5-1.9.5-2.2 0-4-1.8-4-4s1.8-4 4-4c1.8 0 3.3 1.2 3.8 2.8h1.2c-.6-2.2-2.6-3.8-5-3.8-2.8 0-5 2.2-5 5s2.2 5 5 5c1 0 2-.3 2.7-.9v2.1c-.8.5-1.8.8-2.7.8-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6v3h-1v-2.7z"/></svg></a>
+                    <!-- X / Twitter -->
+                    <a href="#" target="_blank" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-secondary/20 hover:text-secondary text-slate-300 transition-all"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-4 uppercase tracking-wider">Platform</h4>
+                <ul class="space-y-2 text-slate-400">
+                    <li><a href="https://thecommissionapparel.com/catalog" class="hover:text-secondary transition-colors">Design Collections</a></li>
+                    <li><a href="https://thecommissionapparel.com/store/search" class="hover:text-secondary transition-colors">Team Stores</a></li>
+                    <li><a href="https://thecommissionapparel.com/sizing-charts" class="hover:text-secondary transition-colors">Sizing Charts</a></li>
+                    <li><a href="https://thecommissionapparel.com/how-it-works" class="hover:text-secondary transition-colors">How it Works</a></li>
+                    <li><a href="https://thecommissionapparel.com/our-team" class="hover:text-secondary transition-colors">Our Team</a></li>
+                    <li><a href="/quote" class="hover:text-secondary transition-colors">Request A Quote</a></li>
+                    <li><a href="https://thecommissionapparel.com/login" class="hover:text-secondary transition-colors">Employee Login</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="max-w-[1500px] mx-auto px-6 mt-12 pt-8 border-t border-slate-800 text-center text-sm text-slate-500">
+            &copy; 2026 The Commission Apparel. All rights reserved.
+        </div>
+    </footer>
+
+    
+    <!-- Global Form Submit Loading State -->
+    <script>
+        document.addEventListener('submit', function(e) {
+            if (e.defaultPrevented) return;
+
+            if (e.target && e.target.nodeName === 'FORM') {
+                const btn = e.target.querySelector('button[type="submit"]') || e.target.querySelector('input[type="submit"]');
+                if (btn && !btn.dataset.loadingIgnored) {
+                    if (btn.disabled) {
+                        e.preventDefault();
+                        return;
+                    }
+
+                    btn.disabled = true;
+                    btn.classList.add('opacity-75', 'cursor-not-allowed', 'pointer-events-none');
+
+                    const hasText = btn.innerText && btn.innerText.trim().length > 0;
+                    const spinnerSvg = `<svg class="animate-spin h-5 w-5 text-current inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+                    if (hasText) {
+                        btn.innerHTML = `<span class="flex items-center justify-center gap-2">${spinnerSvg} Processing...</span>`;
+                    } else {
+                        btn.innerHTML = `<span class="flex items-center justify-center">${spinnerSvg}</span>`;
+                    }
+                }
+            }
+        });
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('imageCropper', (uploadUrl, aspectRatio) => ({
+                isCropping: false,
+                isSaving: false,
+                cropper: null,
+                uploadUrl: uploadUrl,
+                aspectRatio: aspectRatio,
+
+                fileSelected(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.$refs.imageElement.src = e.target.result;
+                        this.isCropping = true;
+                        
+                        this.$nextTick(() => {
+                            if (this.cropper) {
+                                this.cropper.destroy();
+                            }
+                            this.cropper = new Cropper(this.$refs.imageElement, {
+                                aspectRatio: this.aspectRatio,
+                                viewMode: 1,
+                                autoCropArea: 1,
+                            });
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                },
+
+                cancelCrop() {
+                    this.isCropping = false;
+                    if (this.cropper) {
+                        this.cropper.destroy();
+                        this.cropper = null;
+                    }
+                    this.$refs.fileInput.value = '';
+                },
+
+                saveCrop() {
+                    if (!this.cropper) return;
+                    this.isSaving = true;
+
+                    this.cropper.getCroppedCanvas().toBlob((blob) => {
+                        const formData = new FormData();
+                        formData.append('cover_image', blob, 'cover.jpg');
+                        // Add method spoofing if needed, but the form uses POST anyway
+                        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+                        if (tokenMeta) {
+                            formData.append('_token', tokenMeta.content);
+                        }
+
+                        fetch(this.uploadUrl, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                window.location.reload();
+                            } else {
+                                alert('Failed to upload image');
+                                this.isSaving = false;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('An error occurred while uploading.');
+                            this.isSaving = false;
+                        });
+                    }, 'image/jpeg', 0.9);
+                }
+            }));
+        });
+    </script>
+</body>
+</html>
+

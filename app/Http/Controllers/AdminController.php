@@ -14,6 +14,8 @@ use App\Models\PasswordResetLog;
 use App\Models\Testimonial;
 use App\Models\SizingChart;
 use App\Models\SalesAgent;
+use App\Models\NewsArticle;
+use App\Models\SiteSetting;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
 
@@ -404,11 +406,14 @@ class AdminController extends Controller
             return $summary;
         });
 
+        $newsArticles = NewsArticle::orderBy('sort_order', 'asc')->orderBy('published_at', 'desc')->get();
+        $landingSettings = SiteSetting::all()->pluck('value', 'key');
+
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStoreBatches', 'finalizedStoreBatchesPaginator',
             'unassignedDesigns', 'allCollections', 'productionStores', 'quoteRequests', 'quoteRequestsTotal', 'newQuoteRequestsCount', 'landingCollections', 'allStores', 'allCoaches',
             'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'finalizedDirectBatchesPaginator', 'archivedOrderBatches', 'globalSalesSummary', 'archivedBatchesPaginator',
-            'salesAgents'
+            'salesAgents', 'newsArticles', 'landingSettings'
         ));
     }
 
@@ -2160,5 +2165,128 @@ class AdminController extends Controller
         $user->save();
 
         return redirect()->route('admin.dashboard')->with('success', 'Credentials updated successfully.');
+    }
+
+    // ─── DYNAMIC LANDING PAGE SETTINGS ──────────────────────────────────────────
+
+    public function updateLandingSettings(Request $request)
+    {
+        // 1. Process all text and select inputs (excluding CSRF and internal keys)
+        $excludedKeys = ['_token', '_method'];
+        foreach ($request->except($excludedKeys) as $key => $value) {
+            if (!$request->hasFile($key) && is_string($value)) {
+                SiteSetting::updateOrCreate(['key' => $key], ['value' => $value]);
+            }
+        }
+
+        // 2. Process all uploaded file inputs dynamically
+        foreach ($request->allFiles() as $fileKey => $file) {
+            if ($file->isValid()) {
+                $path = $file->store('landing', 'public');
+                SiteSetting::updateOrCreate(['key' => $fileKey], ['value' => '/storage/' . $path]);
+            }
+        }
+
+        return redirect()->route('admin.dashboard', ['tab' => 'landing_settings'])
+            ->with('success', 'Landing page settings updated successfully.');
+    }
+
+    // ─── NEWS & MEDIA MANAGEMENT ────────────────────────────────────────────────
+
+    public function createNewsArticle(Request $request)
+    {
+        $validated = $request->validate([
+            'title'       => 'required|string|max:255',
+            'category'    => 'required|string|max:100',
+            'author'      => 'nullable|string|max:150',
+            'summary'     => 'nullable|string|max:1000',
+            'content'     => 'nullable|string',
+            'video_url'   => 'nullable|url|max:500',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'gallery.*'   => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'cta_text'    => 'nullable|string|max:100',
+            'cta_url'     => 'nullable|string|max:255',
+            'is_featured' => 'nullable|boolean',
+            'sort_order'  => 'nullable|integer',
+        ]);
+
+        $coverImagePath = null;
+        if ($request->hasFile('cover_image')) {
+            $coverImagePath = '/storage/' . $request->file('cover_image')->store('news', 'public');
+        }
+
+        $galleryPaths = [];
+        if ($request->hasFile('gallery')) {
+            foreach ($request->file('gallery') as $file) {
+                $galleryPaths[] = '/storage/' . $file->store('news/gallery', 'public');
+            }
+        }
+
+        $article = NewsArticle::create([
+            'title'          => $validated['title'],
+            'slug'           => Str::slug($validated['title']) . '-' . strtolower(Str::random(5)),
+            'category'       => $validated['category'],
+            'author'         => $validated['author'] ?? 'The Commission Editorial',
+            'summary'        => $validated['summary'] ?? null,
+            'content'        => $validated['content'] ?? null,
+            'cover_image'    => $coverImagePath,
+            'video_url'      => $validated['video_url'] ?? null,
+            'gallery_images' => $galleryPaths,
+            'cta_text'       => $validated['cta_text'] ?? 'Request A Custom Quote',
+            'cta_url'        => $validated['cta_url'] ?? '/quote',
+            'published_at'   => now(),
+            'is_featured'    => $request->boolean('is_featured'),
+            'is_active'      => true,
+            'sort_order'     => $validated['sort_order'] ?? 0,
+        ]);
+
+        return redirect()->route('admin.dashboard', ['tab' => 'news_articles'])
+            ->with('success', 'News article created and published successfully!');
+    }
+
+    public function updateNewsArticle(Request $request, NewsArticle $article)
+    {
+        $validated = $request->validate([
+            'title'       => 'required|string|max:255',
+            'category'    => 'required|string|max:100',
+            'author'      => 'nullable|string|max:150',
+            'summary'     => 'nullable|string|max:1000',
+            'content'     => 'nullable|string',
+            'video_url'   => 'nullable|url|max:500',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'gallery.*'   => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'cta_text'    => 'nullable|string|max:100',
+            'cta_url'     => 'nullable|string|max:255',
+            'is_featured' => 'nullable|boolean',
+            'is_active'   => 'nullable|boolean',
+            'sort_order'  => 'nullable|integer',
+        ]);
+
+        if ($request->hasFile('cover_image')) {
+            $validated['cover_image'] = '/storage/' . $request->file('cover_image')->store('news', 'public');
+        }
+
+        if ($request->hasFile('gallery')) {
+            $gallery = $article->gallery_images ?? [];
+            foreach ($request->file('gallery') as $file) {
+                $gallery[] = '/storage/' . $file->store('news/gallery', 'public');
+            }
+            $validated['gallery_images'] = $gallery;
+        }
+
+        $validated['is_featured'] = $request->boolean('is_featured');
+        $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : $article->is_active;
+
+        $article->update($validated);
+
+        return redirect()->route('admin.dashboard', ['tab' => 'news_articles'])
+            ->with('success', 'News article updated successfully.');
+    }
+
+    public function deleteNewsArticle(NewsArticle $article)
+    {
+        $article->delete();
+        return redirect()->route('admin.dashboard', ['tab' => 'news_articles'])
+            ->with('success', 'News article deleted.');
     }
 }

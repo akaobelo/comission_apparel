@@ -1,163 +1,85 @@
 @extends('layouts.app')
 
-@php
-    if (!isset($heroSettings)) {
-        $heroSettings = [
-            'subtitle'   => \App\Models\SiteSetting::where('key', 'hero_subtitle')->value('value') ?? 'Premium armor tailored for programs that demand greatness. Built for the modern athlete, delivered with lightning speed.',
-            'media_path' => \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value') ?? asset('images/hero-models.png'),
-            'media_type' => \App\Models\SiteSetting::where('key', 'hero_media_type')->value('value') ?? 'image',
-        ];
-    }
-    if (!isset($landingCollections)) {
-        $landingCollections = \App\Models\LandingCollection::where('is_active', true)->orderBy('sort_order', 'asc')->get();
-    }
-    if (!isset($testimonials)) {
-        $testimonials = \App\Models\Testimonial::where('is_active', true)->orderBy('sort_order', 'asc')->limit(5)->get();
-    }
-@endphp
-
 @section('content')
 
-<!-- Hero Section -->
-<section class="w-full bg-black" style="padding-top: 85px;">
-    <img src="{{ asset('images/hero-banner.jpeg') }}" alt="Elite Custom Apparel" class="w-full h-auto object-cover" fetchpriority="high">
-</section>
-
-<!-- Content Container -->
-<div class="max-w-[1500px] mx-auto px-6 py-8 space-y-6">
-
-    <!-- Sports Tabs / Uniform Gallery -->
-    <section id="sports" class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative overflow-hidden">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div>
-                <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">VIEW OUR CUSTOM <span class="text-secondary">COLLECTIONS</span></h2>
-                <p class="text-slate-500 text-xs font-medium mt-1">Stand out with fully custom designs crafted to capture the essence of your program or organization</p>
-            </div>
-            <a href="{{ route('catalog.index') }}" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold bg-[#cd202c] hover:bg-[#a11825] transition-colors">View Design Collection</a>
-        </div>
-
-        <!-- Gallery Carousel -->
-        <div x-data="{ 
-            activePage: 0,
-            itemsPerPage: window.innerWidth < 768 ? 1 : (window.innerWidth < 1024 ? 3 : 5),
-            get totalPages() { return Math.max(1, Math.ceil({{ count($landingCollections ?? []) }} / this.itemsPerPage)) },
-            next() { this.activePage = (this.activePage + 1) % this.totalPages },
-            prev() { this.activePage = (this.activePage - 1 + this.totalPages) % this.totalPages },
-            init() {
-                window.addEventListener('resize', () => {
-                    this.itemsPerPage = window.innerWidth < 768 ? 1 : (window.innerWidth < 1024 ? 3 : 5);
-                    if (this.activePage >= this.totalPages) this.activePage = Math.max(0, this.totalPages - 1);
-                });
-            }
-        }" class="relative w-full">
-            
-            <div class="overflow-hidden relative w-full -mx-2 px-2 pb-4">
-                <div class="flex transition-transform duration-500 ease-out"
-                     :style="'transform: translateX(-' + (activePage * 100) + '%)'">
-                    @forelse($landingCollections ?? [] as $collection)
-                    <div class="shrink-0 p-2 flex text-left" 
-                         :style="'width: ' + (100 / itemsPerPage) + '%'">
-                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
-                            <!-- Enforced exact aspect ratio bounds as requested: 406.7 x 305.017 -->
-                            <a href="{{ route('catalog.index') }}" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
-                                @if($loop->first)
-                                <div class="absolute top-3 left-3 bg-[#cd202c] text-white text-[9px] font-black tracking-widest uppercase px-2.5 py-1 rounded shadow-md z-10 animate-pulse">
-                                    NEWEST ARRIVAL
-                                </div>
-                                @endif
-                                <img src="{{ Str::startsWith($collection->image_path, 'http') ? $collection->image_path : $collection->image_path }}" alt="{{ $collection->tab_name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
-                            </a>
-                            <div class="p-3 md:p-4 flex flex-col flex-1">
-                                <div class="text-secondary text-[10px] font-black tracking-widest uppercase mb-1 md:mb-2">{{ $collection->tab_name }}</div>
-                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="{{ $collection->title }}">{{ $collection->title }}</h3>
-                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-medium line-clamp-3">{{ $collection->description }}</p>
-                                <div class="mt-auto">
-                                    <a href="/quote" class="block btn btn-primary border border-slate-300 rounded-md bg-secondary w-full py-2 shadow-sm font-bold text-[10px] md:text-xs uppercase text-center transition-colors hover:bg-slate-900 hover:text-white">TALK TO AN EXPERT</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @empty
-                    <div class="w-full p-2">
-                        <div class="border-2 border-dashed border-slate-300 p-12 text-center text-slate-500 font-bold uppercase tracking-widest text-sm rounded-lg">
-                            No catalogs active at the moment.
-                        </div>
-                    </div>
-                    @endforelse
-                </div>
-            </div>
-
-            <!-- Arrows -->
-            <button @click="prev()" x-show="totalPages > 1" x-cloak class="absolute -left-3 md:-left-5 top-[35%] -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-white border border-slate-200 shadow-lg text-slate-700 flex items-center justify-center hover:bg-slate-50 hover:text-secondary transition-colors z-10" aria-label="Previous">
-                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            </button>
-            <button @click="next()" x-show="totalPages > 1" x-cloak class="absolute -right-3 md:-right-5 top-[35%] -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-white border border-slate-200 shadow-lg text-slate-700 flex items-center justify-center hover:bg-slate-50 hover:text-secondary transition-colors z-10" aria-label="Next">
-                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </button>
-        </div>
-    </section>
-
-    <!-- Team Store Section -->
-  <section id="team-store" class="py-24 bg-[#0a0a0a] border-y border-slate-900">
-    <div class="max-w-[90rem] mx-auto px-6">
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- HERO SECTION (Full-Bleed Unified Athletic Banner with Layered Typography) -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section class="w-full relative min-h-[640px] md:min-h-[720px] lg:min-h-[780px] xl:min-h-[820px] flex items-center overflow-hidden border-b border-slate-900 bg-[#08090c] pt-[64px] md:pt-[72px]">
+    <!-- Unified Full-Bleed Background Image (Athletes on Track in Stadium) -->
+    <div class="absolute inset-x-0 bottom-0 top-[64px] md:top-[72px] z-0">
+        <img src="{{ $heroSettings['banner_image'] ?? asset('images/hero-banner.jpeg') }}" 
+             alt="{{ $heroSettings['title'] ?? 'The Commission Apparel Athletes' }}" 
+             class="w-full h-full object-cover object-[80%_top] lg:object-[right_top]" 
+             fetchpriority="high"
+             onerror="this.onerror=null; this.src='{{ asset('images/hero-banner.jpeg') }}';">
         
-        <!-- UI Mockup Image -->
-        <div class="mb-6 md:mb-10 px-4 lg:px-6 max-w-[85rem] mx-auto">
-             <div class="w-full rounded-xl overflow-hidden shadow-2xl relative" style="aspect-ratio: 3.2 / 1;">
-                 <img src="/images/team-store-background-v2.png" alt="Team Store UI Previews" class="absolute w-full max-w-none h-auto left-0 -top-[9%] md:-top-[12%] lg:-top-[15%]" loading="lazy">
-             </div>
-        </div>
+        <!-- Athletic Directional Gradient Overlays (Text Legibility + Atmospheric Mood) -->
+        <div class="absolute inset-0 bg-gradient-to-r from-[#08090c] via-[#08090c]/90 sm:via-[#08090c]/75 md:via-[#08090c]/50 lg:via-[#08090c]/25 to-transparent pointer-events-none"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#08090c] via-transparent to-black/20 pointer-events-none"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_40%,rgba(205,32,44,0.18),transparent_60%)] pointer-events-none"></div>
+    </div>
 
-        <!-- Text Content -->
-        <div class="max-w-4xl mx-auto text-center mb-16">
-            <h2 class="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase text-white mb-6">TEAM <span class="text-secondary ml-1">STORE</span></h2>
-            <p class="text-slate-100 text-lg md:text-xl font-medium tracking-wide">Empower your program with a custom online store that eliminates hassle and generates revenue.</p>
-        </div>
-
-        <!-- Features Grid -->
-        <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12">
+    <!-- Content Container Layered Directly On The Image -->
+    <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20 lg:py-24 relative z-10 w-full">
+        <div class="max-w-2xl lg:max-w-3xl space-y-6 text-left">
             
-            <!-- Feature 1 -->
-            <div class="flex gap-4">
-                <div class="shrink-0 mt-1.5">
-                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
-                </div>
-                <div>
-                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">CUSTOM DESIGNS THAT DRIVE DEMAND</h3>
-                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">We create high-quality, exclusive apparel designs tailored to your team—making your store something people actually want to shop from, not just another generic merch page.</p>
-                </div>
+            <!-- Red Pill Tag -->
+            <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-[#cd202c]/50 text-white shadow-lg">
+                <span class="w-2 h-2 rounded-full bg-[#cd202c] animate-pulse"></span>
+                <span class="text-[11px] font-black uppercase tracking-widest text-red-100">
+                    {{ $heroSettings['badge'] ?? 'Official Team Uniforms & Fan Gear' }}
+                </span>
             </div>
 
-            <!-- Feature 2 -->
-            <div class="flex gap-4">
-                <div class="shrink-0 mt-1.5">
-                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
-                </div>
-                <div>
-                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">PARENTS ORDER DIRECTLY</h3>
-                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Families simply use your team store link to place their own orders, eliminating the need for coaches to collect forms, track sizes, or manage money.</p>
-                </div>
+            <!-- Main Headline -->
+            <h1 class="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-black uppercase tracking-tight text-white leading-[0.95] drop-shadow-2xl">
+                @php
+                    $hTitle = $heroSettings['title'] ?? 'CUSTOM GEAR BUILT FOR THE COMMITTED';
+                    $words = explode(' ', trim($hTitle));
+                    $lastWord = array_pop($words);
+                    $firstPart = implode(' ', $words);
+                @endphp
+                @if($firstPart)
+                    {{ $firstPart }} <span class="text-[#ff3b49] drop-shadow-[0_0_30px_rgba(205,32,44,0.8)]">{{ $lastWord }}</span>
+                @else
+                    <span class="text-[#ff3b49] drop-shadow-[0_0_30px_rgba(205,32,44,0.8)]">{{ $lastWord }}</span>
+                @endif
+            </h1>
+
+            <!-- Subtitle -->
+            <p class="text-slate-200 text-sm md:text-base lg:text-lg max-w-xl font-normal leading-relaxed drop-shadow">
+                {{ $heroSettings['subtitle'] ?? 'Dominate the competition with elite performance apparel designed for champion athletes. Precision craftsmanship, fast 2–3 week turnaround, and dedicated online team stores.' }}
+            </p>
+
+            <!-- Dual Action CTAs -->
+            <div class="pt-2 flex flex-wrap items-center gap-4">
+                <a href="{{ $heroSettings['cta_primary_url'] ?? '/quote' }}" class="px-8 py-4 bg-[#cd202c] hover:bg-[#b01621] text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-[0_0_25px_rgba(205,32,44,0.6)] hover:shadow-[0_0_35px_rgba(205,32,44,0.9)] hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
+                    <span>{{ $heroSettings['cta_primary_text'] ?? 'Request Free 3D Mockup' }}</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </a>
+                <a href="{{ $heroSettings['cta_secondary_url'] ?? route('store.search') }}" class="px-8 py-4 bg-black/50 hover:bg-white/15 text-white border border-white/30 hover:border-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-lg backdrop-blur-md transition-all inline-flex items-center justify-center gap-2">
+                    <span>{{ $heroSettings['cta_secondary_text'] ?? 'Find Your Team Store' }}</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </a>
             </div>
 
-            <!-- Feature 3 -->
-            <div class="flex gap-4">
-                <div class="shrink-0 mt-1.5">
-                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
+            <!-- Proof Points -->
+            <div class="pt-6 border-t border-white/15 flex flex-wrap items-center gap-6 text-xs text-slate-300 font-bold uppercase tracking-wider">
+                <div class="flex items-center gap-1.5 text-amber-400">
+                    <span class="text-sm">★ ★ ★ ★ ★</span>
+                    <span class="text-white font-black ml-1">{{ $landingSettings['hero_proof_1_rating'] ?? '5.0' }}</span>
+                    <span class="text-slate-300 font-normal lowercase">{{ $landingSettings['hero_proof_1_text'] ?? 'rated by coaches' }}</span>
                 </div>
-                <div>
-                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">TURN YOUR PROGRAM INTO A REVENUE STREAM</h3>
-                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Your custom team store allows you to generate ongoing income from every purchase—helping fund travel, equipment, and program growth without additional fundraising efforts.</p>
+                <span class="text-white/20">•</span>
+                <div class="flex items-center gap-1.5 text-slate-200">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    <span>{{ $landingSettings['hero_proof_2'] ?? 'Zero Design Fees' }}</span>
                 </div>
-            </div>
-
-            <!-- Feature 4 -->
-            <div class="flex gap-4">
-                <div class="shrink-0 mt-1.5">
-                    <span class="w-6 h-6 rounded bg-secondary text-white text-sm font-black flex items-center justify-center">✓</span>
-                </div>
-                <div>
-                    <h3 class="text-white text-lg font-black uppercase tracking-wide mb-2.5">PROFESSIONAL, BRANDED EXPERIENCE</h3>
-                    <p class="text-slate-300 text-[15px] leading-relaxed font-medium">Your athletes, parents, and supporters get access to a clean, custom-designed online store that reflects your team's identity and elevates your brand.</p>
+                <span class="text-white/20">•</span>
+                <div class="flex items-center gap-1.5 text-slate-200">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    <span>{{ $landingSettings['hero_proof_3'] ?? '2–3 Wk Turnaround' }}</span>
                 </div>
             </div>
 
@@ -165,149 +87,1071 @@
     </div>
 </section>
 
-    <!-- Powerful Features (Team Stores & Dashboard Teaser) -->
-    <!-- <section id="system" class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative overflow-hidden">
-        <div class="mb-6">
-            <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">More Than Gear. <span class="text-secondary">A Platform.</span></h2>
-            <p class="text-slate-500 text-xs font-medium mt-1">Automated workflow entirely centralized.</p>
-        </div>
-
-        <div class="grid lg:grid-cols-2 gap-12 items-center">
-            <div class="order-2 lg:order-1 relative rounded-xl overflow-hidden shadow-sm border border-slate-200">
-                <img src="/images/group.jpg" alt="Dashboard Concept" class="w-full h-auto object-cover" loading="lazy">
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent"></div>
-                <div class="absolute bottom-0 left-0 w-full p-6">
-                    <div class="bg-white rounded-lg p-3 shadow-md border border-slate-100 flex items-center gap-3">
-                        <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200 shrink-0">
-                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                        </div>
-                        <div>
-                            <h4 class="font-black tracking-wider uppercase text-slate-900 text-xs">Coach Dashboard</h4>
-                            <p class="text-[10px] text-slate-500 font-medium">Automated workflow entirely centralized.</p>
-                        </div>
-                    </div>
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- VALUE PROPOSITIONS / TRUST BAR (Wooter Features + Adidas Clean)        -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section class="w-full bg-white border-b border-slate-200 py-6 sm:py-8 shadow-sm">
+    <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            
+            <div class="flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-red-50 text-[#cd202c] border border-red-100 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <div>
+                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">{{ $landingSettings['trust_1_title'] ?? '2–3 Week Turnaround' }}</h4>
+                    <p class="text-[11px] sm:text-xs text-slate-600 mt-0.5 leading-relaxed" style="color: #475569;">{{ $landingSettings['trust_1_desc'] ?? 'Fastest guaranteed production cycle in custom team sports.' }}</p>
                 </div>
             </div>
 
-            <div class="order-1 lg:order-2">
-                <div class="space-y-6">
-                    <div class="flex gap-4 box-border">
-                        <div class="mt-0.5 w-8 h-8 rounded bg-white shadow-sm flex items-center justify-center shrink-0 border border-slate-200">
-                            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                        </div>
-                        <div>
-                            <h4 class="text-xs font-black uppercase mb-1 text-slate-900">Automated Team Stores</h4>
-                            <p class="text-slate-600 font-medium leading-relaxed text-xs max-w-sm">Coaches create a store, parents order directly. No messy spreadsheets, no collecting cash. We manage the logistics.</p>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-4 box-border">
-                        <div class="mt-0.5 w-8 h-8 rounded bg-white shadow-sm flex items-center justify-center shrink-0 border border-slate-200">
-                            <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </div>
-                        <div>
-                            <h4 class="text-xs font-black uppercase mb-1 text-slate-900">Order Deadlines & Tracking</h4>
-                            <p class="text-slate-600 font-medium leading-relaxed text-xs max-w-sm">Set a firm deadline. Parents get email reminders. Once closed, track production visually until shipping.</p>
-                        </div>
-                    </div>
+            <div class="flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-red-50 text-[#cd202c] border border-red-100 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
                 </div>
-                
-                <div class="mt-6 flex flex-wrap items-center gap-4 pt-4 border-t border-slate-200">
-                    <a href="/coach/dashboard" class="btn btn-primary px-4 py-2 font-bold rounded text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-colors">
-                        <img src="/images/LR.png" alt="LR Logo" class="h-3 w-auto object-contain">
-                        Dashboard Sign-in
-                    </a>
-                    <a href="/sales-agents" class="font-bold text-[10px] uppercase tracking-wide text-secondary hover:text-[#a11825] transition-colors">EMPLOYEE SIGN-IN &rarr;</a>
+                <div>
+                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">{{ $landingSettings['trust_2_title'] ?? 'Free 3D Design Proofs' }}</h4>
+                    <p class="text-[11px] sm:text-xs text-slate-600 mt-0.5 leading-relaxed" style="color: #475569;">{{ $landingSettings['trust_2_desc'] ?? 'Professional 3D vector artwork rendered in 24 hours.' }}</p>
                 </div>
             </div>
-        </div>
-    </section> -->
 
-    <!-- Testimonials Section -->
-    <section id="testimonials" class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative overflow-hidden">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div class="flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-red-50 text-[#cd202c] border border-red-100 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                </div>
+                <div>
+                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">{{ $landingSettings['trust_3_title'] ?? 'Full Dye-Sublimation' }}</h4>
+                    <p class="text-[11px] sm:text-xs text-slate-600 mt-0.5 leading-relaxed" style="color: #475569;">{{ $landingSettings['trust_3_desc'] ?? 'Colors, logos & numbers infused into fabric. Never peels or fades.' }}</p>
+                </div>
+            </div>
+
+            <div class="flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-red-50 text-[#cd202c] border border-red-100 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                </div>
+                <div>
+                    <h4 class="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-tight">{{ $landingSettings['trust_4_title'] ?? 'Turnkey Team Stores' }}</h4>
+                    <p class="text-[11px] sm:text-xs text-slate-600 mt-0.5 leading-relaxed" style="color: #475569;">{{ $landingSettings['trust_4_desc'] ?? 'Direct parent ordering online. Zero paperwork or cash handling.' }}</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- MAIN CONTENT CONTAINER (Crisp Bordered Sections with Light Palette)    -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 space-y-8">
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 1. EXPLORE SPORTS CATEGORIES: CUSTOM UNIFORM COLLECTIONS          -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <section id="sports" class="bg-white border border-slate-200 rounded-xl shadow-sm p-5 md:p-6 relative">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
             <div>
                 <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">
-                    <span class="text-secondary">"</span> TESTIMONIALS <span class="text-secondary">"</span>
+                    @php
+                        $customHeading = $landingSettings['collections_heading'] ?? 'CUSTOM UNIFORM COLLECTIONS';
+                    @endphp
+                    @if(stripos($customHeading, 'COLLECTIONS') !== false)
+                        {!! preg_replace('/(COLLECTIONS)/i', '<span class="text-[#cd202c]">$1</span>', e($customHeading)) !!}
+                    @else
+                        {{ $customHeading }}
+                    @endif
                 </h2>
-                <p class="text-slate-500 text-xs font-medium mt-1">What our clients have to say about working with us.</p>
+                <p class="text-slate-500 text-xs font-medium mt-1">
+                    {{ $landingSettings['collections_subheading'] ?? 'Check out with custom designs crafted for sports teams and fans all over your group and/or organization.' }}
+                </p>
             </div>
-            <a href="{{ route('testimonials.index') }}" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold inline-flex items-center gap-2 bg-[#cd202c] hover:bg-[#a11825] transition-colors">
-                More Testimonials
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            <a href="{{ route('catalog.index') }}" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold bg-[#cd202c] hover:bg-[#a11825] text-white transition-colors self-start md:self-auto">
+                {{ $landingSettings['collections_cta_text'] ?? 'VIEW FULL CATALOG' }}
             </a>
         </div>
 
-        @if(isset($testimonials) && $testimonials->isNotEmpty())
+        @if($landingCollections && $landingCollections->isNotEmpty())
+        <!-- Gallery Carousel (5 Items Desktop, Side Arrows, Zero Wasted Space) -->
         <div x-data="{ 
             activePage: 0,
-            itemsPerPage: window.innerWidth < 768 ? 1 : ({{ $testimonials->count() }} > 1 ? 2 : 1),
-            get totalPages() { return Math.ceil({{ $testimonials->count() }} / this.itemsPerPage) },
+            itemsPerPage: window.innerWidth < 640 ? 1 : (window.innerWidth < 768 ? 2 : (window.innerWidth < 1024 ? 3 : 5)),
+            totalItems: {{ count($landingCollections ?? []) }},
+            get totalPages() { return Math.max(1, Math.ceil(this.totalItems / this.itemsPerPage)) },
             next() { this.activePage = (this.activePage + 1) % this.totalPages },
             prev() { this.activePage = (this.activePage - 1 + this.totalPages) % this.totalPages },
             init() {
                 window.addEventListener('resize', () => {
-                    this.itemsPerPage = window.innerWidth < 768 ? 1 : ({{ $testimonials->count() }} > 1 ? 2 : 1);
-                    if (this.activePage >= this.totalPages) this.activePage = 0;
+                    this.itemsPerPage = window.innerWidth < 640 ? 1 : (window.innerWidth < 768 ? 2 : (window.innerWidth < 1024 ? 3 : 5));
+                    if (this.activePage >= this.totalPages) this.activePage = Math.max(0, this.totalPages - 1);
                 });
-                
-                $watch('totalPages', (val) => {
-                    if (val > 1 && !this.interval) {
-                        this.interval = setInterval(() => { this.next() }, 6000);
-                    } else if (val <= 1 && this.interval) {
-                        clearInterval(this.interval);
-                        this.interval = null;
-                    }
-                });
-                
-                if (this.totalPages > 1) {
-                    this.interval = setInterval(() => { this.next() }, 6000);
-                }
             }
         }" class="relative w-full">
-            <div class="overflow-hidden relative w-full -mx-3">
+            
+            <div class="overflow-hidden relative w-full -mx-2 px-2 pb-2">
                 <div class="flex transition-transform duration-500 ease-out"
                      :style="'transform: translateX(-' + (activePage * 100) + '%)'">
-                    @foreach($testimonials as $testimonial)
-                    <div class="shrink-0 p-3 flex" 
+                    @foreach($landingCollections as $collection)
+                    <div class="shrink-0 p-2 flex text-left" 
                          :style="'width: ' + (100 / itemsPerPage) + '%'">
-                        <article class="bg-slate-50 border border-slate-100 rounded-xl p-6 w-full flex flex-col justify-between shadow-sm">
-                            <p class="text-black text-xs font-medium leading-relaxed mb-6" style="color: #000000;">
-                                "{{ $testimonial->content }}"
-                            </p>
-                            <div class="flex items-center gap-4 mt-auto">
-                                @if($testimonial->image_path)
-                                    <img src="{{ $testimonial->image_path }}" alt="{{ $testimonial->client_name }}" class="w-10 h-10 rounded-full object-cover shrink-0" loading="lazy">
-                                @else
-                                    <div class="w-10 h-10 rounded-full bg-[#1e40af] text-white flex items-center justify-center font-black text-base shrink-0">
-                                        {{ substr($testimonial->client_name, 0, 1) }}
-                                    </div>
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds: 406.7 x 305.017 -->
+                            <a href="{{ route('catalog.index') }}" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                @if($loop->first)
+                                <div class="absolute top-2 left-2 bg-[#cd202c] text-white text-[8px] md:text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded shadow z-10">
+                                    NEWEST ARRIVAL
+                                </div>
                                 @endif
-                                <div class="border-l-[3px] border-secondary pl-3">
-                                    <p class="font-black text-slate-900 text-[10px] uppercase tracking-wide">{{ $testimonial->client_name }}</p>
-                                    @if($testimonial->organization)
-                                        <p class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mt-0.5">{{ $testimonial->organization }}</p>
-                                    @endif
+                                <img src="{{ Str::startsWith($collection->image_path, 'http') ? $collection->image_path : asset(ltrim($collection->image_path, '/')) }}" alt="{{ $collection->tab_name }}" onerror="this.onerror=null; this.src='{{ asset('images/basketball.png') }}';" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-[#cd202c] text-[10px] font-black tracking-widest uppercase mb-1 md:mb-1.5">{{ $collection->tab_name }}</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="{{ $collection->title }}">{{ $collection->title }}</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-normal line-clamp-3 leading-relaxed" style="color: #475569;">{{ $collection->description }}</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block w-full py-2 bg-[#cd202c] hover:bg-[#a11825] text-white text-[10px] md:text-xs font-bold uppercase tracking-wider text-center rounded shadow-sm transition-colors">TALK TO AN EXPERT</a>
                                 </div>
                             </div>
-                        </article>
+                        </div>
                     </div>
                     @endforeach
                 </div>
             </div>
-            
-            <!-- Carousel Controls -->
-            <div class="flex items-center gap-2 mt-4" x-show="totalPages > 1" x-cloak>
-                <template x-for="i in totalPages" :key="i">
-                    <button @click="activePage = i - 1" class="h-2 rounded-full transition-all" :class="activePage === i - 1 ? 'bg-secondary w-5' : 'bg-slate-200 hover:bg-slate-300 w-2'"></button>
-                </template>
-            </div>
+
+            <!-- Navigation Arrows on the Sides -->
+            <button @click="prev()" x-show="totalPages > 1" x-cloak class="absolute -left-2 sm:-left-3 md:-left-4 top-[38%] -translate-y-1/2 w-8 h-8 md:w-9 md:h-9 rounded-full bg-white border border-slate-200 shadow-md hover:shadow-lg text-slate-700 flex items-center justify-center hover:bg-slate-50 hover:text-[#cd202c] transition-all z-20 cursor-pointer active:scale-95" aria-label="Previous">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button @click="next()" x-show="totalPages > 1" x-cloak class="absolute -right-2 sm:-right-3 md:-right-4 top-[38%] -translate-y-1/2 w-8 h-8 md:w-9 md:h-9 rounded-full bg-white border border-slate-200 shadow-md hover:shadow-lg text-slate-700 flex items-center justify-center hover:bg-slate-50 hover:text-[#cd202c] transition-all z-20 cursor-pointer active:scale-95" aria-label="Next">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+            </button>
         </div>
         @else
-            <div class="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center text-slate-500 text-xs font-bold uppercase tracking-wider max-w-4xl mx-auto">
-                No testimonials yet.
-            </div>
+        <div class="py-8 text-center text-slate-400 font-bold uppercase text-xs">No collections available.</div>
         @endif
+
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 2. TURNKEY TEAM STORE: INTERACTIVE PROCESS SLIDER                 -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <section id="team-store" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-5 md:p-8 relative overflow-hidden"
+        x-data="{
+            activeStep: 0,
+            totalSteps: 5,
+            autoPlay: true,
+            timer: null,
+            init() {
+                this.startTimer();
+                this.$watch('activeStep', (val) => {
+                    this.$nextTick(() => {
+                        const container = this.$refs.tabScroll;
+                        const activeBtn = container ? container.querySelector(`[data-step='${val}']`) : null;
+                        if (container && activeBtn) {
+                            const offset = activeBtn.getBoundingClientRect().left - container.getBoundingClientRect().left + container.scrollLeft;
+                            const scrollTarget = offset - (container.clientWidth / 2) + (activeBtn.offsetWidth / 2);
+                            container.scrollTo({ left: Math.max(0, scrollTarget), behavior: 'smooth' });
+                        }
+                    });
+                });
+            },
+            startTimer() {
+                this.timer = setInterval(() => {
+                    if (this.autoPlay) {
+                        this.activeStep = (this.activeStep + 1) % this.totalSteps;
+                    }
+                }, 7500);
+            },
+            pause() {
+                this.autoPlay = false;
+            },
+            resume() {
+                this.autoPlay = true;
+            },
+            setStep(idx) {
+                this.activeStep = idx;
+                this.pause();
+            },
+            next() {
+                this.activeStep = (this.activeStep + 1) % this.totalSteps;
+                this.pause();
+            },
+            prev() {
+                this.activeStep = (this.activeStep - 1 + this.totalSteps) % this.totalSteps;
+                this.pause();
+            }
+        }"
+        @mouseenter="pause()"
+        @mouseleave="resume()"
+    >
+        
+        <div class="space-y-4 md:space-y-5">
+            <!-- Section Header (Matching Size & Placement) -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+                <div>
+                    @php
+                        $tsHeading = $teamStoreSettings['heading'] ?? 'LAUNCH YOUR TEAM STORE';
+                        if (str_contains($tsHeading, 'STORE')) {
+                            $parts = explode('STORE', $tsHeading);
+                            $hBefore = $parts[0];
+                            $hColored = 'STORE';
+                        } else {
+                            $tsWords = explode(' ', trim($tsHeading));
+                            $hColored = array_pop($tsWords);
+                            $hBefore = implode(' ', $tsWords) . ' ';
+                        }
+                    @endphp
+                    <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">
+                        {{ $hBefore }}<span class="text-[#cd202c]">{{ $hColored }}</span>
+                    </h2>
+                    <p class="text-slate-500 text-xs font-medium mt-1">
+                        {{ $teamStoreSettings['subheading'] ?? 'Empower your program with a custom online store that eliminates coach hassle and generates revenue.' }}
+                    </p>
+                </div>
+                <a href="{{ route('store.search') }}" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold bg-[#cd202c] hover:bg-[#a11825] text-white transition-colors self-start md:self-auto">
+                    {{ $landingSettings['team_store_header_cta'] ?? 'FIND YOUR TEAM STORE' }}
+                </a>
+            </div>
+
+            <!-- Interactive Stepper Navigation Bar -->
+            <div x-ref="tabScroll" class="w-full max-w-[1300px] mx-auto overflow-x-auto pb-2 pt-0.5 scrollbar-none" @touchstart.passive="pause()">
+                <div class="inline-flex lg:flex items-center justify-between gap-1.5 md:gap-2 w-max min-w-full lg:w-full p-1 sm:p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
+                    
+                    <!-- Step 0 Tab -->
+                    <button type="button" @click="setStep(0)" data-step="0"
+                        class="shrink-0 lg:shrink lg:flex-1 py-2 px-3 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group cursor-pointer"
+                        :class="activeStep === 0 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
+                        <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                            :class="activeStep === 0 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">01</span>
+                        <div class="truncate">
+                            <span class="block text-[11px] font-black uppercase tracking-wider truncate">3D Artwork</span>
+                            <span class="block text-[9px] font-semibold opacity-80 uppercase tracking-tight truncate">Free 24-48h Mockup</span>
+                        </div>
+                    </button>
+
+                    <!-- Step 1 Tab -->
+                    <button type="button" @click="setStep(1)" data-step="1"
+                        class="shrink-0 lg:shrink lg:flex-1 py-2 px-3 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group cursor-pointer"
+                        :class="activeStep === 1 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
+                        <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                            :class="activeStep === 1 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">02</span>
+                        <div class="truncate">
+                            <span class="block text-[11px] font-black uppercase tracking-wider truncate">Store Launch</span>
+                            <span class="block text-[9px] font-semibold opacity-80 uppercase tracking-tight truncate">Custom School Link</span>
+                        </div>
+                    </button>
+
+                    <!-- Step 2 Tab -->
+                    <button type="button" @click="setStep(2)" data-step="2"
+                        class="shrink-0 lg:shrink lg:flex-1 py-2 px-3 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group cursor-pointer"
+                        :class="activeStep === 2 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
+                        <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                            :class="activeStep === 2 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">03</span>
+                        <div class="truncate">
+                            <span class="block text-[11px] font-black uppercase tracking-wider truncate">Direct Orders</span>
+                            <span class="block text-[9px] font-semibold opacity-80 uppercase tracking-tight truncate">Parents Pay Online</span>
+                        </div>
+                    </button>
+
+                    <!-- Step 3 Tab -->
+                    <button type="button" @click="setStep(3)" data-step="3"
+                        class="shrink-0 lg:shrink lg:flex-1 py-2 px-3 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group cursor-pointer"
+                        :class="activeStep === 3 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
+                        <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                            :class="activeStep === 3 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">04</span>
+                        <div class="truncate">
+                            <span class="block text-[11px] font-black uppercase tracking-wider truncate">Sublimation</span>
+                            <span class="block text-[9px] font-semibold opacity-80 uppercase tracking-tight truncate">2-3 Week Craft</span>
+                        </div>
+                    </button>
+
+                    <!-- Step 4 Tab -->
+                    <button type="button" @click="setStep(4)" data-step="4"
+                        class="shrink-0 lg:shrink lg:flex-1 py-2 px-3 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group cursor-pointer"
+                        :class="activeStep === 4 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
+                        <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                            :class="activeStep === 4 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">05</span>
+                        <div class="truncate">
+                            <span class="block text-[11px] font-black uppercase tracking-wider truncate">Pack & Ship</span>
+                            <span class="block text-[9px] font-semibold opacity-80 uppercase tracking-tight truncate">Athlete Bags & Store Mgmt</span>
+                        </div>
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Main Interactive Slider Showcase Frame -->
+            <div class="w-full max-w-[1300px] mx-auto rounded-2xl md:rounded-3xl shadow-2xl border border-slate-800 bg-[#0e1017] p-5 sm:p-6 md:p-8 relative overflow-hidden text-white">
+                
+                <!-- Ambient Subtle Glow Effect -->
+                <div class="absolute -top-32 -right-32 w-96 h-96 bg-[#cd202c]/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+                <!-- SLIDE 0: 3D Artwork & Store Creation -->
+                <div x-show="activeStep === 0" x-cloak
+                    x-transition:enter="transition ease-out duration-300 transform"
+                    x-transition:enter-start="opacity-0 translate-y-3"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+                    
+                    <div class="lg:col-span-6 space-y-3.5 md:space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+                                STEP 01 OF 05 &bull; ZERO COST
+                            </span>
+                            <span class="text-xs font-mono text-slate-400">DESIGN &amp; LAUNCH</span>
+                        </div>
+
+                        <div class="space-y-1">
+                            <h3 class="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white leading-tight">
+                                CUSTOM 3D ARTWORK &amp; STORE SETUP
+                            </h3>
+                            <p class="text-amber-400 font-semibold text-xs sm:text-sm uppercase tracking-wide">
+                                100% Free Mockups &bull; Unlimited Revisions &bull; Live in 24–48 Hours
+                            </p>
+                        </div>
+
+                        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal" style="color: #cbd5e1;">
+                            Send us your school colors, team mascot, and uniform vision. Our dedicated in-house graphic designers build photorealistic 3D uniform mockups and configure your custom branded online store completely free of charge.
+                        </p>
+
+                        <!-- Key Benefits List -->
+                        <div class="space-y-2 pt-1">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">24–48 Hour Turnaround:</strong> Photorealistic 3D uniform renders ready for team approval.</p>
+                            </div>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Full Team Catalog:</strong> Official uniforms, shooting shirts, travel hoodies, bags &amp; fan apparel.</p>
+                            </div>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Zero Financial Commitment:</strong> Free setup with no deposit or credit card required.</p>
+                            </div>
+                        </div>
+
+                        <!-- Action Bar -->
+                        <div class="pt-2 sm:pt-3 flex flex-wrap items-center gap-2.5">
+                            <a href="/quote" class="px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                                Request Free 3D Mockup <span>&rarr;</span>
+                            </a>
+                            <button type="button" @click="next()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                Next: Step 02 <span>&rarr;</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Visual Tech Frame -->
+                    <div class="lg:col-span-6">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-2.5 sm:p-3 shadow-inner">
+                            <div class="flex items-center justify-between pb-2.5 px-2 border-b border-slate-800/80 mb-2.5 text-slate-400 text-xs font-mono">
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span> 3D Digital Concept Stage</span>
+                                <span class="text-slate-500">24-48 HR DELIVERABLE</span>
+                            </div>
+                            <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-black/60 border border-slate-800/60">
+                                <img src="{{ $teamStoreSettings['step_1_image'] ?? asset('images/design.jpeg') }}" alt="3D Uniform Digital Blueprint" class="w-full h-full object-cover object-center" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/design.jpeg') }}'">
+                                <div class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md border border-slate-700 text-white text-[10px] font-mono px-3 py-1.5 rounded-lg shadow-lg">
+                                    Unlimited Revisions &bull; Free
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- SLIDE 1: Dedicated Store Launch & Parent Link -->
+                <div x-show="activeStep === 1" x-cloak
+                    x-transition:enter="transition ease-out duration-300 transform"
+                    x-transition:enter-start="opacity-0 translate-y-3"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+                    
+                    <div class="lg:col-span-6 space-y-3.5 md:space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+                                STEP 02 OF 05 &bull; TURNKEY PLATFORM
+                            </span>
+                            <span class="text-xs font-mono text-slate-400">ONLINE STOREFRONT</span>
+                        </div>
+
+                        <div class="space-y-1">
+                            <h3 class="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white leading-tight">
+                                SHARE CUSTOM LINK WITH PARENTS
+                            </h3>
+                            <p class="text-amber-400 font-semibold text-xs sm:text-sm uppercase tracking-wide">
+                                Zero Paper Forms &bull; Zero Cash Handling &bull; Mobile-First
+                            </p>
+                        </div>
+
+                        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal" style="color: #cbd5e1;">
+                            We publish a dedicated, mobile-optimized online team store customized with your school branding. Coaches receive a single shareable link to text or email directly to athletes, parents, and booster clubs.
+                        </p>
+
+                        <div class="space-y-2 pt-1">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Custom Web URL:</strong> Dedicated storefront link tailored for your school program.</p>
+                            </div>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Parent &amp; Fan Gear:</strong> Fans, alumni, and families can order matching gear alongside player uniforms.</p>
+                            </div>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">No Coach Liability:</strong> Never handle envelopes of cash or balance checks again.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 sm:pt-3 flex flex-wrap items-center gap-2.5">
+                            <button type="button" @click="prev()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                <span>&larr;</span> Step 01
+                            </button>
+                            <a href="/store/search" class="px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                                Search Active Stores <span>&rarr;</span>
+                            </a>
+                            <button type="button" @click="next()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                Next: Step 03 <span>&rarr;</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-6">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-2.5 sm:p-3 shadow-inner">
+                            <div class="flex items-center justify-between pb-2.5 px-3 border-b border-slate-800/80 mb-2.5">
+                                <div class="flex items-center gap-1.5">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                                    <div class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
+                                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
+                                </div>
+                                <div class="bg-black/80 border border-slate-800 text-slate-400 text-[10px] font-mono px-4 py-1 rounded-full flex items-center gap-1.5">
+                                    <svg class="w-3 h-3 text-[#cd202c]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                    thecommissionapparel.com/store/your-school
+                                </div>
+                                <div class="w-8"></div>
+                            </div>
+                            <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[16/10]">
+                                <img src="{{ $teamStoreSettings['step_2_image'] ?? asset('images/team store.png') }}" alt="Custom Team Store Platform" class="w-full h-full object-cover object-top" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/team store.png') }}'">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- SLIDE 2: Direct Parent Ordering & Personalization -->
+                <div x-show="activeStep === 2" x-cloak
+                    x-transition:enter="transition ease-out duration-300 transform"
+                    x-transition:enter-start="opacity-0 translate-y-3"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+                    
+                    <div class="lg:col-span-6 space-y-3.5 md:space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+                                STEP 03 OF 05 &bull; EASY CHECKOUT
+                            </span>
+                            <span class="text-xs font-mono text-slate-400">ONLINE ORDERING</span>
+                        </div>
+
+                        <div class="space-y-1">
+                            <h3 class="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white leading-tight">
+                                PARENTS ORDER DIRECTLY ONLINE
+                            </h3>
+                            <p class="text-amber-400 font-semibold text-xs sm:text-sm uppercase tracking-wide">
+                                Apple Pay &bull; Custom Jersey Numbers &bull; Accurate Sizing
+                            </p>
+                        </div>
+
+                        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal" style="color: #cbd5e1;">
+                            Forget deciphering handwritten size charts and chasing unpaid orders. Every parent selects their athlete's size, enters their custom roster number, and pays securely online in seconds.
+                        </p>
+
+                        <div class="space-y-2 pt-1">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Player Personalization:</strong> Athletes select exact jersey numbers and custom back names.</p>
+                            </div>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Instant Order Confirmation:</strong> Parents receive real-time email receipts and tracking updates.</p>
+                            </div>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Coach Dashboard Tracking:</strong> Watch orders roll in live from your coach portal.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 sm:pt-3 flex flex-wrap items-center gap-2.5">
+                            <button type="button" @click="prev()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                <span>&larr;</span> Step 02
+                            </button>
+                            <a href="/sizing-charts" class="px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                                View Sizing Charts <span>&rarr;</span>
+                            </a>
+                            <button type="button" @click="next()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                Next: Step 04 <span>&rarr;</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-6">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-2.5 sm:p-3 shadow-inner">
+                            <div class="flex items-center justify-between pb-2.5 px-3 border-b border-slate-800/80 mb-2.5 text-slate-400 text-xs font-mono">
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Live Order Ingestion</span>
+                                <span class="text-emerald-400 font-bold">100% SECURE CHECKOUT</span>
+                            </div>
+                            <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[4/3]">
+                                <img src="{{ $teamStoreSettings['step_3_image'] ?? asset('images/direct order.jpeg') }}" alt="Direct Parent Ordering Storefront" class="w-full h-full object-cover object-top" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/direct order.jpeg') }}'">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- SLIDE 3: Rapid Dye-Sublimation Production -->
+                <div x-show="activeStep === 3" x-cloak
+                    x-transition:enter="transition ease-out duration-300 transform"
+                    x-transition:enter-start="opacity-0 translate-y-3"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+                    
+                    <div class="lg:col-span-6 space-y-3.5 md:space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+                                STEP 04 OF 05 &bull; CRAFTSMANSHIP
+                            </span>
+                            <span class="text-xs font-mono text-slate-400">RAPID SUBLIMATION</span>
+                        </div>
+
+                        <div class="space-y-1">
+                            <h3 class="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white leading-tight">
+                                RAPID 2–3 WEEK PRODUCTION
+                            </h3>
+                            <p class="text-amber-400 font-semibold text-xs sm:text-sm uppercase tracking-wide">
+                                Never Peels, Cracks, or Fades &bull; Guaranteed Turnaround
+                            </p>
+                        </div>
+
+                        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal" style="color: #cbd5e1;">
+                            Once your ordering window closes, our automated production pipeline begins immediately. High-tensile moisture-wicking fabrics are dye-sublimated at high heat so colors and numbers are permanently infused into the fabric.
+                        </p>
+
+                        <div class="space-y-2 pt-1">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">2–3 Week Turnaround:</strong> Guaranteed delivery so your squad takes the field fully equipped.</p>
+                            </div>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Dye-Sublimated Durability:</strong> Permanent inks will never crack, peel, or fade in the wash.</p>
+                            </div>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Reinforced Athletic Seams:</strong> 4-way stretch flex threading built for brutal game contact.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 sm:pt-3 flex flex-wrap items-center gap-2.5">
+                            <button type="button" @click="prev()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                <span>&larr;</span> Step 03
+                            </button>
+                            <a href="/catalog" class="px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                                Browse Uniform Styles <span>&rarr;</span>
+                            </a>
+                            <button type="button" @click="next()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                Next: Step 05 <span>&rarr;</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-6">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-2.5 sm:p-3 shadow-inner">
+                            <div class="flex items-center justify-between pb-2.5 px-2 border-b border-slate-800/80 mb-2.5 text-slate-400 text-xs font-mono">
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Sublimation Production Line</span>
+                                <span class="text-slate-400">PHYSICAL SAMPLE</span>
+                            </div>
+                            <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-black/60 border border-slate-800/60">
+                                <img src="{{ $teamStoreSettings['step_4_image'] ?? asset('images/week production.jpeg') }}" alt="Manufactured Sublimated Uniform Reality" class="w-full h-full object-cover object-center" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/week production.jpeg') }}'">
+                                <div class="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md border border-slate-700 text-white text-[10px] font-mono px-3 py-1.5 rounded-lg shadow-lg">
+                                    Infused Sublimation &bull; Zero Cracking
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- SLIDE 4: Individually Bagged by Athlete • Simplified Team Management -->
+                <div x-show="activeStep === 4" x-cloak
+                    x-transition:enter="transition ease-out duration-300 transform"
+                    x-transition:enter-start="opacity-0 translate-y-3"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+                    
+                    <div class="lg:col-span-6 space-y-3.5 md:space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+                                STEP 05 OF 05 &bull; PACK &amp; SHIP
+                            </span>
+                            <span class="text-xs font-mono text-slate-400">DISTRIBUTION &amp; MANAGEMENT</span>
+                        </div>
+
+                        <div class="space-y-1">
+                            <h3 class="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white leading-tight">
+                                INDIVIDUALLY BAGGED BY ATHLETE
+                            </h3>
+                            <p class="text-emerald-400 font-semibold text-xs sm:text-sm uppercase tracking-wide">
+                                Individually Bagged by Athlete &bull; Simplified Team Management
+                            </p>
+                        </div>
+
+                        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal" style="color: #cbd5e1;">
+                            Say goodbye to chaotic uniform distribution! Every athlete’s order arrives individually packaged and clearly labeled with their name, making distribution fast and effortless. Plus, turn your team's online store into a fundraising opportunity that generates revenue to support your program.
+                        </p>
+
+                        <div class="space-y-2 pt-1">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Individually Bagged &amp; Labeled:</strong> Every athlete's order is organized by name, allowing you to distribute uniforms in minutes instead of hours.</p>
+                            </div>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Free Batch Shipping:</strong> All batch orders are shipped together to one designated location at no additional cost.</p>
+                            </div>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Generate Revenue for Your Program:</strong> Turn your team store into a fundraising powerhouse! Offer custom apparel and merchandise to athletes, families, and supporters while building your program's operational budget.</p>
+                            </div>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Manage Multiple Stores:</strong> Oversee multiple teams or programs from one convenient account. Create separate stores, switch between them effortlessly, and manage everything through a single dashboard.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 sm:pt-3 flex flex-wrap items-center gap-2.5">
+                            <button type="button" @click="prev()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                <span>&larr;</span> Step 04
+                            </button>
+                            <a href="/quote" class="px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                                Launch Your Team Store &rarr;
+                            </a>
+                            <button type="button" @click="setStep(0)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                                Back to Step 01
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-6">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-2.5 sm:p-3 shadow-inner">
+                            <div class="flex items-center justify-between pb-2.5 px-3 border-b border-slate-800/80 mb-2.5 text-slate-400 text-xs font-mono">
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Admin Operations &amp; Management</span>
+                                <span class="text-emerald-400 font-bold">CENTRALIZED DASHBOARD</span>
+                            </div>
+                            <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[4/3]">
+                                <img src="{{ $teamStoreSettings['step_5_image'] ?? asset('images/5.jpeg') }}" alt="Individually Bagged Orders & Simplified Management" class="w-full h-full object-cover object-top" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/5.jpeg') }}'">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Slider Bottom Indicator & Manual Controls -->
+                <div class="pt-4 mt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <template x-for="i in totalSteps" :key="i">
+                            <button type="button" @click="setStep(i - 1)"
+                                class="h-2 rounded-full transition-all duration-300"
+                                :class="activeStep === (i - 1) ? 'w-8 bg-[#cd202c]' : 'w-2 bg-slate-700 hover:bg-slate-500'">
+                            </button>
+                        </template>
+                        <span class="text-xs font-mono text-slate-400 ml-3">
+                            STEP <span x-text="'0' + (activeStep + 1)" class="text-white font-bold"></span> / 05
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" @click="prev()" aria-label="Previous Step" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors border border-slate-700">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <button type="button" @click="next()" aria-label="Next Step" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors border border-slate-700">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 4 Quick Proof Metrics (Unified Compact Strip - Space Maximized) -->
+            <div class="max-w-4xl mx-auto bg-slate-50/80 border border-slate-200 rounded-xl md:rounded-2xl overflow-hidden shadow-sm mt-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                    
+                    <!-- Metric 1: $0 Setup Fee -->
+                    <div class="p-3 sm:p-3.5 flex items-center justify-center gap-3">
+                        <div class="text-2xl md:text-3xl font-black text-[#cd202c] font-heading tracking-tight shrink-0">
+                            {{ $landingSettings['slider_metric_1_val'] ?? '$0' }}
+                        </div>
+                        <div class="text-left">
+                            <div class="text-xs font-black uppercase text-slate-900 tracking-tight leading-tight">
+                                {{ $landingSettings['slider_metric_1_label'] ?? 'SETUP FEE' }}
+                            </div>
+                            <div class="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">
+                                {{ $landingSettings['slider_metric_1_sub'] ?? '100% Free Store Creation' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 2: 24-48h Rapid Mockups -->
+                    <div class="p-3 sm:p-3.5 flex items-center justify-center gap-3">
+                        <div class="text-xl md:text-2xl font-black text-slate-900 font-heading tracking-tight shrink-0">
+                            {{ $landingSettings['slider_metric_2_val'] ?? '24-48h' }}
+                        </div>
+                        <div class="text-left">
+                            <div class="text-xs font-black uppercase text-slate-900 tracking-tight leading-tight">
+                                {{ $landingSettings['slider_metric_2_label'] ?? 'RAPID MOCKUPS' }}
+                            </div>
+                            <div class="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">
+                                {{ $landingSettings['slider_metric_2_sub'] ?? 'Photorealistic 3D concepts' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 3: 2-3 WKS Production -->
+                    <div class="p-3 sm:p-3.5 flex items-center justify-center gap-3">
+                        <div class="text-xl md:text-2xl font-black text-slate-900 font-heading tracking-tight shrink-0">
+                            {{ $landingSettings['slider_metric_3_val'] ?? '2-3 WKS' }}
+                        </div>
+                        <div class="text-left">
+                            <div class="text-xs font-black uppercase text-slate-900 tracking-tight leading-tight">
+                                {{ $landingSettings['slider_metric_3_label'] ?? 'PRODUCTION' }}
+                            </div>
+                            <div class="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">
+                                {{ $landingSettings['slider_metric_3_sub'] ?? 'Guaranteed game-ready' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 4: 10-20% Team Kickback -->
+                    <div class="p-3 sm:p-3.5 flex items-center justify-center gap-3">
+                        <div class="text-xl md:text-2xl font-black text-slate-900 font-heading tracking-tight shrink-0">
+                            {{ $landingSettings['slider_metric_4_val'] ?? '10-20%' }}
+                        </div>
+                        <div class="text-left">
+                            <div class="text-xs font-black uppercase text-slate-900 tracking-tight leading-tight">
+                                {{ $landingSettings['slider_metric_4_label'] ?? 'Team Kickback' }}
+                            </div>
+                            <div class="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">
+                                {{ $landingSettings['slider_metric_4_sub'] ?? 'Direct program fundraising' }}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Call to Action Trigger -->
+            <div class="text-center mt-4">
+                <a href="{{ $landingSettings['team_store_cta_url'] ?? '/quote' }}" class="px-8 py-3.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-lg hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
+                    {{ $landingSettings['team_store_cta_text'] ?? 'Start Your Custom Team Store Today →' }}
+                </a>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 3. PROGRAM SPOTLIGHTS & MEDIA (Primary Highlight + Side Stories)  -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <section id="news" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-5 md:p-8 relative overflow-hidden">
+        
+        <!-- Header (Matching Size & Placement) -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+            <div>
+                @php
+                    $newsHeading = $landingSettings['news_heading'] ?? 'PROGRAM SPOTLIGHTS & MEDIA';
+                    if (str_contains($newsHeading, 'MEDIA')) {
+                        $nParts = explode('MEDIA', $newsHeading);
+                        $nBefore = $nParts[0];
+                        $nColored = 'MEDIA';
+                    } else {
+                        $nWords = explode(' ', trim($newsHeading));
+                        $nColored = array_pop($nWords);
+                        $nBefore = implode(' ', $nWords) . ' ';
+                    }
+                @endphp
+                <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">
+                    {{ $nBefore }}<span class="text-[#cd202c]">{{ $nColored }}</span>
+                </h2>
+                <p class="text-slate-500 text-xs font-medium mt-1">
+                    {{ $landingSettings['news_subheading'] ?? 'Championship stories, team features, and media coverage from programs powered by The Commission.' }}
+                </p>
+            </div>
+            <a href="{{ route('news.index') }}" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold bg-[#cd202c] hover:bg-[#a11825] text-white transition-colors self-start md:self-auto">
+                {{ $landingSettings['news_cta_text'] ?? 'VIEW ALL NEWS & STORIES' }}
+            </a>
+        </div>
+
+        @php
+            $displayArticles = ($newsArticles && $newsArticles->isNotEmpty()) ? $newsArticles : collect([
+                (object)[
+                    'id' => 2,
+                    'title' => 'Legacy Athletics: Modernizing High School Programs',
+                    'slug' => 'legacy-athletics-modernizing-high-school-programs',
+                    'category' => 'PROGRAM SPOTLIGHT',
+                    'author' => 'The Commission Editorial',
+                    'summary' => 'Discover how Legacy Athletics equipped over 400 student-athletes across 6 varsity sports without a single paper order form. The athletic director tracked production status visually and received automated team fundraising kickbacks.',
+                    'cover_image' => '/images/group.jpg',
+                    'video_url' => null,
+                    'published_at' => \Carbon\Carbon::now()->subDays(3),
+                    'created_at' => \Carbon\Carbon::now()->subDays(3),
+                    'is_featured' => true,
+                ],
+                (object)[
+                    'id' => 1,
+                    'title' => "The Journey: Coach Mike's Championship Run",
+                    'slug' => 'the-journey-coach-mikes-championship-run',
+                    'category' => 'CHAMPIONSHIP RUN',
+                    'author' => 'The Commission Editorial',
+                    'summary' => 'How Coach Mike led his program to a historic state championship victory wearing bespoke Commission performance uniforms.',
+                    'cover_image' => '/images/basketball.png',
+                    'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                    'published_at' => \Carbon\Carbon::now()->subDays(5),
+                    'created_at' => \Carbon\Carbon::now()->subDays(5),
+                    'is_featured' => false,
+                ],
+                (object)[
+                    'id' => 3,
+                    'title' => 'Justin Gatlin Signature Track & Field Collection Revealed',
+                    'slug' => 'justin-gatlin-signature-track-collection',
+                    'category' => 'UNIFORM REVEAL',
+                    'author' => 'The Commission Editorial',
+                    'summary' => 'Olympic gold medalist Justin Gatlin partners with The Commission to introduce ultra-aerodynamic singlets and speed suits for youth track clubs.',
+                    'cover_image' => '/images/gatlin.png',
+                    'video_url' => null,
+                    'published_at' => \Carbon\Carbon::now()->subDays(8),
+                    'created_at' => \Carbon\Carbon::now()->subDays(8),
+                    'is_featured' => false,
+                ],
+                (object)[
+                    'id' => 4,
+                    'title' => 'The Science of Sublimation: Why Modern Teams Ditch Screenprint',
+                    'slug' => 'science-of-sublimation-modern-teams',
+                    'category' => 'CRAFTSMANSHIP',
+                    'author' => 'The Commission Technical Lab',
+                    'summary' => 'Why heavy screen printed numbers crack and peel in the wash, and how molecular dye-sublimation preserves athletic breathability forever.',
+                    'cover_image' => '/images/reality-spartan.png',
+                    'video_url' => null,
+                    'published_at' => \Carbon\Carbon::now()->subDays(12),
+                    'created_at' => \Carbon\Carbon::now()->subDays(12),
+                    'is_featured' => false,
+                ],
+            ]);
+
+            $highlightArticle = $displayArticles->firstWhere('is_featured', true) ?? $displayArticles->first();
+            $sideArticles = $displayArticles->filter(fn($a) => $a->id !== ($highlightArticle->id ?? null));
+        @endphp
+
+        <!-- Dark Showcase Media Frame (Matching Team Store Dark Theme) -->
+        <div class="w-full rounded-2xl md:rounded-3xl shadow-2xl border border-slate-800 bg-[#0e1017] p-5 sm:p-6 md:p-8 relative overflow-hidden text-white">
+            
+            <!-- Ambient Subtle Glow Effects -->
+            <div class="absolute -top-32 -right-32 w-96 h-96 bg-[#cd202c]/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch relative z-10">
+                <!-- Left Column: Primary Highlight -->
+                @if($highlightArticle)
+                <div class="lg:col-span-7 xl:col-span-8 flex">
+                    <article class="bg-[#07090e] border border-slate-800 hover:border-[#cd202c]/50 rounded-2xl overflow-hidden shadow-inner transition-all duration-300 flex flex-col justify-between w-full group">
+                        <!-- Media Card Header -->
+                        <a href="{{ route('news.show', $highlightArticle->slug) }}" class="relative block w-full overflow-hidden aspect-[2/1] sm:aspect-[21/9] max-h-64 sm:max-h-72 bg-black/60">
+                            @if($highlightArticle->cover_image)
+                                <img src="{{ Str::startsWith($highlightArticle->cover_image, 'http') ? $highlightArticle->cover_image : asset(ltrim($highlightArticle->cover_image, '/')) }}" 
+                                     alt="{{ $highlightArticle->title }}" 
+                                     onerror="this.onerror=null; this.src='{{ asset('images/group.jpg') }}';" 
+                                     class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
+                                     loading="lazy">
+                            @endif
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                            
+                            <div class="absolute top-4 left-4 bg-[#cd202c] text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded shadow-md">
+                                {{ $highlightArticle->category }}
+                            </div>
+
+                            @if($highlightArticle->video_url)
+                            <div class="absolute bottom-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-wider group-hover:bg-[#cd202c] group-hover:border-[#cd202c] transition-all shadow-md">
+                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                <span>WATCH VIDEO</span>
+                            </div>
+                            @endif
+                        </a>
+
+                        <!-- Card Body -->
+                        <div class="p-5 md:p-6 flex flex-col justify-between flex-1 space-y-4">
+                            <div class="space-y-2.5">
+                                <h3 class="text-xl md:text-2xl font-black uppercase text-white leading-tight group-hover:text-[#cd202c] transition-colors">
+                                    <a href="{{ route('news.show', $highlightArticle->slug) }}">{{ $highlightArticle->title }}</a>
+                                </h3>
+                                <p class="text-slate-300 text-xs md:text-sm leading-relaxed font-normal line-clamp-3">
+                                    {{ $highlightArticle->summary }}
+                                </p>
+                            </div>
+
+                            <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between mt-auto">
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Featured Program Story</span>
+                                <a href="{{ route('news.show', $highlightArticle->slug) }}" class="text-xs font-black uppercase text-[#cd202c] group-hover:translate-x-1 group-hover:text-white transition-all inline-flex items-center gap-1.5">
+                                    Read Full Story <span>&rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+                @endif
+
+                <!-- Right Column: Side Stories List -->
+                <div class="lg:col-span-5 xl:col-span-4 flex flex-col">
+                    <div class="bg-[#07090e] border border-slate-800 rounded-2xl p-5 md:p-6 shadow-inner flex flex-col h-full justify-between text-white">
+                        <div>
+                            <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800/80">
+                                <h4 class="text-xs font-black uppercase tracking-widest text-slate-400 font-mono">SIDE STORIES</h4>
+                                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">Latest Updates</span>
+                            </div>
+
+                            <div class="divide-y divide-slate-800/80">
+                                @foreach($sideArticles as $side)
+                                <article class="py-3.5 first:pt-1 last:pb-1 group {{ $loop->iteration > 3 ? 'hidden lg:block' : 'block' }}">
+                                    <a href="{{ route('news.show', $side->slug) }}" class="flex items-start gap-3.5">
+                                        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-black/60 border border-slate-800/80">
+                                            @if($side->cover_image)
+                                                 <img src="{{ Str::startsWith($side->cover_image, 'http') ? $side->cover_image : asset(ltrim($side->cover_image, '/')) }}" 
+                                                      alt="{{ $side->title }}" 
+                                                      onerror="this.onerror=null; this.src='{{ asset('images/basketball.png') }}';" 
+                                                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                                                      loading="lazy">
+                                            @endif
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <span class="text-[9px] md:text-[10px] font-black uppercase text-[#cd202c] tracking-widest block mb-1">
+                                                {{ $side->category }}
+                                            </span>
+                                            <h5 class="text-xs md:text-sm font-bold uppercase text-white group-hover:text-[#cd202c] transition-colors line-clamp-2 leading-snug">
+                                                {{ $side->title }}
+                                            </h5>
+                                        </div>
+                                    </a>
+                                </article>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-800/80 mt-4">
+                            <a href="{{ route('news.index') }}" class="block w-full py-2.5 bg-slate-800 hover:bg-[#cd202c] hover:text-white text-slate-300 hover:border-[#cd202c] text-xs font-bold uppercase tracking-wider text-center rounded-xl border border-slate-700 shadow-sm transition-all">
+                                View All News & Stories &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 4. COACH & TEAM TESTIMONIALS                                      -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <section id="testimonials" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden">
+        
+        <!-- Header (Matching Size & Placement) -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+            <div>
+                @php
+                    $testHeading = $landingSettings['testimonials_heading'] ?? 'WHAT COACHES & TEAMS SAY';
+                    if (str_contains($testHeading, 'SAY')) {
+                        $tParts = explode('SAY', $testHeading);
+                        $tBefore = $tParts[0];
+                        $tColored = 'SAY';
+                    } elseif (stripos($testHeading, 'TESTIMONIALS') !== false) {
+                        $tBefore = preg_replace('/TESTIMONIALS.*/i', '', $testHeading);
+                        $tColored = 'TESTIMONIALS';
+                    } else {
+                        $tWords = explode(' ', trim($testHeading));
+                        $tColored = array_pop($tWords);
+                        $tBefore = implode(' ', $tWords) . ' ';
+                    }
+                @endphp
+                <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">
+                    {{ $tBefore }}<span class="text-[#cd202c]">{{ $tColored }}</span>
+                </h2>
+                <p class="text-slate-500 text-xs font-medium mt-1">
+                    {{ $landingSettings['testimonials_subheading'] ?? 'Real feedback and reviews from athletic directors, coaches, and team organizers nationwide.' }}
+                </p>
+            </div>
+            <a href="{{ route('testimonials.index') }}" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold bg-[#cd202c] hover:bg-[#a11825] text-white transition-colors self-start md:self-auto">
+                {{ $landingSettings['testimonials_cta_text'] ?? 'READ ALL TESTIMONIALS' }}
+            </a>
+        </div>
+
+        @if(isset($testimonials) && $testimonials->isNotEmpty())
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach($testimonials as $testimonial)
+            <div class="bg-slate-50 border border-slate-200/90 rounded-2xl p-6 md:p-7 flex flex-col justify-between shadow-sm hover:border-[#cd202c]/40 hover:shadow-md transition-all duration-300">
+                <div class="mb-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex gap-1 text-[#f59e0b] text-sm">
+                            ★ ★ ★ ★ ★
+                        </div>
+                        <span class="text-3xl text-[#cd202c] font-serif leading-none opacity-40">“</span>
+                    </div>
+                    <p class="text-slate-800 text-xs md:text-sm leading-relaxed italic font-normal" style="color: #334155;">
+                        "{{ $testimonial->content }}"
+                    </p>
+                </div>
+                <div class="flex items-center gap-3.5 pt-4 border-t border-slate-200">
+                    @if($testimonial->image_path)
+                        <img src="{{ $testimonial->image_path }}" alt="{{ $testimonial->client_name }}" class="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-300">
+                    @else
+                        <div class="w-10 h-10 rounded-full bg-[#cd202c] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-sm">
+                            {{ substr($testimonial->client_name, 0, 1) }}
+                        </div>
+                    @endif
+                    <div>
+                        <h4 class="text-xs font-black uppercase text-slate-900 tracking-wide">{{ $testimonial->client_name }}</h4>
+                        @if($testimonial->organization)
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mt-0.5">{{ $testimonial->organization }}</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        @endif
+
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 6. FINAL HIGH-CONVERSION CTA BANNER                               -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <section class="bg-[#cd202c] border border-red-700 rounded-2xl md:rounded-3xl text-white py-12 md:py-16 px-6 md:px-12 relative overflow-hidden text-center shadow-xl">
+        <!-- Subtle athletic diagonal stripe background -->
+        <div class="absolute inset-0 bg-[linear-gradient(45deg,rgba(0,0,0,0.06)_25%,transparent_25%,transparent_50%,rgba(0,0,0,0.06)_50%,rgba(0,0,0,0.06)_75%,transparent_75%,transparent)] bg-[size:3rem_3rem] pointer-events-none"></div>
+
+        <div class="max-w-[1200px] mx-auto space-y-5 relative z-10">
+            <span class="inline-block bg-white/20 text-white text-[11px] font-black tracking-widest uppercase px-4 py-1.5 rounded-full border border-white/30 shadow-sm backdrop-blur-sm">
+                {{ $landingSettings['final_cta_badge'] ?? 'DOMINATE THE COMPETITION' }}
+            </span>
+            <h2 class="text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white leading-tight drop-shadow-sm">
+                {{ $landingSettings['final_cta_title'] ?? "READY TO DESIGN YOUR PROGRAM'S LEGACY?" }}
+            </h2>
+            <p class="text-red-50 text-sm md:text-base max-w-2xl mx-auto leading-relaxed font-medium">
+                {{ $landingSettings['final_cta_subtitle'] ?? 'Get bespoke 3D custom uniform mockups tailored specifically for your organization within 24 hours. Zero risk, 100% free.' }}
+            </p>
+            <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="{{ $landingSettings['final_cta_primary_url'] ?? '/quote' }}" class="w-full sm:w-auto px-9 py-4 bg-white hover:bg-slate-100 text-slate-950 font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-xl hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
+                    <span>{{ $landingSettings['final_cta_primary_text'] ?? 'Request Free Custom Mockup' }}</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </a>
+                <a href="{{ $landingSettings['final_cta_secondary_url'] ?? route('store.search') }}" class="w-full sm:w-auto px-8 py-4 bg-transparent hover:bg-white hover:text-slate-950 text-white border-2 border-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full transition-all inline-flex items-center justify-center">
+                    {{ $landingSettings['final_cta_secondary_text'] ?? 'Explore Team Stores' }}
+                </a>
+            </div>
+        </div>
     </section>
 
 </div>

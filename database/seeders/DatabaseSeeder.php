@@ -43,6 +43,7 @@ class DatabaseSeeder extends Seeder
             LandingCollectionSeeder::class,
             TestimonialSeeder::class,
             SalesAgentSeeder::class,
+            NewsArticleSeeder::class,
         ]);
     }
 }

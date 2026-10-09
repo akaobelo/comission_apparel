@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CoachController;
 use App\Http\Controllers\QuoteRequestController;
 use App\Http\Controllers\StoreController;
+use App\Http\Controllers\NewsController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\CoachMiddleware;
 
@@ -17,15 +18,68 @@ Route::get('/', function () {
         ->get();
     $testimonials = \App\Models\Testimonial::where('is_active', true)
         ->orderBy('sort_order', 'asc')
-        ->limit(5)
+        ->limit(6)
         ->get();
+    
+    // Ensure default articles exist so visitors always see live interactive stories
+    if (\Illuminate\Support\Facades\Schema::hasTable('news_articles') && \App\Models\NewsArticle::count() === 0) {
+        try {
+            (new \Database\Seeders\LandingPageSeeder())->run();
+        } catch (\Throwable $e) {
+            // Silently fallback
+        }
+    }
+
+    $newsArticles = \App\Models\NewsArticle::where('is_active', true)
+        ->orderBy('is_featured', 'desc')
+        ->orderBy('sort_order', 'asc')
+        ->orderBy('published_at', 'desc')
+        ->limit(6)
+        ->get();
+
+    $landingSettings = \App\Models\SiteSetting::all()->pluck('value', 'key')->toArray();
+
     $heroSettings = [
-        'subtitle'   => \App\Models\SiteSetting::where('key', 'hero_subtitle')->value('value') ?? 'Premium armor tailored for programs that demand greatness. Built for the modern athlete, delivered with lightning speed.',
-        'media_path' => \App\Models\SiteSetting::where('key', 'hero_media_path')->value('value') ?? asset('images/hero-models.png'),
-        'media_type' => \App\Models\SiteSetting::where('key', 'hero_media_type')->value('value') ?? 'image',
+        'badge'               => $landingSettings['hero_badge'] ?? 'Official Team Uniforms & Fan Gear',
+        'title'               => $landingSettings['hero_title'] ?? 'CUSTOM GEAR BUILT FOR THE COMMITTED',
+        'subtitle'            => $landingSettings['hero_subtitle'] ?? 'Dominate the competition with elite performance apparel designed for champion athletes. Precision craftsmanship, fast 2–3 week turnaround, and dedicated online team stores.',
+        'banner_image'        => $landingSettings['hero_banner_image'] ?? $landingSettings['hero_media_path'] ?? asset('images/hero-banner.jpeg'),
+        'cta_primary_text'    => $landingSettings['hero_cta_primary_text'] ?? 'Request Free 3D Mockup',
+        'cta_primary_url'     => $landingSettings['hero_cta_primary_url'] ?? '/quote',
+        'cta_secondary_text'  => $landingSettings['hero_cta_secondary_text'] ?? 'Find Your Team Store',
+        'cta_secondary_url'   => $landingSettings['hero_cta_secondary_url'] ?? route('store.search'),
     ];
-    return view('welcome', compact('landingCollections', 'testimonials', 'heroSettings')); 
+
+    $proofSettings = [
+        'heading'             => $landingSettings['proof_heading'] ?? 'From Vision to Victory: Concept to Reality',
+        'subheading'          => $landingSettings['proof_subheading'] ?? 'Precision craftsmanship from 3D digital blueprint to final sublimated uniform.',
+        'concept_image'       => $landingSettings['proof_concept_image'] ?? asset('images/concept-spartan.png'),
+        'reality_image'       => $landingSettings['proof_reality_image'] ?? asset('images/reality-spartan.png'),
+        'feature_1'           => $landingSettings['proof_feature_1'] ?? '1. Full Custom Graphics',
+        'feature_2'           => $landingSettings['proof_feature_2'] ?? '2. Premium Moisture-Wicking Fabric',
+        'feature_3'           => $landingSettings['proof_feature_3'] ?? '3. Reinforced Athletic Stitching',
+    ];
+
+    $teamStoreSettings = [
+        'badge'               => $landingSettings['team_store_badge'] ?? 'COACH & PROGRAM PLATFORM',
+        'heading'             => $landingSettings['team_store_heading'] ?? 'LAUNCH YOUR TEAM STORE',
+        'subheading'          => $landingSettings['team_store_subheading'] ?? 'Empower your program with a custom online store that eliminates coach hassle and generates revenue.',
+        'image'               => $landingSettings['team_store_image'] ?? asset('images/team store.png'),
+        'step_1_image'        => $landingSettings['team_store_step_1_image'] ?? asset('images/design.jpeg'),
+        'step_2_image'        => $landingSettings['team_store_step_2_image'] ?? asset('images/team store.png'),
+        'step_3_image'        => $landingSettings['team_store_step_3_image'] ?? asset('images/direct order.jpeg'),
+        'step_4_image'        => $landingSettings['team_store_step_4_image'] ?? asset('images/week production.jpeg'),
+        'step_5_image'        => $landingSettings['team_store_step_5_image'] ?? asset('images/5.jpeg'),
+        'bullet_1'            => $landingSettings['team_store_bullet_1'] ?? 'Streamlined Direct Ordering for Parents',
+        'bullet_2'            => $landingSettings['team_store_bullet_2'] ?? 'Custom Fan Gear & Official Team Packages',
+        'bullet_3'            => $landingSettings['team_store_bullet_3'] ?? 'Fast Direct-to-Door Delivery',
+        'bullet_4'            => $landingSettings['team_store_bullet_4'] ?? 'Centralized Coach & Athletic Director Portal',
+    ];
+
+    return view('welcome', compact('landingCollections', 'testimonials', 'newsArticles', 'heroSettings', 'proofSettings', 'teamStoreSettings', 'landingSettings'));
 });
+Route::get('/news', [NewsController::class, 'index'])->name('news.index');
+Route::get('/news/{slug}', [NewsController::class, 'show'])->name('news.show');
 Route::get('/testimonials', function () {
     $testimonials = \App\Models\Testimonial::where('is_active', true)
         ->orderBy('sort_order', 'asc')
@@ -378,6 +432,14 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     // Quotes
     Route::post('/admin/quote/{quoteRequest}/mark-addressed', [AdminController::class, 'markQuoteAddressed'])->name('admin.quote.mark-addressed');
     Route::delete('/admin/quote/{quoteRequest}', [AdminController::class, 'deleteQuote'])->name('admin.quote.delete');
+
+    // Landing Page CMS Settings
+    Route::post('/admin/landing-settings', [AdminController::class, 'updateLandingSettings'])->name('admin.landing.settings.update');
+
+    // News & Media Management
+    Route::post('/admin/news', [AdminController::class, 'createNewsArticle'])->name('admin.news.create');
+    Route::post('/admin/news/{article}/update', [AdminController::class, 'updateNewsArticle'])->name('admin.news.update');
+    Route::delete('/admin/news/{article}/delete', [AdminController::class, 'deleteNewsArticle'])->name('admin.news.delete');
 
     // Sales Agents Admin CRUD
     Route::post('/admin/sales-agents', [AdminController::class, 'createSalesAgent'])->name('admin.sales-agent.create');

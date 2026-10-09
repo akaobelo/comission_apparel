@@ -1,0 +1,1284 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\TeamStore;
+use App\Models\StoreItem;
+use App\Models\ParentOrder;
+use App\Models\DesignCatalog;
+use App\Services\TwilioService;
+use Illuminate\Support\Str;
+
+class CoachController extends Controller
+{
+    public function dashboard(Request $request)
+    {
+        $user = $request->user();
+
+        // Load all stores for this coach
+        $stores = $user->teamStores()->orderBy('created_at', 'desc')->get();
+
+        // Determine the active store (via query param, session, or default to latest)
+        $activeStoreId = $request->query('store_id') 
+            ?? session('active_coach_store_id') 
+            ?? $stores->first()?->id;
+
+        $store = $stores->firstWhere('id', $activeStoreId) ?? $stores->first();
+
+        if ($store) {
+            session(['active_coach_store_id' => $store->id]);
+            $store->load(['items' => function($q) {
+                $q->orderBy('sort_order', 'asc');
+            }, 'items.designCatalog', 'rosters']);
+            // Get unbatched orders for the active store roster
+            $store->setRelation('parentOrders', $store->parentOrders()->whereNull('batch_id')->get());
+        }
+
+        // Designs assigned to this coach (for item builder)
+        $assignedDesigns = $user->designCatalog()->latest()->get();
+
+        // All batched orders placed by the coach (Direct Orders AND Store Orders)
+        $batchedOrders = $user->parentOrders()->whereNotNull('batch_id')->where('is_archived', false)->latest()->get();
+        $archivedBatchedOrders = $user->parentOrders()->whereNotNull('batch_id')->where('is_archived', true)->latest()->get();
+        
+        // Draft Direct Orders
+        $directOrders = $user->parentOrders()->whereNull('team_store_id')->where('status', 'Draft')->where('is_archived', false)->latest()->get();
+
+        // Group batched orders by batch
+        $directOrderBatches = $batchedOrders->groupBy('batch_id');
+        $archivedOrderBatches = $archivedBatchedOrders->groupBy('batch_id');
+
+        // Organize assigned designs by category for package selection
+        $packageDesigns = [
+            'package_a' => $assignedDesigns->where('category', 'package_a'),
+            'package_b' => $assignedDesigns->where('category', 'package_b'),
+            'package_c' => $assignedDesigns->where('category', 'package_c'),
+            'individual' => $assignedDesigns->where('category', 'individual'),
+        ];
+
+        $salesSummary = [
+            'orders_count' => 0,
+            'total_sales' => 0,
+            'total_items_sold' => 0,
+            'average_order_value' => 0,
+            'order_rows' => [],
+        ];
+
+        if ($store) {
+            $priceByItemId = $store->items->keyBy('id');
+            $orderRows = [];
+            $totalSales = 0;
+            $totalWholesale = 0;
+            $totalItemsSold = 0;
+
+            foreach ($store->parentOrders as $order) {
+                $orderTotal = 0;
+                $orderWholesaleTotal = 0;
+                $orderItemsCount = 0;
+                $items = is_array($order->items_json) ? $order->items_json : [];
+
+                foreach ($items as $orderedItem) {
+                    $itemId = isset($orderedItem['id']) ? (int) $orderedItem['id'] : null;
+                    $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
+                    $orderItemsCount += $qty;
+
+                    $prices = \App\Models\ParentOrder::getItemPrices($orderedItem, $store);
+                    $retailPrice = $prices['retail_price'];
+                    $wholesalePrice = $prices['wholesale_price'];
+                    
+                    $orderTotal += ($retailPrice * $qty);
+                    $orderWholesaleTotal += ($wholesalePrice * $qty);
+                }
+
+                $totalSales += $orderTotal;
+                $totalWholesale += $orderWholesaleTotal;
+                $totalItemsSold += $orderItemsCount;
+
+                $orderRows[] = [
+                    'athlete_name' => $order->athlete_name,
+                    'items_count' => $orderItemsCount,
+                    'order_total' => $orderTotal,
+                    'submitted_at' => $order->created_at,
+                ];
+            }
+
+            $ordersCount = count($orderRows);
+            $salesSummary = [
+                'orders_count' => $ordersCount,
+                'total_sales' => $totalSales,
+                'total_wholesale' => $totalWholesale,
+                'net_proceeds' => $totalSales - $totalWholesale,
+                'total_items_sold' => $totalItemsSold,
+                'average_order_value' => $ordersCount > 0 ? $totalSales / $ordersCount : 0,
+                'order_rows' => $orderRows,
+            ];
+        }
+
+        return view('coach.dashboard', compact('user', 'stores', 'store', 'assignedDesigns', 'packageDesigns', 'salesSummary', 'directOrders', 'directOrderBatches', 'archivedOrderBatches'));
+    }
+
+
+    public function createStore(Request $request)
+    {
+        $request->validate([
+            'name'         => 'required|string|max:255',
+            'description'  => 'nullable|string|max:1000',
+            'package_type' => 'nullable|in:package_a,package_b,package_c,individual',
+            'payment_mode' => 'nullable|in:in_house,online',
+        ]);
+
+        $user = $request->user();
+
+        $store = TeamStore::create([
+            'user_id'      => $user->id,
+            'name'         => $request->name,
+            'description'  => null,
+<<<<<<< HEAD
+            'slug'         => Str::slug($request->name) . '-' . strtolower(Str::random(6)),
+=======
+>>>>>>> 06212026_latest_update
+            'package_type' => $request->package_type ?? 'individual',
+            'payment_mode' => $request->payment_mode ?? 'in_house',
+            'status'       => 'pending',
+        ]);
+
+        session(['active_coach_store_id' => $store->id]);
+
+        \Illuminate\Support\Facades\Notification::send(
+            \App\Models\User::where('role', 'admin')->get(),
+            new \App\Notifications\StoreCreated($store)
+        );
+
+        return redirect()->route('coach.dashboard', ['store_id' => $store->id, 'tab' => 'overview'])
+            ->with('success', 'Store "' . $store->name . '" created! Awaiting admin approval. You can start setting it up.');
+    }
+
+    public function addStoreItem(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'design_catalog_id' => ['required', 'exists:design_catalog,id'],
+        ]);
+
+        $design = DesignCatalog::findOrFail($request->design_catalog_id);
+
+        // Check if design is assigned to this coach
+        if (!$request->user()->designCatalog()->where('design_catalog.id', $design->id)->exists()) {
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'You do not have permission to add this design. Please contact The Commission Apparel to request permission.');
+        }
+
+        // Check it isn't already in the store
+        if ($store->items()->where('design_catalog_id', $design->id)->exists()) {
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'That design is already added to your store.');
+        }
+
+        $maxSort = $store->items()->max('sort_order') ?? 0;
+
+        $retailPrice = $request->filled('retail_price') ? max($request->retail_price, $design->wholesale_price) : $design->wholesale_price;
+
+        $store->items()->create([
+            'design_catalog_id' => $design->id,
+            'name'              => $design->name,
+            'type'              => null, // Deprecated
+            'types'             => $design->types,
+            'image_url'         => null, // Deprecated
+            'image_paths'       => $design->image_paths,
+            'wholesale_price'   => $design->wholesale_price,
+            'retail_price'      => $retailPrice,
+            'sort_order'        => $maxSort + 1,
+        ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => "{$design->name} added to your store."]);
+        }
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', "\"{$design->name}\" added to your store.");
+    }
+
+    public function removeStoreItem(Request $request, StoreItem $item)
+    {
+        $store = $item->teamStore;
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $item->delete();
+        
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Item removed from store.']);
+        }
+        
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Item removed from store.');
+    }
+
+    public function updateItemMarkup(Request $request, StoreItem $item)
+    {
+        $store = $item->teamStore;
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'retail_price' => 'required|numeric|min:' . $item->wholesale_price,
+            'sort_order'   => 'nullable|integer',
+        ]);
+
+        $item->update([
+            'retail_price' => $request->retail_price,
+            'sort_order'   => $request->sort_order ?? $item->sort_order,
+        ]);
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Store price updated successfully.');
+    }
+
+    public function updateBulkItemMarkup(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.retail_price' => 'required|numeric',
+            'items.*.sort_order' => 'nullable|integer',
+        ]);
+
+        foreach ($request->items as $itemId => $data) {
+            $item = $store->items()->find($itemId);
+            if ($item) {
+                if ($data['retail_price'] >= $item->wholesale_price) {
+                    $item->update([
+                        'retail_price' => $data['retail_price'],
+                        'sort_order'   => $data['sort_order'] ?? $item->sort_order,
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'All store prices updated successfully.');
+    }
+
+    public function updateDeadline(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'deadline' => 'required|date|after:today',
+        ]);
+
+        $store->update(['order_deadline' => $request->deadline]);
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Order deadline updated.');
+    }
+
+    public function submitMasterOrder(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'shipping_address' => 'required|string|max:1000',
+        ]);
+
+        $unbatchedOrders = $store->parentOrders()
+            ->whereNull('batch_id')
+            ->where('is_archived', false)
+            ->where(function($q) {
+                $q->where('payment_status', 'paid')
+                  ->orWhere('payment_status', 'not_applicable');
+            });
+
+        if ($unbatchedOrders->count() === 0) {
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'No confirmed orders are ready to submit. Please ensure all online orders are paid before finalizing.');
+        }
+
+        $batchId = (string) Str::uuid();
+
+        $unbatchedOrders->update([
+            'status' => 'Submitted to Admin',
+            'batch_id' => $batchId
+        ]);
+
+        $store->update([
+            'status' => 'submitted_to_admin',
+            'shipping_address' => $request->shipping_address
+        ]);
+        
+        \Illuminate\Support\Facades\Notification::send(
+            \App\Models\User::where('role', 'admin')->get(),
+            new \App\Notifications\MasterOrderSubmitted($store)
+        );
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Master order submitted to The Commission Apparel for production!');
+    }
+
+    public function exportOrderCSV(TeamStore $store)
+    {
+        if ($store->user_id !== request()->user()->id) abort(403);
+
+        $store->load(['items', 'parentOrders' => function($q) {
+            $q->where('is_archived', false);
+        }]);
+        $orders = $store->parentOrders;
+
+        $filename = "{$store->slug}-master-order.csv";
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = [
+            'Store Name', 'Order ID', 'Submission Date', 'Payment Mode', 'Payment Status',
+            'Athlete First Name', 'Athlete Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
+            'Jersey Name', 'Jersey Number', 'Backpack Name',
+            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price', 'Manufacture Price', 'Total Manufacture Price', 'Special Notes', 'Edited?'
+        ];
+
+        $callback = function() use ($store, $orders, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($orders as $order) {
+                if (is_array($order->items_json)) {
+                    foreach ($order->items_json as $item) {
+                        $typesStr = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
+                        
+                        $sizesArr = [];
+                        if (isset($item['components']) && is_array($item['components'])) {
+                            foreach ($item['components'] as $comp) {
+                                if (isset($comp['sizes']) && is_array($comp['sizes'])) {
+                                    foreach ($comp['sizes'] as $t => $s) {
+                                        $sizesArr[] = "{$comp['name']} ($t): $s";
+                                    }
+                                } elseif (!empty($comp['size'])) {
+                                    $sizesArr[] = "{$comp['name']}: {$comp['size']}";
+                                }
+                            }
+                        } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
+                            foreach ($item['sizes'] as $t => $s) {
+                                $sizesArr[] = "$t: $s";
+                            }
+                        }
+                        $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
+
+                        $qty = $item['qty'] ?? 1;
+                        $prices = \App\Models\ParentOrder::getItemPrices($item, $store);
+                        $itemPrice = $prices['retail_price'];
+                        $totalRowPrice = $itemPrice * $qty;
+                        $mfgPrice = $prices['wholesale_price'];
+                        $totalMfgPrice = $mfgPrice * $qty;
+
+                        fputcsv($file, [
+                            $store->name,
+                            $order->id,
+                            $order->created_at->format('Y-m-d'),
+                            $store->payment_mode ?? 'in_house',
+                            $order->payment_status ?? 'not_applicable',
+                            $order->athlete_first_name,
+                            $order->athlete_last_name,
+                            $order->parent_email ?? '',
+                            $order->parent_phone ?? '',
+                            $order->shipping_address ?? '',
+                            $item['gender'] ?? $order->gender ?? 'Not Specified',
+                            $order->jersey_name ?? '',
+                            $order->jersey_number ?? '',
+                            $order->backpack_name ?? '',
+                            $item['name'] ?? 'Unknown Item',
+                            $typesStr,
+                            $sizesStr,
+                            $qty,
+                            number_format($itemPrice, 2, '.', ''),
+                            number_format($totalRowPrice, 2, '.', ''),
+                            number_format($mfgPrice, 2, '.', ''),
+                            number_format($totalMfgPrice, 2, '.', ''),
+                            $order->special_notes ?? '',
+                            $order->is_edited ? 'Yes' : 'No',
+                        ]);
+                    }
+                }
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function editOrder(Request $request, ParentOrder $order)
+    {
+        if ($order->team_store_id) {
+            $store = $order->teamStore;
+            if ($store->user_id !== $request->user()->id) abort(403);
+
+            $sizeChart = DesignCatalog::sizeChart();
+            
+            $availableItems = $store->items()->with('designCatalog')->get()->map(function($item) {
+                $types = $item->types ?? [$item->type];
+                $sizedTypes = array_intersect($types, \App\Models\DesignCatalog::sizedTypes());
+                $imagePath = null;
+                $paths = $item->designCatalog->image_paths ?? $item->image_paths ?? null;
+                if (!empty($paths)) {
+                    $path = $paths[0];
+                    $imagePath = \Illuminate\Support\Str::startsWith($path, 'http') || \Illuminate\Support\Str::startsWith($path, '/storage') ? asset($path) : asset('storage/' . $path);
+                }
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'types' => $types,
+                    'sizedTypes' => array_values($sizedTypes),
+                    'image_path' => $imagePath
+                ];
+            });
+
+            return view('coach.order_edit', compact('order', 'store', 'sizeChart', 'availableItems'));
+        } else {
+            // Direct Order
+            if ($order->user_id !== $request->user()->id) abort(403);
+
+            $sizeChart = DesignCatalog::sizeChart();
+            
+            $availableItems = $request->user()->designCatalog()->get()->map(function($item) {
+                $types = $item->types ?? [$item->type];
+                $sizedTypes = array_intersect($types, \App\Models\DesignCatalog::sizedTypes());
+                $imagePath = null;
+                if (!empty($item->image_paths)) {
+                    $path = $item->image_paths[0];
+                    $imagePath = \Illuminate\Support\Str::startsWith($path, 'http') || \Illuminate\Support\Str::startsWith($path, '/storage') ? asset($path) : asset('storage/' . $path);
+                }
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'types' => $types,
+                    'sizedTypes' => array_values($sizedTypes),
+                    'image_path' => $imagePath
+                ];
+            });
+
+            $store = null;
+            return view('coach.order_edit', compact('order', 'store', 'sizeChart', 'availableItems'));
+        }
+    }
+
+    public function updateOrder(Request $request, ParentOrder $order)
+    {
+        if ($order->team_store_id) {
+            $store = $order->teamStore;
+            if ($store->user_id !== $request->user()->id) abort(403);
+        } else {
+            if ($order->user_id !== $request->user()->id) abort(403);
+        }
+
+        $request->validate([
+            'athlete_first_name'  => ['required', 'string', 'max:255'],
+            'athlete_last_name'   => ['required', 'string', 'max:255'],
+            'gender'              => ['nullable', 'string', 'max:50'],
+            'jersey_name'         => ['nullable', 'string', 'max:255'],
+            'jersey_number'       => ['nullable', 'string', 'max:10'],
+            'backpack_name'       => ['nullable', 'string', 'max:255'],
+            'special_notes'       => ['nullable', 'string'],
+            'items'               => ['required', 'array'],
+        ]);
+
+        $itemsJson = [];
+        foreach ($request->items as $idx => $item) {
+            $entry = [
+                'id'           => $item['id'] ?? $idx,
+                'name'         => $item['name'] ?? 'Unknown',
+                'types'        => $item['types'] ?? [],
+                'sizes'        => $item['sizes'] ?? [],
+                'qty'          => $item['qty'] ?? 1,
+                'gender'       => $item['gender'] ?? 'Unisex',
+            ];
+            if (!empty($item['components']) && is_array($item['components'])) {
+                $entry['components'] = $item['components'];
+            }
+            $itemsJson[] = $entry;
+        }
+
+        $order->update([
+            'athlete_first_name'  => $request->athlete_first_name,
+            'athlete_last_name'   => $request->athlete_last_name,
+            'gender'              => $request->gender,
+            'jersey_name'         => $request->jersey_name,
+            'jersey_number'       => $request->jersey_number,
+            'backpack_name'       => $request->backpack_name,
+            'special_notes'       => $request->special_notes,
+            'items_json'          => $itemsJson,
+            'is_edited'           => true,
+            'edited_by'           => 'coach',
+        ]);
+
+        $fullName = trim($request->athlete_first_name . ' ' . $request->athlete_last_name);
+
+        if (!$order->team_store_id) {
+            return redirect()->route('coach.dashboard')
+                ->with('success', "Order for {$fullName} has been updated.")
+                ->with('activeCoachTab', 'create_order');
+        }
+
+        return redirect()->route('coach.dashboard', ['tab' => 'overview'])
+            ->with('success', "Order for {$fullName} has been updated.");
+    }
+
+    public function deleteOrder(Request $request, ParentOrder $order)
+    {
+        if ($order->team_store_id) {
+            $store = $order->teamStore;
+            if ($store->user_id !== $request->user()->id) abort(403);
+            
+            $fullName = trim($order->athlete_first_name . ' ' . $order->athlete_last_name);
+
+            if ($order->payment_status === 'paid') {
+                return redirect()->route('coach.dashboard', ['tab' => 'overview'])
+                    ->with('error', "Cannot delete order for {$fullName} because it has already been paid online. Please contact admin if cancellation is needed.");
+            }
+
+            $order->delete();
+            return redirect()->route('coach.dashboard', ['tab' => 'overview'])->with('success', "Order for {$fullName} has been deleted.");
+        } else {
+            if ($order->user_id !== $request->user()->id) abort(403);
+            
+            $fullName = trim($order->athlete_first_name . ' ' . $order->athlete_last_name);
+            $order->delete();
+            return redirect()->route('coach.dashboard')->with('success', "Order for {$fullName} has been deleted.")->with('activeCoachTab', 'create_order');
+        }
+    }
+
+    public function approvePricing(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $store->update(['pricing_approved' => true]);
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Pricing approved! The public storefront is now live with the approved pricing.');
+    }
+
+    public function reopenStore(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        // Unlock the store. Previous orders have already been batched.
+        $store->update(['status' => 'approved']);
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Store has been re-opened for new orders! The active roster is now clear for the new batch.');
+    }
+    public function updateCoverImage(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'cover_image' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'], // Max 5MB
+        ]);
+
+        if ($request->hasFile('cover_image')) {
+            // Delete old image if exists
+            if ($store->cover_image_path) {
+                $pathToRemove = str_replace('/storage/', '', $store->cover_image_path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            }
+
+            // Store new image
+            $path = \App\Services\ImageOptimizer::optimize($request->file('cover_image'), 'covers');
+            $store->update(['cover_image_path' => $path]);
+        }
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Store cover image updated successfully.');
+    }
+
+    public function updateDescription(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'payment_mode' => ['required', 'in:in_house,online'],
+        ]);
+
+        $store->update(['payment_mode' => $request->payment_mode]);
+
+        if ($request->payment_mode === 'online') {
+            $store->parentOrders()->where(function($q) {
+                $q->whereNull('payment_status')
+                  ->orWhere('payment_status', 'not_applicable');
+            })->update(['payment_status' => 'pending']);
+        } else {
+            $store->parentOrders()->where('payment_status', 'pending')
+                  ->update(['payment_status' => 'not_applicable']);
+        }
+
+        $label = $request->payment_mode === 'online' ? 'Online Credit Card Payment' : 'Cash Collection (In-House)';
+        return redirect()->route('coach.dashboard')
+            ->with('success', "Payment collection method updated to: {$label}.");
+    }
+
+    public function updateProfileLogo(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'], // Max 5MB
+        ]);
+
+        if ($request->hasFile('logo')) {
+            // Delete old logo if exists
+            if ($user->logo_path) {
+                $pathToRemove = str_replace('/storage/', '', $user->logo_path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            }
+
+            // Store new logo
+            $path = \App\Services\ImageOptimizer::optimize($request->file('logo'), 'organization_logos');
+            $user->update(['logo_path' => $path]);
+        }
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Organization logo updated successfully.');
+    }
+
+    public function submitDirectOrder(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'order_type'          => 'required|in:person,item',
+            'athlete_first_name'  => 'nullable|string|max:255',
+            'athlete_last_name'   => 'nullable|string|max:255',
+            'gender'              => 'nullable|string|max:50',
+            'jersey_name'         => 'nullable|string|max:255',
+            'jersey_number'       => 'nullable|string|max:10',
+            'backpack_name'       => 'nullable|string|max:255',
+            'items'               => 'required|array|min:1',
+        ]);
+
+        $itemsJson = [];
+
+        foreach ($request->items as $designId => $details) {
+            if (!isset($details['selected']) || $details['selected'] != '1') {
+                continue;
+            }
+
+            $design = $user->designCatalog()->find($designId);
+            if (!$design) continue;
+
+            $unitPrice = (float) $design->wholesale_price;
+            $qty = max(1, intval($details['qty'] ?? 1));
+
+            $types = $design->types ?? [];
+            $sizedTypes = DesignCatalog::sizedTypes();
+            $hasSizes = count(array_intersect($types, $sizedTypes)) > 0;
+
+            if (isset($details['package_sizes']) && is_array($details['package_sizes'])) {
+                $qty = max(1, intval($details['qty'] ?? 1));
+                $entry = [
+                    'id'           => $designId,
+                    'name'         => $design->name,
+                    'types'        => $types,
+                    'qty'          => $qty,
+                    'gender'       => $details['gender'] ?? 'Unisex',
+                    'sizes'        => [],
+                    'unit_price'   => $unitPrice,
+                ];
+                // Apply the sizes selected
+                foreach ($details['package_sizes'] as $t => $size) {
+                    if (!empty($size)) {
+                        $entry['sizes'][$t] = $size;
+                    }
+                }
+                $itemsJson[] = $entry;
+            } else if ($hasSizes && isset($details['sizes']) && is_array($details['sizes'])) {
+                foreach ($details['sizes'] as $size => $qty) {
+                    $qty = intval($qty);
+                    if ($qty > 0) {
+                        $entry = [
+                            'id'           => $designId,
+                            'name'         => $design->name,
+                            'types'        => $types,
+                            'qty'          => $qty,
+                            'gender'       => $details['gender'] ?? 'Unisex',
+                            'sizes'        => [],
+                            'unit_price'   => $unitPrice,
+                        ];
+                        // Apply this size to all sized types in the item
+                        foreach ($types as $t) {
+                            if (in_array($t, $sizedTypes)) {
+                                $entry['sizes'][$t] = $size;
+                            }
+                        }
+                        $itemsJson[] = $entry;
+                    }
+                }
+            } else if (!$hasSizes) {
+                // Non-sized item
+                $qty = max(1, intval($details['qty'] ?? 1));
+                $entry = [
+                    'id'           => $designId,
+                    'name'         => $design->name,
+                    'types'        => $types,
+                    'qty'          => $qty,
+                    'gender'       => $details['gender'] ?? 'Unisex',
+                    'sizes'        => [],
+                    'unit_price'   => $unitPrice,
+                ];
+                $itemsJson[] = $entry;
+            }
+        }
+
+        if (empty($itemsJson)) {
+            return back()->with('error', 'Please select at least one item before submitting.');
+        }
+
+        // If order by item (bulk), use "Bulk Order" as name
+        $firstName = $request->order_type === 'item' ? 'Bulk' : trim($request->athlete_first_name);
+        $lastName = $request->order_type === 'item' ? 'Order' : trim($request->athlete_last_name);
+
+        $lineSubtotal = 0.0;
+        foreach ($itemsJson as $item) {
+            $qty = max(1, intval($item['qty'] ?? 1));
+            $unitPrice = (float) ($item['unit_price'] ?? 0);
+            $lineSubtotal += ($unitPrice * $qty);
+        }
+
+        ParentOrder::create([
+            'user_id'             => $user->id,
+            'team_store_id'       => null,
+            'athlete_first_name'  => $firstName ?: 'Direct',
+            'athlete_last_name'   => $lastName ?: 'Order',
+            'gender'              => $request->filled('gender') ? trim($request->gender) : null,
+            'jersey_name'         => $request->jersey_name,
+            'jersey_number'       => $request->jersey_number,
+            'backpack_name'       => $request->backpack_name,
+            'items_json'          => $itemsJson,
+            'status'              => 'Draft',
+            'payment_status'      => 'pending_payment',
+            'subtotal'            => $lineSubtotal,
+            'total_retail_price'  => $lineSubtotal,
+        ]);
+
+        return redirect()->route('coach.dashboard')->with('success', 'Order line added to your draft.')->with('activeCoachTab', 'create_order');
+    }
+
+    public function finalizeDirectOrders(Request $request)
+    {
+        $user = $request->user();
+        
+        $draftOrders = $user->parentOrders()
+            ->whereNull('team_store_id')
+            ->where('status', 'Draft')
+            ->get();
+
+        if ($draftOrders->isEmpty()) {
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'You have no draft orders to submit.')
+                ->with('activeCoachTab', 'create_order');
+        }
+
+        // Calculate and sync accurate subtotal per draft order
+        $subtotal = 0.0;
+        foreach ($draftOrders as $order) {
+            $orderSubtotal = (float) $order->getCalculatedSubtotal();
+            $order->update([
+                'subtotal'           => $orderSubtotal,
+                'total_retail_price' => $orderSubtotal,
+            ]);
+            $subtotal += $orderSubtotal;
+        }
+
+        if ($subtotal <= 0) {
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'The draft orders total must be greater than $0.00.')
+                ->with('activeCoachTab', 'create_order');
+        }
+
+        $batchId = (string) Str::uuid();
+
+        // 501(c)(3) tax exemption check
+        $isTaxExempt = (bool) $user->is_tax_exempt;
+        $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
+        $taxAmount = $isTaxExempt ? 0.00 : round($subtotal * $taxRate, 2);
+
+        $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+        $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+        $preFeeTotal = $subtotal + $taxAmount;
+        $grandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
+        $feeAmount = round($grandTotal - $preFeeTotal, 2);
+        $totalPaid = $grandTotal;
+
+        // Assign batch ID and pending payment state
+        foreach ($draftOrders as $order) {
+            $order->update([
+                'batch_id'       => $batchId,
+                'payment_status' => 'pending_payment',
+            ]);
+        }
+
+        $stripeSecret = config('services.stripe.secret');
+
+        if ($stripeSecret) {
+            try {
+                $stripe = new \Stripe\StripeClient($stripeSecret);
+
+                $lineItems = [];
+                foreach ($draftOrders as $order) {
+                    $itemsJson = is_array($order->items_json) ? $order->items_json : [];
+                    foreach ($itemsJson as $itemEntry) {
+                        $itemPrices = \App\Models\ParentOrder::getItemPrices($itemEntry, null);
+                        $unitPrice = isset($itemEntry['unit_price']) && (float)$itemEntry['unit_price'] > 0
+                            ? (float) $itemEntry['unit_price']
+                            : (float) $itemPrices['retail_price'];
+                        $unitCents = max(50, intval(round($unitPrice * 100)));
+                        $qty = max(1, intval($itemEntry['qty'] ?? 1));
+
+                        // Build sizes description
+                        $sizesDesc = '';
+                        if (!empty($itemEntry['sizes']) && is_array($itemEntry['sizes'])) {
+                            $sizesDesc = ' (Sizes: ' . implode(', ', array_map(fn($k, $v) => "{$k}: {$v}", array_keys($itemEntry['sizes']), $itemEntry['sizes'])) . ')';
+                        }
+                        $genderDesc = isset($itemEntry['gender']) ? ' [' . $itemEntry['gender'] . ']' : '';
+
+                        $lineItems[] = [
+                            'price_data' => [
+                                'currency'     => 'usd',
+                                'unit_amount'  => $unitCents,
+                                'product_data' => [
+                                    'name'        => ($itemEntry['name'] ?? 'Item') . $genderDesc,
+                                    'description' => ($order->athlete_name ?: 'Direct Order') . $sizesDesc,
+                                ],
+                            ],
+                            'quantity'   => $qty,
+                        ];
+                    }
+                }
+
+                if ($taxAmount > 0) {
+                    $lineItems[] = [
+                        'price_data' => [
+                            'currency'     => 'usd',
+                            'unit_amount'  => intval(round($taxAmount * 100)),
+                            'product_data' => [
+                                'name'        => 'Sales Tax (7.5%)',
+                                'description' => 'Mandatory sales tax per transaction',
+                            ],
+                        ],
+                        'quantity'   => 1,
+                    ];
+                }
+
+                if ($feeAmount > 0) {
+                    $lineItems[] = [
+                        'price_data' => [
+                            'currency'     => 'usd',
+                            'unit_amount'  => intval(round($feeAmount * 100)),
+                            'product_data' => [
+                                'name'        => 'Card Processing Fee',
+                                'description' => 'Credit card processing fee',
+                            ],
+                        ],
+                        'quantity'   => 1,
+                    ];
+                }
+
+                $sessionParams = [
+                    'payment_method_types' => ['card'],
+                    'line_items'           => $lineItems,
+                    'mode'                 => 'payment',
+                    'client_reference_id'  => (string) $batchId,
+                    'metadata'             => [
+                        'type'         => 'direct_order',
+                        'batch_id'     => $batchId,
+                        'user_id'      => $user->id,
+                        'organization' => $user->organization ?? '',
+                        'subtotal'     => $subtotal,
+                        'tax_amount'   => $taxAmount,
+                        'fee_amount'   => $feeAmount,
+                        'grand_total'  => $grandTotal,
+                    ],
+                    'success_url'          => route('coach.direct-order.checkout.success') . '?session_id={CHECKOUT_SESSION_ID}&batch_id=' . $batchId,
+                    'cancel_url'           => route('coach.direct-order.checkout.cancel') . '?batch_id=' . $batchId,
+                ];
+
+                if (!empty($user->email) && filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+                    $sessionParams['customer_email'] = $user->email;
+                }
+
+                $session = $stripe->checkout->sessions->create($sessionParams);
+
+                foreach ($draftOrders as $order) {
+                    $order->update([
+                        'stripe_session_id' => $session->id,
+                        'tax_amount'        => $taxAmount,
+                        'fee_amount'        => $feeAmount,
+                        'total_paid'        => $grandTotal,
+                    ]);
+                }
+
+                return redirect($session->url);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Direct order Stripe Checkout creation failed: ' . $e->getMessage());
+                return back()->with('error', 'Payment gateway error: ' . $e->getMessage());
+            }
+        } else {
+            // Local dev simulation when Stripe secret is not configured
+            foreach ($draftOrders as $order) {
+                $order->update([
+                    'status'         => 'Submitted to Admin',
+                    'payment_status' => 'paid',
+                    'paid_at'        => now(),
+                    'total_paid'     => $order->getCalculatedSubtotal(),
+                ]);
+            }
+
+            // Notify Admin
+            \Illuminate\Support\Facades\Notification::send(
+                \App\Models\User::where('role', 'admin')->get(),
+                new \App\Notifications\MasterOrderSubmitted((object) [
+                    'name' => ($user->organization ?: $user->name) . ' Direct Order (Paid Online)',
+                    'user' => $user
+                ])
+            );
+
+            return redirect()->route('coach.dashboard')
+                ->with('success', 'Direct orders successfully paid and submitted to production (Test Simulation)!')
+                ->with('activeCoachTab', 'order_status');
+        }
+    }
+
+    public function directOrderCheckoutSuccess(Request $request)
+    {
+        $user = $request->user();
+        $batchId = $request->query('batch_id');
+        $sessionId = $request->query('session_id');
+
+        $orders = ParentOrder::where('batch_id', $batchId)
+            ->where('user_id', $user->id)
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'Direct order batch not found.')
+                ->with('activeCoachTab', 'create_order');
+        }
+
+        $stripeSecret = config('services.stripe.secret');
+
+        if ($sessionId && $stripeSecret) {
+            try {
+                $stripe = new \Stripe\StripeClient($stripeSecret);
+                $session = $stripe->checkout->sessions->retrieve($sessionId);
+
+                if ($session->payment_status === 'paid') {
+                    $firstOrder = $orders->first();
+                    $alreadyNotified = ($firstOrder->status === 'Submitted to Admin' && $firstOrder->isPaid());
+
+                    foreach ($orders as $order) {
+                        $order->update([
+                            'status'                   => 'Submitted to Admin',
+                            'payment_status'           => 'paid',
+                            'stripe_payment_intent_id' => $session->payment_intent,
+                            'paid_at'                  => now(),
+                        ]);
+                    }
+
+                    if (!$alreadyNotified) {
+                        \Illuminate\Support\Facades\Notification::send(
+                            \App\Models\User::where('role', 'admin')->get(),
+                            new \App\Notifications\MasterOrderSubmitted((object) [
+                                'name' => ($user->organization ?: $user->name) . ' Direct Order (Paid Online)',
+                                'user' => $user
+                            ])
+                        );
+                    }
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Error verifying Stripe session for direct order return: ' . $e->getMessage());
+            }
+        }
+
+        return redirect()->route('coach.dashboard')
+            ->with('success', 'Payment successful! Your direct order has been automatically submitted to production.')
+            ->with('activeCoachTab', 'order_status');
+    }
+
+    public function directOrderCheckoutCancel(Request $request)
+    {
+        return redirect()->route('coach.dashboard')
+            ->with('error', 'Online payment was cancelled. Your draft orders are still saved and ready for checkout whenever you are.')
+            ->with('activeCoachTab', 'create_order');
+    }
+
+    public function exportDirectOrderBatch(Request $request, $batchId)
+    {
+        $user = $request->user();
+        $orders = $user->parentOrders()->where('batch_id', $batchId)->get();
+
+        if ($orders->isEmpty()) abort(404);
+
+        $filename = "direct-order-{$batchId}.csv";
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = [
+            'First Name', 'Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
+            'Jersey Name', 'Jersey Number', 'Backpack Name',
+            'Item', 'Types', 'Sizes', 'Qty', 'Item Price', 'Total Price', 'Manufacture Price', 'Total Manufacture Price'
+        ];
+
+        $callback = function() use ($orders, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($orders as $order) {
+                if (is_array($order->items_json)) {
+                    foreach ($order->items_json as $item) {
+                        $typesStr = isset($item['types']) ? implode(', ', $item['types']) : 'N/A';
+                        
+                        $sizesArr = [];
+                        if (isset($item['components']) && is_array($item['components'])) {
+                            foreach ($item['components'] as $comp) {
+                                if (isset($comp['sizes']) && is_array($comp['sizes'])) {
+                                    foreach ($comp['sizes'] as $t => $s) {
+                                        $sizesArr[] = "{$comp['name']} ($t): $s";
+                                    }
+                                } elseif (!empty($comp['size'])) {
+                                    $sizesArr[] = "{$comp['name']}: {$comp['size']}";
+                                }
+                            }
+                        } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
+                            foreach ($item['sizes'] as $t => $s) {
+                                $sizesArr[] = "$t: $s";
+                            }
+                        }
+                        $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : 'N/A';
+
+                        $design = \App\Models\DesignCatalog::find($item['id'] ?? null);
+                        $itemPrice = $design ? (float) $design->wholesale_price : 0;
+                        $qty = $item['qty'] ?? 1;
+                        $totalPrice = $itemPrice * $qty;
+                        $mfgPrice = $design ? (float) $design->wholesale_price : 0;
+                        $totalMfgPrice = $mfgPrice * $qty;
+
+                        fputcsv($file, [
+                            $order->athlete_first_name,
+                            $order->athlete_last_name,
+                            $order->parent_email ?? '',
+                            $order->parent_phone ?? '',
+                            $order->shipping_address ?? '',
+                            $item['gender'] ?? $order->gender ?? 'Not Specified',
+                            $order->jersey_name ?? '',
+                            $order->jersey_number ?? '',
+                            $order->backpack_name ?? '',
+                            $item['name'] ?? 'Unknown Item',
+                            $typesStr,
+                            $sizesStr,
+                            $qty,
+                            number_format($itemPrice, 2, '.', ''),
+                            number_format($totalPrice, 2, '.', ''),
+                            number_format($mfgPrice, 2, '.', ''),
+                            number_format($totalMfgPrice, 2, '.', ''),
+                        ]);
+                    }
+                }
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function archiveDirectOrderBatch(Request $request, $batchId)
+    {
+        $user = $request->user();
+        if ($user->role !== 'coach') abort(403);
+
+        ParentOrder::where('user_id', $user->id)
+            ->where('batch_id', $batchId)
+            ->update(['is_archived' => true]);
+
+        return back()->with('success', 'Batch has been archived successfully.');
+    }
+
+    public function addRosterPaste(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'emails' => 'required|string',
+        ]);
+
+        $inputs = explode(',', $request->emails);
+        $added = 0;
+
+        foreach ($inputs as $input) {
+            $input = trim($input);
+            $email = null;
+            $phone = null;
+            
+            if (filter_var($input, FILTER_VALIDATE_EMAIL)) {
+                $email = $input;
+            } else {
+                // Remove non-numeric chars to check if it's a valid phone number (at least 10 digits)
+                $numeric = preg_replace('/[^0-9]/', '', $input);
+                if (strlen($numeric) >= 10) {
+                    $phone = $input;
+                }
+            }
+
+            if ($email || $phone) {
+                // Check if already exists
+                $exists = $store->rosters()->where(function ($query) use ($email, $phone) {
+                    if ($email) $query->orWhere('parent_email', $email);
+                    if ($phone) $query->orWhere('parent_phone', $phone);
+                })->exists();
+
+                if (!$exists) {
+                    $store->rosters()->create([
+                        'parent_email' => $email,
+                        'parent_phone' => $phone,
+                    ]);
+                    $added++;
+                }
+            }
+        }
+
+        return back()->with('success', "{$added} parents added to the roster.");
+    }
+
+    public function addRosterUpload(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $request->validate([
+            'roster_csv' => 'required|file|mimes:csv,txt|max:2048',
+        ]);
+
+        $file = $request->file('roster_csv');
+        $handle = fopen($file->path(), "r");
+        
+        $header = fgetcsv($handle);
+        if (!$header) {
+            return back()->with('error', 'CSV file is empty or invalid.');
+        }
+
+        // Find email, phone, and name columns
+        $emailIdx = -1;
+        $phoneIdx = -1;
+        $nameIdx = -1;
+
+        foreach ($header as $idx => $col) {
+            $colName = strtolower(trim($col));
+            if (str_contains($colName, 'email')) {
+                $emailIdx = $idx;
+            } elseif (str_contains($colName, 'phone') || str_contains($colName, 'mobile') || str_contains($colName, 'sms')) {
+                $phoneIdx = $idx;
+            } elseif (str_contains($colName, 'name') || str_contains($colName, 'athlete')) {
+                $nameIdx = $idx;
+            }
+        }
+
+        if ($emailIdx === -1 && $phoneIdx === -1) {
+            return back()->with('error', 'Could not find an "Email" or "Phone" column in the CSV.');
+        }
+
+        $added = 0;
+        while (($row = fgetcsv($handle)) !== false) {
+            $email = ($emailIdx !== -1 && isset($row[$emailIdx])) ? trim($row[$emailIdx]) : null;
+            $phone = ($phoneIdx !== -1 && isset($row[$phoneIdx])) ? trim($row[$phoneIdx]) : null;
+            $name = ($nameIdx !== -1 && isset($row[$nameIdx])) ? trim($row[$nameIdx]) : null;
+
+            if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $email = null;
+            }
+            if ($phone) {
+                $numeric = preg_replace('/[^0-9]/', '', $phone);
+                if (strlen($numeric) < 10) {
+                    $phone = null;
+                }
+            }
+
+            if ($email || $phone) {
+                $exists = $store->rosters()->where(function ($query) use ($email, $phone) {
+                    if ($email) $query->orWhere('parent_email', $email);
+                    if ($phone) $query->orWhere('parent_phone', $phone);
+                })->exists();
+
+                if (!$exists) {
+                    $store->rosters()->create([
+                        'parent_email' => $email,
+                        'parent_phone' => $phone,
+                        'athlete_name' => $name,
+                    ]);
+                    $added++;
+                }
+            }
+        }
+
+        fclose($handle);
+
+        return back()->with('success', "{$added} parents added to the roster from CSV.");
+    }
+
+    public function removeRoster(Request $request, TeamStore $store, $rosterId)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $roster = $store->rosters()->findOrFail($rosterId);
+        $roster->delete();
+
+        return back()->with('success', 'Contact removed from the roster successfully.');
+    }
+    public function sendReminderBlast(Request $request, TeamStore $store, TwilioService $twilio)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $emailsSent = 0;
+        $smsSent = 0;
+
+        $message = $twilio->generateReminderMessage($store);
+        
+        $orderedPhones = $store->parentOrders()->whereNotNull('parent_phone')->pluck('parent_phone')->toArray();
+        $orderedEmails = $store->parentOrders()->whereNotNull('parent_email')->pluck('parent_email')->toArray();
+
+        foreach ($store->rosters as $roster) {
+            $hasOrdered = false;
+            if ($roster->parent_phone && in_array($roster->parent_phone, $orderedPhones)) {
+                $hasOrdered = true;
+            }
+            if ($roster->parent_email && in_array($roster->parent_email, $orderedEmails)) {
+                $hasOrdered = true;
+            }
+
+            if (!$hasOrdered) {
+                // Send Email
+                if ($roster->parent_email) {
+                    try {
+                        \Illuminate\Support\Facades\Mail::to($roster->parent_email)
+                            ->send(new \App\Mail\StoreOrderReminder($store));
+                        $emailsSent++;
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error("Failed to send blast email to {$roster->parent_email}: " . $e->getMessage());
+                    }
+                }
+
+                // Send SMS
+                if ($roster->parent_phone) {
+                    $twilio->sendSms($roster->parent_phone, $message);
+                    $smsSent++;
+                }
+            }
+        }
+
+        return back()->with('success', "Reminder blast sent! {$emailsSent} emails and {$smsSent} text messages were dispatched successfully.");
+    }
+}
+
