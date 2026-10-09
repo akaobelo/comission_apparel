@@ -12,6 +12,27 @@ use Illuminate\Support\Facades\File;
 class OgImageController extends Controller
 {
     /**
+     * Serve an optimized Open Graph image for the Homepage Banner (< 300KB for WhatsApp & iMessage)
+     */
+    public function home()
+    {
+        $banner = \App\Models\SiteSetting::where('key', 'hero_banner_image')
+            ->orWhere('key', 'hero_media_path')
+            ->value('value');
+
+        $sourcePath = null;
+        if (!empty($banner)) {
+            $sourcePath = $this->resolveLocalPath($banner);
+        }
+
+        $staticHome = public_path('images/og-home.jpg');
+        $aliases = (File::exists($staticHome)) ? [$staticHome] : [];
+
+        $cacheKey = 'home_' . md5($banner ?? 'default');
+        return $this->serveOptimizedImage($sourcePath, $cacheKey, 'landscape', $aliases);
+    }
+
+    /**
      * Serve an optimized Open Graph image for Design Collections (< 300KB for WhatsApp & iMessage)
      */
     public function collection($collection)

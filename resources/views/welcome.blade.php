@@ -4,7 +4,7 @@
 
 @section('meta')
     @php
-        $homeOgImg = asset('images/og-home.jpg');
+        $homeOgImg = route('og.home');
         if (!str_starts_with($homeOgImg, 'http')) {
             $homeOgImg = url($homeOgImg);
         }

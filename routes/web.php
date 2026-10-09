@@ -82,6 +82,7 @@ Route::get('/news', [NewsController::class, 'index'])->name('news.index');
 Route::get('/news/{slug}', [NewsController::class, 'show'])->name('news.show');
 
 // Dynamic Open Graph Image Endpoints (Optimized < 300KB for WhatsApp, iMessage & Social Card previews)
+Route::get('/og-image/home', [\App\Http\Controllers\OgImageController::class, 'home'])->name('og.home');
 Route::get('/og-image/collection/{collection}', [\App\Http\Controllers\OgImageController::class, 'collection'])->name('og.collection');
 Route::get('/og-image/news/{slug}', [\App\Http\Controllers\OgImageController::class, 'news'])->name('og.news');
 Route::get('/og-image/store/{slug}', [\App\Http\Controllers\OgImageController::class, 'store'])->name('og.store');
