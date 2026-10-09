@@ -52,15 +52,15 @@
         if ($ogImage && (str_contains(strtolower($ogImage), '.png') || str_ends_with(strtolower(parse_url($ogImage, PHP_URL_PATH) ?? ''), '.png'))) {
             $ogImageType = 'image/png';
         }
+        $ogImageUrl = route('og.collection', $collection);
+        if (str_contains($ogImageUrl, 'thecommissionapparel.com')) {
+            $ogImageUrl = str_replace('http://', 'https://', $ogImageUrl);
+        }
     @endphp
-    @if($ogImage)
-        <meta property="og:image" content="{{ $ogImage }}">
-        <meta property="og:image:secure_url" content="{{ $ogImage }}">
-        <meta property="og:image:type" content="{{ $ogImageType }}">
-        <meta property="og:image:width" content="1200">
-        <meta property="og:image:height" content="630">
-        <meta name="twitter:image" content="{{ $ogImage }}">
-    @endif
+    <meta property="og:image" content="{{ $ogImageUrl }}">
+    <meta property="og:image:secure_url" content="{{ $ogImageUrl }}">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta name="twitter:image" content="{{ $ogImageUrl }}">
     <meta property="og:type" content="website">
     <meta property="og:title" content="{{ $collection }} | Design Collections | The Commission Apparel">
     <meta property="og:description" content="Explore our latest team apparel concepts for {{ $collection }} across all packages and individual items.">
