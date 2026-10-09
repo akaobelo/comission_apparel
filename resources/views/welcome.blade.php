@@ -240,6 +240,17 @@
             timer: null,
             init() {
                 this.startTimer();
+                this.$watch('activeStep', (val) => {
+                    this.$nextTick(() => {
+                        const container = this.$refs.tabScroll;
+                        const activeBtn = container ? container.querySelector(`[data-step='${val}']`) : null;
+                        if (container && activeBtn) {
+                            const offset = activeBtn.getBoundingClientRect().left - container.getBoundingClientRect().left + container.scrollLeft;
+                            const scrollTarget = offset - (container.clientWidth / 2) + (activeBtn.offsetWidth / 2);
+                            container.scrollTo({ left: Math.max(0, scrollTarget), behavior: 'smooth' });
+                        }
+                    });
+                });
             },
             startTimer() {
                 this.timer = setInterval(() => {
@@ -300,12 +311,12 @@
             </div>
 
             <!-- Interactive Stepper Navigation Bar -->
-            <div class="w-full max-w-[1300px] mx-auto overflow-x-auto pb-1 scrollbar-none">
-                <div class="flex items-center justify-between gap-1.5 md:gap-2 min-w-[720px] lg:min-w-0 p-1 bg-slate-100/90 rounded-2xl border border-slate-200">
+            <div x-ref="tabScroll" class="w-full max-w-[1300px] mx-auto overflow-x-auto pb-2 pt-0.5 scrollbar-none" @touchstart.passive="pause()">
+                <div class="inline-flex lg:flex items-center justify-between gap-1.5 md:gap-2 w-max min-w-full lg:w-full p-1 sm:p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
                     
                     <!-- Step 0 Tab -->
-                    <button type="button" @click="setStep(0)"
-                        class="flex-1 py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group"
+                    <button type="button" @click="setStep(0)" data-step="0"
+                        class="shrink-0 lg:shrink lg:flex-1 py-2 px-3 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group cursor-pointer"
                         :class="activeStep === 0 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
                         <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
                             :class="activeStep === 0 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">01</span>
@@ -316,8 +327,8 @@
                     </button>
 
                     <!-- Step 1 Tab -->
-                    <button type="button" @click="setStep(1)"
-                        class="flex-1 py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group"
+                    <button type="button" @click="setStep(1)" data-step="1"
+                        class="shrink-0 lg:shrink lg:flex-1 py-2 px-3 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group cursor-pointer"
                         :class="activeStep === 1 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
                         <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
                             :class="activeStep === 1 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">02</span>
@@ -328,8 +339,8 @@
                     </button>
 
                     <!-- Step 2 Tab -->
-                    <button type="button" @click="setStep(2)"
-                        class="flex-1 py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group"
+                    <button type="button" @click="setStep(2)" data-step="2"
+                        class="shrink-0 lg:shrink lg:flex-1 py-2 px-3 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group cursor-pointer"
                         :class="activeStep === 2 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
                         <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
                             :class="activeStep === 2 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">03</span>
@@ -340,8 +351,8 @@
                     </button>
 
                     <!-- Step 3 Tab -->
-                    <button type="button" @click="setStep(3)"
-                        class="flex-1 py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group"
+                    <button type="button" @click="setStep(3)" data-step="3"
+                        class="shrink-0 lg:shrink lg:flex-1 py-2 px-3 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group cursor-pointer"
                         :class="activeStep === 3 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
                         <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
                             :class="activeStep === 3 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">04</span>
@@ -352,8 +363,8 @@
                     </button>
 
                     <!-- Step 4 Tab -->
-                    <button type="button" @click="setStep(4)"
-                        class="flex-1 py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group"
+                    <button type="button" @click="setStep(4)" data-step="4"
+                        class="shrink-0 lg:shrink lg:flex-1 py-2 px-3 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group cursor-pointer"
                         :class="activeStep === 4 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
                         <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
                             :class="activeStep === 4 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">05</span>
