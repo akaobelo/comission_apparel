@@ -232,7 +232,7 @@
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- 2. TURNKEY TEAM STORE: INTERACTIVE PROCESS SLIDER                 -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <section id="team-store" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden"
+    <section id="team-store" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-5 md:p-8 relative overflow-hidden"
         x-data="{
             activeStep: 0,
             totalSteps: 5,
@@ -271,44 +271,39 @@
         @mouseleave="resume()"
     >
         
-        <div class="space-y-8">
+        <div class="space-y-4 md:space-y-5">
             <!-- Section Header -->
-            <div class="text-center max-w-3xl mx-auto space-y-2">
-                <div class="inline-flex items-center gap-2.5 justify-center">
-                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">2</span>
-                    <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">
-                        {{ $teamStoreSettings['badge'] ?? 'COACH & PROGRAM PLATFORM' }}
-                    </span>
-                </div>
-                
-                <h2 class="text-3xl md:text-5xl font-black tracking-tight uppercase text-slate-900 leading-tight">
-                    @php
-                        $tsHeading = $teamStoreSettings['heading'] ?? 'HOW THE TEAM STORE WORKS STEP-BY-STEP';
+            <div class="text-center max-w-3xl mx-auto space-y-1.5">
+                @php
+                    $tsHeading = $teamStoreSettings['heading'] ?? 'LAUNCH YOUR TEAM STORE';
+                    if (str_contains($tsHeading, 'STORE')) {
+                        $parts = explode('STORE', $tsHeading);
+                        $hBefore = $parts[0];
+                        $hColored = 'STORE';
+                    } else {
                         $tsWords = explode(' ', trim($tsHeading));
-                        $tsLastWord = array_pop($tsWords);
-                        $tsFirstPart = implode(' ', $tsWords);
-                    @endphp
-                    @if($tsFirstPart)
-                        {{ $tsFirstPart }} <span class="text-[#cd202c]">{{ $tsLastWord }}</span>
-                    @else
-                        <span class="text-[#cd202c]">{{ $tsLastWord }}</span>
-                    @endif
+                        $hColored = array_pop($tsWords);
+                        $hBefore = implode(' ', $tsWords) . ' ';
+                    }
+                @endphp
+                <h2 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight uppercase text-slate-900 leading-tight">
+                    {{ $hBefore }}<span class="text-[#cd202c]">{{ $hColored }}</span>
                 </h2>
                 
-                <p class="text-slate-700 text-sm md:text-base font-normal max-w-2xl mx-auto" style="color: #475569;">
-                    {{ $teamStoreSettings['subheading'] ?? 'Empower your program with a custom online store that eliminates coach paperwork and generates automatic fundraising revenue.' }}
+                <p class="text-slate-600 text-xs sm:text-sm md:text-base font-normal max-w-2xl mx-auto leading-relaxed" style="color: #475569;">
+                    {{ $teamStoreSettings['subheading'] ?? 'Empower your program with a custom online store that eliminates coach hassle and generates revenue.' }}
                 </p>
             </div>
 
             <!-- Interactive Stepper Navigation Bar -->
-            <div class="w-full max-w-[1300px] mx-auto overflow-x-auto pb-2 scrollbar-none">
-                <div class="flex items-center justify-between gap-2 md:gap-3 min-w-[720px] lg:min-w-0 p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200">
+            <div class="w-full max-w-[1300px] mx-auto overflow-x-auto pb-1 scrollbar-none">
+                <div class="flex items-center justify-between gap-1.5 md:gap-2 min-w-[720px] lg:min-w-0 p-1 bg-slate-100/90 rounded-2xl border border-slate-200">
                     
                     <!-- Step 0 Tab -->
                     <button type="button" @click="setStep(0)"
-                        class="flex-1 py-3 px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2.5 group"
+                        class="flex-1 py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group"
                         :class="activeStep === 0 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
-                        <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                        <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
                             :class="activeStep === 0 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">01</span>
                         <div class="truncate">
                             <span class="block text-[11px] font-black uppercase tracking-wider truncate">3D Artwork</span>
@@ -318,9 +313,9 @@
 
                     <!-- Step 1 Tab -->
                     <button type="button" @click="setStep(1)"
-                        class="flex-1 py-3 px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2.5 group"
+                        class="flex-1 py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group"
                         :class="activeStep === 1 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
-                        <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                        <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
                             :class="activeStep === 1 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">02</span>
                         <div class="truncate">
                             <span class="block text-[11px] font-black uppercase tracking-wider truncate">Store Launch</span>
@@ -330,9 +325,9 @@
 
                     <!-- Step 2 Tab -->
                     <button type="button" @click="setStep(2)"
-                        class="flex-1 py-3 px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2.5 group"
+                        class="flex-1 py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group"
                         :class="activeStep === 2 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
-                        <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                        <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
                             :class="activeStep === 2 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">03</span>
                         <div class="truncate">
                             <span class="block text-[11px] font-black uppercase tracking-wider truncate">Direct Orders</span>
@@ -342,9 +337,9 @@
 
                     <!-- Step 3 Tab -->
                     <button type="button" @click="setStep(3)"
-                        class="flex-1 py-3 px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2.5 group"
+                        class="flex-1 py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group"
                         :class="activeStep === 3 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
-                        <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                        <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
                             :class="activeStep === 3 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">04</span>
                         <div class="truncate">
                             <span class="block text-[11px] font-black uppercase tracking-wider truncate">Sublimation</span>
@@ -354,9 +349,9 @@
 
                     <!-- Step 4 Tab -->
                     <button type="button" @click="setStep(4)"
-                        class="flex-1 py-3 px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2.5 group"
+                        class="flex-1 py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl transition-all duration-300 text-left flex items-center gap-2 group"
                         :class="activeStep === 4 ? 'bg-[#cd202c] text-white shadow-md shadow-[#cd202c]/25' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/60'">
-                        <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
+                        <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
                             :class="activeStep === 4 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">05</span>
                         <div class="truncate">
                             <span class="block text-[11px] font-black uppercase tracking-wider truncate">Pack & Ship</span>
@@ -368,7 +363,7 @@
             </div>
 
             <!-- Main Interactive Slider Showcase Frame -->
-            <div class="w-full max-w-[1300px] mx-auto rounded-2xl md:rounded-3xl shadow-2xl border border-slate-800 bg-[#0e1017] p-6 md:p-10 relative overflow-hidden text-white">
+            <div class="w-full max-w-[1300px] mx-auto rounded-2xl md:rounded-3xl shadow-2xl border border-slate-800 bg-[#0e1017] p-5 sm:p-6 md:p-8 relative overflow-hidden text-white">
                 
                 <!-- Ambient Subtle Glow Effect -->
                 <div class="absolute -top-32 -right-32 w-96 h-96 bg-[#cd202c]/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -379,9 +374,9 @@
                     x-transition:enter="transition ease-out duration-300 transform"
                     x-transition:enter-start="opacity-0 translate-y-3"
                     x-transition:enter-end="opacity-100 translate-y-0"
-                    class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
                     
-                    <div class="lg:col-span-6 space-y-6">
+                    <div class="lg:col-span-6 space-y-3.5 md:space-y-4">
                         <div class="flex items-center gap-3">
                             <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
                                 STEP 01 OF 05 &bull; ZERO COST
@@ -389,41 +384,41 @@
                             <span class="text-xs font-mono text-slate-400">DESIGN &amp; LAUNCH</span>
                         </div>
 
-                        <div class="space-y-2">
-                            <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+                        <div class="space-y-1">
+                            <h3 class="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white leading-tight">
                                 CUSTOM 3D ARTWORK &amp; STORE SETUP
                             </h3>
-                            <p class="text-amber-400 font-semibold text-sm uppercase tracking-wide">
+                            <p class="text-amber-400 font-semibold text-xs sm:text-sm uppercase tracking-wide">
                                 100% Free Mockups &bull; Unlimited Revisions &bull; Live in 24–48 Hours
                             </p>
                         </div>
 
-                        <p class="text-slate-300 text-sm md:text-base leading-relaxed font-normal" style="color: #cbd5e1;">
+                        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal" style="color: #cbd5e1;">
                             Send us your school colors, team mascot, and uniform vision. Our dedicated in-house graphic designers build photorealistic 3D uniform mockups and configure your custom branded online store completely free of charge.
                         </p>
 
                         <!-- Key Benefits List -->
-                        <div class="space-y-3 pt-2">
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">24–48 Hour Turnaround:</strong> Photorealistic 3D uniform renders ready for team approval.</p>
+                        <div class="space-y-2 pt-1">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">24–48 Hour Turnaround:</strong> Photorealistic 3D uniform renders ready for team approval.</p>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Full Team Catalog:</strong> Official uniforms, shooting shirts, travel hoodies, bags &amp; fan apparel.</p>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Full Team Catalog:</strong> Official uniforms, shooting shirts, travel hoodies, bags &amp; fan apparel.</p>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Zero Financial Commitment:</strong> Free setup with no deposit or credit card required.</p>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Zero Financial Commitment:</strong> Free setup with no deposit or credit card required.</p>
                             </div>
                         </div>
 
                         <!-- Action Bar -->
-                        <div class="pt-4 flex flex-wrap items-center gap-3">
-                            <a href="/quote" class="px-6 py-3 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                        <div class="pt-2 sm:pt-3 flex flex-wrap items-center gap-2.5">
+                            <a href="/quote" class="px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
                                 Request Free 3D Mockup <span>&rarr;</span>
                             </a>
-                            <button type="button" @click="next()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                            <button type="button" @click="next()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
                                 Next: Step 02 <span>&rarr;</span>
                             </button>
                         </div>
@@ -431,8 +426,8 @@
 
                     <!-- Visual Tech Frame -->
                     <div class="lg:col-span-6">
-                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-3 shadow-inner">
-                            <div class="flex items-center justify-between pb-3 px-2 border-b border-slate-800/80 mb-3 text-slate-400 text-xs font-mono">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-2.5 sm:p-3 shadow-inner">
+                            <div class="flex items-center justify-between pb-2.5 px-2 border-b border-slate-800/80 mb-2.5 text-slate-400 text-xs font-mono">
                                 <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span> 3D Digital Concept Stage</span>
                                 <span class="text-slate-500">24-48 HR DELIVERABLE</span>
                             </div>
@@ -452,9 +447,9 @@
                     x-transition:enter="transition ease-out duration-300 transform"
                     x-transition:enter-start="opacity-0 translate-y-3"
                     x-transition:enter-end="opacity-100 translate-y-0"
-                    class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
                     
-                    <div class="lg:col-span-6 space-y-6">
+                    <div class="lg:col-span-6 space-y-3.5 md:space-y-4">
                         <div class="flex items-center gap-3">
                             <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
                                 STEP 02 OF 05 &bull; TURNKEY PLATFORM
@@ -462,50 +457,50 @@
                             <span class="text-xs font-mono text-slate-400">ONLINE STOREFRONT</span>
                         </div>
 
-                        <div class="space-y-2">
-                            <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+                        <div class="space-y-1">
+                            <h3 class="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white leading-tight">
                                 SHARE CUSTOM LINK WITH PARENTS
                             </h3>
-                            <p class="text-amber-400 font-semibold text-sm uppercase tracking-wide">
+                            <p class="text-amber-400 font-semibold text-xs sm:text-sm uppercase tracking-wide">
                                 Zero Paper Forms &bull; Zero Cash Handling &bull; Mobile-First
                             </p>
                         </div>
 
-                        <p class="text-slate-300 text-sm md:text-base leading-relaxed font-normal" style="color: #cbd5e1;">
+                        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal" style="color: #cbd5e1;">
                             We publish a dedicated, mobile-optimized online team store customized with your school branding. Coaches receive a single shareable link to text or email directly to athletes, parents, and booster clubs.
                         </p>
 
-                        <div class="space-y-3 pt-2">
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Custom Web URL:</strong> Dedicated storefront link tailored for your school program.</p>
+                        <div class="space-y-2 pt-1">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Custom Web URL:</strong> Dedicated storefront link tailored for your school program.</p>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Parent &amp; Fan Gear:</strong> Fans, alumni, and families can order matching gear alongside player uniforms.</p>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Parent &amp; Fan Gear:</strong> Fans, alumni, and families can order matching gear alongside player uniforms.</p>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">No Coach Liability:</strong> Never handle envelopes of cash or balance checks again.</p>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">No Coach Liability:</strong> Never handle envelopes of cash or balance checks again.</p>
                             </div>
                         </div>
 
-                        <div class="pt-4 flex flex-wrap items-center gap-3">
-                            <button type="button" @click="prev()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                        <div class="pt-2 sm:pt-3 flex flex-wrap items-center gap-2.5">
+                            <button type="button" @click="prev()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
                                 <span>&larr;</span> Step 01
                             </button>
-                            <a href="/store/search" class="px-6 py-3 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                            <a href="/store/search" class="px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
                                 Search Active Stores <span>&rarr;</span>
                             </a>
-                            <button type="button" @click="next()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                            <button type="button" @click="next()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
                                 Next: Step 03 <span>&rarr;</span>
                             </button>
                         </div>
                     </div>
 
                     <div class="lg:col-span-6">
-                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-3 shadow-inner">
-                            <div class="flex items-center justify-between pb-3 px-3 border-b border-slate-800/80 mb-3">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-2.5 sm:p-3 shadow-inner">
+                            <div class="flex items-center justify-between pb-2.5 px-3 border-b border-slate-800/80 mb-2.5">
                                 <div class="flex items-center gap-1.5">
                                     <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
                                     <div class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
@@ -530,9 +525,9 @@
                     x-transition:enter="transition ease-out duration-300 transform"
                     x-transition:enter-start="opacity-0 translate-y-3"
                     x-transition:enter-end="opacity-100 translate-y-0"
-                    class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
                     
-                    <div class="lg:col-span-6 space-y-6">
+                    <div class="lg:col-span-6 space-y-3.5 md:space-y-4">
                         <div class="flex items-center gap-3">
                             <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
                                 STEP 03 OF 05 &bull; EASY CHECKOUT
@@ -540,50 +535,50 @@
                             <span class="text-xs font-mono text-slate-400">ONLINE ORDERING</span>
                         </div>
 
-                        <div class="space-y-2">
-                            <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+                        <div class="space-y-1">
+                            <h3 class="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white leading-tight">
                                 PARENTS ORDER DIRECTLY ONLINE
                             </h3>
-                            <p class="text-amber-400 font-semibold text-sm uppercase tracking-wide">
+                            <p class="text-amber-400 font-semibold text-xs sm:text-sm uppercase tracking-wide">
                                 Apple Pay &bull; Custom Jersey Numbers &bull; Accurate Sizing
                             </p>
                         </div>
 
-                        <p class="text-slate-300 text-sm md:text-base leading-relaxed font-normal" style="color: #cbd5e1;">
+                        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal" style="color: #cbd5e1;">
                             Forget deciphering handwritten size charts and chasing unpaid orders. Every parent selects their athlete's size, enters their custom roster number, and pays securely online in seconds.
                         </p>
 
-                        <div class="space-y-3 pt-2">
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Player Personalization:</strong> Athletes select exact jersey numbers and custom back names.</p>
+                        <div class="space-y-2 pt-1">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Player Personalization:</strong> Athletes select exact jersey numbers and custom back names.</p>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Instant Order Confirmation:</strong> Parents receive real-time email receipts and tracking updates.</p>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Instant Order Confirmation:</strong> Parents receive real-time email receipts and tracking updates.</p>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Coach Dashboard Tracking:</strong> Watch orders roll in live from your coach portal.</p>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Coach Dashboard Tracking:</strong> Watch orders roll in live from your coach portal.</p>
                             </div>
                         </div>
 
-                        <div class="pt-4 flex flex-wrap items-center gap-3">
-                            <button type="button" @click="prev()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                        <div class="pt-2 sm:pt-3 flex flex-wrap items-center gap-2.5">
+                            <button type="button" @click="prev()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
                                 <span>&larr;</span> Step 02
                             </button>
-                            <a href="/sizing-charts" class="px-6 py-3 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                            <a href="/sizing-charts" class="px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
                                 View Sizing Charts <span>&rarr;</span>
                             </a>
-                            <button type="button" @click="next()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                            <button type="button" @click="next()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
                                 Next: Step 04 <span>&rarr;</span>
                             </button>
                         </div>
                     </div>
 
                     <div class="lg:col-span-6">
-                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-3 shadow-inner">
-                            <div class="flex items-center justify-between pb-3 px-3 border-b border-slate-800/80 mb-3 text-slate-400 text-xs font-mono">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-2.5 sm:p-3 shadow-inner">
+                            <div class="flex items-center justify-between pb-2.5 px-3 border-b border-slate-800/80 mb-2.5 text-slate-400 text-xs font-mono">
                                 <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Live Order Ingestion</span>
                                 <span class="text-emerald-400 font-bold">100% SECURE CHECKOUT</span>
                             </div>
@@ -600,9 +595,9 @@
                     x-transition:enter="transition ease-out duration-300 transform"
                     x-transition:enter-start="opacity-0 translate-y-3"
                     x-transition:enter-end="opacity-100 translate-y-0"
-                    class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
                     
-                    <div class="lg:col-span-6 space-y-6">
+                    <div class="lg:col-span-6 space-y-3.5 md:space-y-4">
                         <div class="flex items-center gap-3">
                             <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
                                 STEP 04 OF 05 &bull; CRAFTSMANSHIP
@@ -610,50 +605,50 @@
                             <span class="text-xs font-mono text-slate-400">RAPID SUBLIMATION</span>
                         </div>
 
-                        <div class="space-y-2">
-                            <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+                        <div class="space-y-1">
+                            <h3 class="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white leading-tight">
                                 RAPID 2–3 WEEK PRODUCTION
                             </h3>
-                            <p class="text-amber-400 font-semibold text-sm uppercase tracking-wide">
+                            <p class="text-amber-400 font-semibold text-xs sm:text-sm uppercase tracking-wide">
                                 Never Peels, Cracks, or Fades &bull; Guaranteed Turnaround
                             </p>
                         </div>
 
-                        <p class="text-slate-300 text-sm md:text-base leading-relaxed font-normal" style="color: #cbd5e1;">
+                        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal" style="color: #cbd5e1;">
                             Once your ordering window closes, our automated production pipeline begins immediately. High-tensile moisture-wicking fabrics are dye-sublimated at high heat so colors and numbers are permanently infused into the fabric.
                         </p>
 
-                        <div class="space-y-3 pt-2">
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">2–3 Week Turnaround:</strong> Guaranteed delivery so your squad takes the field fully equipped.</p>
+                        <div class="space-y-2 pt-1">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">2–3 Week Turnaround:</strong> Guaranteed delivery so your squad takes the field fully equipped.</p>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Dye-Sublimated Durability:</strong> Permanent inks will never crack, peel, or fade in the wash.</p>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Dye-Sublimated Durability:</strong> Permanent inks will never crack, peel, or fade in the wash.</p>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Reinforced Athletic Seams:</strong> 4-way stretch flex threading built for brutal game contact.</p>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Reinforced Athletic Seams:</strong> 4-way stretch flex threading built for brutal game contact.</p>
                             </div>
                         </div>
 
-                        <div class="pt-4 flex flex-wrap items-center gap-3">
-                            <button type="button" @click="prev()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                        <div class="pt-2 sm:pt-3 flex flex-wrap items-center gap-2.5">
+                            <button type="button" @click="prev()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
                                 <span>&larr;</span> Step 03
                             </button>
-                            <a href="/catalog" class="px-6 py-3 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                            <a href="/catalog" class="px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
                                 Browse Uniform Styles <span>&rarr;</span>
                             </a>
-                            <button type="button" @click="next()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                            <button type="button" @click="next()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
                                 Next: Step 05 <span>&rarr;</span>
                             </button>
                         </div>
                     </div>
 
                     <div class="lg:col-span-6">
-                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-3 shadow-inner">
-                            <div class="flex items-center justify-between pb-3 px-2 border-b border-slate-800/80 mb-3 text-slate-400 text-xs font-mono">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-2.5 sm:p-3 shadow-inner">
+                            <div class="flex items-center justify-between pb-2.5 px-2 border-b border-slate-800/80 mb-2.5 text-slate-400 text-xs font-mono">
                                 <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Sublimation Production Line</span>
                                 <span class="text-slate-400">PHYSICAL SAMPLE</span>
                             </div>
@@ -673,9 +668,9 @@
                     x-transition:enter="transition ease-out duration-300 transform"
                     x-transition:enter-start="opacity-0 translate-y-3"
                     x-transition:enter-end="opacity-100 translate-y-0"
-                    class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
                     
-                    <div class="lg:col-span-6 space-y-6">
+                    <div class="lg:col-span-6 space-y-3.5 md:space-y-4">
                         <div class="flex items-center gap-3">
                             <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
                                 STEP 05 OF 05 &bull; PACK &amp; SHIP
@@ -683,59 +678,59 @@
                             <span class="text-xs font-mono text-slate-400">DISTRIBUTION &amp; MANAGEMENT</span>
                         </div>
 
-                        <div class="space-y-2">
-                            <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+                        <div class="space-y-1">
+                            <h3 class="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white leading-tight">
                                 INDIVIDUALLY BAGGED BY ATHLETE
                             </h3>
-                            <p class="text-emerald-400 font-semibold text-sm uppercase tracking-wide">
+                            <p class="text-emerald-400 font-semibold text-xs sm:text-sm uppercase tracking-wide">
                                 Individually Bagged by Athlete &bull; Simplified Team Management
                             </p>
                         </div>
 
-                        <p class="text-slate-300 text-sm md:text-base leading-relaxed font-normal" style="color: #cbd5e1;">
+                        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal" style="color: #cbd5e1;">
                             Say goodbye to chaotic uniform distribution! Every athlete’s order arrives individually packaged and clearly labeled with their name, making distribution fast and effortless. Plus, turn your team's online store into a fundraising opportunity that generates revenue to support your program.
                         </p>
 
-                        <div class="space-y-3 pt-2">
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Individually Bagged &amp; Labeled:</strong> Every athlete's order is organized by name, allowing you to distribute uniforms in minutes instead of hours.</p>
+                        <div class="space-y-2 pt-1">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Individually Bagged &amp; Labeled:</strong> Every athlete's order is organized by name, allowing you to distribute uniforms in minutes instead of hours.</p>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Free Batch Shipping:</strong> All batch orders are shipped together to one designated location at no additional cost.</p>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Free Batch Shipping:</strong> All batch orders are shipped together to one designated location at no additional cost.</p>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Generate Revenue for Your Program:</strong> Turn your team store into a fundraising powerhouse! Offer custom apparel and merchandise to athletes, families, and supporters while building your program's operational budget.</p>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Generate Revenue for Your Program:</strong> Turn your team store into a fundraising powerhouse! Offer custom apparel and merchandise to athletes, families, and supporters while building your program's operational budget.</p>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Manage Multiple Stores:</strong> Oversee multiple teams or programs from one convenient account. Create separate stores, switch between them effortlessly, and manage everything through a single dashboard.</p>
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-4 h-4 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium leading-snug"><strong class="text-white">Manage Multiple Stores:</strong> Oversee multiple teams or programs from one convenient account. Create separate stores, switch between them effortlessly, and manage everything through a single dashboard.</p>
                             </div>
                         </div>
 
-                        <div class="pt-4 flex flex-wrap items-center gap-3">
-                            <button type="button" @click="prev()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                        <div class="pt-2 sm:pt-3 flex flex-wrap items-center gap-2.5">
+                            <button type="button" @click="prev()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
                                 <span>&larr;</span> Step 04
                             </button>
-                            <a href="/quote" class="px-6 py-3 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
+                            <a href="/quote" class="px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
                                 Launch Your Team Store &rarr;
                             </a>
-                            <button type="button" @click="setStep(0)" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
+                            <button type="button" @click="setStep(0)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
                                 Back to Step 01
                             </button>
                         </div>
                     </div>
 
                     <div class="lg:col-span-6">
-                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-3 shadow-inner">
-                            <div class="flex items-center justify-between pb-3 px-3 border-b border-slate-800/80 mb-3 text-slate-400 text-xs font-mono">
+                        <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-2.5 sm:p-3 shadow-inner">
+                            <div class="flex items-center justify-between pb-2.5 px-3 border-b border-slate-800/80 mb-2.5 text-slate-400 text-xs font-mono">
                                 <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Admin Operations &amp; Management</span>
                                 <span class="text-emerald-400 font-bold">CENTRALIZED DASHBOARD</span>
                             </div>
-                            <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[16/10]">
-                                <img src="{{ $teamStoreSettings['step_5_image'] ?? asset('images/5.jpeg') }}" alt="Individually Bagged Orders & Simplified Management" class="w-full h-full object-cover object-center" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/5.jpeg') }}'">
+                            <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[4/3]">
+                                <img src="{{ $teamStoreSettings['step_5_image'] ?? asset('images/5.jpeg') }}" alt="Individually Bagged Orders & Simplified Management" class="w-full h-full object-cover object-top" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/5.jpeg') }}'">
                             </div>
                         </div>
                     </div>
@@ -743,7 +738,7 @@
                 </div>
 
                 <!-- Slider Bottom Indicator & Manual Controls -->
-                <div class="pt-8 mt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="pt-4 mt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
                         <template x-for="i in totalSteps" :key="i">
                             <button type="button" @click="setStep(i - 1)"
@@ -757,10 +752,10 @@
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <button type="button" @click="prev()" aria-label="Previous Step" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors border border-slate-700">
+                        <button type="button" @click="prev()" aria-label="Previous Step" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors border border-slate-700">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         </button>
-                        <button type="button" @click="next()" aria-label="Next Step" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors border border-slate-700">
+                        <button type="button" @click="next()" aria-label="Next Step" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors border border-slate-700">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </button>
                     </div>
@@ -769,11 +764,11 @@
             </div>
 
             <!-- 4 Quick Proof Metrics (Unified Compact Strip - Space Maximized) -->
-            <div class="max-w-5xl mx-auto bg-slate-50/80 border border-slate-200 rounded-xl md:rounded-2xl overflow-hidden shadow-sm">
+            <div class="max-w-4xl mx-auto bg-slate-50/80 border border-slate-200 rounded-xl md:rounded-2xl overflow-hidden shadow-sm mt-5">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
                     
                     <!-- Metric 1: $0 Setup Fee -->
-                    <div class="p-3.5 sm:p-4 flex items-center justify-center gap-3">
+                    <div class="p-3 sm:p-3.5 flex items-center justify-center gap-3">
                         <div class="text-2xl md:text-3xl font-black text-[#cd202c] font-heading tracking-tight shrink-0">
                             {{ $landingSettings['slider_metric_1_val'] ?? '$0' }}
                         </div>
@@ -788,7 +783,7 @@
                     </div>
 
                     <!-- Metric 2: 24-48h Rapid Mockups -->
-                    <div class="p-3.5 sm:p-4 flex items-center justify-center gap-3">
+                    <div class="p-3 sm:p-3.5 flex items-center justify-center gap-3">
                         <div class="text-xl md:text-2xl font-black text-slate-900 font-heading tracking-tight shrink-0">
                             {{ $landingSettings['slider_metric_2_val'] ?? '24-48h' }}
                         </div>
@@ -803,7 +798,7 @@
                     </div>
 
                     <!-- Metric 3: 2-3 WKS Production -->
-                    <div class="p-3.5 sm:p-4 flex items-center justify-center gap-3">
+                    <div class="p-3 sm:p-3.5 flex items-center justify-center gap-3">
                         <div class="text-xl md:text-2xl font-black text-slate-900 font-heading tracking-tight shrink-0">
                             {{ $landingSettings['slider_metric_3_val'] ?? '2-3 WKS' }}
                         </div>
@@ -817,27 +812,27 @@
                         </div>
                     </div>
 
-                    <!-- Metric 4: 100% Customer Service -->
-                    <div class="p-3.5 sm:p-4 flex flex-col items-center justify-center text-center">
-                        <div class="text-2xl md:text-3xl font-black text-slate-900 font-heading tracking-tight leading-none">
-                            {{ $landingSettings['slider_metric_4_val'] ?? '100%' }}
+                    <!-- Metric 4: 10-20% Team Kickback -->
+                    <div class="p-3 sm:p-3.5 flex items-center justify-center gap-3">
+                        <div class="text-xl md:text-2xl font-black text-slate-900 font-heading tracking-tight shrink-0">
+                            {{ $landingSettings['slider_metric_4_val'] ?? '10-20%' }}
                         </div>
-                        <div class="text-xs font-bold text-slate-700 leading-tight mt-1">
-                            {{ $landingSettings['slider_metric_4_label'] ?? 'Customer Service' }}
-                        </div>
-                        @if(!empty($landingSettings['slider_metric_4_sub']))
-                            <div class="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">
-                                {{ $landingSettings['slider_metric_4_sub'] }}
+                        <div class="text-left">
+                            <div class="text-xs font-black uppercase text-slate-900 tracking-tight leading-tight">
+                                {{ $landingSettings['slider_metric_4_label'] ?? 'Team Kickback' }}
                             </div>
-                        @endif
+                            <div class="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">
+                                {{ $landingSettings['slider_metric_4_sub'] ?? 'Direct program fundraising' }}
+                            </div>
+                        </div>
                     </div>
 
                 </div>
             </div>
 
             <!-- Call to Action Trigger -->
-            <div class="text-center pt-2">
-                <a href="{{ $landingSettings['team_store_cta_url'] ?? '/quote' }}" class="px-8 py-4 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-lg hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
+            <div class="text-center mt-4">
+                <a href="{{ $landingSettings['team_store_cta_url'] ?? '/quote' }}" class="px-8 py-3.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-lg hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
                     {{ $landingSettings['team_store_cta_text'] ?? 'Start Your Custom Team Store Today →' }}
                 </a>
             </div>
@@ -848,15 +843,11 @@
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- 3. PROGRAM SPOTLIGHTS & MEDIA (Primary Highlight + Side Stories)  -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <section id="news" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden">
+    <section id="news" class="bg-slate-50/75 border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden">
         
         <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-slate-100">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-slate-200">
             <div>
-                <div class="flex items-center gap-2.5 mb-1.5">
-                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">3</span>
-                    <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">{{ $landingSettings['news_badge'] ?? 'COMMISSION NEWS & STORIES' }}</span>
-                </div>
                 <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
                     {{ $landingSettings['news_heading'] ?? 'PROGRAM SPOTLIGHTS & MEDIA' }}
                 </h2>
@@ -930,14 +921,14 @@
             <!-- Left Column: Primary Highlight -->
             @if($highlightArticle)
             <div class="lg:col-span-7 xl:col-span-8 flex">
-                <article class="bg-white border border-slate-200 hover:border-[#cd202c]/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between w-full group">
+                <article class="bg-white border border-slate-200/90 hover:border-[#cd202c]/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between w-full group">
                     <!-- Media Card Header -->
-                    <a href="{{ route('news.show', $highlightArticle->slug) }}" class="relative block w-full overflow-hidden aspect-[16/10] bg-slate-100">
+                    <a href="{{ route('news.show', $highlightArticle->slug) }}" class="relative block w-full overflow-hidden aspect-[2/1] sm:aspect-[21/9] max-h-64 sm:max-h-72 bg-slate-100">
                         @if($highlightArticle->cover_image)
                             <img src="{{ Str::startsWith($highlightArticle->cover_image, 'http') ? $highlightArticle->cover_image : asset(ltrim($highlightArticle->cover_image, '/')) }}" 
                                  alt="{{ $highlightArticle->title }}" 
                                  onerror="this.onerror=null; this.src='{{ asset('images/group.jpg') }}';" 
-                                 class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" 
+                                 class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
                                  loading="lazy">
                         @endif
                         <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
@@ -955,22 +946,17 @@
                     </a>
 
                     <!-- Card Body -->
-                    <div class="p-6 md:p-8 flex flex-col justify-between flex-1 space-y-4">
-                        <div class="space-y-3">
-                            <div class="flex items-center gap-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>{{ $highlightArticle->published_at ? $highlightArticle->published_at->format('M d, Y') : $highlightArticle->created_at->format('M d, Y') }}</span>
-                                <span>•</span>
-                                <span>{{ $highlightArticle->author ?? 'The Commission Editorial' }}</span>
-                            </div>
-                            <h3 class="text-xl md:text-2xl lg:text-3xl font-black uppercase text-slate-900 leading-tight group-hover:text-[#cd202c] transition-colors">
+                    <div class="p-5 md:p-6 flex flex-col justify-between flex-1 space-y-4">
+                        <div class="space-y-2.5">
+                            <h3 class="text-xl md:text-2xl font-black uppercase text-slate-900 leading-tight group-hover:text-[#cd202c] transition-colors">
                                 <a href="{{ route('news.show', $highlightArticle->slug) }}">{{ $highlightArticle->title }}</a>
                             </h3>
-                            <p class="text-slate-700 text-xs md:text-sm leading-relaxed font-normal text-justify" style="color: #475569;">
+                            <p class="text-slate-600 text-xs md:text-sm leading-relaxed font-normal line-clamp-3" style="color: #475569;">
                                 {{ $highlightArticle->summary }}
                             </p>
                         </div>
 
-                        <div class="pt-5 border-t border-slate-100 flex items-center justify-between mt-auto">
+                        <div class="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto">
                             <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Featured Program Story</span>
                             <a href="{{ route('news.show', $highlightArticle->slug) }}" class="text-xs font-black uppercase text-[#cd202c] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1.5">
                                 Read Full Story <span>&rarr;</span>
@@ -983,7 +969,7 @@
 
             <!-- Right Column: Side Stories List -->
             <div class="lg:col-span-5 xl:col-span-4 flex flex-col">
-                <div class="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm flex flex-col h-full justify-between">
+                <div class="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-sm flex flex-col h-full justify-between">
                     <div>
                         <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
                             <h4 class="text-xs font-black uppercase tracking-widest text-slate-400">SIDE STORIES</h4>
@@ -994,13 +980,13 @@
                             @foreach($sideArticles as $side)
                             <article class="py-3.5 first:pt-1 last:pb-1 group {{ $loop->iteration > 3 ? 'hidden lg:block' : 'block' }}">
                                 <a href="{{ route('news.show', $side->slug) }}" class="flex items-start gap-3.5">
-                                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-slate-100 border border-slate-200">
+                                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-slate-50 border border-slate-200">
                                         @if($side->cover_image)
-                                            <img src="{{ Str::startsWith($side->cover_image, 'http') ? $side->cover_image : asset(ltrim($side->cover_image, '/')) }}" 
-                                                 alt="{{ $side->title }}" 
-                                                 onerror="this.onerror=null; this.src='{{ asset('images/basketball.png') }}';" 
-                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                                                 loading="lazy">
+                                             <img src="{{ Str::startsWith($side->cover_image, 'http') ? $side->cover_image : asset(ltrim($side->cover_image, '/')) }}" 
+                                                  alt="{{ $side->title }}" 
+                                                  onerror="this.onerror=null; this.src='{{ asset('images/basketball.png') }}';" 
+                                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                                                  loading="lazy">
                                         @endif
                                     </div>
                                     <div class="flex-1 min-w-0">
@@ -1010,9 +996,6 @@
                                         <h5 class="text-xs md:text-sm font-bold uppercase text-slate-900 group-hover:text-[#cd202c] transition-colors line-clamp-2 leading-snug">
                                             {{ $side->title }}
                                         </h5>
-                                        <span class="text-[10px] text-slate-400 font-medium block mt-1">
-                                            {{ $side->published_at ? $side->published_at->format('M d, Y') : $side->created_at->format('M d, Y') }}
-                                        </span>
                                     </div>
                                 </a>
                             </article>
@@ -1021,7 +1004,7 @@
                     </div>
 
                     <div class="pt-4 border-t border-slate-100 mt-4">
-                        <a href="{{ route('news.index') }}" class="block w-full py-2.5 bg-slate-50 hover:bg-[#cd202c] hover:text-white text-slate-700 text-xs font-bold uppercase tracking-wider text-center rounded-lg border border-slate-200 hover:border-[#cd202c] shadow-sm transition-all">
+                        <a href="{{ route('news.index') }}" class="block w-full py-2.5 bg-slate-50 hover:bg-[#cd202c] hover:text-white text-slate-700 hover:border-[#cd202c] text-xs font-bold uppercase tracking-wider text-center rounded-lg border border-slate-200 shadow-sm transition-all">
                             View All News & Stories &rarr;
                         </a>
                     </div>

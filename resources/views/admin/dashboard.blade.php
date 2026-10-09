@@ -1156,9 +1156,9 @@
                                 </div>
                                 <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5">
                                     <span class="text-[10px] font-black uppercase text-slate-500">Metric 4</span>
-                                    <input type="text" name="slider_metric_4_val" value="{{ $landingSettings['slider_metric_4_val'] ?? '100%' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-black text-slate-900">
-                                    <input type="text" name="slider_metric_4_label" value="{{ $landingSettings['slider_metric_4_label'] ?? 'Customer Service' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-bold text-slate-900">
-                                    <input type="text" name="slider_metric_4_sub" value="{{ $landingSettings['slider_metric_4_sub'] ?? 'Dedicated Support' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-[11px] text-slate-600">
+                                    <input type="text" name="slider_metric_4_val" value="{{ $landingSettings['slider_metric_4_val'] ?? '10-20%' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-black text-slate-900">
+                                    <input type="text" name="slider_metric_4_label" value="{{ $landingSettings['slider_metric_4_label'] ?? 'Team Kickback' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-bold text-slate-900">
+                                    <input type="text" name="slider_metric_4_sub" value="{{ $landingSettings['slider_metric_4_sub'] ?? 'Direct program fundraising' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-[11px] text-slate-600">
                                 </div>
                             </div>
                         </div>

@@ -62,8 +62,8 @@ Route::get('/', function () {
 
     $teamStoreSettings = [
         'badge'               => $landingSettings['team_store_badge'] ?? 'COACH & PROGRAM PLATFORM',
-        'heading'             => $landingSettings['team_store_heading'] ?? 'HOW THE TEAM STORE WORKS STEP-BY-STEP',
-        'subheading'          => $landingSettings['team_store_subheading'] ?? 'Empower your program with a custom online store that eliminates coach paperwork and generates automatic fundraising revenue.',
+        'heading'             => $landingSettings['team_store_heading'] ?? 'LAUNCH YOUR TEAM STORE',
+        'subheading'          => $landingSettings['team_store_subheading'] ?? 'Empower your program with a custom online store that eliminates coach hassle and generates revenue.',
         'image'               => $landingSettings['team_store_image'] ?? asset('images/team store.png'),
         'step_1_image'        => $landingSettings['team_store_step_1_image'] ?? asset('images/design.jpeg'),
         'step_2_image'        => $landingSettings['team_store_step_2_image'] ?? asset('images/team store.png'),
