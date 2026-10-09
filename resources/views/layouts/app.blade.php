@@ -5,7 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'The Commission Apparel | Elite Custom Uniforms')</title>
-    @yield('meta')
+    @if(View::hasSection('meta'))
+        @yield('meta')
+    @else
+        @php
+            $defaultOgImg = asset('images/og-home.jpg');
+            if (!str_starts_with($defaultOgImg, 'http')) {
+                $defaultOgImg = url($defaultOgImg);
+            }
+            if (str_contains($defaultOgImg, 'thecommissionapparel.com')) {
+                $defaultOgImg = str_replace('http://', 'https://', $defaultOgImg);
+            }
+            $currentOgUrl = request()->fullUrl();
+            if (str_contains($currentOgUrl, 'thecommissionapparel.com')) {
+                $currentOgUrl = str_replace('http://', 'https://', $currentOgUrl);
+            }
+        @endphp
+        <meta name="description" content="Dominate the competition with elite performance apparel designed for champion athletes. Fast 2–3 week turnaround, free 3D design mockups, and turnkey online team stores.">
+        <meta property="og:site_name" content="The Commission Apparel">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="{{ $currentOgUrl }}">
+        <meta property="og:title" content="The Commission Apparel | Elite Custom Uniforms">
+        <meta property="og:description" content="Dominate the competition with elite performance apparel designed for champion athletes. Fast 2–3 week turnaround, free 3D design mockups, and turnkey online team stores.">
+        <meta property="og:image" content="{{ $defaultOgImg }}">
+        <meta property="og:image:secure_url" content="{{ $defaultOgImg }}">
+        <meta property="og:image:type" content="image/jpeg">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="The Commission Apparel | Elite Custom Uniforms">
+        <meta name="twitter:description" content="Dominate the competition with elite performance apparel designed for champion athletes. Fast 2–3 week turnaround, free 3D design mockups, and turnkey online team stores.">
+        <meta name="twitter:image" content="{{ $defaultOgImg }}">
+    @endif
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

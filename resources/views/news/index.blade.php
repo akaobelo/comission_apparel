@@ -1,6 +1,37 @@
 @extends('layouts.app')
 @section('title', 'News & Stories | The Commission Apparel')
 
+@section('meta')
+    @php
+        $newsOgImg = asset('images/og-home.jpg');
+        if (!str_starts_with($newsOgImg, 'http')) {
+            $newsOgImg = url($newsOgImg);
+        }
+        if (str_contains($newsOgImg, 'thecommissionapparel.com')) {
+            $newsOgImg = str_replace('http://', 'https://', $newsOgImg);
+        }
+        $newsOgUrl = route('news.index');
+        if (str_contains($newsOgUrl, 'thecommissionapparel.com')) {
+            $newsOgUrl = str_replace('http://', 'https://', $newsOgUrl);
+        }
+    @endphp
+    <meta name="description" content="Explore program spotlights, championship moments, athlete interviews, and exclusive custom uniform reveals from The Commission Apparel.">
+    <meta property="og:site_name" content="The Commission Apparel">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ $newsOgUrl }}">
+    <meta property="og:title" content="News & Stories | The Commission Apparel">
+    <meta property="og:description" content="Explore program spotlights, championship moments, athlete interviews, and exclusive custom uniform reveals from The Commission Apparel.">
+    <meta property="og:image" content="{{ $newsOgImg }}">
+    <meta property="og:image:secure_url" content="{{ $newsOgImg }}">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="News & Stories | The Commission Apparel">
+    <meta name="twitter:description" content="Explore program spotlights, championship moments, athlete interviews, and exclusive custom uniform reveals from The Commission Apparel.">
+    <meta name="twitter:image" content="{{ $newsOgImg }}">
+@endsection
+
 @section('content')
 <div class="bg-slate-50 min-h-screen text-slate-900 pt-24 pb-16">
     <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">

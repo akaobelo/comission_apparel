@@ -1,5 +1,41 @@
 @extends('layouts.app')
 
+@section('title', 'The Commission Apparel | Elite Custom Uniforms')
+
+@section('meta')
+    @php
+        $homeOgImg = asset('images/og-home.jpg');
+        if (!str_starts_with($homeOgImg, 'http')) {
+            $homeOgImg = url($homeOgImg);
+        }
+        if (str_contains($homeOgImg, 'thecommissionapparel.com')) {
+            $homeOgImg = str_replace('http://', 'https://', $homeOgImg);
+        }
+        $homeOgUrl = url('/');
+        if (str_contains($homeOgUrl, 'thecommissionapparel.com')) {
+            $homeOgUrl = str_replace('http://', 'https://', $homeOgUrl);
+        }
+        $homeTitle = 'The Commission Apparel | Elite Custom Uniforms';
+        $homeDesc = $heroSettings['subtitle'] ?? 'Dominate the competition with elite performance apparel designed for champion athletes. Fast 2–3 week turnaround, free 3D design mockups, and turnkey online team stores.';
+    @endphp
+    <meta name="description" content="{{ $homeDesc }}">
+    <meta property="og:site_name" content="The Commission Apparel">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ $homeOgUrl }}">
+    <meta property="og:title" content="{{ $homeTitle }}">
+    <meta property="og:description" content="{{ $homeDesc }}">
+    <meta property="og:image" content="{{ $homeOgImg }}">
+    <meta property="og:image:secure_url" content="{{ $homeOgImg }}">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="The Commission Apparel - Custom Uniforms">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $homeTitle }}">
+    <meta name="twitter:description" content="{{ $homeDesc }}">
+    <meta name="twitter:image" content="{{ $homeOgImg }}">
+@endsection
+
 @section('content')
 
 <!-- ══════════════════════════════════════════════════════════════════════ -->

@@ -1,6 +1,63 @@
 @extends('layouts.app')
 @section('title', $article->title . ' | The Commission Apparel')
 
+@section('meta')
+    @php
+        $rawImage = $article->cover_image;
+        if (!empty($rawImage)) {
+            $altJpg = str_replace('.png', '.jpg', $rawImage);
+            if (str_ends_with(strtolower($rawImage), '.png') && file_exists(public_path(ltrim($altJpg, '/')))) {
+                $articleOgImg = asset(ltrim($altJpg, '/'));
+            } else {
+                $articleOgImg = asset(ltrim($rawImage, '/'));
+            }
+        } elseif (!empty($article->video_url) && preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i', $article->video_url, $ytMatches)) {
+            $articleOgImg = 'https://img.youtube.com/vi/' . $ytMatches[1] . '/maxresdefault.jpg';
+        } else {
+            $articleOgImg = asset('images/og-home.jpg');
+        }
+
+        if (!str_starts_with($articleOgImg, 'http')) {
+            $articleOgImg = url($articleOgImg);
+        }
+        if (str_contains($articleOgImg, 'thecommissionapparel.com')) {
+            $articleOgImg = str_replace('http://', 'https://', $articleOgImg);
+        }
+
+        $articleOgUrl = route('news.show', $article->slug);
+        if (str_contains($articleOgUrl, 'thecommissionapparel.com')) {
+            $articleOgUrl = str_replace('http://', 'https://', $articleOgUrl);
+        }
+
+        $articleDesc = !empty($article->summary) 
+            ? $article->summary 
+            : Str::limit(strip_tags($article->content ?? ''), 160);
+
+        $articleImageType = 'image/jpeg';
+        if (str_ends_with(strtolower(parse_url($articleOgImg, PHP_URL_PATH) ?? ''), '.png')) {
+            $articleImageType = 'image/png';
+        }
+    @endphp
+    <meta name="description" content="{{ $articleDesc }}">
+    <meta property="og:site_name" content="The Commission Apparel">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="{{ $articleOgUrl }}">
+    <meta property="og:title" content="{{ $article->title }} | The Commission Apparel">
+    <meta property="og:description" content="{{ $articleDesc }}">
+    <meta property="og:image" content="{{ $articleOgImg }}">
+    <meta property="og:image:secure_url" content="{{ $articleOgImg }}">
+    <meta property="og:image:type" content="{{ $articleImageType }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ $article->title }}">
+    <meta property="article:published_time" content="{{ ($article->published_at ?? $article->created_at)->toIso8601String() }}">
+    <meta property="article:section" content="{{ $article->category }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $article->title }} | The Commission Apparel">
+    <meta name="twitter:description" content="{{ $articleDesc }}">
+    <meta name="twitter:image" content="{{ $articleOgImg }}">
+@endsection
+
 @section('content')
 <article class="bg-slate-50 text-slate-900 min-h-screen pt-24 pb-20">
     <div class="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
@@ -54,7 +111,7 @@
         @endif
 
         <!-- Main Article Content Body -->
-        <div class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start">
+        <div class="grid grid-cols-1 {{ isset($relatedArticles) && $relatedArticles->isNotEmpty() ? 'lg:grid-cols-[1fr_340px]' : '' }} gap-8 items-start">
             
             <!-- Left: Article Write-up Card -->
             <div class="space-y-6 bg-white border border-slate-200 rounded-2xl md:rounded-3xl p-6 md:p-10 shadow-sm">
@@ -94,42 +151,11 @@
                         text-align: justify !important;
                     }
                 </style>
-
-                <!-- Uniform Photo Gallery Grid -->
-                @if(!empty($article->gallery_images) && count($article->gallery_images) > 0)
-                <div class="pt-8 border-t border-slate-100 mt-10">
-                    <h3 class="text-lg font-black uppercase text-slate-900 tracking-wider mb-5 flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-[#cd202c]"></span>
-                        Uniform Craftsmanship & Action Gallery
-                    </h3>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        @foreach($article->gallery_images as $img)
-                        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-square group bg-slate-100 shadow-sm">
-                            <img src="{{ $img }}" alt="Gallery photo" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
             </div>
 
-            <!-- Right: Sticky Sidebar / Quick CTA -->
+            @if(isset($relatedArticles) && $relatedArticles->isNotEmpty())
+            <!-- Right: Sticky Sidebar / More Stories -->
             <aside class="space-y-6 lg:sticky lg:top-24">
-                <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center">
-                    <div class="w-12 h-12 bg-[#cd202c]/10 text-[#cd202c] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#cd202c]/20">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                    </div>
-                    <h3 class="text-base font-black uppercase text-slate-900 mb-2">Outfitting Your Team?</h3>
-                    <p class="text-slate-600 text-xs mb-5 leading-relaxed font-normal">
-                        Get bespoke 3D custom uniform mockups tailored specifically for your program within 24 hours.
-                    </p>
-                    <a href="{{ $article->cta_url ?? '/quote' }}" class="block w-full py-3 bg-[#cd202c] hover:bg-[#a11825] text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-sm transition-colors">
-                        {{ $article->cta_text ?? 'Request A Custom Quote' }}
-                    </a>
-                </div>
-
-                <!-- Related Stories -->
-                @if($relatedArticles->isNotEmpty())
                 <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                     <h4 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 pb-2 border-b border-slate-100">More Stories</h4>
                     <div class="space-y-4">
@@ -146,8 +172,8 @@
                         @endforeach
                     </div>
                 </div>
-                @endif
             </aside>
+            @endif
 
         </div>
 

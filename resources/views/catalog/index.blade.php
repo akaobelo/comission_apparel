@@ -3,10 +3,34 @@
 @section('title', 'Design Catalog | The Commission Apparel')
 
 @section('meta')
-    <meta property="og:image" content="{{ asset('images/hero-banner.jpeg') }}">
+    @php
+        $catOgImg = asset('images/og-home.jpg');
+        if (!str_starts_with($catOgImg, 'http')) {
+            $catOgImg = url($catOgImg);
+        }
+        if (str_contains($catOgImg, 'thecommissionapparel.com')) {
+            $catOgImg = str_replace('http://', 'https://', $catOgImg);
+        }
+        $catOgUrl = route('catalog.index');
+        if (str_contains($catOgUrl, 'thecommissionapparel.com')) {
+            $catOgUrl = str_replace('http://', 'https://', $catOgUrl);
+        }
+    @endphp
+    <meta name="description" content="Explore our latest team apparel concepts across all packages and individual items.">
+    <meta property="og:site_name" content="The Commission Apparel">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ $catOgUrl }}">
     <meta property="og:title" content="Design Catalog | The Commission Apparel">
     <meta property="og:description" content="Explore our latest team apparel concepts across all packages and individual items.">
+    <meta property="og:image" content="{{ $catOgImg }}">
+    <meta property="og:image:secure_url" content="{{ $catOgImg }}">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Design Catalog | The Commission Apparel">
+    <meta name="twitter:description" content="Explore our latest team apparel concepts across all packages and individual items.">
+    <meta name="twitter:image" content="{{ $catOgImg }}">
 @endsection
 
 @php
