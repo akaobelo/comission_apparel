@@ -77,6 +77,10 @@
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
                                             Online Credit Card Active
                                         </span>
+                                    @elseif(($store->payment_mode ?? 'in_house') === 'check')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">
+                                            Pay by Check Active (Payment Waived)
+                                        </span>
                                     @else
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
                                             Cash Collection Active
@@ -86,10 +90,12 @@
                                 <select name="payment_mode" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 font-bold focus:border-primary focus:outline-none shadow-sm">
                                     <option value="in_house" {{ old('payment_mode', $store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash Collection (In-House by Coach)</option>
                                     <option value="online" {{ old('payment_mode', $store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Online Credit Card Payment (Stripe Checkout)</option>
+                                    <option value="check" {{ old('payment_mode', $store->payment_mode ?? 'in_house') === 'check' ? 'selected' : '' }}>📑 Pay by Check (School PO / Payment Requirements Waived)</option>
                                 </select>
                                 <p class="text-xs text-slate-500 mt-2 leading-relaxed">
                                     <strong>Cash Collection:</strong> Coach collects funds directly from parents; Commission Apparel invoices coach for manufacturing.<br>
-                                    <strong>Online Credit Card Payment:</strong> Enabled post-closure after reviewing MOQ (15 items). Parents visit the store link, view their submitted order at the bottom, and pay via Stripe credit card checkout.
+                                    <strong>Online Credit Card Payment:</strong> Enabled post-closure after reviewing MOQ (15 items). Parents visit the store link, view their submitted order at the bottom, and pay via Stripe credit card checkout.<br>
+                                    <strong>Pay by Check (Super Admin Only):</strong> Waives payment requirements for US high schools/programs that issue payment by mail/check after collecting items.
                                 </p>
                             </div>
                             <div class="col-span-2">
@@ -518,6 +524,10 @@
                                         <span class="inline-flex items-center text-[10px] font-black uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-200">
                                             Failed
                                         </span>
+                                    @elseif($store->isCheckPayment())
+                                        <span class="inline-flex items-center text-[10px] font-black uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
+                                            Pay by Check (Waived)
+                                        </span>
                                     @else
                                         <span class="inline-flex items-center text-[10px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
                                             In-House
@@ -550,7 +560,7 @@
                         @endif
                     </div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Payment Mode</span>
-                        <span class="font-bold text-slate-900 uppercase text-xs">{{ $store->isOnlinePayment() ? 'Online (Stripe)' : 'In-House' }}</span>
+                        <span class="font-bold text-slate-900 uppercase text-xs">{{ $store->isOnlinePayment() ? 'Online (Stripe)' : ($store->isCheckPayment() ? 'Pay by Check' : 'In-House') }}</span>
                     </div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Athletes Ordered</span><span class="font-bold text-slate-900">{{ $store->parentOrders->count() }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Total Items</span><span class="font-bold text-slate-900">{{ $financials['total_items_sold'] ?? $store->parentOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1)) }}</span></div>

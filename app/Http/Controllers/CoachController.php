@@ -287,32 +287,48 @@ class CoachController extends Controller
     {
         if ($store->user_id !== $request->user()->id) abort(403);
 
-        $request->validate([
-            'shipping_address'   => 'required|string|max:1000',
-            'acknowledge_unpaid' => 'accepted',
-        ], [
+        $rules = [
+            'shipping_address' => 'required|string|max:1000',
+        ];
+        if (!$store->isCheckPayment()) {
+            $rules['acknowledge_unpaid'] = 'accepted';
+        }
+
+        $request->validate($rules, [
             'acknowledge_unpaid.accepted' => 'You must acknowledge that orders with "Pending Payment" will not be processed before submitting.',
         ]);
 
         $unbatchedOrders = $store->parentOrders()
             ->whereNull('batch_id')
             ->where('is_archived', false)
-            ->where(function($q) {
-                $q->where('payment_status', 'paid')
-                  ->orWhere('payment_status', 'not_applicable');
+            ->where(function($q) use ($store) {
+                if ($store->isCheckPayment()) {
+                    // Payment requirements waived for Pay by Check stores
+                    $q->whereNotNull('id');
+                } else {
+                    $q->where('payment_status', 'paid')
+                      ->orWhere('payment_status', 'not_applicable');
+                }
             });
 
         if ($unbatchedOrders->count() === 0) {
             return redirect()->route('coach.dashboard')
-                ->with('error', 'No confirmed orders are ready to submit. Please ensure all online orders are paid before finalizing.');
+                ->with('error', $store->isCheckPayment() 
+                    ? 'No orders are available to submit for this store.'
+                    : 'No confirmed orders are ready to submit. Please ensure all online orders are paid before finalizing.');
         }
 
         $batchId = (string) Str::uuid();
 
-        $unbatchedOrders->update([
+        $updateData = [
             'status' => 'Submitted to Admin',
             'batch_id' => $batchId
-        ]);
+        ];
+        if ($store->isCheckPayment()) {
+            $updateData['payment_status'] = 'not_applicable';
+        }
+
+        $unbatchedOrders->update($updateData);
 
         $store->update([
             'status' => 'submitted_to_admin',
@@ -611,6 +627,11 @@ class CoachController extends Controller
     public function updateDescription(Request $request, TeamStore $store)
     {
         if ($store->user_id !== $request->user()->id) abort(403);
+
+        if ($store->isCheckPayment()) {
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'Payment method is managed by Super Admin (Pay by Check) and cannot be modified.');
+        }
 
         $request->validate([
             'payment_mode' => ['required', 'in:in_house,online'],

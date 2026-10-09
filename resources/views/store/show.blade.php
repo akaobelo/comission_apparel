@@ -1017,6 +1017,10 @@
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                         Paid
                                     </span>
+                                @elseif($store->isCheckPayment())
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-700 border border-blue-200">
+                                        Check / PO
+                                    </span>
                                 @elseif($store->isOnlinePayment())
                                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-700 border border-amber-200">
                                         Pay Due
@@ -1327,6 +1331,11 @@
                                                             Payment received on {{ $order->paid_at ? $order->paid_at->format('M d, Y h:i A') : 'file' }}. Thank you!
                                                         </div>
                                                     @endif
+                                                </div>
+                                            @elseif($store->isCheckPayment())
+                                                <div class="mt-5 p-4 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900">
+                                                    <span class="font-bold text-blue-900 block mb-1 uppercase tracking-wider text-[11px]">Payment Method: Pay by Check</span>
+                                                    Payment requirements have been waived for this school. Your school/program will issue payment by check upon order receipt.
                                                 </div>
                                             @else
                                                 <div class="mt-5 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">

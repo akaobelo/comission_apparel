@@ -251,6 +251,10 @@ class StoreController extends Controller
             return back()->with('error', 'This store is currently set to Cash Collection. Please pay your coach directly.');
         }
 
+        if ($store->isCheckPayment()) {
+            return back()->with('info', 'Payment requirements have been waived for this school (Pay by Check). No online payment is required.');
+        }
+
         $itemsJson = $order->items_json ?? [];
         if (empty($itemsJson)) {
             return back()->with('error', 'No order items found to pay for.');

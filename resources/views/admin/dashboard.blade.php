@@ -300,9 +300,10 @@
                                             {{-- Quick Payment Mode Switcher --}}
                                             <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="inline-block">
                                                 @csrf
-                                                <select name="payment_mode" onchange="this.form.submit()" title="Change payment collection method" class="text-[11px] font-bold rounded-md px-2 py-1 border shadow-sm cursor-pointer outline-none transition-colors {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100' }}">
+                                                <select name="payment_mode" onchange="this.form.submit()" title="Change payment collection method" class="text-[11px] font-bold rounded-md px-2 py-1 border shadow-sm cursor-pointer outline-none transition-colors {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100' : (($store->payment_mode ?? 'in_house') === 'check' ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100') }}">
                                                     <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash</option>
                                                     <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Stripe</option>
+                                                    <option value="check" {{ ($store->payment_mode ?? 'in_house') === 'check' ? 'selected' : '' }}>📑 Check (Waived)</option>
                                                 </select>
                                             </form>
 
@@ -364,6 +365,11 @@
                                                             501(c)(3)
                                                         </span>
                                                     @endif
+                                                    @if($store && $store->isCheckPayment())
+                                                        <span class="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[9px] font-black uppercase tracking-wider rounded border border-blue-200">
+                                                            Pay by Check
+                                                        </span>
+                                                    @endif
                                                     <span class="text-[11px] text-slate-400 uppercase tracking-wide font-bold">Batch: {{ $batchOrders->first()?->created_at?->format('M d, Y') ?? 'Unknown' }}</span>
                                                 </div>
                                                 <div class="mt-2.5 grid grid-cols-3 gap-2">
@@ -412,9 +418,10 @@
                                                     <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="flex items-center justify-between bg-white border border-slate-200 rounded-md p-1.5 gap-1.5 shadow-sm">
                                                         @csrf
                                                         <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Payment:</span>
-                                                        <select name="payment_mode" onchange="this.form.submit()" class="text-xs font-bold rounded px-1.5 py-0.5 outline-none border transition-colors w-full max-w-[125px] {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-300' }}">
+                                                        <select name="payment_mode" onchange="this.form.submit()" class="text-xs font-bold rounded px-1.5 py-0.5 outline-none border transition-colors w-full max-w-[125px] {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (($store->payment_mode ?? 'in_house') === 'check' ? 'bg-blue-50 text-blue-800 border-blue-300' : 'bg-amber-50 text-amber-800 border-amber-300') }}">
                                                             <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash</option>
                                                             <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Stripe</option>
+                                                            <option value="check" {{ ($store->payment_mode ?? 'in_house') === 'check' ? 'selected' : '' }}>📑 Check (Waived)</option>
                                                         </select>
                                                     </form>
                                                 @endif

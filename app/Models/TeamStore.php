@@ -29,9 +29,14 @@ class TeamStore extends Model
         return ($this->payment_mode ?? 'in_house') === 'online';
     }
 
+    public function isCheckPayment(): bool
+    {
+        return ($this->payment_mode ?? 'in_house') === 'check';
+    }
+
     public function isInHousePayment(): bool
     {
-        return !$this->isOnlinePayment();
+        return ($this->payment_mode ?? 'in_house') === 'in_house';
     }
 
     public function isTaxExempt(): bool

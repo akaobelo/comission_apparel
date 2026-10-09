@@ -1054,7 +1054,7 @@ class AdminController extends Controller
             'status'       => ['required', 'in:pending,approved,submitted_to_admin,declined'],
             'pricing_approved' => ['boolean'],
             'is_tax_exempt'    => ['boolean'],
-            'payment_mode'     => ['required', 'in:in_house,online'],
+            'payment_mode'     => ['required', 'in:in_house,online,check'],
             'shipping_address' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -1100,7 +1100,7 @@ class AdminController extends Controller
     public function updateStorePaymentMode(Request $request, TeamStore $store)
     {
         $validated = $request->validate([
-            'payment_mode' => ['required', 'in:in_house,online'],
+            'payment_mode' => ['required', 'in:in_house,online,check'],
         ]);
 
         $store->update(['payment_mode' => $validated['payment_mode']]);
@@ -1115,7 +1115,11 @@ class AdminController extends Controller
                   ->update(['payment_status' => 'not_applicable']);
         }
 
-        $label = $validated['payment_mode'] === 'online' ? 'Online Credit Card Payment' : 'Cash Collection (In-House)';
+        $label = match($validated['payment_mode']) {
+            'online' => 'Online Credit Card Payment',
+            'check'  => 'Pay by Check (Waived)',
+            default  => 'Cash Collection (In-House)',
+        };
         return back()->with('success', "Store \"{$store->name}\" payment mode updated to: {$label}.");
     }
 

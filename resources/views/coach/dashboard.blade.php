@@ -779,7 +779,7 @@
                         <a href="{{ route('store.show', $store->slug) }}" target="_blank" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase rounded-lg transition-colors">Share Link</a>
                         <a href="{{ route('coach.store.export', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase rounded-lg transition-colors">Export CSV</a>
                         @if(!$isLocked && $totalAthletes > 0)
-                        <div x-data="{ openSubmitModal: false, agreedUnpaid: false }">
+                        <div x-data="{ openSubmitModal: false, agreedUnpaid: {{ $store->isCheckPayment() ? 'true' : 'false' }} }">
                             <button @click="openSubmitModal = true" type="button" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors">Approve/Submit</button>
 
                             <!-- Submit Confirmation Modal -->
@@ -808,32 +808,45 @@
                                             <textarea name="shipping_address" required rows="3" class="w-full bg-slate-100 border border-slate-200 rounded-lg p-3 text-sm focus:bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-inner text-slate-900" placeholder="Street Address&#10;City, State ZIP"></textarea>
                                         </div>
 
-                                        {{-- Required Unpaid Orders Acknowledgment Checkbox --}}
-                                        <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 mb-6">
-                                            @php
-                                                $pendingPaymentCount = $store->parentOrders->whereNull('batch_id')->where('payment_status', 'pending')->count();
-                                            @endphp
-                                            @if($pendingPaymentCount > 0)
-                                                <div class="mb-2.5 flex items-center gap-2 text-xs font-bold text-amber-900 bg-amber-100/80 px-2.5 py-1.5 rounded-lg border border-amber-300/60">
-                                                    <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                                    <span>Attention: {{ $pendingPaymentCount }} order(s) currently marked as "Pending Payment".</span>
+                                        {{-- Unpaid Orders Acknowledgment or Check Payment Waived Banner --}}
+                                        @if($store->isCheckPayment())
+                                            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3.5 mb-6 text-xs text-blue-900">
+                                                <div class="flex items-center gap-2 font-bold mb-1">
+                                                    <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                    <span>Payment Method: Pay by Check</span>
                                                 </div>
-                                            @endif
-                                            <label class="flex items-start gap-3 cursor-pointer select-none">
-                                                <input type="checkbox" 
-                                                       name="acknowledge_unpaid" 
-                                                       x-model="agreedUnpaid"
-                                                       required
-                                                       value="1" 
-                                                       class="mt-0.5 w-4 h-4 rounded text-secondary border-slate-300 focus:ring-secondary cursor-pointer">
-                                                <span class="text-xs text-slate-700 leading-relaxed font-medium">
-                                                    Please note: orders within this batch that are "Pending Payment" will not be processed. Be sure you have reviewed the order to ensure all is cleared for production.
-                                                </span>
-                                            </label>
-                                        </div>
+                                                <p class="text-blue-800 leading-relaxed">
+                                                    Payment requirements have been waived by Super Admin. Your school/program can submit this master order now and mail the check upon receipt.
+                                                </p>
+                                                <input type="hidden" name="acknowledge_unpaid" value="1">
+                                            </div>
+                                        @else
+                                            <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 mb-6">
+                                                @php
+                                                    $pendingPaymentCount = $store->parentOrders->whereNull('batch_id')->where('payment_status', 'pending')->count();
+                                                @endphp
+                                                @if($pendingPaymentCount > 0)
+                                                    <div class="mb-2.5 flex items-center gap-2 text-xs font-bold text-amber-900 bg-amber-100/80 px-2.5 py-1.5 rounded-lg border border-amber-300/60">
+                                                        <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                                        <span>Attention: {{ $pendingPaymentCount }} order(s) currently marked as "Pending Payment".</span>
+                                                    </div>
+                                                @endif
+                                                <label class="flex items-start gap-3 cursor-pointer select-none">
+                                                    <input type="checkbox" 
+                                                           name="acknowledge_unpaid" 
+                                                           x-model="agreedUnpaid"
+                                                           required
+                                                           value="1" 
+                                                           class="mt-0.5 w-4 h-4 rounded text-secondary border-slate-300 focus:ring-secondary cursor-pointer">
+                                                    <span class="text-xs text-slate-700 leading-relaxed font-medium">
+                                                        Please note: orders within this batch that are "Pending Payment" will not be processed. Be sure you have reviewed the order to ensure all is cleared for production.
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        @endif
 
                                         <div class="flex gap-3">
-                                            <button @click="openSubmitModal = false; agreedUnpaid = false" type="button" class="flex-1 py-3 bg-white border border-slate-300 text-slate-700 font-bold uppercase text-xs tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Review Again</button>
+                                            <button @click="openSubmitModal = false; agreedUnpaid = {{ $store->isCheckPayment() ? 'true' : 'false' }}" type="button" class="flex-1 py-3 bg-white border border-slate-300 text-slate-700 font-bold uppercase text-xs tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Review Again</button>
                                             <button type="submit" 
                                                     :disabled="!agreedUnpaid" 
                                                     :class="agreedUnpaid ? 'bg-secondary hover:bg-[#a11825] cursor-pointer' : 'bg-slate-300 text-slate-500 cursor-not-allowed'"
@@ -885,7 +898,9 @@
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        @if($store->isOnlinePayment())
+                                        @if($store->isCheckPayment())
+                                            <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-700 border border-blue-200 tracking-wider">Pay by Check</span>
+                                        @elseif($store->isOnlinePayment())
                                             @if($order->isPaid())
                                                 <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200 tracking-wider">Paid (${{ number_format($order->total_paid, 2) }})</span>
                                             @elseif($order->payment_status === 'failed')
@@ -902,8 +917,8 @@
                                         @if(!$isLocked)
                                             <a href="{{ route('coach.order.edit', $order) }}" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 text-[10px] font-bold uppercase rounded hover:bg-slate-50 transition-colors">View/Edit</a>
                                         @endif
-                                        @if(!$store->isOnlinePayment() || $order->isPaid())
-                                        <span class="w-6 h-6 flex items-center justify-center bg-green-100 text-green-600 rounded-full border border-green-200" title="{{ !$store->isOnlinePayment() ? 'In-House Order Confirmed' : 'Paid Online' }}">
+                                        @if($store->isCheckPayment() || !$store->isOnlinePayment() || $order->isPaid())
+                                        <span class="w-6 h-6 flex items-center justify-center bg-green-100 text-green-600 rounded-full border border-green-200" title="{{ $store->isCheckPayment() ? 'Pay by Check (Payment Requirements Waived)' : (!$store->isOnlinePayment() ? 'In-House Order Confirmed' : 'Paid Online') }}">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                         </span>
                                         @else
@@ -1240,36 +1255,60 @@
 
             {{-- Payment, Production & Delivery Notes --}}
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
-                <div class="p-5 border-b border-slate-200 bg-slate-50">
-                    <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Payment Collection Method</h3>
-                    <p class="text-xs text-slate-500 mt-1">Choose how parents pay for their orders on this team store.</p>
+                <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Payment Collection Method</h3>
+                        <p class="text-xs text-slate-500 mt-1">Payment configuration for this team store.</p>
+                    </div>
+                    @if($store->isCheckPayment())
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">
+                            📑 Super Admin Managed
+                        </span>
+                    @endif
                 </div>
                 <div class="p-5">
-                    <form action="{{ route('coach.store.description', $store) }}" method="POST" class="space-y-4">
-                        @csrf
-                        <div>
-                            <div class="space-y-3 mb-3">
-                                <label class="flex items-start gap-2.5 p-3.5 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
-                                    <input type="radio" name="payment_mode" value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'checked' : '' }} class="mt-0.5 text-primary focus:ring-primary">
-                                    <div>
-                                        <span class="block text-xs font-bold text-slate-900 uppercase">Cash Collection</span>
-                                        <span class="block text-[11px] text-slate-500 mt-0.5 leading-relaxed">You collect funds from the parents directly and we send you an invoice for the manufacturing total.</span>
-                                    </div>
-                                </label>
-                                <label class="flex items-start gap-2.5 p-3.5 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
-                                    <input type="radio" name="payment_mode" value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'checked' : '' }} class="mt-0.5 text-primary focus:ring-primary">
-                                    <div>
-                                        <span class="block text-xs font-bold text-slate-900 uppercase">Online Credit Card Payment</span>
-                                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">This option is available once your store has closed and the total order is reviewed to ensure the minimum order quantity for each item is met.</p>
-                                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Once enabled, parents can go back to store’s link, click their order at the bottom of the page and make payment at that point.</p>
-                                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">If you’ve marked up your items, proceeds earned from your sale will be sent to you via Intuit Quickbooks direct deposit once funds have cleared.</p>
-                                    </div>
-                                </label>
+                    @if($store->isCheckPayment())
+                        <div class="flex items-start gap-3.5 p-4 rounded-xl bg-blue-50/70 border border-blue-200">
+                            <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-lg flex-shrink-0 font-black shadow-sm">
+                                📑
+                            </div>
+                            <div>
+                                <span class="block text-xs font-black uppercase tracking-wider text-blue-900">Pay by Check (Assigned by Super Admin)</span>
+                                <p class="text-xs text-blue-800 mt-1 leading-relaxed">
+                                    Payment requirements have been waived for your school. You can finalize and submit your team orders for production without requiring online parent payments; your school or athletic program can mail the check directly to Commission Apparel upon receipt of items.
+                                </p>
+                                <p class="text-[11px] text-blue-600 font-semibold mt-2">
+                                    Note: This payment method was granted and configured by Commission Apparel Super Admin. If you have questions or need this changed, please contact Super Admin support.
+                                </p>
                             </div>
                         </div>
+                    @else
+                        <form action="{{ route('coach.store.description', $store) }}" method="POST" class="space-y-4">
+                            @csrf
+                            <div>
+                                <div class="space-y-3 mb-3">
+                                    <label class="flex items-start gap-2.5 p-3.5 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
+                                        <input type="radio" name="payment_mode" value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'checked' : '' }} class="mt-0.5 text-primary focus:ring-primary">
+                                        <div>
+                                            <span class="block text-xs font-bold text-slate-900 uppercase">Cash Collection</span>
+                                            <span class="block text-[11px] text-slate-500 mt-0.5 leading-relaxed">You collect funds from the parents directly and we send you an invoice for the manufacturing total.</span>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-start gap-2.5 p-3.5 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
+                                        <input type="radio" name="payment_mode" value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'checked' : '' }} class="mt-0.5 text-primary focus:ring-primary">
+                                        <div>
+                                            <span class="block text-xs font-bold text-slate-900 uppercase">Online Credit Card Payment</span>
+                                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">This option is available once your store has closed and the total order is reviewed to ensure the minimum order quantity for each item is met.</p>
+                                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Once enabled, parents can go back to store’s link, click their order at the bottom of the page and make payment at that point.</p>
+                                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">If you’ve marked up your items, proceeds earned from your sale will be sent to you via Intuit Quickbooks direct deposit once funds have cleared.</p>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
 
-                        <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-800 transition-colors">Save Payment Method</button>
-                    </form>
+                            <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-800 transition-colors">Save Payment Method</button>
+                        </form>
+                    @endif
                 </div>
             </div>
 
