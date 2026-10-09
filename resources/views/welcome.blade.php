@@ -151,7 +151,7 @@
             <div>
                 <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">
                     @php
-                        $customHeading = $landingSettings['collections_heading'] ?? 'VIEW OUR CUSTOM COLLECTIONS';
+                        $customHeading = $landingSettings['collections_heading'] ?? 'CUSTOM UNIFORM COLLECTIONS';
                     @endphp
                     @if(stripos($customHeading, 'COLLECTIONS') !== false)
                         {!! preg_replace('/(COLLECTIONS)/i', '<span class="text-[#cd202c]">$1</span>', e($customHeading)) !!}
@@ -164,7 +164,7 @@
                 </p>
             </div>
             <a href="{{ route('catalog.index') }}" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold bg-[#cd202c] hover:bg-[#a11825] text-white transition-colors self-start md:self-auto">
-                {{ $landingSettings['collections_cta_text'] ?? 'View Design Collection' }}
+                {{ $landingSettings['collections_cta_text'] ?? 'VIEW FULL CATALOG' }}
             </a>
         </div>
 
@@ -272,27 +272,31 @@
     >
         
         <div class="space-y-4 md:space-y-5">
-            <!-- Section Header -->
-            <div class="text-center max-w-3xl mx-auto space-y-1.5">
-                @php
-                    $tsHeading = $teamStoreSettings['heading'] ?? 'LAUNCH YOUR TEAM STORE';
-                    if (str_contains($tsHeading, 'STORE')) {
-                        $parts = explode('STORE', $tsHeading);
-                        $hBefore = $parts[0];
-                        $hColored = 'STORE';
-                    } else {
-                        $tsWords = explode(' ', trim($tsHeading));
-                        $hColored = array_pop($tsWords);
-                        $hBefore = implode(' ', $tsWords) . ' ';
-                    }
-                @endphp
-                <h2 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight uppercase text-slate-900 leading-tight">
-                    {{ $hBefore }}<span class="text-[#cd202c]">{{ $hColored }}</span>
-                </h2>
-                
-                <p class="text-slate-600 text-xs sm:text-sm md:text-base font-normal max-w-2xl mx-auto leading-relaxed" style="color: #475569;">
-                    {{ $teamStoreSettings['subheading'] ?? 'Empower your program with a custom online store that eliminates coach hassle and generates revenue.' }}
-                </p>
+            <!-- Section Header (Matching Size & Placement) -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+                <div>
+                    @php
+                        $tsHeading = $teamStoreSettings['heading'] ?? 'LAUNCH YOUR TEAM STORE';
+                        if (str_contains($tsHeading, 'STORE')) {
+                            $parts = explode('STORE', $tsHeading);
+                            $hBefore = $parts[0];
+                            $hColored = 'STORE';
+                        } else {
+                            $tsWords = explode(' ', trim($tsHeading));
+                            $hColored = array_pop($tsWords);
+                            $hBefore = implode(' ', $tsWords) . ' ';
+                        }
+                    @endphp
+                    <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">
+                        {{ $hBefore }}<span class="text-[#cd202c]">{{ $hColored }}</span>
+                    </h2>
+                    <p class="text-slate-500 text-xs font-medium mt-1">
+                        {{ $teamStoreSettings['subheading'] ?? 'Empower your program with a custom online store that eliminates coach hassle and generates revenue.' }}
+                    </p>
+                </div>
+                <a href="{{ route('store.search') }}" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold bg-[#cd202c] hover:bg-[#a11825] text-white transition-colors self-start md:self-auto">
+                    {{ $landingSettings['team_store_header_cta'] ?? 'FIND YOUR TEAM STORE' }}
+                </a>
             </div>
 
             <!-- Interactive Stepper Navigation Bar -->
@@ -843,17 +847,32 @@
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- 3. PROGRAM SPOTLIGHTS & MEDIA (Primary Highlight + Side Stories)  -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <section id="news" class="bg-slate-50/75 border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden">
+    <section id="news" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-5 md:p-8 relative overflow-hidden">
         
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-slate-200">
+        <!-- Header (Matching Size & Placement) -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
             <div>
-                <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
-                    {{ $landingSettings['news_heading'] ?? 'PROGRAM SPOTLIGHTS & MEDIA' }}
+                @php
+                    $newsHeading = $landingSettings['news_heading'] ?? 'PROGRAM SPOTLIGHTS & MEDIA';
+                    if (str_contains($newsHeading, 'MEDIA')) {
+                        $nParts = explode('MEDIA', $newsHeading);
+                        $nBefore = $nParts[0];
+                        $nColored = 'MEDIA';
+                    } else {
+                        $nWords = explode(' ', trim($newsHeading));
+                        $nColored = array_pop($nWords);
+                        $nBefore = implode(' ', $nWords) . ' ';
+                    }
+                @endphp
+                <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">
+                    {{ $nBefore }}<span class="text-[#cd202c]">{{ $nColored }}</span>
                 </h2>
+                <p class="text-slate-500 text-xs font-medium mt-1">
+                    {{ $landingSettings['news_subheading'] ?? 'Championship stories, team features, and media coverage from programs powered by The Commission.' }}
+                </p>
             </div>
-            <a href="{{ route('news.index') }}" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#cd202c] hover:text-slate-900 transition-colors">
-                {{ $landingSettings['news_cta_text'] ?? 'View All News & Stories' }} <span>&rarr;</span>
+            <a href="{{ route('news.index') }}" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold bg-[#cd202c] hover:bg-[#a11825] text-white transition-colors self-start md:self-auto">
+                {{ $landingSettings['news_cta_text'] ?? 'VIEW ALL NEWS & STORIES' }}
             </a>
         </div>
 
@@ -917,99 +936,108 @@
             $sideArticles = $displayArticles->filter(fn($a) => $a->id !== ($highlightArticle->id ?? null));
         @endphp
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
-            <!-- Left Column: Primary Highlight -->
-            @if($highlightArticle)
-            <div class="lg:col-span-7 xl:col-span-8 flex">
-                <article class="bg-white border border-slate-200/90 hover:border-[#cd202c]/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between w-full group">
-                    <!-- Media Card Header -->
-                    <a href="{{ route('news.show', $highlightArticle->slug) }}" class="relative block w-full overflow-hidden aspect-[2/1] sm:aspect-[21/9] max-h-64 sm:max-h-72 bg-slate-100">
-                        @if($highlightArticle->cover_image)
-                            <img src="{{ Str::startsWith($highlightArticle->cover_image, 'http') ? $highlightArticle->cover_image : asset(ltrim($highlightArticle->cover_image, '/')) }}" 
-                                 alt="{{ $highlightArticle->title }}" 
-                                 onerror="this.onerror=null; this.src='{{ asset('images/group.jpg') }}';" 
-                                 class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
-                                 loading="lazy">
-                        @endif
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-                        
-                        <div class="absolute top-4 left-4 bg-[#cd202c] text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded shadow-md">
-                            {{ $highlightArticle->category }}
+        <!-- Dark Showcase Media Frame (Matching Team Store Dark Theme) -->
+        <div class="w-full rounded-2xl md:rounded-3xl shadow-2xl border border-slate-800 bg-[#0e1017] p-5 sm:p-6 md:p-8 relative overflow-hidden text-white">
+            
+            <!-- Ambient Subtle Glow Effects -->
+            <div class="absolute -top-32 -right-32 w-96 h-96 bg-[#cd202c]/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch relative z-10">
+                <!-- Left Column: Primary Highlight -->
+                @if($highlightArticle)
+                <div class="lg:col-span-7 xl:col-span-8 flex">
+                    <article class="bg-[#07090e] border border-slate-800 hover:border-[#cd202c]/50 rounded-2xl overflow-hidden shadow-inner transition-all duration-300 flex flex-col justify-between w-full group">
+                        <!-- Media Card Header -->
+                        <a href="{{ route('news.show', $highlightArticle->slug) }}" class="relative block w-full overflow-hidden aspect-[2/1] sm:aspect-[21/9] max-h-64 sm:max-h-72 bg-black/60">
+                            @if($highlightArticle->cover_image)
+                                <img src="{{ Str::startsWith($highlightArticle->cover_image, 'http') ? $highlightArticle->cover_image : asset(ltrim($highlightArticle->cover_image, '/')) }}" 
+                                     alt="{{ $highlightArticle->title }}" 
+                                     onerror="this.onerror=null; this.src='{{ asset('images/group.jpg') }}';" 
+                                     class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
+                                     loading="lazy">
+                            @endif
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                            
+                            <div class="absolute top-4 left-4 bg-[#cd202c] text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded shadow-md">
+                                {{ $highlightArticle->category }}
+                            </div>
+
+                            @if($highlightArticle->video_url)
+                            <div class="absolute bottom-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-wider group-hover:bg-[#cd202c] group-hover:border-[#cd202c] transition-all shadow-md">
+                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                <span>WATCH VIDEO</span>
+                            </div>
+                            @endif
+                        </a>
+
+                        <!-- Card Body -->
+                        <div class="p-5 md:p-6 flex flex-col justify-between flex-1 space-y-4">
+                            <div class="space-y-2.5">
+                                <h3 class="text-xl md:text-2xl font-black uppercase text-white leading-tight group-hover:text-[#cd202c] transition-colors">
+                                    <a href="{{ route('news.show', $highlightArticle->slug) }}">{{ $highlightArticle->title }}</a>
+                                </h3>
+                                <p class="text-slate-300 text-xs md:text-sm leading-relaxed font-normal line-clamp-3">
+                                    {{ $highlightArticle->summary }}
+                                </p>
+                            </div>
+
+                            <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between mt-auto">
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Featured Program Story</span>
+                                <a href="{{ route('news.show', $highlightArticle->slug) }}" class="text-xs font-black uppercase text-[#cd202c] group-hover:translate-x-1 group-hover:text-white transition-all inline-flex items-center gap-1.5">
+                                    Read Full Story <span>&rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+                @endif
+
+                <!-- Right Column: Side Stories List -->
+                <div class="lg:col-span-5 xl:col-span-4 flex flex-col">
+                    <div class="bg-[#07090e] border border-slate-800 rounded-2xl p-5 md:p-6 shadow-inner flex flex-col h-full justify-between text-white">
+                        <div>
+                            <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800/80">
+                                <h4 class="text-xs font-black uppercase tracking-widest text-slate-400 font-mono">SIDE STORIES</h4>
+                                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">Latest Updates</span>
+                            </div>
+
+                            <div class="divide-y divide-slate-800/80">
+                                @foreach($sideArticles as $side)
+                                <article class="py-3.5 first:pt-1 last:pb-1 group {{ $loop->iteration > 3 ? 'hidden lg:block' : 'block' }}">
+                                    <a href="{{ route('news.show', $side->slug) }}" class="flex items-start gap-3.5">
+                                        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-black/60 border border-slate-800/80">
+                                            @if($side->cover_image)
+                                                 <img src="{{ Str::startsWith($side->cover_image, 'http') ? $side->cover_image : asset(ltrim($side->cover_image, '/')) }}" 
+                                                      alt="{{ $side->title }}" 
+                                                      onerror="this.onerror=null; this.src='{{ asset('images/basketball.png') }}';" 
+                                                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                                                      loading="lazy">
+                                            @endif
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <span class="text-[9px] md:text-[10px] font-black uppercase text-[#cd202c] tracking-widest block mb-1">
+                                                {{ $side->category }}
+                                            </span>
+                                            <h5 class="text-xs md:text-sm font-bold uppercase text-white group-hover:text-[#cd202c] transition-colors line-clamp-2 leading-snug">
+                                                {{ $side->title }}
+                                            </h5>
+                                        </div>
+                                    </a>
+                                </article>
+                                @endforeach
+                            </div>
                         </div>
 
-                        @if($highlightArticle->video_url)
-                        <div class="absolute bottom-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-wider group-hover:bg-[#cd202c] group-hover:border-[#cd202c] transition-all shadow-md">
-                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                            <span>WATCH VIDEO</span>
-                        </div>
-                        @endif
-                    </a>
-
-                    <!-- Card Body -->
-                    <div class="p-5 md:p-6 flex flex-col justify-between flex-1 space-y-4">
-                        <div class="space-y-2.5">
-                            <h3 class="text-xl md:text-2xl font-black uppercase text-slate-900 leading-tight group-hover:text-[#cd202c] transition-colors">
-                                <a href="{{ route('news.show', $highlightArticle->slug) }}">{{ $highlightArticle->title }}</a>
-                            </h3>
-                            <p class="text-slate-600 text-xs md:text-sm leading-relaxed font-normal line-clamp-3" style="color: #475569;">
-                                {{ $highlightArticle->summary }}
-                            </p>
-                        </div>
-
-                        <div class="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto">
-                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Featured Program Story</span>
-                            <a href="{{ route('news.show', $highlightArticle->slug) }}" class="text-xs font-black uppercase text-[#cd202c] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1.5">
-                                Read Full Story <span>&rarr;</span>
+                        <div class="pt-4 border-t border-slate-800/80 mt-4">
+                            <a href="{{ route('news.index') }}" class="block w-full py-2.5 bg-slate-800 hover:bg-[#cd202c] hover:text-white text-slate-300 hover:border-[#cd202c] text-xs font-bold uppercase tracking-wider text-center rounded-xl border border-slate-700 shadow-sm transition-all">
+                                View All News & Stories &rarr;
                             </a>
                         </div>
                     </div>
-                </article>
-            </div>
-            @endif
-
-            <!-- Right Column: Side Stories List -->
-            <div class="lg:col-span-5 xl:col-span-4 flex flex-col">
-                <div class="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-sm flex flex-col h-full justify-between">
-                    <div>
-                        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
-                            <h4 class="text-xs font-black uppercase tracking-widest text-slate-400">SIDE STORIES</h4>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Latest Updates</span>
-                        </div>
-
-                        <div class="divide-y divide-slate-100">
-                            @foreach($sideArticles as $side)
-                            <article class="py-3.5 first:pt-1 last:pb-1 group {{ $loop->iteration > 3 ? 'hidden lg:block' : 'block' }}">
-                                <a href="{{ route('news.show', $side->slug) }}" class="flex items-start gap-3.5">
-                                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-slate-50 border border-slate-200">
-                                        @if($side->cover_image)
-                                             <img src="{{ Str::startsWith($side->cover_image, 'http') ? $side->cover_image : asset(ltrim($side->cover_image, '/')) }}" 
-                                                  alt="{{ $side->title }}" 
-                                                  onerror="this.onerror=null; this.src='{{ asset('images/basketball.png') }}';" 
-                                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                                                  loading="lazy">
-                                        @endif
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <span class="text-[9px] md:text-[10px] font-black uppercase text-[#cd202c] tracking-widest block mb-1">
-                                            {{ $side->category }}
-                                        </span>
-                                        <h5 class="text-xs md:text-sm font-bold uppercase text-slate-900 group-hover:text-[#cd202c] transition-colors line-clamp-2 leading-snug">
-                                            {{ $side->title }}
-                                        </h5>
-                                    </div>
-                                </a>
-                            </article>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <div class="pt-4 border-t border-slate-100 mt-4">
-                        <a href="{{ route('news.index') }}" class="block w-full py-2.5 bg-slate-50 hover:bg-[#cd202c] hover:text-white text-slate-700 hover:border-[#cd202c] text-xs font-bold uppercase tracking-wider text-center rounded-lg border border-slate-200 shadow-sm transition-all">
-                            View All News & Stories &rarr;
-                        </a>
-                    </div>
                 </div>
             </div>
+
         </div>
 
     </section>
@@ -1019,19 +1047,33 @@
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <section id="testimonials" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden">
         
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-slate-100">
+        <!-- Header (Matching Size & Placement) -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
             <div>
-                <div class="flex items-center gap-2.5 mb-1.5">
-                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">4</span>
-                    <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">{{ $landingSettings['testimonials_badge'] ?? 'COACH TESTIMONIALS' }}</span>
-                </div>
-                <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
-                    {{ $landingSettings['testimonials_heading'] ?? 'Testimonials | Feedback from our clients' }}
+                @php
+                    $testHeading = $landingSettings['testimonials_heading'] ?? 'WHAT COACHES & TEAMS SAY';
+                    if (str_contains($testHeading, 'SAY')) {
+                        $tParts = explode('SAY', $testHeading);
+                        $tBefore = $tParts[0];
+                        $tColored = 'SAY';
+                    } elseif (stripos($testHeading, 'TESTIMONIALS') !== false) {
+                        $tBefore = preg_replace('/TESTIMONIALS.*/i', '', $testHeading);
+                        $tColored = 'TESTIMONIALS';
+                    } else {
+                        $tWords = explode(' ', trim($testHeading));
+                        $tColored = array_pop($tWords);
+                        $tBefore = implode(' ', $tWords) . ' ';
+                    }
+                @endphp
+                <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">
+                    {{ $tBefore }}<span class="text-[#cd202c]">{{ $tColored }}</span>
                 </h2>
+                <p class="text-slate-500 text-xs font-medium mt-1">
+                    {{ $landingSettings['testimonials_subheading'] ?? 'Real feedback and reviews from athletic directors, coaches, and team organizers nationwide.' }}
+                </p>
             </div>
-            <a href="{{ route('testimonials.index') }}" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#cd202c] hover:text-slate-900 transition-colors">
-                {{ $landingSettings['testimonials_cta_text'] ?? 'Read All Testimonials' }} <span>&rarr;</span>
+            <a href="{{ route('testimonials.index') }}" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold bg-[#cd202c] hover:bg-[#a11825] text-white transition-colors self-start md:self-auto">
+                {{ $landingSettings['testimonials_cta_text'] ?? 'READ ALL TESTIMONIALS' }}
             </a>
         </div>
 
