@@ -48,8 +48,14 @@ class OgImageController extends Controller
             }
         }
 
-        $cacheKey = 'col_' . md5($collection);
-        return $this->serveOptimizedImage($sourcePath, $cacheKey, 'portrait');
+        $slug = \Illuminate\Support\Str::slug($collection);
+        $cacheKey = 'col_' . $slug;
+        $aliases = [
+            public_path('images/og/col_' . md5($collection) . '.jpg'),
+            public_path('images/og/col_' . md5($slug) . '.jpg'),
+            public_path('images/og/' . $slug . '.jpg'),
+        ];
+        return $this->serveOptimizedImage($sourcePath, $cacheKey, 'portrait', $aliases);
     }
 
     /**
@@ -64,7 +70,8 @@ class OgImageController extends Controller
             $sourcePath = $this->resolveLocalPath($article->cover_image);
         }
 
-        $cacheKey = 'news_' . md5($slug);
+        $cleanSlug = \Illuminate\Support\Str::slug($slug);
+        $cacheKey = 'news_' . $cleanSlug;
         return $this->serveOptimizedImage($sourcePath, $cacheKey, 'landscape');
     }
 
@@ -84,15 +91,32 @@ class OgImageController extends Controller
             }
         }
 
-        $cacheKey = 'store_' . md5($slug);
+        $cleanSlug = \Illuminate\Support\Str::slug($slug);
+        $cacheKey = 'store_' . $cleanSlug;
         return $this->serveOptimizedImage($sourcePath, $cacheKey, 'landscape');
     }
 
     /**
      * Compress, resize, cache and return image strictly under 300KB
      */
-    protected function serveOptimizedImage(?string $sourcePath, string $cacheKey, string $mode = 'landscape')
+    protected function serveOptimizedImage(?string $sourcePath, string $cacheKey, string $mode = 'landscape', array $extraAliases = [])
     {
+        // 0. Check for pre-compiled static image in public/images/og/
+        $staticCandidates = array_unique(array_merge([
+            public_path('images/og/' . $cacheKey . '.jpg'),
+            public_path('images/og/' . ltrim($cacheKey, 'col_') . '.jpg'),
+        ], $extraAliases));
+
+        foreach ($staticCandidates as $sc) {
+            if (File::exists($sc) && filesize($sc) > 0 && filesize($sc) <= 295 * 1024) {
+                return response()->file($sc, [
+                    'Content-Type' => 'image/jpeg',
+                    'Cache-Control' => 'public, max-age=604800',
+                    'X-OG-Engine' => 'Precompiled-Static',
+                ]);
+            }
+        }
+
         $cacheDir = storage_path('app/public/og-cache');
         if (!File::exists($cacheDir)) {
             File::makeDirectory($cacheDir, 0755, true);
@@ -106,6 +130,7 @@ class OgImageController extends Controller
                 return response()->file($cacheFile, [
                     'Content-Type' => 'image/jpeg',
                     'Cache-Control' => 'public, max-age=604800',
+                    'X-OG-Engine' => 'Storage-Cache',
                 ]);
             }
         }
@@ -117,6 +142,7 @@ class OgImageController extends Controller
                 return response()->file($fallback, [
                     'Content-Type' => 'image/jpeg',
                     'Cache-Control' => 'public, max-age=604800',
+                    'X-OG-Engine' => 'Home-Fallback',
                 ]);
             }
             abort(404);
@@ -199,15 +225,27 @@ class OgImageController extends Controller
             }
         }
 
-        // 4. Fallback: serve source file directly with appropriate headers
+        // 4. Fallback:
+        // WhatsApp strictly drops images > 300KB!
+        // If the source image is <= 295KB, we can safely serve it.
+        // If it's > 295KB and no dynamic compressor is available, serve og-home.jpg (266KB)
+        // so WhatsApp always displays a rich card rather than falling back to the small logo!
+        $fileToServe = $sourcePath;
         $mime = 'image/jpeg';
-        if (str_ends_with(strtolower($sourcePath), '.png')) {
+        if (filesize($sourcePath) > 295 * 1024) {
+            $homeFallback = public_path('images/og-home.jpg');
+            if (File::exists($homeFallback)) {
+                $fileToServe = $homeFallback;
+                $mime = 'image/jpeg';
+            }
+        } elseif (str_ends_with(strtolower($sourcePath), '.png')) {
             $mime = 'image/png';
         }
-        return response()->file($sourcePath, [
+
+        return response()->file($fileToServe, [
             'Content-Type' => $mime,
             'Cache-Control' => 'public, max-age=604800',
-            'X-OG-Engine' => 'Direct-Fallback',
+            'X-OG-Engine' => ($fileToServe === $sourcePath) ? 'Direct-Fallback' : 'Home-Fallback',
         ]);
     }
 

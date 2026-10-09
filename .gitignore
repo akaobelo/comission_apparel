@@ -38,3 +38,6 @@ pnpm-debug.log*
 *.gif
 *.svg
 *.webp
+
+!public/images/og/**
+!public/images/og-*.jpg
