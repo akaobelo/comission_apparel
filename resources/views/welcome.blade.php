@@ -146,103 +146,82 @@
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- 1. EXPLORE SPORTS CATEGORIES: CUSTOM UNIFORM COLLECTIONS          -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <section id="sports" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden"
-        x-data="{ 
+    <section id="sports" class="bg-white border border-slate-200 rounded-xl shadow-sm p-5 md:p-6 relative">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+            <div>
+                <h2 class="text-lg md:text-xl font-black tracking-tight uppercase text-slate-900">
+                    @php
+                        $customHeading = $landingSettings['collections_heading'] ?? 'VIEW OUR CUSTOM COLLECTIONS';
+                    @endphp
+                    @if(stripos($customHeading, 'COLLECTIONS') !== false)
+                        {!! preg_replace('/(COLLECTIONS)/i', '<span class="text-[#cd202c]">$1</span>', e($customHeading)) !!}
+                    @else
+                        {{ $customHeading }}
+                    @endif
+                </h2>
+                <p class="text-slate-500 text-xs font-medium mt-1">
+                    {{ $landingSettings['collections_subheading'] ?? 'Check out with custom designs crafted for sports teams and fans all over your group and/or organization.' }}
+                </p>
+            </div>
+            <a href="{{ route('catalog.index') }}" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold bg-[#cd202c] hover:bg-[#a11825] text-white transition-colors self-start md:self-auto">
+                {{ $landingSettings['collections_cta_text'] ?? 'View Design Collection' }}
+            </a>
+        </div>
+
+        @if($landingCollections && $landingCollections->isNotEmpty())
+        <!-- Gallery Carousel (5 Items Desktop, Side Arrows, Zero Wasted Space) -->
+        <div x-data="{ 
             activePage: 0,
-            itemsPerPage: window.innerWidth < 768 ? 1 : (window.innerWidth < 1200 ? 2 : 3),
+            itemsPerPage: window.innerWidth < 640 ? 1 : (window.innerWidth < 768 ? 2 : (window.innerWidth < 1024 ? 3 : 5)),
             totalItems: {{ count($landingCollections ?? []) }},
             get totalPages() { return Math.max(1, Math.ceil(this.totalItems / this.itemsPerPage)) },
             next() { this.activePage = (this.activePage + 1) % this.totalPages },
             prev() { this.activePage = (this.activePage - 1 + this.totalPages) % this.totalPages },
             init() {
                 window.addEventListener('resize', () => {
-                    this.itemsPerPage = window.innerWidth < 768 ? 1 : (window.innerWidth < 1200 ? 2 : 3);
+                    this.itemsPerPage = window.innerWidth < 640 ? 1 : (window.innerWidth < 768 ? 2 : (window.innerWidth < 1024 ? 3 : 5));
                     if (this.activePage >= this.totalPages) this.activePage = Math.max(0, this.totalPages - 1);
                 });
             }
-        }">
-        
-        <!-- Header with Title and Carousel Controls -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-slate-100">
-            <div>
-                <div class="flex items-center gap-2.5 mb-1.5">
-                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">1</span>
-                    <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">{{ $landingSettings['collections_badge'] ?? 'EXPLORE OUR SPORTS CATEGORIES' }}</span>
-                </div>
-                <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
-                    {{ $landingSettings['collections_heading'] ?? 'CUSTOM UNIFORM COLLECTIONS' }}
-                </h2>
-            </div>
+        }" class="relative w-full">
             
-            <div class="flex items-center gap-4">
-                <a href="{{ route('catalog.index') }}" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#cd202c] hover:text-slate-900 transition-colors mr-2">
-                    {{ $landingSettings['collections_cta_text'] ?? 'View Full Catalog' }} <span>&rarr;</span>
-                </a>
-                
-                <!-- Prev / Next Navigation Buttons -->
-                <div class="flex items-center gap-2" x-show="totalPages > 1">
-                    <button @click="prev()" aria-label="Previous sport collections" class="w-9 h-9 rounded-full bg-slate-50 border border-slate-200 hover:border-[#cd202c] hover:bg-[#cd202c] hover:text-white text-slate-700 flex items-center justify-center transition-all shadow-sm active:scale-95">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
-                    </button>
-                    <button @click="next()" aria-label="Next sport collections" class="w-9 h-9 rounded-full bg-slate-50 border border-slate-200 hover:border-[#cd202c] hover:bg-[#cd202c] hover:text-white text-slate-700 flex items-center justify-center transition-all shadow-sm active:scale-95">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        @if($landingCollections && $landingCollections->isNotEmpty())
-        <!-- Carousel Track Container -->
-        <div class="overflow-hidden relative -mx-3">
-            <div class="flex transition-transform duration-500 ease-out"
-                 :style="'transform: translateX(-' + (activePage * 100) + '%)'">
-                @foreach($landingCollections as $collection)
-                <div class="shrink-0 p-3 flex"
-                     :style="'width: ' + (100 / itemsPerPage) + '%'">
-                    <div class="bg-slate-50 hover:bg-white border border-slate-200 hover:border-[#cd202c] hover:shadow-lg rounded-2xl overflow-hidden transition-all duration-300 flex flex-col justify-between h-full w-full group">
-                        
-                        <!-- Full Graphic Banner Artwork (Un-cropped Aspect Ratio) -->
-                        <a href="{{ route('catalog.index') }}" class="relative block overflow-hidden bg-slate-100 w-full" style="aspect-ratio: 406.7 / 305.017;">
-                            @if($loop->first)
-                            <div class="absolute top-3 left-3 bg-[#cd202c] text-white text-[9px] font-black tracking-widest uppercase px-2.5 py-1 rounded shadow-md z-10">
-                                NEWEST ARRIVAL
-                            </div>
-                            @endif
-                            <img src="{{ asset(ltrim($collection->image_path, '/')) }}" alt="{{ $collection->tab_name }}" onerror="this.onerror=null; this.src='{{ asset('images/basketball.png') }}';" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
-                        </a>
-
-                        <!-- Card Body -->
-                        <div class="p-5 flex flex-col flex-1 justify-between">
-                            <div>
-                                <div class="text-[#cd202c] text-[10px] font-black tracking-widest uppercase mb-1.5">
-                                    {{ $collection->tab_name }}
+            <div class="overflow-hidden relative w-full -mx-2 px-2 pb-2">
+                <div class="flex transition-transform duration-500 ease-out"
+                     :style="'transform: translateX(-' + (activePage * 100) + '%)'">
+                    @foreach($landingCollections as $collection)
+                    <div class="shrink-0 p-2 flex text-left" 
+                         :style="'width: ' + (100 / itemsPerPage) + '%'">
+                        <div class="bg-white overflow-hidden group border border-slate-200 shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full w-full rounded-xl">
+                            <!-- Enforced exact aspect ratio bounds: 406.7 x 305.017 -->
+                            <a href="{{ route('catalog.index') }}" class="relative overflow-hidden bg-slate-100 w-full block cursor-pointer" style="aspect-ratio: 406.7 / 305.017;">
+                                @if($loop->first)
+                                <div class="absolute top-2 left-2 bg-[#cd202c] text-white text-[8px] md:text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded shadow z-10">
+                                    NEWEST ARRIVAL
                                 </div>
-                                <h3 class="text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2 group-hover:text-[#cd202c] transition-colors" title="{{ $collection->title }}">
-                                    {{ $collection->title }}
-                                </h3>
-                                <p class="text-slate-700 text-xs mb-4 font-normal line-clamp-3 leading-relaxed" style="color: #475569;">
-                                    {{ $collection->description }}
-                                </p>
-                            </div>
-                            
-                            <div class="mt-auto">
-                                <a href="/quote" class="block w-full py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white text-xs font-bold uppercase tracking-wider text-center rounded-lg shadow-sm transition-colors">
-                                    TALK TO AN EXPERT
-                                </a>
+                                @endif
+                                <img src="{{ Str::startsWith($collection->image_path, 'http') ? $collection->image_path : asset(ltrim($collection->image_path, '/')) }}" alt="{{ $collection->tab_name }}" onerror="this.onerror=null; this.src='{{ asset('images/basketball.png') }}';" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                            </a>
+                            <div class="p-3 md:p-4 flex flex-col flex-1">
+                                <div class="text-[#cd202c] text-[10px] font-black tracking-widest uppercase mb-1 md:mb-1.5">{{ $collection->tab_name }}</div>
+                                <h3 class="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight mb-2 line-clamp-2" title="{{ $collection->title }}">{{ $collection->title }}</h3>
+                                <p class="text-slate-600 text-[10px] md:text-xs mb-4 font-normal line-clamp-3 leading-relaxed" style="color: #475569;">{{ $collection->description }}</p>
+                                <div class="mt-auto">
+                                    <a href="/quote" class="block w-full py-2 bg-[#cd202c] hover:bg-[#a11825] text-white text-[10px] md:text-xs font-bold uppercase tracking-wider text-center rounded shadow-sm transition-colors">TALK TO AN EXPERT</a>
+                                </div>
                             </div>
                         </div>
-
                     </div>
+                    @endforeach
                 </div>
-                @endforeach
             </div>
-        </div>
 
-        <!-- Carousel Pagination Dots -->
-        <div class="flex items-center justify-center gap-2 mt-6" x-show="totalPages > 1">
-            <template x-for="i in totalPages" :key="i">
-                <button @click="activePage = i - 1" class="h-1.5 rounded-full transition-all duration-300" :class="activePage === i - 1 ? 'bg-[#cd202c] w-8' : 'bg-slate-200 hover:bg-slate-300 w-2.5'"></button>
-            </template>
+            <!-- Navigation Arrows on the Sides -->
+            <button @click="prev()" x-show="totalPages > 1" x-cloak class="absolute -left-2 sm:-left-3 md:-left-4 top-[38%] -translate-y-1/2 w-8 h-8 md:w-9 md:h-9 rounded-full bg-white border border-slate-200 shadow-md hover:shadow-lg text-slate-700 flex items-center justify-center hover:bg-slate-50 hover:text-[#cd202c] transition-all z-20 cursor-pointer active:scale-95" aria-label="Previous">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button @click="next()" x-show="totalPages > 1" x-cloak class="absolute -right-2 sm:-right-3 md:-right-4 top-[38%] -translate-y-1/2 w-8 h-8 md:w-9 md:h-9 rounded-full bg-white border border-slate-200 shadow-md hover:shadow-lg text-slate-700 flex items-center justify-center hover:bg-slate-50 hover:text-[#cd202c] transition-all z-20 cursor-pointer active:scale-95" aria-label="Next">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+            </button>
         </div>
         @else
         <div class="py-8 text-center text-slate-400 font-bold uppercase text-xs">No collections available.</div>
@@ -251,115 +230,7 @@
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- 2. COMMISSION NEWS & STORIES (Balanced 3-Card Spotlight)          -->
-    <!-- ══════════════════════════════════════════════════════════════════ -->
-    <section id="news" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden">
-        
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-slate-100">
-            <div>
-                <div class="flex items-center gap-2.5 mb-1.5">
-                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">2</span>
-                    <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">{{ $landingSettings['news_badge'] ?? 'COMMISSION NEWS & STORIES' }}</span>
-                </div>
-                <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
-                    {{ $landingSettings['news_heading'] ?? 'PROGRAM SPOTLIGHTS & MEDIA' }}
-                </h2>
-            </div>
-            <a href="{{ route('news.index') }}" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#cd202c] hover:text-slate-900 transition-colors">
-                {{ $landingSettings['news_cta_text'] ?? 'View All News & Stories' }} <span>&rarr;</span>
-            </a>
-        </div>
-
-        @php
-            $displayArticles = ($newsArticles && $newsArticles->isNotEmpty()) ? $newsArticles : collect([
-                (object)[
-                    'title' => "The Journey: Coach Mike's Championship Run",
-                    'slug' => 'the-journey-coach-mikes-championship-run',
-                    'category' => 'CHAMPIONSHIP RUN',
-                    'author' => 'The Commission Editorial',
-                    'summary' => 'How Coach Mike led his program to a historic state championship victory wearing bespoke Commission performance uniforms.',
-                    'cover_image' => '/images/basketball.png',
-                    'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                    'published_at' => \Carbon\Carbon::now()->subDays(2),
-                    'created_at' => \Carbon\Carbon::now()->subDays(2),
-                ],
-                (object)[
-                    'title' => 'Legacy Athletics: Modernizing High School Programs',
-                    'slug' => 'legacy-athletics-modernizing-high-school-programs',
-                    'category' => 'PROGRAM SPOTLIGHT',
-                    'author' => 'The Commission Editorial',
-                    'summary' => 'Discover how Legacy Athletics equipped over 400 student-athletes across 6 varsity sports without a single paper order form.',
-                    'cover_image' => '/images/group.jpg',
-                    'video_url' => null,
-                    'published_at' => \Carbon\Carbon::now()->subDays(5),
-                    'created_at' => \Carbon\Carbon::now()->subDays(5),
-                ],
-                (object)[
-                    'title' => 'Justin Gatlin Signature Track & Field Collection Revealed',
-                    'slug' => 'justin-gatlin-signature-track-collection',
-                    'category' => 'UNIFORM REVEAL',
-                    'author' => 'The Commission Editorial',
-                    'summary' => 'Olympic gold medalist Justin Gatlin partners with The Commission to introduce ultra-aerodynamic singlets and speed suits for youth track clubs.',
-                    'cover_image' => '/images/gatlin.png',
-                    'video_url' => null,
-                    'published_at' => \Carbon\Carbon::now()->subDays(8),
-                    'created_at' => \Carbon\Carbon::now()->subDays(8),
-                ],
-            ]);
-        @endphp
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 items-stretch">
-            @foreach($displayArticles as $article)
-            <article class="bg-slate-50 hover:bg-white border border-slate-200 hover:border-[#cd202c]/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg flex flex-col group transition-all duration-300">
-                <!-- Media Card Header -->
-                <a href="{{ route('news.show', $article->slug) }}" class="relative block w-full overflow-hidden aspect-[16/10] bg-slate-100">
-                    @if($article->cover_image)
-                        <img src="{{ asset(ltrim($article->cover_image, '/')) }}" alt="{{ $article->title }}" onerror="this.onerror=null; this.src='{{ asset('images/group.jpg') }}';" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" loading="lazy">
-                    @endif
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                    
-                    <div class="absolute top-3 left-3 bg-[#cd202c] text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded shadow-sm">
-                        {{ $article->category }}
-                    </div>
-
-                    @if($article->video_url)
-                    <div class="absolute bottom-3 left-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/80 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-wider group-hover:bg-[#cd202c] group-hover:border-[#cd202c] transition-all shadow-md">
-                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        <span>WATCH VIDEO</span>
-                    </div>
-                    @endif
-                </a>
-
-                <!-- Card Content -->
-                <div class="p-5 md:p-6 flex flex-col justify-between flex-1 space-y-4">
-                    <div class="space-y-2">
-                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                            {{ $article->published_at ? $article->published_at->format('M d, Y') : $article->created_at->format('M d, Y') }}
-                        </span>
-                        <h3 class="text-base md:text-lg font-black uppercase text-slate-900 leading-snug group-hover:text-[#cd202c] transition-colors line-clamp-2">
-                            <a href="{{ route('news.show', $article->slug) }}">{{ $article->title }}</a>
-                        </h3>
-                        <p class="text-slate-700 text-xs leading-relaxed line-clamp-3 font-normal" style="color: #475569;">
-                            {{ $article->summary }}
-                        </p>
-                    </div>
-
-                    <div class="pt-4 border-t border-slate-200 flex items-center justify-between mt-auto">
-                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{{ $article->author ?? 'The Commission Editorial' }}</span>
-                        <a href="{{ route('news.show', $article->slug) }}" class="text-xs font-black uppercase text-[#cd202c] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                            Read Story <span>&rarr;</span>
-                        </a>
-                    </div>
-                </div>
-            </article>
-            @endforeach
-        </div>
-
-    </section>
-
-    <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- 3. TURNKEY TEAM STORE: INTERACTIVE PROCESS SLIDER                 -->
+    <!-- 2. TURNKEY TEAM STORE: INTERACTIVE PROCESS SLIDER                 -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <section id="team-store" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden"
         x-data="{
@@ -404,7 +275,7 @@
             <!-- Section Header -->
             <div class="text-center max-w-3xl mx-auto space-y-2">
                 <div class="inline-flex items-center gap-2.5 justify-center">
-                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">3</span>
+                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">2</span>
                     <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">
                         {{ $teamStoreSettings['badge'] ?? 'COACH & PROGRAM PLATFORM' }}
                     </span>
@@ -488,8 +359,8 @@
                         <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors"
                             :class="activeStep === 4 ? 'bg-white text-[#cd202c]' : 'bg-slate-100 text-slate-800 group-hover:bg-slate-200'">05</span>
                         <div class="truncate">
-                            <span class="block text-[11px] font-black uppercase tracking-wider truncate">Pack & Payout</span>
-                            <span class="block text-[9px] font-semibold opacity-80 uppercase tracking-tight truncate">Athlete Bags & Rebate</span>
+                            <span class="block text-[11px] font-black uppercase tracking-wider truncate">Pack & Ship</span>
+                            <span class="block text-[9px] font-semibold opacity-80 uppercase tracking-tight truncate">Athlete Bags & Store Mgmt</span>
                         </div>
                     </button>
 
@@ -797,7 +668,7 @@
 
                 </div>
 
-                <!-- SLIDE 4: Pack & Ship + Team Fundraising Kickback -->
+                <!-- SLIDE 4: Individually Bagged by Athlete • Simplified Team Management -->
                 <div x-show="activeStep === 4" x-cloak
                     x-transition:enter="transition ease-out duration-300 transform"
                     x-transition:enter-start="opacity-0 translate-y-3"
@@ -807,36 +678,40 @@
                     <div class="lg:col-span-6 space-y-6">
                         <div class="flex items-center gap-3">
                             <span class="bg-[#cd202c] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
-                                STEP 05 OF 05 &bull; DELIVERY &amp; REVENUE
+                                STEP 05 OF 05 &bull; PACK &amp; SHIP
                             </span>
-                            <span class="text-xs font-mono text-slate-400">PACK &amp; FUNDRAISE</span>
+                            <span class="text-xs font-mono text-slate-400">DISTRIBUTION &amp; MANAGEMENT</span>
                         </div>
 
                         <div class="space-y-2">
                             <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
-                                PLAYER-LABELED DELIVERY &amp; KICKBACKS
+                                INDIVIDUALLY BAGGED BY ATHLETE
                             </h3>
                             <p class="text-emerald-400 font-semibold text-sm uppercase tracking-wide">
-                                Individually Bagged by Athlete &bull; 10%–20% Program Rebate
+                                Individually Bagged by Athlete &bull; Simplified Team Management
                             </p>
                         </div>
 
                         <p class="text-slate-300 text-sm md:text-base leading-relaxed font-normal" style="color: #cbd5e1;">
-                            Say goodbye to chaotic gym floor sorting. Every single athlete's order arrives individually packaged and labeled with their name. Plus, earn an automatic 10%–20% cash rebate kickback on all store sales sent directly to your athletic budget!
+                            Say goodbye to chaotic uniform distribution! Every athlete’s order arrives individually packaged and clearly labeled with their name, making distribution fast and effortless. Plus, turn your team's online store into a fundraising opportunity that generates revenue to support your program.
                         </p>
 
                         <div class="space-y-3 pt-2">
                             <div class="flex items-start gap-3">
                                 <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Individually Bagged &amp; Labeled:</strong> Distribute uniforms to your team in under 5 minutes.</p>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Individually Bagged &amp; Labeled:</strong> Every athlete's order is organized by name, allowing you to distribute uniforms in minutes instead of hours.</p>
                             </div>
                             <div class="flex items-start gap-3">
                                 <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Direct-to-Door or Team Batch:</strong> Ship directly to parents' homes or bulk to practice.</p>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Free Batch Shipping:</strong> All batch orders are shipped together to one designated location at no additional cost.</p>
                             </div>
                             <div class="flex items-start gap-3">
                                 <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
-                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Automatic Cash Rebate:</strong> Receive 10%–20% cash back payouts to fund travel and tournaments.</p>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Generate Revenue for Your Program:</strong> Turn your team store into a fundraising powerhouse! Offer custom apparel and merchandise to athletes, families, and supporters while building your program's operational budget.</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-[#cd202c]/20 border border-[#cd202c] text-[#cd202c] flex items-center justify-center shrink-0 mt-0.5 text-xs font-black">✓</div>
+                                <p class="text-slate-200 text-xs md:text-sm font-medium"><strong class="text-white">Manage Multiple Stores:</strong> Oversee multiple teams or programs from one convenient account. Create separate stores, switch between them effortlessly, and manage everything through a single dashboard.</p>
                             </div>
                         </div>
 
@@ -856,11 +731,11 @@
                     <div class="lg:col-span-6">
                         <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#07090e] p-3 shadow-inner">
                             <div class="flex items-center justify-between pb-3 px-3 border-b border-slate-800/80 mb-3 text-slate-400 text-xs font-mono">
-                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Admin Operations &amp; Payouts</span>
-                                <span class="text-emerald-400 font-bold">REBATES DIRECT DEPOSIT</span>
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Admin Operations &amp; Management</span>
+                                <span class="text-emerald-400 font-bold">CENTRALIZED DASHBOARD</span>
                             </div>
                             <div class="relative rounded-xl overflow-hidden bg-black/60 border border-slate-800/60 aspect-[16/10]">
-                                <img src="{{ $teamStoreSettings['step_5_image'] ?? asset('images/admin dashboard.png') }}" alt="Admin Operations & Financial Dashboard" class="w-full h-full object-cover object-top" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/admin dashboard.png') }}'">
+                                <img src="{{ $teamStoreSettings['step_5_image'] ?? asset('images/5.jpeg') }}" alt="Individually Bagged Orders & Simplified Management" class="w-full h-full object-cover object-center" loading="lazy" onerror="this.onerror=null; this.src='{{ asset('images/5.jpeg') }}'">
                             </div>
                         </div>
                     </div>
@@ -893,27 +768,70 @@
 
             </div>
 
-            <!-- 4 Quick Proof Metrics (Clean Strip) -->
-            <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 pt-4">
-                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center">
-                    <div class="text-2xl md:text-3xl font-black text-[#cd202c] font-heading tracking-tight">{{ $landingSettings['slider_metric_1_val'] ?? '$0' }}</div>
-                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">{{ $landingSettings['slider_metric_1_label'] ?? 'Setup Fee' }}</div>
-                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">{{ $landingSettings['slider_metric_1_sub'] ?? '100% Free Store Creation' }}</div>
-                </div>
-                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center">
-                    <div class="text-2xl md:text-3xl font-black text-slate-900 font-heading tracking-tight">{{ $landingSettings['slider_metric_2_val'] ?? '24-48h' }}</div>
-                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">{{ $landingSettings['slider_metric_2_label'] ?? 'Rapid Mockups' }}</div>
-                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">{{ $landingSettings['slider_metric_2_sub'] ?? 'Photorealistic 3D concepts' }}</div>
-                </div>
-                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center">
-                    <div class="text-2xl md:text-3xl font-black text-slate-900 font-heading tracking-tight">{{ $landingSettings['slider_metric_3_val'] ?? '2-3 WKS' }}</div>
-                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">{{ $landingSettings['slider_metric_3_label'] ?? 'Production' }}</div>
-                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">{{ $landingSettings['slider_metric_3_sub'] ?? 'Guaranteed game-ready' }}</div>
-                </div>
-                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center">
-                    <div class="text-2xl md:text-3xl font-black text-emerald-600 font-heading tracking-tight">{{ $landingSettings['slider_metric_4_val'] ?? '10-20%' }}</div>
-                    <div class="text-[11px] font-black uppercase text-slate-900 mt-1">{{ $landingSettings['slider_metric_4_label'] ?? 'Team Kickback' }}</div>
-                    <div class="text-[10px] text-slate-700 mt-0.5 font-normal" style="color: #475569;">{{ $landingSettings['slider_metric_4_sub'] ?? 'Direct program fundraising' }}</div>
+            <!-- 4 Quick Proof Metrics (Unified Compact Strip - Space Maximized) -->
+            <div class="max-w-5xl mx-auto bg-slate-50/80 border border-slate-200 rounded-xl md:rounded-2xl overflow-hidden shadow-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                    
+                    <!-- Metric 1: $0 Setup Fee -->
+                    <div class="p-3.5 sm:p-4 flex items-center justify-center gap-3">
+                        <div class="text-2xl md:text-3xl font-black text-[#cd202c] font-heading tracking-tight shrink-0">
+                            {{ $landingSettings['slider_metric_1_val'] ?? '$0' }}
+                        </div>
+                        <div class="text-left">
+                            <div class="text-xs font-black uppercase text-slate-900 tracking-tight leading-tight">
+                                {{ $landingSettings['slider_metric_1_label'] ?? 'SETUP FEE' }}
+                            </div>
+                            <div class="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">
+                                {{ $landingSettings['slider_metric_1_sub'] ?? '100% Free Store Creation' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 2: 24-48h Rapid Mockups -->
+                    <div class="p-3.5 sm:p-4 flex items-center justify-center gap-3">
+                        <div class="text-xl md:text-2xl font-black text-slate-900 font-heading tracking-tight shrink-0">
+                            {{ $landingSettings['slider_metric_2_val'] ?? '24-48h' }}
+                        </div>
+                        <div class="text-left">
+                            <div class="text-xs font-black uppercase text-slate-900 tracking-tight leading-tight">
+                                {{ $landingSettings['slider_metric_2_label'] ?? 'RAPID MOCKUPS' }}
+                            </div>
+                            <div class="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">
+                                {{ $landingSettings['slider_metric_2_sub'] ?? 'Photorealistic 3D concepts' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 3: 2-3 WKS Production -->
+                    <div class="p-3.5 sm:p-4 flex items-center justify-center gap-3">
+                        <div class="text-xl md:text-2xl font-black text-slate-900 font-heading tracking-tight shrink-0">
+                            {{ $landingSettings['slider_metric_3_val'] ?? '2-3 WKS' }}
+                        </div>
+                        <div class="text-left">
+                            <div class="text-xs font-black uppercase text-slate-900 tracking-tight leading-tight">
+                                {{ $landingSettings['slider_metric_3_label'] ?? 'PRODUCTION' }}
+                            </div>
+                            <div class="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">
+                                {{ $landingSettings['slider_metric_3_sub'] ?? 'Guaranteed game-ready' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 4: 100% Customer Service -->
+                    <div class="p-3.5 sm:p-4 flex flex-col items-center justify-center text-center">
+                        <div class="text-2xl md:text-3xl font-black text-slate-900 font-heading tracking-tight leading-none">
+                            {{ $landingSettings['slider_metric_4_val'] ?? '100%' }}
+                        </div>
+                        <div class="text-xs font-bold text-slate-700 leading-tight mt-1">
+                            {{ $landingSettings['slider_metric_4_label'] ?? 'Customer Service' }}
+                        </div>
+                        @if(!empty($landingSettings['slider_metric_4_sub']))
+                            <div class="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">
+                                {{ $landingSettings['slider_metric_4_sub'] }}
+                            </div>
+                        @endif
+                    </div>
+
                 </div>
             </div>
 
@@ -925,6 +843,192 @@
             </div>
 
         </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 3. PROGRAM SPOTLIGHTS & MEDIA (Primary Highlight + Side Stories)  -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <section id="news" class="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 md:p-10 relative overflow-hidden">
+        
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-slate-100">
+            <div>
+                <div class="flex items-center gap-2.5 mb-1.5">
+                    <span class="w-5 h-5 rounded-full bg-[#cd202c] text-white font-black text-[10px] flex items-center justify-center shadow-sm">3</span>
+                    <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">{{ $landingSettings['news_badge'] ?? 'COMMISSION NEWS & STORIES' }}</span>
+                </div>
+                <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
+                    {{ $landingSettings['news_heading'] ?? 'PROGRAM SPOTLIGHTS & MEDIA' }}
+                </h2>
+            </div>
+            <a href="{{ route('news.index') }}" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#cd202c] hover:text-slate-900 transition-colors">
+                {{ $landingSettings['news_cta_text'] ?? 'View All News & Stories' }} <span>&rarr;</span>
+            </a>
+        </div>
+
+        @php
+            $displayArticles = ($newsArticles && $newsArticles->isNotEmpty()) ? $newsArticles : collect([
+                (object)[
+                    'id' => 2,
+                    'title' => 'Legacy Athletics: Modernizing High School Programs',
+                    'slug' => 'legacy-athletics-modernizing-high-school-programs',
+                    'category' => 'PROGRAM SPOTLIGHT',
+                    'author' => 'The Commission Editorial',
+                    'summary' => 'Discover how Legacy Athletics equipped over 400 student-athletes across 6 varsity sports without a single paper order form. The athletic director tracked production status visually and received automated team fundraising kickbacks.',
+                    'cover_image' => '/images/group.jpg',
+                    'video_url' => null,
+                    'published_at' => \Carbon\Carbon::now()->subDays(3),
+                    'created_at' => \Carbon\Carbon::now()->subDays(3),
+                    'is_featured' => true,
+                ],
+                (object)[
+                    'id' => 1,
+                    'title' => "The Journey: Coach Mike's Championship Run",
+                    'slug' => 'the-journey-coach-mikes-championship-run',
+                    'category' => 'CHAMPIONSHIP RUN',
+                    'author' => 'The Commission Editorial',
+                    'summary' => 'How Coach Mike led his program to a historic state championship victory wearing bespoke Commission performance uniforms.',
+                    'cover_image' => '/images/basketball.png',
+                    'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                    'published_at' => \Carbon\Carbon::now()->subDays(5),
+                    'created_at' => \Carbon\Carbon::now()->subDays(5),
+                    'is_featured' => false,
+                ],
+                (object)[
+                    'id' => 3,
+                    'title' => 'Justin Gatlin Signature Track & Field Collection Revealed',
+                    'slug' => 'justin-gatlin-signature-track-collection',
+                    'category' => 'UNIFORM REVEAL',
+                    'author' => 'The Commission Editorial',
+                    'summary' => 'Olympic gold medalist Justin Gatlin partners with The Commission to introduce ultra-aerodynamic singlets and speed suits for youth track clubs.',
+                    'cover_image' => '/images/gatlin.png',
+                    'video_url' => null,
+                    'published_at' => \Carbon\Carbon::now()->subDays(8),
+                    'created_at' => \Carbon\Carbon::now()->subDays(8),
+                    'is_featured' => false,
+                ],
+                (object)[
+                    'id' => 4,
+                    'title' => 'The Science of Sublimation: Why Modern Teams Ditch Screenprint',
+                    'slug' => 'science-of-sublimation-modern-teams',
+                    'category' => 'CRAFTSMANSHIP',
+                    'author' => 'The Commission Technical Lab',
+                    'summary' => 'Why heavy screen printed numbers crack and peel in the wash, and how molecular dye-sublimation preserves athletic breathability forever.',
+                    'cover_image' => '/images/reality-spartan.png',
+                    'video_url' => null,
+                    'published_at' => \Carbon\Carbon::now()->subDays(12),
+                    'created_at' => \Carbon\Carbon::now()->subDays(12),
+                    'is_featured' => false,
+                ],
+            ]);
+
+            $highlightArticle = $displayArticles->firstWhere('is_featured', true) ?? $displayArticles->first();
+            $sideArticles = $displayArticles->filter(fn($a) => $a->id !== ($highlightArticle->id ?? null));
+        @endphp
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
+            <!-- Left Column: Primary Highlight -->
+            @if($highlightArticle)
+            <div class="lg:col-span-7 xl:col-span-8 flex">
+                <article class="bg-white border border-slate-200 hover:border-[#cd202c]/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between w-full group">
+                    <!-- Media Card Header -->
+                    <a href="{{ route('news.show', $highlightArticle->slug) }}" class="relative block w-full overflow-hidden aspect-[16/10] bg-slate-100">
+                        @if($highlightArticle->cover_image)
+                            <img src="{{ Str::startsWith($highlightArticle->cover_image, 'http') ? $highlightArticle->cover_image : asset(ltrim($highlightArticle->cover_image, '/')) }}" 
+                                 alt="{{ $highlightArticle->title }}" 
+                                 onerror="this.onerror=null; this.src='{{ asset('images/group.jpg') }}';" 
+                                 class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" 
+                                 loading="lazy">
+                        @endif
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                        
+                        <div class="absolute top-4 left-4 bg-[#cd202c] text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded shadow-md">
+                            {{ $highlightArticle->category }}
+                        </div>
+
+                        @if($highlightArticle->video_url)
+                        <div class="absolute bottom-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-wider group-hover:bg-[#cd202c] group-hover:border-[#cd202c] transition-all shadow-md">
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            <span>WATCH VIDEO</span>
+                        </div>
+                        @endif
+                    </a>
+
+                    <!-- Card Body -->
+                    <div class="p-6 md:p-8 flex flex-col justify-between flex-1 space-y-4">
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                <span>{{ $highlightArticle->published_at ? $highlightArticle->published_at->format('M d, Y') : $highlightArticle->created_at->format('M d, Y') }}</span>
+                                <span>•</span>
+                                <span>{{ $highlightArticle->author ?? 'The Commission Editorial' }}</span>
+                            </div>
+                            <h3 class="text-xl md:text-2xl lg:text-3xl font-black uppercase text-slate-900 leading-tight group-hover:text-[#cd202c] transition-colors">
+                                <a href="{{ route('news.show', $highlightArticle->slug) }}">{{ $highlightArticle->title }}</a>
+                            </h3>
+                            <p class="text-slate-700 text-xs md:text-sm leading-relaxed font-normal text-justify" style="color: #475569;">
+                                {{ $highlightArticle->summary }}
+                            </p>
+                        </div>
+
+                        <div class="pt-5 border-t border-slate-100 flex items-center justify-between mt-auto">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Featured Program Story</span>
+                            <a href="{{ route('news.show', $highlightArticle->slug) }}" class="text-xs font-black uppercase text-[#cd202c] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1.5">
+                                Read Full Story <span>&rarr;</span>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            @endif
+
+            <!-- Right Column: Side Stories List -->
+            <div class="lg:col-span-5 xl:col-span-4 flex flex-col">
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm flex flex-col h-full justify-between">
+                    <div>
+                        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+                            <h4 class="text-xs font-black uppercase tracking-widest text-slate-400">SIDE STORIES</h4>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Latest Updates</span>
+                        </div>
+
+                        <div class="divide-y divide-slate-100">
+                            @foreach($sideArticles as $side)
+                            <article class="py-3.5 first:pt-1 last:pb-1 group {{ $loop->iteration > 3 ? 'hidden lg:block' : 'block' }}">
+                                <a href="{{ route('news.show', $side->slug) }}" class="flex items-start gap-3.5">
+                                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-slate-100 border border-slate-200">
+                                        @if($side->cover_image)
+                                            <img src="{{ Str::startsWith($side->cover_image, 'http') ? $side->cover_image : asset(ltrim($side->cover_image, '/')) }}" 
+                                                 alt="{{ $side->title }}" 
+                                                 onerror="this.onerror=null; this.src='{{ asset('images/basketball.png') }}';" 
+                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                                                 loading="lazy">
+                                        @endif
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-[9px] md:text-[10px] font-black uppercase text-[#cd202c] tracking-widest block mb-1">
+                                            {{ $side->category }}
+                                        </span>
+                                        <h5 class="text-xs md:text-sm font-bold uppercase text-slate-900 group-hover:text-[#cd202c] transition-colors line-clamp-2 leading-snug">
+                                            {{ $side->title }}
+                                        </h5>
+                                        <span class="text-[10px] text-slate-400 font-medium block mt-1">
+                                            {{ $side->published_at ? $side->published_at->format('M d, Y') : $side->created_at->format('M d, Y') }}
+                                        </span>
+                                    </div>
+                                </a>
+                            </article>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100 mt-4">
+                        <a href="{{ route('news.index') }}" class="block w-full py-2.5 bg-slate-50 hover:bg-[#cd202c] hover:text-white text-slate-700 text-xs font-bold uppercase tracking-wider text-center rounded-lg border border-slate-200 hover:border-[#cd202c] shadow-sm transition-all">
+                            View All News & Stories &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -940,7 +1044,7 @@
                     <span class="text-xs font-black uppercase tracking-widest text-[#cd202c]">{{ $landingSettings['testimonials_badge'] ?? 'COACH TESTIMONIALS' }}</span>
                 </div>
                 <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
-                    {{ $landingSettings['testimonials_heading'] ?? 'WHAT COACHES & TEAMS SAY' }}
+                    {{ $landingSettings['testimonials_heading'] ?? 'Testimonials | Feedback from our clients' }}
                 </h2>
             </div>
             <a href="{{ route('testimonials.index') }}" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#cd202c] hover:text-slate-900 transition-colors">

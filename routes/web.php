@@ -34,7 +34,7 @@ Route::get('/', function () {
         ->orderBy('is_featured', 'desc')
         ->orderBy('sort_order', 'asc')
         ->orderBy('published_at', 'desc')
-        ->limit(3)
+        ->limit(6)
         ->get();
 
     $landingSettings = \App\Models\SiteSetting::all()->pluck('value', 'key')->toArray();
@@ -69,7 +69,7 @@ Route::get('/', function () {
         'step_2_image'        => $landingSettings['team_store_step_2_image'] ?? asset('images/team store.png'),
         'step_3_image'        => $landingSettings['team_store_step_3_image'] ?? asset('images/direct order.jpeg'),
         'step_4_image'        => $landingSettings['team_store_step_4_image'] ?? asset('images/week production.jpeg'),
-        'step_5_image'        => $landingSettings['team_store_step_5_image'] ?? asset('images/admin dashboard.png'),
+        'step_5_image'        => $landingSettings['team_store_step_5_image'] ?? asset('images/5.jpeg'),
         'bullet_1'            => $landingSettings['team_store_bullet_1'] ?? 'Streamlined Direct Ordering for Parents',
         'bullet_2'            => $landingSettings['team_store_bullet_2'] ?? 'Custom Fan Gear & Official Team Packages',
         'bullet_3'            => $landingSettings['team_store_bullet_3'] ?? 'Fast Direct-to-Door Delivery',

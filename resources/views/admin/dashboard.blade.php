@@ -978,23 +978,23 @@
                             <span class="text-xs font-black uppercase text-slate-900">Section 1: Custom Uniform Collections Header</span>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-[11px] text-slate-600 mb-1">Badge Text</label>
-                                    <input type="text" name="collections_badge" value="{{ $landingSettings['collections_badge'] ?? 'EXPLORE OUR SPORTS CATEGORIES' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-bold">
-                                </div>
-                                <div>
                                     <label class="block text-[11px] text-slate-600 mb-1">Section Heading</label>
-                                    <input type="text" name="collections_heading" value="{{ $landingSettings['collections_heading'] ?? 'CUSTOM UNIFORM COLLECTIONS' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-bold">
+                                    <input type="text" name="collections_heading" value="{{ $landingSettings['collections_heading'] ?? 'VIEW OUR CUSTOM COLLECTIONS' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-bold">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] text-slate-600 mb-1">Header Link Text</label>
-                                    <input type="text" name="collections_cta_text" value="{{ $landingSettings['collections_cta_text'] ?? 'View Full Catalog' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900">
+                                    <label class="block text-[11px] text-slate-600 mb-1">Section Subtitle</label>
+                                    <input type="text" name="collections_subheading" value="{{ $landingSettings['collections_subheading'] ?? 'Check out with custom designs crafted for sports teams and fans all over your group and/or organization.' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-1">Header Button Text</label>
+                                    <input type="text" name="collections_cta_text" value="{{ $landingSettings['collections_cta_text'] ?? 'View Design Collection' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Section 2 (News & Stories) -->
+                        <!-- Section 3 (News & Stories) -->
                         <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-                            <span class="text-xs font-black uppercase text-slate-900">Section 2: Commission News & Stories Header</span>
+                            <span class="text-xs font-black uppercase text-slate-900">Section 3: Commission News & Stories Header</span>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
                                     <label class="block text-[11px] text-slate-600 mb-1">Badge Text</label>
@@ -1021,7 +1021,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-[11px] text-slate-600 mb-1">Section Heading</label>
-                                    <input type="text" name="testimonials_heading" value="{{ $landingSettings['testimonials_heading'] ?? 'WHAT COACHES & TEAMS SAY' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-bold">
+                                    <input type="text" name="testimonials_heading" value="{{ $landingSettings['testimonials_heading'] ?? 'Testimonials | Feedback from our clients' }}" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-bold">
                                 </div>
                                 <div>
                                     <label class="block text-[11px] text-slate-600 mb-1">Header Link Text</label>
@@ -1120,11 +1120,11 @@
                                 <!-- Step 5 -->
                                 <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-xs font-black uppercase text-slate-900">Step 05: Pack & Payout</span>
+                                        <span class="text-xs font-black uppercase text-slate-900">Step 05: Pack & Ship (Store Management)</span>
                                         <span class="text-[10px] font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700">Admin Operations</span>
                                     </div>
                                     <div class="bg-slate-900 p-2 rounded-lg flex items-center justify-center h-28 overflow-hidden">
-                                        <img src="{{ $landingSettings['team_store_step_5_image'] ?? asset('images/admin dashboard.png') }}" class="h-full w-auto object-contain" onerror="this.src='{{ asset('images/admin dashboard.png') }}'">
+                                        <img src="{{ $landingSettings['team_store_step_5_image'] ?? asset('images/5.jpeg') }}" class="h-full w-auto object-contain" onerror="this.src='{{ asset('images/5.jpeg') }}'">
                                     </div>
                                     <label class="block text-[11px] font-bold text-slate-600">Replace Image:</label>
                                     <input type="file" name="team_store_step_5_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-bold file:uppercase file:bg-slate-900 file:text-white">
@@ -1156,9 +1156,9 @@
                                 </div>
                                 <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5">
                                     <span class="text-[10px] font-black uppercase text-slate-500">Metric 4</span>
-                                    <input type="text" name="slider_metric_4_val" value="{{ $landingSettings['slider_metric_4_val'] ?? '10-20%' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-black text-emerald-600">
-                                    <input type="text" name="slider_metric_4_label" value="{{ $landingSettings['slider_metric_4_label'] ?? 'Team Kickback' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-bold text-slate-900">
-                                    <input type="text" name="slider_metric_4_sub" value="{{ $landingSettings['slider_metric_4_sub'] ?? 'Direct program fundraising' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-[11px] text-slate-600">
+                                    <input type="text" name="slider_metric_4_val" value="{{ $landingSettings['slider_metric_4_val'] ?? '100%' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-black text-slate-900">
+                                    <input type="text" name="slider_metric_4_label" value="{{ $landingSettings['slider_metric_4_label'] ?? 'Customer Service' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-bold text-slate-900">
+                                    <input type="text" name="slider_metric_4_sub" value="{{ $landingSettings['slider_metric_4_sub'] ?? 'Dedicated Support' }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-[11px] text-slate-600">
                                 </div>
                             </div>
                         </div>
