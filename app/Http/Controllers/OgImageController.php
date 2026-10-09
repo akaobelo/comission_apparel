@@ -122,58 +122,92 @@ class OgImageController extends Controller
             abort(404);
         }
 
-        // Read source image
-        $data = @file_get_contents($sourcePath);
-        if (!$data) {
-            abort(404);
-        }
-
-        $src = @imagecreatefromstring($data);
-        if (!$src) {
-            abort(404);
-        }
-
-        $origW = imagesx($src);
-        $origH = imagesy($src);
-
         // Target max dimensions based on aspect ratio
-        if ($mode === 'landscape') {
-            $maxW = 1200;
-            $maxH = 630;
-        } else {
-            // Portrait / Square collection posters
-            $maxW = 900;
-            $maxH = 1100;
+        $maxW = ($mode === 'landscape') ? 1200 : 900;
+        $maxH = ($mode === 'landscape') ? 630 : 1100;
+
+        // 1. Try Imagick extension if available
+        if (class_exists(\Imagick::class)) {
+            try {
+                $im = new \Imagick($sourcePath);
+                $im->setImageFormat('jpeg');
+                $im->thumbnailImage($maxW, $maxH, true);
+                $im->setImageCompressionQuality(80);
+                $im->writeImage($cacheFile);
+                $im->clear();
+                $im->destroy();
+
+                if (File::exists($cacheFile) && filesize($cacheFile) > 0) {
+                    return response()->file($cacheFile, [
+                        'Content-Type' => 'image/jpeg',
+                        'Cache-Control' => 'public, max-age=604800',
+                        'X-OG-Engine' => 'Imagick-ext',
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                // Continue to GD or CLI
+            }
         }
 
-        // Calculate scaled dimensions preserving aspect ratio
-        $scale = min($maxW / $origW, $maxH / $origH, 1.0);
-        $newW = max(1, (int)($origW * $scale));
-        $newH = max(1, (int)($origH * $scale));
+        // 2. Try GD extension if available
+        if (function_exists('imagecreatefromstring')) {
+            $data = @file_get_contents($sourcePath);
+            if ($data) {
+                $src = @imagecreatefromstring($data);
+                if ($src) {
+                    $origW = imagesx($src);
+                    $origH = imagesy($src);
+                    $scale = min($maxW / $origW, $maxH / $origH, 1.0);
+                    $newW = max(1, (int)($origW * $scale));
+                    $newH = max(1, (int)($origH * $scale));
 
-        $dst = imagecreatetruecolor($newW, $newH);
-        
-        // Fill white background for transparent PNGs
-        $white = imagecolorallocate($dst, 255, 255, 255);
-        imagefill($dst, 0, 0, $white);
-        
-        imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
+                    $dst = imagecreatetruecolor($newW, $newH);
+                    $white = imagecolorallocate($dst, 255, 255, 255);
+                    imagefill($dst, 0, 0, $white);
+                    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
 
-        // Compress to JPEG with quality that guarantees < 280KB for WhatsApp
-        $quality = 82;
-        imagejpeg($dst, $cacheFile, $quality);
+                    imagejpeg($dst, $cacheFile, 82);
+                    if (filesize($cacheFile) > 280 * 1024) {
+                        imagejpeg($dst, $cacheFile, 68);
+                    }
 
-        // If still > 280KB, re-compress with lower quality
-        if (filesize($cacheFile) > 280 * 1024) {
-            imagejpeg($dst, $cacheFile, 68);
+                    imagedestroy($src);
+                    imagedestroy($dst);
+
+                    return response()->file($cacheFile, [
+                        'Content-Type' => 'image/jpeg',
+                        'Cache-Control' => 'public, max-age=604800',
+                        'X-OG-Engine' => 'GD-ext',
+                    ]);
+                }
+            }
         }
 
-        imagedestroy($src);
-        imagedestroy($dst);
+        // 3. Try ImageMagick CLI (convert / magick) if available
+        if (function_exists('exec')) {
+            try {
+                @exec(sprintf('convert %s -resize %dx%d\\> -quality 80 %s 2>&1', escapeshellarg($sourcePath), $maxW, $maxH, escapeshellarg($cacheFile)));
+                if (File::exists($cacheFile) && filesize($cacheFile) > 0) {
+                    return response()->file($cacheFile, [
+                        'Content-Type' => 'image/jpeg',
+                        'Cache-Control' => 'public, max-age=604800',
+                        'X-OG-Engine' => 'convert-cli',
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                // Continue to fallback
+            }
+        }
 
-        return response()->file($cacheFile, [
-            'Content-Type' => 'image/jpeg',
+        // 4. Fallback: serve source file directly with appropriate headers
+        $mime = 'image/jpeg';
+        if (str_ends_with(strtolower($sourcePath), '.png')) {
+            $mime = 'image/png';
+        }
+        return response()->file($sourcePath, [
+            'Content-Type' => $mime,
             'Cache-Control' => 'public, max-age=604800',
+            'X-OG-Engine' => 'Direct-Fallback',
         ]);
     }
 
