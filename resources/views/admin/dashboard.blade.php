@@ -1503,6 +1503,56 @@
 
         {{-- ═══ NEWS & STORIES TAB ═══ --}}
         <div x-show="activeAdminTab === 'news'" x-cloak class="max-w-6xl space-y-8" x-data="{ createNewsModal: false }">
+            <!-- Quill WYSIWYG Editor Styles & Scripts -->
+            <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+            <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+            <style>
+                .ql-toolbar.ql-snow {
+                    border-top-left-radius: 0.5rem;
+                    border-top-right-radius: 0.5rem;
+                    border-color: #cbd5e1 !important;
+                    background-color: #f8fafc;
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 3px;
+                    padding: 8px 10px !important;
+                }
+                .ql-container.ql-snow {
+                    border-bottom-left-radius: 0.5rem;
+                    border-bottom-right-radius: 0.5rem;
+                    border-color: #cbd5e1 !important;
+                    background-color: #ffffff;
+                    font-family: inherit;
+                    font-size: 0.95rem;
+                    min-height: 250px;
+                }
+                .ql-editor {
+                    min-height: 250px;
+                    line-height: 1.75;
+                    color: #1e293b;
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                }
+                .ql-editor p {
+                    margin-bottom: 1rem;
+                    font-size: 0.95rem;
+                }
+                .ql-editor h1, .ql-editor h2, .ql-editor h3 {
+                    font-family: 'Outfit', 'Inter', sans-serif;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    color: #0f172a;
+                    margin-top: 1.5rem;
+                    margin-bottom: 0.75rem;
+                }
+                .ql-editor ul, .ql-editor ol {
+                    padding-left: 1.5rem;
+                    margin-bottom: 1rem;
+                }
+                .ql-snow .ql-picker {
+                    color: #334155;
+                    font-weight: 600;
+                }
+            </style>
             
             <!-- Header with Create Button -->
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
@@ -1510,7 +1560,7 @@
                     <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">News & Stories Management</h2>
                     <p class="text-xs text-slate-500 mt-1">Publish team highlights, uniform drop announcements, and embedded videos directly to the homepage and newsroom.</p>
                 </div>
-                <button type="button" @click="createNewsModal = true" class="btn btn-primary inline-flex items-center gap-2 px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-md transition-all">
+                <button type="button" @click="createNewsModal = true; $nextTick(() => window.initQuillEditor('quill-editor-create'))" class="btn btn-primary inline-flex items-center gap-2 px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-md transition-all">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Write New Article
                 </button>
@@ -1555,7 +1605,7 @@
                             <a href="{{ route('news.show', $article->slug) }}" target="_blank" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold uppercase rounded-lg transition-colors">
                                 View ↗
                             </a>
-                            <button type="button" @click="editArticleModal = true" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-700 text-white text-xs font-bold uppercase rounded-lg transition-colors">
+                            <button type="button" @click="editArticleModal = true; $nextTick(() => window.initQuillEditor('quill-editor-{{ $article->id }}'))" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-700 text-white text-xs font-bold uppercase rounded-lg transition-colors">
                                 Edit
                             </button>
                             <form action="{{ route('admin.news.delete', $article) }}" method="POST" onsubmit="return confirm('Permanently delete this news article?')">
@@ -1573,7 +1623,7 @@
                                     <h3 class="text-base font-black uppercase">Edit Article: {{ $article->title }}</h3>
                                     <button @click="editArticleModal = false" class="text-slate-400 hover:text-white">✕</button>
                                 </div>
-                                <form action="{{ route('admin.news.update', $article) }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4 text-left">
+                                <form action="{{ route('admin.news.update', $article) }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4 text-left" @submit="if(window['quill_quill-editor-{{ $article->id }}']) { $refs.contentInput_{{ $article->id }}.value = window['quill_quill-editor-{{ $article->id }}'].root.innerHTML; }">
                                     @csrf
                                     <div>
                                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Title</label>
@@ -1598,8 +1648,14 @@
                                         <input type="url" name="video_url" value="{{ $article->video_url }}" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Article Body Write-up (HTML supported)</label>
-                                        <textarea name="content" rows="6" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 font-mono">{{ $article->content }}</textarea>
+                                        <div class="flex items-center justify-between mb-1">
+                                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Article Body / Story Content</label>
+                                            <span class="text-[11px] text-slate-500 font-normal">WYSIWYG: Format Font, Size, Bold & Headings</span>
+                                        </div>
+                                        <div id="quill-editor-{{ $article->id }}" class="bg-white">
+                                            {!! $article->formatted_content !!}
+                                        </div>
+                                        <input type="hidden" name="content" x-ref="contentInput_{{ $article->id }}" id="quill-input-{{ $article->id }}" value="{{ e($article->formatted_content) }}">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Replace Cover Image</label>
@@ -1641,7 +1697,7 @@
                         <h3 class="text-base font-black uppercase">Create New Story / Announcement</h3>
                         <button @click="createNewsModal = false" class="text-slate-400 hover:text-white">✕</button>
                     </div>
-                    <form action="{{ route('admin.news.create') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4 text-left">
+                    <form action="{{ route('admin.news.create') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4 text-left" @submit="if(window['quill_quill-editor-create']) { $refs.createContentInput.value = window['quill_quill-editor-create'].root.innerHTML; }">
                         @csrf
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Headline Title <span class="text-red-500">*</span></label>
@@ -1674,8 +1730,12 @@
                             <input type="file" name="gallery[]" multiple accept="image/*" class="w-full text-xs text-slate-500">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Full Article Write-up (HTML / Paragraphs)</label>
-                            <textarea name="content" rows="6" placeholder="<p>Full story content here...</p>" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 font-mono"></textarea>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Full Article Write-up / Story Content</label>
+                                <span class="text-[11px] text-slate-500 font-normal">WYSIWYG: Format Font, Size, Bold & Headings</span>
+                            </div>
+                            <div id="quill-editor-create" class="bg-white"></div>
+                            <input type="hidden" name="content" x-ref="createContentInput" id="quill-input-create">
                         </div>
                         <div class="flex items-center gap-6 pt-2">
                             <label class="inline-flex items-center gap-2 cursor-pointer">
@@ -3432,5 +3492,52 @@
         
         form.submit();
     }
+
+    window.applyTextFormat = function(textarea, prefix, suffix = '') {
+        if (!textarea) return;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selected = textarea.value.substring(start, end);
+        const before = textarea.value.substring(0, start);
+        const after = textarea.value.substring(end);
+        const replacement = selected ? (prefix + selected + suffix) : (prefix + 'YOUR TEXT HERE' + suffix);
+        textarea.value = before + replacement + after;
+        textarea.focus();
+        const cursorStart = start + prefix.length;
+        const cursorEnd = cursorStart + (selected ? selected.length : 14);
+        textarea.setSelectionRange(cursorStart, cursorEnd);
+    };
+
+    window.initQuillEditor = function(editorId) {
+        if (window['quill_' + editorId]) return window['quill_' + editorId];
+        const editorEl = document.getElementById(editorId);
+        if (!editorEl) return null;
+
+        if (typeof Quill === 'undefined') {
+            console.warn('Quill is not yet loaded');
+            return null;
+        }
+
+        const quill = new Quill(editorEl, {
+            theme: 'snow',
+            placeholder: 'Write your story here... format font, headings, bold, bullet points, and spacing directly with the toolbar above.',
+            modules: {
+                toolbar: [
+                    [{ 'font': [] }],
+                    [{ 'size': ['small', false, 'large', 'huge'] }],
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'align': [] }],
+                    ['blockquote', 'link'],
+                    ['clean']
+                ]
+            }
+        });
+
+        window['quill_' + editorId] = quill;
+        return quill;
+    };
 </script>
 @endsection

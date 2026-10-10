@@ -75,11 +75,11 @@
                         <div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 font-bold">COMMISSION APPAREL</div>
                     @endif
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-70"></div>
-                    <div class="absolute top-3 left-3 bg-[#cd202c] text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded shadow-sm">
+                    <div class="absolute bottom-3 left-3 bg-[#cd202c] text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded shadow-sm z-10">
                         {{ $article->category }}
                     </div>
                     @if($article->video_url)
-                    <div class="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white shadow-sm">
+                    <div class="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white shadow-sm z-10">
                         <svg class="w-4 h-4 text-white fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                     </div>
                     @endif

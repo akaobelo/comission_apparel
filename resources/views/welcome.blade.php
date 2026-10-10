@@ -1006,12 +1006,12 @@
                             @endif
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                             
-                            <div class="absolute top-4 left-4 bg-[#cd202c] text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded shadow-md">
+                            <div class="absolute bottom-4 left-4 bg-[#cd202c] text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded shadow-md z-10">
                                 {{ $highlightArticle->category }}
                             </div>
 
                             @if($highlightArticle->video_url)
-                            <div class="absolute bottom-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-wider group-hover:bg-[#cd202c] group-hover:border-[#cd202c] transition-all shadow-md">
+                            <div class="absolute bottom-4 right-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-wider group-hover:bg-[#cd202c] group-hover:border-[#cd202c] transition-all shadow-md z-10">
                                 <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                 <span>WATCH VIDEO</span>
                             </div>
