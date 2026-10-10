@@ -220,3 +220,5 @@ class NewsArticle extends Model
         $text = preg_replace('/(?<!\*)\*([^*]+?)\*(?!\*)/s', '<em>$1</em>', $text);
         return $text;
     }
+}
+
