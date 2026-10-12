@@ -1364,6 +1364,7 @@ class AdminController extends Controller
                 'types'        => $item['types'] ?? [],
                 'sizes'        => $item['sizes'] ?? [],
                 'qty'          => $item['qty'] ?? 1,
+                'gender'       => $item['gender'] ?? $order->gender ?? 'Mens / Boys',
             ];
             if (!empty($item['components']) && is_array($item['components'])) {
                 $entry['components'] = $item['components'];
@@ -1608,7 +1609,7 @@ class AdminController extends Controller
             "Expires"             => "0"
         ];
 
-        $columns = ['Item Name', 'Type', 'Size', 'Unit Price', 'Total Quantity', 'Total Price', 'Manufacture Price', 'Total Manufacture Price'];
+        $columns = ['Item Name', 'Gender / Cut', 'Type', 'Size', 'Unit Price', 'Total Quantity', 'Total Price', 'Manufacture Price', 'Total Manufacture Price'];
         
         $aggregated = [];
 
@@ -1616,6 +1617,7 @@ class AdminController extends Controller
             if (is_array($order->items_json)) {
                 foreach ($order->items_json as $item) {
                     $itemQty = max(1, (int)($item['qty'] ?? 1));
+                    $gender = $item['gender'] ?? $order->gender ?? 'Not Specified';
 
                     $itemPrice = 0;
                     $mfgPrice = 0;
@@ -1630,17 +1632,17 @@ class AdminController extends Controller
                             
                             if (isset($comp['sizes']) && is_array($comp['sizes'])) {
                                 foreach ($comp['sizes'] as $type => $size) {
-                                    $key = "{$name}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
+                                    $key = "{$name}|{$gender}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
                                     $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
                                 }
                             } elseif (!empty($comp['size'])) {
                                 $type = isset($comp['types']) ? implode(', ', $comp['types']) : ($comp['type'] ?? 'N/A');
                                 $size = $comp['size'];
-                                $key = "{$name}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
+                                $key = "{$name}|{$gender}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
                                 $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
                             } else {
                                 $type = isset($comp['types']) ? implode(', ', $comp['types']) : ($comp['type'] ?? 'N/A');
-                                $key = "{$name}|{$type}|N/A|{$itemPrice}|{$mfgPrice}";
+                                $key = "{$name}|{$gender}|{$type}|N/A|{$itemPrice}|{$mfgPrice}";
                                 $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
                             }
                         }
@@ -1649,17 +1651,17 @@ class AdminController extends Controller
                         
                         if (isset($item['sizes']) && is_array($item['sizes'])) {
                             foreach ($item['sizes'] as $type => $size) {
-                                $key = "{$name}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
+                                $key = "{$name}|{$gender}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
                                 $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
                             }
                         } elseif (!empty($item['size'])) {
                             $type = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
                             $size = $item['size'];
-                            $key = "{$name}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
+                            $key = "{$name}|{$gender}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
                             $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
                         } else {
                             $type = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
-                            $key = "{$name}|{$type}|N/A|{$itemPrice}|{$mfgPrice}";
+                            $key = "{$name}|{$gender}|{$type}|N/A|{$itemPrice}|{$mfgPrice}";
                             $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
                         }
                     }
@@ -1672,11 +1674,11 @@ class AdminController extends Controller
             fputcsv($file, $columns);
             foreach ($aggregated as $key => $qty) {
                 $parts = explode('|', $key);
-                $unitPrice = (float)($parts[3] ?? 0);
+                $unitPrice = (float)($parts[4] ?? 0);
                 $totalPrice = $unitPrice * $qty;
-                $mfgPrice = (float)($parts[4] ?? 0);
+                $mfgPrice = (float)($parts[5] ?? 0);
                 $totalMfgPrice = $mfgPrice * $qty;
-                fputcsv($file, [$parts[0], $parts[1], $parts[2], number_format($unitPrice, 2, '.', ''), $qty, number_format($totalPrice, 2, '.', ''), number_format($mfgPrice, 2, '.', ''), number_format($totalMfgPrice, 2, '.', '')]);
+                fputcsv($file, [$parts[0], $parts[1], $parts[2], $parts[3], number_format($unitPrice, 2, '.', ''), $qty, number_format($totalPrice, 2, '.', ''), number_format($mfgPrice, 2, '.', ''), number_format($totalMfgPrice, 2, '.', '')]);
             }
             fclose($file);
         };

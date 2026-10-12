@@ -73,7 +73,14 @@
                     @foreach($order->items_json ?? [] as $item)
                     <div class="py-3.5 flex items-start justify-between gap-4">
                         <div class="flex-1">
-                            <p class="text-sm font-bold text-slate-900">{{ $item['name'] ?? 'Custom Apparel Item' }}</p>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm font-bold text-slate-900">{{ $item['name'] ?? 'Custom Apparel Item' }}</p>
+                                @if(!empty($item['gender']))
+                                    <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                                        {{ $item['gender'] }}
+                                    </span>
+                                @endif
+                            </div>
                             <p class="text-xs text-slate-500 mt-0.5">Quantity: <span class="font-bold text-slate-800">{{ $item['qty'] ?? 1 }}</span></p>
                             @if(!empty($item['sizes']))
                                 <p class="text-[11px] text-slate-500 mt-0.5">

@@ -211,6 +211,28 @@
                       touchEndX: 0,
                       policyAgreed: false,
                       isOnline: {{ $store->isOnlinePayment() ? 'true' : 'false' }},
+                      orderGender: '{{ old('gender', '') }}',
+                      unitGenders: {},
+                      touchedGenders: {},
+                      init() {
+                          const defaultCut = this.orderGender || 'Mens / Boys';
+                          for (const [id, item] of Object.entries(this.items)) {
+                              for (let u = 0; u < 10; u++) {
+                                  this.unitGenders[id + '_' + u] = defaultCut;
+                              }
+                          }
+                          this.$watch('orderGender', (newVal) => {
+                              if (!newVal) return;
+                              for (const [id, item] of Object.entries(this.items)) {
+                                  for (let u = 0; u < 10; u++) {
+                                      const k = id + '_' + u;
+                                      if (!this.touchedGenders[k]) {
+                                          this.unitGenders[k] = newVal;
+                                      }
+                                  }
+                              }
+                          });
+                      },
                       items: {
                           @foreach($store->items as $item)
                           '{{ $item->id }}': { selected: false, qty: 1, price: {{ (float) ($item->retail_price ?? 0) }} },
@@ -347,7 +369,7 @@
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Gender / Pattern Base <span class="text-red-500">*</span></label>
-                            <select name="gender" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none transition-all font-medium">
+                            <select name="gender" x-model="orderGender" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none transition-all font-medium">
                                 <option value="">Select cut pattern...</option>
                                 <option value="Mens / Boys">Men's / Boy's Cut</option>
                                 <option value="Womens / Girls">Women's / Girl's Cut</option>
@@ -645,17 +667,29 @@
                                         </p>
                                     </div>
 
-                                    @if($item->isPackage() && $item->components->isNotEmpty())
+                                     @if($item->isPackage() && $item->components->isNotEmpty())
                                         {{-- Packages: 1 to 10 sets --}}
                                         <div class="space-y-4">
                                             @for($u = 1; $u <= 10; $u++)
                                             <div x-show="(items['{{ $item->id }}'].qty || 1) >= {{ $u }}" class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
                                                 <div class="flex items-center justify-between border-b border-slate-200 pb-2">
                                                     <span class="text-xs font-black uppercase tracking-wider text-slate-900">
-                                                        <span x-show="(items['{{ $item->id }}'].qty || 1) > 1">Package Set {{ $u }} Sizes</span>
-                                                        <span x-show="(items['{{ $item->id }}'].qty || 1) <= 1">Package Sizes</span>
+                                                        <span x-show="(items['{{ $item->id }}'].qty || 1) > 1">Package Set {{ $u }} Sizes & Cut</span>
+                                                        <span x-show="(items['{{ $item->id }}'].qty || 1) <= 1">Package Sizes & Cut</span>
                                                     </span>
                                                     <span class="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">Required</span>
+                                                </div>
+
+                                                <div class="mb-2">
+                                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Gender / Cut Pattern <span class="text-red-500">*</span></label>
+                                                    <select name="items[{{ $item->id }}][units][{{ $u - 1 }}][gender]"
+                                                            x-model="unitGenders['{{ $item->id }}_{{ $u - 1 }}']"
+                                                            @change="touchedGenders['{{ $item->id }}_{{ $u - 1 }}'] = true"
+                                                            :disabled="(items['{{ $item->id }}'].qty || 1) < {{ $u }}"
+                                                            class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium shadow-sm">
+                                                        <option value="Mens / Boys">Men's / Boy's Cut</option>
+                                                        <option value="Womens / Girls">Women's / Girl's Cut</option>
+                                                    </select>
                                                 </div>
 
                                                 @foreach($item->components as $component)
@@ -698,10 +732,22 @@
                                             <div x-show="(items['{{ $item->id }}'].qty || 1) >= {{ $u }}" class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
                                                 <div class="flex items-center justify-between border-b border-slate-200 pb-2">
                                                     <span class="text-xs font-black uppercase tracking-wider text-slate-900">
-                                                        <span x-show="(items['{{ $item->id }}'].qty || 1) > 1">Unit {{ $u }} Size</span>
-                                                        <span x-show="(items['{{ $item->id }}'].qty || 1) <= 1">Select Size</span>
+                                                        <span x-show="(items['{{ $item->id }}'].qty || 1) > 1">Unit {{ $u }} Size & Cut</span>
+                                                        <span x-show="(items['{{ $item->id }}'].qty || 1) <= 1">Select Size & Cut</span>
                                                     </span>
                                                     <span class="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">Required</span>
+                                                </div>
+
+                                                <div class="mb-2">
+                                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Gender / Cut Pattern <span class="text-red-500">*</span></label>
+                                                    <select name="items[{{ $item->id }}][units][{{ $u - 1 }}][gender]"
+                                                            x-model="unitGenders['{{ $item->id }}_{{ $u - 1 }}']"
+                                                            @change="touchedGenders['{{ $item->id }}_{{ $u - 1 }}'] = true"
+                                                            :disabled="(items['{{ $item->id }}'].qty || 1) < {{ $u }}"
+                                                            class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium shadow-sm">
+                                                        <option value="Mens / Boys">Men's / Boy's Cut</option>
+                                                        <option value="Womens / Girls">Women's / Girl's Cut</option>
+                                                    </select>
                                                 </div>
 
                                                 @foreach($itemSizedTypes as $t)
@@ -858,7 +904,7 @@
                 isSaving: false,
                 saveSuccess: false,
                 saveMessage: '',
-                editItems: JSON.parse(JSON.stringify(config.items || [])),
+                editItems: JSON.parse(JSON.stringify(config.items || [])).map(i => ({ ...i, gender: i.gender || config.orderGender || 'Mens / Boys' })),
                 customFields: config.customFields || {},
                 async verifyPin() {
                     if (!this.enteredPin || this.enteredPin.trim().length !== 4) {
@@ -986,6 +1032,7 @@
                             'verifyPinUrl' => route('store.order.verify-pin', ['slug' => $store->slug, 'order' => $order->id]),
                             'updateSizesUrl' => route('store.order.update-sizes', ['slug' => $store->slug, 'order' => $order->id]),
                             'csrfToken' => csrf_token(),
+                            'orderGender' => (string)($order->gender ?? 'Mens / Boys'),
                             'items' => is_array($order->items_json) ? $order->items_json : [],
                             'customFields' => [
                                 'jersey_name' => (string)($order->jersey_name ?? ''),
@@ -1062,7 +1109,14 @@
                                                 <div class="space-y-4">
                                                     @foreach($order->items_json as $item)
                                                         <div class="p-4 rounded-xl border border-slate-200 bg-slate-50">
-                                                            <div class="font-bold text-slate-900 text-sm mb-1">{{ $item['name'] ?? 'Unknown Item' }}</div>
+                                                            <div class="flex items-start justify-between gap-2">
+                                                                <div class="font-bold text-slate-900 text-sm mb-1">{{ $item['name'] ?? 'Unknown Item' }}</div>
+                                                                @if(!empty($item['gender']) || !empty($order->gender))
+                                                                    <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-slate-200 text-slate-700">
+                                                                        {{ $item['gender'] ?? $order->gender }}
+                                                                    </span>
+                                                                @endif
+                                                            </div>
                                                             <div class="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Qty: {{ $item['qty'] ?? 1 }}</div>
 
                                                             @if(!empty($item['sizes']) && is_array($item['sizes']))
@@ -1154,7 +1208,15 @@
                                             <template x-for="(item, idx) in editItems" :key="idx">
                                                 <div class="p-4 rounded-xl border border-slate-200 bg-slate-50">
                                                     <div class="font-bold text-slate-900 text-sm mb-1" x-text="item.name || 'Custom Item'"></div>
-                                                    <div class="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Qty: <span x-text="item.qty || 1"></span></div>
+                                                    <div class="text-[10px] font-black uppercase tracking-widest text-primary mb-2">Qty: <span x-text="item.qty || 1"></span></div>
+
+                                                    <div class="mb-3">
+                                                        <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Gender / Cut Pattern</label>
+                                                        <select x-model="item.gender" class="w-full bg-white border border-slate-300 rounded text-xs px-2.5 py-1.5 font-bold text-slate-900 focus:outline-none focus:border-primary">
+                                                            <option value="Mens / Boys">Men's / Boy's Cut</option>
+                                                            <option value="Womens / Girls">Women's / Girl's Cut</option>
+                                                        </select>
+                                                    </div>
 
                                                     <template x-if="item.sizes && Object.keys(item.sizes).length > 0">
                                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">

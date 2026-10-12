@@ -114,16 +114,21 @@ class StoreController extends Controller
                     'sizes'      => $details['sizes'] ?? [],
                     'components' => $details['components'] ?? [],
                     'qty'        => $qty,
+                    'gender'     => $details['gender'] ?? $request->gender ?? 'Mens / Boys',
                 ];
             }
 
-            // Group identical units by their size configuration so they have proper qty
+            // Group identical units by their size and gender configuration so they have proper qty
             $groupedUnits = [];
             foreach ($units as $unit) {
                 $unitCount = isset($unit['qty']) ? intval($unit['qty']) : 1;
+                $unitGender = !empty($unit['gender']) ? trim($unit['gender']) : trim($request->gender ?? 'Mens / Boys');
+                $unit['gender'] = $unitGender;
+
                 $unitKey = serialize([
                     'sizes'      => $unit['sizes'] ?? [],
                     'components' => $unit['components'] ?? [],
+                    'gender'     => $unitGender,
                 ]);
 
                 if (!isset($groupedUnits[$unitKey])) {
@@ -145,6 +150,7 @@ class StoreController extends Controller
                     'name'        => $storeItem->name,
                     'types'       => $types,
                     'qty'         => $unitQty,
+                    'gender'      => $unitData['gender'] ?? trim($request->gender ?? 'Mens / Boys'),
                     'unit_price'  => $unitPrice,
                     'line_total'  => round($unitPrice * $unitQty, 2),
                     'sizes'       => [],
@@ -509,6 +515,11 @@ class StoreController extends Controller
         foreach ($itemsJson as $idx => &$item) {
             if (isset($submittedItems[$idx])) {
                 $subItem = $submittedItems[$idx];
+
+                // Update gender if submitted
+                if (!empty($subItem['gender'])) {
+                    $item['gender'] = trim($subItem['gender']);
+                }
 
                 // Update standalone item sizes
                 if (isset($subItem['sizes']) && is_array($subItem['sizes'])) {

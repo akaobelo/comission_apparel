@@ -75,7 +75,14 @@
                                     @foreach(is_array($order->items_json) ? $order->items_json : [] as $item)
                                         <div class="text-sm flex justify-between bg-white border border-slate-100 p-2 rounded items-center">
                                             <div>
-                                                <div class="text-slate-700 font-medium truncate pr-4 max-w-[200px]">{{ $item['name'] ?? 'Item' }}</div>
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    <span class="text-slate-700 font-medium truncate max-w-[200px]">{{ $item['name'] ?? 'Item' }}</span>
+                                                    @if(!empty($item['gender']))
+                                                        <span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                                                            {{ $item['gender'] }}
+                                                        </span>
+                                                    @endif
+                                                </div>
                                                 @if(!empty($item['components']) && is_array($item['components']))
                                                     <div class="text-[11px] text-slate-500 mt-0.5">
                                                         @foreach($item['components'] as $comp)

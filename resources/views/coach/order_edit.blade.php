@@ -140,8 +140,10 @@
                                         </template>
                                         
                                         <div>
-                                            <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Gender</label>
-                                            <select :name="`items[${idx}][gender]`" x-model="item.gender" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm min-w-[100px]">
+                                            <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Gender / Cut</label>
+                                            <select :name="`items[${idx}][gender]`" x-model="item.gender" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm min-w-[120px]">
+                                                <option value="Mens / Boys">Men's / Boy's</option>
+                                                <option value="Womens / Girls">Women's / Girl's</option>
                                                 <option value="Male">Male</option>
                                                 <option value="Female">Female</option>
                                             </select>
@@ -196,7 +198,7 @@ document.addEventListener('alpine:init', () => {
                     item.sizes = {};
                 }
                 if (!item.gender) {
-                    item.gender = 'Male';
+                    item.gender = '{{ $order->gender ?: 'Mens / Boys' }}';
                 }
                 const match = this.availableItems.find(i => i.id == item.id);
                 if (match && match.image_path) {
@@ -225,7 +227,7 @@ document.addEventListener('alpine:init', () => {
                 type: storeItem.types[0] || 'Unknown',
                 types: storeItem.types,
                 qty: 1,
-                gender: 'Male',
+                gender: '{{ $order->gender ?: 'Mens / Boys' }}',
                 sizes: sizes,
                 image_path: storeItem.image_path
             });

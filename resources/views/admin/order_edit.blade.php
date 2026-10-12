@@ -130,6 +130,16 @@
                                         </div>
                                     @endforeach
                                     <div>
+                                        <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Gender / Cut</label>
+                                        @php
+                                            $itemGender = $item['gender'] ?? $order->gender ?? 'Mens / Boys';
+                                        @endphp
+                                        <select name="items[{{ $idx }}][gender]" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm min-w-[120px]">
+                                            <option value="Mens / Boys" {{ in_array($itemGender, ['Mens / Boys', 'Male']) ? 'selected' : '' }}>Men's / Boy's</option>
+                                            <option value="Womens / Girls" {{ in_array($itemGender, ['Womens / Girls', 'Female']) ? 'selected' : '' }}>Women's / Girl's</option>
+                                        </select>
+                                    </div>
+                                    <div>
                                         <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Qty</label>
                                         <input type="number" name="items[{{ $idx }}][qty]" value="{{ old("items.{$idx}.qty", $item['qty'] ?? 1) }}" min="1" max="10" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm w-16">
                                     </div>
