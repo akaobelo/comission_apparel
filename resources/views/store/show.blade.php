@@ -195,7 +195,7 @@
 
         @if($closedReason !== 'no_items')
             {{-- ═══ NEW ORDER FORM GRID (OR ITEMS VIEW) ═══ --}}
-            <form action="{{ route('store.order.submit', $store->slug) }}" method="POST"
+            <form action="{{ route('store.order.submit', $store->slug) }}" method="POST" autocomplete="off"
                   class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 md:p-6 relative overflow-hidden"
                   @invalid.capture="athleteInfoOpen = true; setTimeout(() => document.getElementById('athlete-info-section').scrollIntoView({behavior: 'smooth', block: 'start'}), 100)"
                   x-data="{
@@ -212,7 +212,13 @@
                       policyAgreed: false,
                       isOnline: {{ $store->isOnlinePayment() ? 'true' : 'false' }},
                       orderGender: '{{ old('gender', '') }}',
-                      unitGenders: {},
+                      unitGenders: {
+                          @foreach($store->items as $item)
+                              @for($u = 0; $u < 10; $u++)
+                                  '{{ $item->id }}_{{ $u }}': '',
+                              @endfor
+                          @endforeach
+                      },
                       unitGenderErrors: {},
                       saveItem(itemId, isSized) {
                           if (isSized) {
@@ -266,6 +272,12 @@
                       },
                       openPanel(id) {
                           this.activeItemId = id;
+                          for (let u = 0; u < 10; u++) {
+                              const k = id + '_' + u;
+                              if (typeof this.unitGenders[k] === 'undefined' || this.unitGenders[k] === null) {
+                                  this.unitGenders[k] = '';
+                              }
+                          }
                           this.slideOpen = true;
                           document.body.style.overflow = 'hidden';
                       },
@@ -687,6 +699,7 @@
                                                             x-model="unitGenders['{{ $item->id }}_{{ $u - 1 }}']"
                                                             @change="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] = false"
                                                             :disabled="(items['{{ $item->id }}'].qty || 1) < {{ $u }}"
+                                                            autocomplete="off"
                                                             required
                                                             class="w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none font-medium shadow-sm transition-colors"
                                                             :class="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50/30' : 'border-slate-300 focus:border-primary'">
@@ -752,6 +765,7 @@
                                                             x-model="unitGenders['{{ $item->id }}_{{ $u - 1 }}']"
                                                             @change="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] = false"
                                                             :disabled="(items['{{ $item->id }}'].qty || 1) < {{ $u }}"
+                                                            autocomplete="off"
                                                             required
                                                             class="w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none font-medium shadow-sm transition-colors"
                                                             :class="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50/30' : 'border-slate-300 focus:border-primary'">
