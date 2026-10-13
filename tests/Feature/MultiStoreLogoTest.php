@@ -159,4 +159,46 @@ class MultiStoreLogoTest extends TestCase
         $this->assertNotNull($store);
         $this->assertEquals('organization_logos/oak_ridge.png', $store->logo_path);
     }
+
+    public function test_coach_can_update_banner_cover_image_for_one_store_without_affecting_other_stores()
+    {
+        Storage::fake('public');
+
+        $coach = User::factory()->create([
+            'role' => 'coach',
+            'organization' => 'Apex High',
+        ]);
+
+        $storeA = TeamStore::create([
+            'user_id' => $coach->id,
+            'name' => 'Apex Track & Field',
+            'slug' => 'apex-track-field',
+            'status' => 'approved',
+            'cover_image_path' => 'covers/cover_a.png',
+        ]);
+
+        $storeB = TeamStore::create([
+            'user_id' => $coach->id,
+            'name' => 'Apex Basketball',
+            'slug' => 'apex-basketball',
+            'status' => 'approved',
+            'cover_image_path' => 'covers/cover_b.png',
+        ]);
+
+        $newBanner = UploadedFile::fake()->image('track_banner.png', 1600, 400);
+
+        $response = $this->actingAs($coach)->post(route('coach.store.cover', $storeA), [
+            'cover_image' => $newBanner,
+        ]);
+
+        $response->assertRedirect(route('coach.dashboard', ['store_id' => $storeA->id, 'tab' => 'overview']));
+        $storeA->refresh();
+        $storeB->refresh();
+
+        // Store A cover updated
+        $this->assertNotEquals('covers/cover_a.png', $storeA->cover_image_path);
+
+        // Store B cover remains intact
+        $this->assertEquals('covers/cover_b.png', $storeB->cover_image_path);
+    }
 }

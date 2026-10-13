@@ -621,7 +621,7 @@ class CoachController extends Controller
             $store->update(['cover_image_path' => $path]);
         }
 
-        return redirect()->route('coach.dashboard')
+        return redirect()->route('coach.dashboard', ['store_id' => $store->id, 'tab' => 'overview'])
             ->with('success', 'Store cover image updated successfully.');
     }
 
