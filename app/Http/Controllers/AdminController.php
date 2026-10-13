@@ -988,6 +988,7 @@ class AdminController extends Controller
             'name'         => $request->name,
             'description'  => $request->description,
             'slug'         => Str::slug($request->name) . '-' . strtolower(Str::random(6)),
+            'logo_path'    => $user->logo_path,
             'package_type' => 'individual', // Admins usually sell individually for campaigns
             'status'       => 'approved', // Auto-approved since admin created it
             'pricing_approved' => true,   // Auto-approved
@@ -1211,23 +1212,27 @@ class AdminController extends Controller
 
     public function updateStoreLogo(Request $request, TeamStore $store)
     {
-        $user = $store->user;
-
         $request->validate([
             'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ]);
 
         if ($request->hasFile('logo')) {
-            if ($user->logo_path) {
-                $pathToRemove = str_replace('/storage/', '', $user->logo_path);
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            if ($store->logo_path) {
+                $pathToRemove = str_replace('/storage/', '', $store->logo_path);
+                $isReferencedElsewhere = TeamStore::where('id', '!=', $store->id)
+                    ->where('logo_path', $store->logo_path)
+                    ->exists() || ($store->user && $store->user->logo_path === $store->logo_path);
+
+                if (!$isReferencedElsewhere) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+                }
             }
             $path = \App\Services\ImageOptimizer::optimize($request->file('logo'), 'organization_logos');
-            $user->update(['logo_path' => $path]);
+            $store->update(['logo_path' => $path]);
         }
 
         return redirect()->route('admin.store.edit', $store)
-            ->with('success', 'Organization logo updated successfully.');
+            ->with('success', 'Store logo updated successfully.');
     }
 
     public function addStoreItem(Request $request, TeamStore $store)

@@ -134,16 +134,19 @@
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-slate-200 bg-slate-50">
                     <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Branding & Artwork</h3>
-                    <p class="text-xs text-slate-500 mt-1">Upload the organization logo and store cover image.</p>
+                    <p class="text-xs text-slate-500 mt-1">Upload the store logo and cover image.</p>
                 </div>
                 <div class="p-5 space-y-6">
                     <!-- Logo Upload -->
                     <div>
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Organization Logo</h4>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Store Logo</h4>
                         <div class="flex items-start gap-5">
                             <div class="w-20 h-20 rounded-full bg-slate-100 border-2 border-slate-200 overflow-hidden flex items-center justify-center flex-shrink-0">
-                                @if($store->user->logo_path)
-                                    <img src="{{ Str::startsWith($store->user->logo_path, 'http') ? $store->user->logo_path : Storage::url($store->user->logo_path) }}" alt="Logo" class="w-full h-full object-cover">
+                                @php
+                                    $currentStoreLogo = $store->effective_logo_path;
+                                @endphp
+                                @if($currentStoreLogo)
+                                    <img src="{{ Str::startsWith($currentStoreLogo, 'http') ? $currentStoreLogo : Storage::url($currentStoreLogo) }}" alt="Logo" class="w-full h-full object-cover">
                                 @else
                                     <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                 @endif
@@ -152,9 +155,9 @@
                                 <form action="{{ route('admin.store.logo', $store) }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
                                     @csrf
                                     <input type="file" name="logo" accept="image/jpeg,image/png,image/jpg,image/webp" required class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-colors">
-                                    <button type="submit" class="px-5 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm whitespace-nowrap">Upload Logo</button>
+                                    <button type="submit" class="px-5 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm whitespace-nowrap">Upload Store Logo</button>
                                 </form>
-                                <p class="text-[10px] text-slate-400 mt-2">Recommended: Square PNG with transparent background. Max 5MB.</p>
+                                <p class="text-[10px] text-slate-400 mt-2">Recommended: Square PNG with transparent background. Max 5MB. Updates logo for this store only.</p>
                                 @error('logo')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
                         </div>

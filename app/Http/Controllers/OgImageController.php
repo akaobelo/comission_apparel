@@ -107,8 +107,8 @@ class OgImageController extends Controller
         if ($store) {
             if (!empty($store->cover_image_path)) {
                 $sourcePath = $this->resolveLocalPath($store->cover_image_path);
-            } elseif (!empty($store->logo_path)) {
-                $sourcePath = $this->resolveLocalPath($store->logo_path);
+            } elseif (!empty($store->effective_logo_path)) {
+                $sourcePath = $this->resolveLocalPath($store->effective_logo_path);
             }
         }
 

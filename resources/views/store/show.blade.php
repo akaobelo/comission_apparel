@@ -99,9 +99,12 @@
 {{-- Store Header Content --}}
 <div class="max-w-6xl w-full mx-auto px-4 md:px-6 py-4 md:py-6 flex flex-col md:flex-row items-start md:items-end justify-between gap-4 md:gap-6 bg-white border border-slate-200 rounded-xl shadow-sm">
     <div class="flex flex-row items-center md:items-end gap-3 md:gap-5 w-full">
-        @if($store->user->logo_path)
+        @php
+            $storeLogo = $store->effective_logo_path;
+        @endphp
+        @if($storeLogo)
             <div class="w-16 h-16 md:w-24 md:h-24 rounded-full bg-white border border-slate-200 overflow-hidden flex items-center justify-center shadow-sm flex-shrink-0 p-1.5 md:p-2">
-                <img src="{{ Str::startsWith($store->user->logo_path, 'http') ? $store->user->logo_path : Storage::url($store->user->logo_path) }}" alt="Team Logo" class="w-full h-full object-contain">
+                <img src="{{ Str::startsWith($storeLogo, 'http') ? $storeLogo : Storage::url($storeLogo) }}" alt="Team Logo" class="w-full h-full object-contain">
             </div>
         @endif
         <div class="flex-1 min-w-0">

@@ -1183,25 +1183,28 @@
                     <p class="text-xs text-slate-500 mt-1">Customize how your store appears to parents.</p>
                 </div>
 
-                {{-- Organization Logo --}}
+                {{-- Store Logo --}}
                 <div class="p-5 border-b border-slate-100">
-                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Organization Logo (Circle Display)</h4>
-                    <form action="{{ route('coach.profile.logo') }}" method="POST" enctype="multipart/form-data">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Store Logo (Circle Display)</h4>
+                    <form action="{{ route('coach.store.logo', $store) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="flex items-center gap-4 mb-3">
                             <div class="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                @if($user->logo_path)
-                                    <img src="{{ Str::startsWith($user->logo_path, 'http') ? $user->logo_path : asset('storage/' . $user->logo_path) }}" alt="Logo" class="w-full h-full object-cover">
+                                @php
+                                    $currentStoreLogo = $store->effective_logo_path;
+                                @endphp
+                                @if($currentStoreLogo)
+                                    <img src="{{ Str::startsWith($currentStoreLogo, 'http') ? $currentStoreLogo : asset('storage/' . $currentStoreLogo) }}" alt="Logo" class="w-full h-full object-cover">
                                 @else
-                                    <span class="text-lg font-black text-slate-400">{{ substr($user->organization ?? $user->name, 0, 1) }}</span>
+                                    <span class="text-lg font-black text-slate-400">{{ substr($store->name ?? $user->organization ?? $user->name, 0, 1) }}</span>
                                 @endif
                             </div>
                             <div class="flex-1 flex gap-2 flex-col sm:flex-row">
                                 <input type="file" name="logo" accept="image/jpeg,image/png,image/webp" required class="flex-1 block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-lg bg-white focus:outline-none">
-                                <button type="submit" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase rounded-lg hover:bg-[#a11825] transition-colors">Save Logo</button>
+                                <button type="submit" class="px-4 py-2 bg-secondary text-white text-xs font-bold uppercase rounded-lg hover:bg-[#a11825] transition-colors">Save Store Logo</button>
                             </div>
                         </div>
-                        <p class="text-[10px] text-slate-500">Max 5MB. Square PNG with transparent background recommended.</p>
+                        <p class="text-[10px] text-slate-500">Max 5MB. Square PNG with transparent background recommended. This updates the logo for <strong>{{ $store->name }}</strong> only.</p>
                         @error('logo')<p class="text-red-500 text-[10px] mt-1 font-bold">{{ $message }}</p>@enderror
                     </form>
                 </div>

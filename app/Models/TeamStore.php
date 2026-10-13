@@ -12,6 +12,7 @@ class TeamStore extends Model
         'sport',
         'description',
         'slug',
+        'logo_path',
         'cover_image_path',
         'order_deadline',
         'status',
@@ -42,6 +43,22 @@ class TeamStore extends Model
     public function isTaxExempt(): bool
     {
         return (bool) ($this->is_tax_exempt || $this->user?->is_tax_exempt);
+    }
+
+    public function getEffectiveLogoPathAttribute(): ?string
+    {
+        return $this->logo_path ?: $this->user?->logo_path;
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        $path = $this->effective_logo_path;
+        if (!$path) {
+            return null;
+        }
+        return \Illuminate\Support\Str::startsWith($path, 'http')
+            ? $path
+            : \Illuminate\Support\Facades\Storage::url($path);
     }
 
     public function isClosed(): bool

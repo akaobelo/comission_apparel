@@ -148,6 +148,7 @@ class CoachController extends Controller
             'sport'        => $sport,
             'description'  => $request->description,
             'slug'         => Str::slug($request->name) . '-' . strtolower(Str::random(6)),
+            'logo_path'    => $user->logo_path,
             'package_type' => $request->package_type ?? 'individual',
             'payment_mode' => $request->payment_mode ?? 'in_house',
             'status'       => 'pending',
@@ -663,10 +664,13 @@ class CoachController extends Controller
         ]);
 
         if ($request->hasFile('logo')) {
-            // Delete old logo if exists
+            // Delete old logo if exists and not used by any store
             if ($user->logo_path) {
                 $pathToRemove = str_replace('/storage/', '', $user->logo_path);
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+                $isReferencedElsewhere = TeamStore::where('logo_path', $user->logo_path)->exists();
+                if (!$isReferencedElsewhere) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+                }
             }
 
             // Store new logo
@@ -675,7 +679,40 @@ class CoachController extends Controller
         }
 
         return redirect()->route('coach.dashboard')
-            ->with('success', 'Organization logo updated successfully.');
+            ->with('success', 'Organization profile logo updated successfully.');
+    }
+
+    public function updateStoreLogo(Request $request, TeamStore $store)
+    {
+        $user = $request->user();
+        if ($store->user_id !== $user->id && !$user->isAdmin()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'], // Max 5MB
+        ]);
+
+        if ($request->hasFile('logo')) {
+            // Delete old store logo if exists and not used elsewhere
+            if ($store->logo_path) {
+                $pathToRemove = str_replace('/storage/', '', $store->logo_path);
+                $isReferencedElsewhere = TeamStore::where('id', '!=', $store->id)
+                    ->where('logo_path', $store->logo_path)
+                    ->exists() || ($user->logo_path === $store->logo_path);
+
+                if (!$isReferencedElsewhere) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+                }
+            }
+
+            // Store new logo
+            $path = \App\Services\ImageOptimizer::optimize($request->file('logo'), 'organization_logos');
+            $store->update(['logo_path' => $path]);
+        }
+
+        return redirect()->route('coach.dashboard', ['store_id' => $store->id, 'tab' => 'overview'])
+            ->with('success', 'Store logo updated successfully.');
     }
 
     public function submitDirectOrder(Request $request)
