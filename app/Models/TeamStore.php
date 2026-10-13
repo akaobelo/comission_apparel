@@ -61,6 +61,17 @@ class TeamStore extends Model
             : \Illuminate\Support\Facades\Storage::url($path);
     }
 
+    public function getCoverImageUrlAttribute(): ?string
+    {
+        $path = $this->cover_image_path;
+        if (!$path) {
+            return null;
+        }
+        return \Illuminate\Support\Str::startsWith($path, 'http')
+            ? $path
+            : \Illuminate\Support\Facades\Storage::url($path);
+    }
+
     public function isClosed(): bool
     {
         if ($this->status === 'submitted_to_admin') return true;

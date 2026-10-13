@@ -42,32 +42,31 @@
     @else
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
             @foreach($stores as $store)
-                <a href="{{ route('store.show', $store->slug) }}" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-primary/40 transition-all flex flex-col h-full">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="flex-1">
-                            <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-1">{{ $store->sport ?: ($store->user->sport ?? 'Team Athletics') }}</p>
-                            <h2 class="text-lg font-black text-slate-900 leading-tight">{{ $store->name }}</h2>
+                <a href="{{ route('store.show', $store->slug) }}" class="group bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:border-primary/40 transition-all flex flex-col h-full">
+                    {{-- Cover Banner --}}
+                    @if($store->cover_image_url)
+                        <div class="relative w-full aspect-[2.2/1] overflow-hidden bg-slate-950">
+                            <img src="{{ $store->cover_image_url }}" alt="{{ $store->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
                         </div>
-                        <div class="flex flex-col items-end gap-2 shrink-0">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">Open</span>
-                            @php
-                                $storeLogo = $store->effective_logo_path;
-                            @endphp
-                            @if($storeLogo)
-                                <img src="{{ Str::startsWith($storeLogo, 'http') ? $storeLogo : '/storage/' . $storeLogo }}" alt="Team Logo" class="w-12 h-12 md:w-14 md:h-14 object-contain rounded-full border border-slate-200 shadow-sm mt-1 bg-white" loading="lazy">
-                            @endif
+                    @elseif($store->logo_url)
+                        <div class="relative w-full aspect-[2.2/1] overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 flex items-center justify-center p-6">
+                            <img src="{{ $store->logo_url }}" alt="{{ $store->name }}" class="max-h-16 max-w-[70%] object-contain group-hover:scale-105 transition-transform duration-300" loading="lazy">
                         </div>
-                    </div>
+                    @else
+                        <div class="relative w-full aspect-[2.2/1] overflow-hidden bg-slate-900">
+                            <img src="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=800" alt="{{ $store->name }}" class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-300" loading="lazy">
+                        </div>
+                    @endif
 
-                    <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                        <div class="text-[11px] md:text-xs text-slate-500">
-                            @if($store->order_deadline)
-                                Deadline: <span class="font-bold text-slate-700">{{ $store->order_deadline->format('M d, Y') }}</span>
-                            @else
-                                No deadline posted
-                            @endif
+                    {{-- Store Details --}}
+                    <div class="p-4 sm:p-5 flex flex-col flex-1 justify-between gap-2">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-1">{{ $store->sport ?: ($store->user->sport ?? 'Team Athletics') }}</p>
+                            <div class="flex items-end justify-between gap-3">
+                                <h2 class="text-base sm:text-lg font-black text-slate-900 leading-snug group-hover:text-primary transition-colors">{{ $store->name }}</h2>
+                                <span class="text-[10px] sm:text-xs font-black uppercase tracking-wider text-secondary shrink-0 whitespace-nowrap group-hover:translate-x-0.5 transition-transform mb-0.5">Open Store &rarr;</span>
+                            </div>
                         </div>
-                        <span class="text-[10px] md:text-xs font-black uppercase tracking-wider text-secondary">Open Store →</span>
                     </div>
                 </a>
             @endforeach
