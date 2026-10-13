@@ -227,16 +227,25 @@
                           if (isSized) {
                               const qty = parseInt(this.items[itemId].qty) || 1;
                               let hasError = false;
+                              let firstErrorUnit = null;
                               for (let u = 0; u < qty; u++) {
                                   const k = itemId + '_' + u;
                                   if (!this.unitGenders[k]) {
                                       this.unitGenderErrors[k] = true;
+                                      if (firstErrorUnit === null) firstErrorUnit = u;
                                       hasError = true;
                                   } else {
                                       this.unitGenderErrors[k] = false;
                                   }
                               }
                               if (hasError) {
+                                  this.$nextTick(() => {
+                                      const el = document.querySelector(`select[name="items[${itemId}][units][${firstErrorUnit}][gender]"]`);
+                                      if (el) {
+                                          el.focus();
+                                          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                      }
+                                  });
                                   return false;
                               }
                           }
@@ -281,9 +290,7 @@
                           this.activeItemId = id;
                           for (let u = 0; u < 10; u++) {
                               const k = id + '_' + u;
-                              if (!this.unitGenders[k] && this.orderGender) {
-                                  this.unitGenders[k] = this.orderGender;
-                              } else if (typeof this.unitGenders[k] === 'undefined' || this.unitGenders[k] === null) {
+                              if (typeof this.unitGenders[k] === 'undefined' || this.unitGenders[k] === null) {
                                   this.unitGenders[k] = '';
                               }
                           }
