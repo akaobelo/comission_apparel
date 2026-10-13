@@ -240,7 +240,7 @@
                               }
                               if (hasError) {
                                   this.$nextTick(() => {
-                                      const el = document.querySelector(`select[name="items[${itemId}][units][${firstErrorUnit}][gender]"]`);
+                                      const el = document.getElementById('item-' + itemId + '-unit-' + firstErrorUnit + '-gender');
                                       if (el) {
                                           el.focus();
                                           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -712,7 +712,8 @@
 
                                                 <div class="mb-2">
                                                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Gender / Cut Pattern <span class="text-red-500">*</span></label>
-                                                    <select name="items[{{ $item->id }}][units][{{ $u - 1 }}][gender]"
+                                                    <select id="item-{{ $item->id }}-unit-{{ $u - 1 }}-gender"
+                                                            name="items[{{ $item->id }}][units][{{ $u - 1 }}][gender]"
                                                             x-model="unitGenders['{{ $item->id }}_{{ $u - 1 }}']"
                                                             @change="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] = false"
                                                             :disabled="(!items['{{ $item->id }}'].selected && activeItemId !== '{{ $item->id }}') || (items['{{ $item->id }}'].qty || 1) < {{ $u }}"
@@ -777,7 +778,8 @@
 
                                                 <div class="mb-2">
                                                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Gender / Cut Pattern <span class="text-red-500">*</span></label>
-                                                    <select name="items[{{ $item->id }}][units][{{ $u - 1 }}][gender]"
+                                                    <select id="item-{{ $item->id }}-unit-{{ $u - 1 }}-gender"
+                                                            name="items[{{ $item->id }}][units][{{ $u - 1 }}][gender]"
                                                             x-model="unitGenders['{{ $item->id }}_{{ $u - 1 }}']"
                                                             @change="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] = false"
                                                             :disabled="(!items['{{ $item->id }}'].selected && activeItemId !== '{{ $item->id }}') || (items['{{ $item->id }}'].qty || 1) < {{ $u }}"
