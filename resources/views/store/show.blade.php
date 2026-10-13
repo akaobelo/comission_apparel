@@ -200,7 +200,7 @@
             {{-- ═══ NEW ORDER FORM GRID (OR ITEMS VIEW) ═══ --}}
             <form action="{{ route('store.order.submit', $store->slug) }}" method="POST" autocomplete="off"
                   class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 md:p-6 relative overflow-hidden"
-                  @invalid.capture="athleteInfoOpen = true; setTimeout(() => document.getElementById('athlete-info-section').scrollIntoView({behavior: 'smooth', block: 'start'}), 100)"
+                  @invalid.capture="if ($event.target.closest('#athlete-info-section')) { athleteInfoOpen = true; setTimeout(() => document.getElementById('athlete-info-section').scrollIntoView({behavior: 'smooth', block: 'start'}), 100); }"
                   x-data="{
                       athleteInfoOpen: {{ $errors->any() ? 'true' : 'false' }},
                       storeInfoOpen: false,
@@ -218,7 +218,7 @@
                       unitGenders: {
                           @foreach($store->items as $item)
                               @for($u = 0; $u < 10; $u++)
-                                  '{{ $item->id }}_{{ $u }}': '',
+                                  '{{ $item->id }}_{{ $u }}': '{{ old("items.{$item->id}.units.{$u}.gender", "") }}',
                               @endfor
                           @endforeach
                       },
@@ -245,7 +245,11 @@
                       },
                       items: {
                           @foreach($store->items as $item)
-                          '{{ $item->id }}': { selected: false, qty: 1, price: {{ (float) ($item->retail_price ?? 0) }} },
+                          '{{ $item->id }}': { 
+                              selected: {{ old('items.' . $item->id . '.selected') ? 'true' : 'false' }}, 
+                              qty: {{ (int) old('items.' . $item->id . '.qty', 1) }}, 
+                              price: {{ (float) ($item->retail_price ?? 0) }} 
+                          },
                           @endforeach
                       },
                       getSubtotal() {
@@ -277,7 +281,9 @@
                           this.activeItemId = id;
                           for (let u = 0; u < 10; u++) {
                               const k = id + '_' + u;
-                              if (typeof this.unitGenders[k] === 'undefined' || this.unitGenders[k] === null) {
+                              if (!this.unitGenders[k] && this.orderGender) {
+                                  this.unitGenders[k] = this.orderGender;
+                              } else if (typeof this.unitGenders[k] === 'undefined' || this.unitGenders[k] === null) {
                                   this.unitGenders[k] = '';
                               }
                           }
@@ -453,7 +459,7 @@
 
                             <!-- Hidden Select -->
                             <input type="checkbox" name="items[{{ $item->id }}][selected]" value="1" x-model="items['{{ $item->id }}'].selected" class="hidden">
-                            <input type="hidden" name="items[{{ $item->id }}][name]" value="{{ $item->name }}">
+                            <input type="hidden" name="items[{{ $item->id }}][name]" value="{{ $item->name }}" :disabled="!items['{{ $item->id }}'].selected">
 
                             <!-- Selected Badge -->
                             <div x-show="items['{{ $item->id }}'].selected" x-transition class="absolute top-4 right-4 bg-secondary text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full z-20 flex items-center gap-1 shadow-md">
@@ -671,6 +677,7 @@
                                                    min="1" 
                                                    max="10" 
                                                    x-model.number="items['{{ $item->id }}'].qty" 
+                                                   :disabled="!items['{{ $item->id }}'].selected && activeItemId !== '{{ $item->id }}'"
                                                    class="w-20 text-center bg-white border border-slate-300 rounded-xl py-2 text-base font-black text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                                             <button type="button" 
                                                     @click="items['{{ $item->id }}'].qty = Math.min(10, (items['{{ $item->id }}'].qty || 1) + 1)" 
@@ -701,9 +708,8 @@
                                                     <select name="items[{{ $item->id }}][units][{{ $u - 1 }}][gender]"
                                                             x-model="unitGenders['{{ $item->id }}_{{ $u - 1 }}']"
                                                             @change="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] = false"
-                                                            :disabled="(items['{{ $item->id }}'].qty || 1) < {{ $u }}"
+                                                            :disabled="(!items['{{ $item->id }}'].selected && activeItemId !== '{{ $item->id }}') || (items['{{ $item->id }}'].qty || 1) < {{ $u }}"
                                                             autocomplete="off"
-                                                            required
                                                             class="w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none font-medium shadow-sm transition-colors"
                                                             :class="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50/30' : 'border-slate-300 focus:border-primary'">
                                                         <option value="" disabled selected>Select Cut / Pattern...</option>
@@ -728,7 +734,7 @@
                                                             <div class="mb-2 last:mb-0">
                                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">{{ str_replace('_', ' ', $t) }} Size <span class="text-red-500">*</span></label>
                                                                 <select name="items[{{ $item->id }}][units][{{ $u - 1 }}][components][{{ $component->id }}][sizes][{{ $t }}]"
-                                                                        :disabled="(items['{{ $item->id }}'].qty || 1) < {{ $u }}"
+                                                                        :disabled="(!items['{{ $item->id }}'].selected && activeItemId !== '{{ $item->id }}') || (items['{{ $item->id }}'].qty || 1) < {{ $u }}"
                                                                         class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium shadow-sm">
                                                                     <optgroup label="Youth Sizes">
                                                                         @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $s)
@@ -767,9 +773,8 @@
                                                     <select name="items[{{ $item->id }}][units][{{ $u - 1 }}][gender]"
                                                             x-model="unitGenders['{{ $item->id }}_{{ $u - 1 }}']"
                                                             @change="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] = false"
-                                                            :disabled="(items['{{ $item->id }}'].qty || 1) < {{ $u }}"
+                                                            :disabled="(!items['{{ $item->id }}'].selected && activeItemId !== '{{ $item->id }}') || (items['{{ $item->id }}'].qty || 1) < {{ $u }}"
                                                             autocomplete="off"
-                                                            required
                                                             class="w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none font-medium shadow-sm transition-colors"
                                                             :class="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50/30' : 'border-slate-300 focus:border-primary'">
                                                         <option value="" disabled selected>Select Cut / Pattern...</option>
@@ -788,7 +793,7 @@
                                                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">{{ str_replace('_', ' ', $t) }} Size <span class="text-red-500">*</span></label>
                                                     @endif
                                                     <select name="items[{{ $item->id }}][units][{{ $u - 1 }}][sizes][{{ $t }}]"
-                                                            :disabled="(items['{{ $item->id }}'].qty || 1) < {{ $u }}"
+                                                            :disabled="(!items['{{ $item->id }}'].selected && activeItemId !== '{{ $item->id }}') || (items['{{ $item->id }}'].qty || 1) < {{ $u }}"
                                                             class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium shadow-sm">
                                                         <optgroup label="Youth Sizes">
                                                             @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $s)
