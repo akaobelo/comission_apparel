@@ -213,25 +213,26 @@
                       isOnline: {{ $store->isOnlinePayment() ? 'true' : 'false' }},
                       orderGender: '{{ old('gender', '') }}',
                       unitGenders: {},
-                      touchedGenders: {},
-                      init() {
-                          const defaultCut = this.orderGender || 'Mens / Boys';
-                          for (const [id, item] of Object.entries(this.items)) {
-                              for (let u = 0; u < 10; u++) {
-                                  this.unitGenders[id + '_' + u] = defaultCut;
-                              }
-                          }
-                          this.$watch('orderGender', (newVal) => {
-                              if (!newVal) return;
-                              for (const [id, item] of Object.entries(this.items)) {
-                                  for (let u = 0; u < 10; u++) {
-                                      const k = id + '_' + u;
-                                      if (!this.touchedGenders[k]) {
-                                          this.unitGenders[k] = newVal;
-                                      }
+                      unitGenderErrors: {},
+                      saveItem(itemId, isSized) {
+                          if (isSized) {
+                              const qty = parseInt(this.items[itemId].qty) || 1;
+                              let hasError = false;
+                              for (let u = 0; u < qty; u++) {
+                                  const k = itemId + '_' + u;
+                                  if (!this.unitGenders[k]) {
+                                      this.unitGenderErrors[k] = true;
+                                      hasError = true;
+                                  } else {
+                                      this.unitGenderErrors[k] = false;
                                   }
                               }
-                          });
+                              if (hasError) {
+                                  return false;
+                              }
+                          }
+                          this.items[itemId].selected = true;
+                          this.closePanel();
                       },
                       items: {
                           @foreach($store->items as $item)
@@ -684,12 +685,19 @@
                                                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Gender / Cut Pattern <span class="text-red-500">*</span></label>
                                                     <select name="items[{{ $item->id }}][units][{{ $u - 1 }}][gender]"
                                                             x-model="unitGenders['{{ $item->id }}_{{ $u - 1 }}']"
-                                                            @change="touchedGenders['{{ $item->id }}_{{ $u - 1 }}'] = true"
+                                                            @change="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] = false"
                                                             :disabled="(items['{{ $item->id }}'].qty || 1) < {{ $u }}"
-                                                            class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium shadow-sm">
+                                                            required
+                                                            class="w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none font-medium shadow-sm transition-colors"
+                                                            :class="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50/30' : 'border-slate-300 focus:border-primary'">
+                                                        <option value="" disabled selected>Select Cut / Pattern...</option>
                                                         <option value="Mens / Boys">Men's / Boy's Cut</option>
                                                         <option value="Womens / Girls">Women's / Girl's Cut</option>
                                                     </select>
+                                                    <p x-show="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}']" x-cloak class="text-red-500 text-xs mt-1 font-bold flex items-center gap-1">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                        Please select a cut pattern.
+                                                    </p>
                                                 </div>
 
                                                 @foreach($item->components as $component)
@@ -742,12 +750,19 @@
                                                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Gender / Cut Pattern <span class="text-red-500">*</span></label>
                                                     <select name="items[{{ $item->id }}][units][{{ $u - 1 }}][gender]"
                                                             x-model="unitGenders['{{ $item->id }}_{{ $u - 1 }}']"
-                                                            @change="touchedGenders['{{ $item->id }}_{{ $u - 1 }}'] = true"
+                                                            @change="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] = false"
                                                             :disabled="(items['{{ $item->id }}'].qty || 1) < {{ $u }}"
-                                                            class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none font-medium shadow-sm">
+                                                            required
+                                                            class="w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none font-medium shadow-sm transition-colors"
+                                                            :class="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50/30' : 'border-slate-300 focus:border-primary'">
+                                                        <option value="" disabled selected>Select Cut / Pattern...</option>
                                                         <option value="Mens / Boys">Men's / Boy's Cut</option>
                                                         <option value="Womens / Girls">Women's / Girl's Cut</option>
                                                     </select>
+                                                    <p x-show="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}']" x-cloak class="text-red-500 text-xs mt-1 font-bold flex items-center gap-1">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                        Please select a cut pattern.
+                                                    </p>
                                                 </div>
 
                                                 @foreach($itemSizedTypes as $t)
@@ -779,7 +794,7 @@
 
                                 <div class="pt-8 border-t border-slate-100 mt-8">
                                     @if(!$isClosed)
-                                        <button type="button" @click="items['{{ $item->id }}'].selected = true; closePanel()" class="w-full py-4 bg-slate-900 text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-secondary transition-colors shadow-lg shadow-slate-900/20">
+                                        <button type="button" @click="saveItem('{{ $item->id }}', {{ (!empty($itemSizedTypes) || ($item->isPackage() && $item->components->isNotEmpty())) ? 'true' : 'false' }})" class="w-full py-4 bg-slate-900 text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-secondary transition-colors shadow-lg shadow-slate-900/20">
                                             <span x-show="(items['{{ $item->id }}'].qty || 1) > 1">Save & Select (<span x-text="items['{{ $item->id }}'].qty"></span> Items)</span>
                                             <span x-show="(items['{{ $item->id }}'].qty || 1) <= 1">Save & Select</span>
                                         </button>

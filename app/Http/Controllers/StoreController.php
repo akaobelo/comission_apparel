@@ -98,6 +98,16 @@ class StoreController extends Controller
             $qty = max(1, intval($details['qty'] ?? 1));
             $types = $storeItem->types ?? [$storeItem->type];
 
+            $isSizedItem = false;
+            if ($storeItem->isPackage() && $storeItem->components()->count() > 0) {
+                $isSizedItem = true;
+            } else {
+                $sizedTypes = DesignCatalog::sizedTypes();
+                if (array_intersect($types, $sizedTypes)) {
+                    $isSizedItem = true;
+                }
+            }
+
             // Collect per-unit data if submitted
             $units = [];
             if (!empty($details['units']) && is_array($details['units'])) {
@@ -114,8 +124,16 @@ class StoreController extends Controller
                     'sizes'      => $details['sizes'] ?? [],
                     'components' => $details['components'] ?? [],
                     'qty'        => $qty,
-                    'gender'     => $details['gender'] ?? $request->gender ?? 'Mens / Boys',
+                    'gender'     => $details['gender'] ?? ($isSizedItem ? null : ($request->gender ?? 'Mens / Boys')),
                 ];
+            }
+
+            if ($isSizedItem) {
+                foreach ($units as $unit) {
+                    if (empty($unit['gender'])) {
+                        return back()->with('error', 'Please select a cut pattern (Men\'s / Boy\'s or Women\'s / Girl\'s) for all units of ' . $storeItem->name . '.')->withInput();
+                    }
+                }
             }
 
             // Group identical units by their size and gender configuration so they have proper qty
