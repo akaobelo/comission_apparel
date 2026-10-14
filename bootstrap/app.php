@@ -21,4 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, $request) {
             return redirect()->route('admin.dashboard')->with('error', 'The uploaded files are too large. Please upload smaller images or fewer images at a time.');
         });
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            return back()->with('error', 'Your session expired. Please refresh the page and try submitting again.');
+        });
     })->create();

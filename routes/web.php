@@ -257,6 +257,9 @@ Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request,
 Route::get('/store/search', [StoreController::class, 'search'])->name('store.search');
 Route::get('/store/{slug}', [StoreController::class, 'show'])->name('store.show');
 Route::post('/store/{slug}/order', [StoreController::class, 'submitOrder'])->name('store.order.submit');
+Route::get('/store/{slug}/order', function ($slug) {
+    return redirect()->route('store.show', $slug);
+});
 Route::post('/store/{slug}/order/{order}/pay', [StoreController::class, 'payOrder'])->name('store.order.pay');
 Route::post('/store/{slug}/order/{order}/verify-pin', [StoreController::class, 'verifyOrderPin'])->name('store.order.verify-pin');
 Route::post('/store/{slug}/order/{order}/update-sizes', [StoreController::class, 'updateOrderSizes'])->name('store.order.update-sizes');

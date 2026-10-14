@@ -214,6 +214,8 @@
                       touchEndX: 0,
                       policyAgreed: false,
                       isOnline: {{ $store->isOnlinePayment() ? 'true' : 'false' }},
+                      isTaxExempt: {{ $store->isTaxExempt() ? 'true' : 'false' }},
+                      taxRate: {{ $store->isTaxExempt() ? 0 : 0.075 }},
                       unitGenders: {
                           @foreach($store->items as $item)
                               @for($u = 0; $u < 10; $u++)
@@ -270,7 +272,11 @@
                           return total;
                       },
                       getTax() {
-                          return Math.round(this.getSubtotal() * 0.075 * 100) / 100;
+                          if (this.isTaxExempt) return 0;
+                          return Math.round(this.getSubtotal() * this.taxRate * 100) / 100;
+                      },
+                      getCashTotal() {
+                          return Math.round((this.getSubtotal() + this.getTax()) * 100) / 100;
                       },
                       getGrandTotal() {
                           const sub = this.getSubtotal();
@@ -840,14 +846,33 @@
                                 <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Items</span>
                                 <span class="font-black text-white text-sm"><span x-text="Object.values(items).filter(i => i.selected).length">0</span> Selected</span>
                             </div>
-                            <div x-show="getSubtotal() > 0" class="border-l border-emerald-600/70 pl-5">
-                                <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Estimated Subtotal</span>
-                                <span class="font-black text-white text-base">$<span x-text="getSubtotal().toFixed(2)">0.00</span></span>
-                            </div>
-                            <div class="hidden sm:block border-l border-emerald-600/70 pl-5">
-                                <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Payment Timing</span>
-                                <span class="text-xs font-semibold text-emerald-100">No payment collected today</span>
-                            </div>
+                            @if($store->isInHousePayment())
+                                <div x-show="getSubtotal() > 0" class="border-l border-emerald-600/70 pl-4 sm:pl-5">
+                                    <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Subtotal</span>
+                                    <span class="font-bold text-white text-sm">$<span x-text="getSubtotal().toFixed(2)">0.00</span></span>
+                                </div>
+                                <div x-show="getSubtotal() > 0" class="border-l border-emerald-600/70 pl-4 sm:pl-5">
+                                    <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Sales Tax {{ $store->isTaxExempt() ? '(Exempt)' : '(7.5%)' }}</span>
+                                    <span class="font-bold text-white text-sm">$<span x-text="getTax().toFixed(2)">0.00</span></span>
+                                </div>
+                                <div x-show="getSubtotal() > 0" class="border-l border-emerald-600/70 pl-4 sm:pl-5 bg-emerald-900/70 px-3 py-1 rounded-lg border border-emerald-400/40">
+                                    <span class="text-emerald-200 font-black uppercase text-[10px] tracking-wider block">Total to Pay Coach</span>
+                                    <span class="font-black text-white text-base">$<span x-text="getCashTotal().toFixed(2)">0.00</span></span>
+                                </div>
+                                <div class="hidden sm:block border-l border-emerald-600/70 pl-4 sm:pl-5">
+                                    <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Payment Method</span>
+                                    <span class="text-xs font-semibold text-emerald-100">Pay Coach Directly</span>
+                                </div>
+                            @else
+                                <div x-show="getSubtotal() > 0" class="border-l border-emerald-600/70 pl-5">
+                                    <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Estimated Subtotal</span>
+                                    <span class="font-black text-white text-base">$<span x-text="getSubtotal().toFixed(2)">0.00</span></span>
+                                </div>
+                                <div class="hidden sm:block border-l border-emerald-600/70 pl-5">
+                                    <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Payment Timing</span>
+                                    <span class="text-xs font-semibold text-emerald-100">No payment collected today</span>
+                                </div>
+                            @endif
                         </div>
 
                         <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
@@ -1437,9 +1462,52 @@
                                                     Payment requirements have been waived for this school. Your school/program will issue payment by check upon order receipt.
                                                 </div>
                                             @else
-                                                <div class="mt-5 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
-                                                    <span class="font-bold text-slate-800 block mb-1 uppercase tracking-wider text-[11px]">Payment Method: Cash Collection</span>
-                                                    Please pay your coach directly for this order. We will invoice your coach for the team manufacturing total.
+                                                @php
+                                                    $cashOrderSubtotal = (float) ($order->subtotal > 0 ? $order->subtotal : $orderSubtotal);
+                                                    $cashOrderTax = $isTaxExempt ? 0.00 : ((float) ($order->tax_amount > 0 ? $order->tax_amount : round($cashOrderSubtotal * $taxRate, 2)));
+                                                    $cashOrderTotal = $order->total_paid > 0 ? (float) $order->total_paid : round($cashOrderSubtotal + $cashOrderTax, 2);
+                                                @endphp
+                                                <div class="mt-5 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                                    <div class="flex items-center justify-between mb-3">
+                                                        <span class="text-xs font-black uppercase tracking-wider text-slate-700">Payment Method</span>
+                                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-slate-200 text-slate-800 border border-slate-300">
+                                                            Cash Collection
+                                                        </span>
+                                                    </div>
+
+                                                    <div class="space-y-1.5 text-xs border-t border-slate-200/80 pt-3">
+                                                        <div class="flex justify-between text-slate-600">
+                                                            <span>Subtotal:</span>
+                                                            <span class="font-bold text-slate-900">${{ number_format($cashOrderSubtotal, 2) }}</span>
+                                                        </div>
+                                                        @if($isTaxExempt)
+                                                        <div class="flex justify-between text-slate-600">
+                                                            <span class="flex items-center gap-1.5">
+                                                                <span>Sales Tax:</span>
+                                                                <span class="text-[9px] font-black uppercase tracking-wider text-blue-700 bg-blue-100/70 border border-blue-200 px-1.5 py-0.5 rounded">501(c)(3) Waived</span>
+                                                            </span>
+                                                            <span class="font-bold text-slate-900">$0.00</span>
+                                                        </div>
+                                                        @else
+                                                        <div class="flex justify-between text-slate-600">
+                                                            <span>Sales Tax (7.5%):</span>
+                                                            <span class="font-bold text-slate-900">${{ number_format($cashOrderTax, 2) }}</span>
+                                                        </div>
+                                                        @endif
+                                                        <div class="flex justify-between text-sm font-black text-slate-900 border-t border-slate-200 pt-2 mt-2">
+                                                            <span>Total Due to Coach:</span>
+                                                            <span class="text-emerald-700 font-black text-base">${{ number_format($cashOrderTotal, 2) }}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="mt-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
+                                                        <p class="font-bold text-amber-950 mb-1">
+                                                            Total Due to Coach: ${{ number_format($cashOrderTotal, 2) }} {{ $isTaxExempt ? '(Tax-Exempt)' : '(Includes applicable state sales tax)' }}
+                                                        </p>
+                                                        <p class="text-amber-900 leading-relaxed">
+                                                            Please remit this exact amount directly to your coach via cash, check, or team account.
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             @endif
                                     </div>

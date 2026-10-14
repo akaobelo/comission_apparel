@@ -104,10 +104,15 @@
                             @endif
                         </div>
                         <div class="text-right">
-                            @if(isset($item['unit_price']) && $item['unit_price'] > 0)
-                                <span class="text-sm font-black text-slate-900">${{ number_format(($item['unit_price'] * ($item['qty'] ?? 1)), 2) }}</span>
+                            @php
+                                $uPrice = isset($item['unit_price']) && $item['unit_price'] > 0 
+                                    ? (float) $item['unit_price'] 
+                                    : (\App\Models\ParentOrder::getItemPrices($item, $order->teamStore)['retail_price'] ?? 0);
+                            @endphp
+                            @if($uPrice > 0)
+                                <span class="text-sm font-black text-slate-900">${{ number_format(($uPrice * ($item['qty'] ?? 1)), 2) }}</span>
                                 @if(($item['qty'] ?? 1) > 1)
-                                    <span class="block text-[10px] text-slate-400 font-medium">${{ number_format($item['unit_price'], 2) }} each</span>
+                                    <span class="block text-[10px] text-slate-400 font-medium">${{ number_format($uPrice, 2) }} each</span>
                                 @endif
                             @else
                                 <span class="text-xs font-bold text-slate-500">In-House</span>
@@ -141,14 +146,45 @@
                         <span class="uppercase tracking-wider">Total Paid</span>
                         <span class="text-lg text-emerald-700">${{ number_format($order->total_paid, 2) }}</span>
                     </div>
-                @else
+                @elseif($order->teamStore && $order->teamStore->isCheckPayment())
                     <div class="flex justify-between text-slate-600 font-medium">
                         <span>Total Items</span>
                         <span class="text-slate-900 font-bold">{{ collect($order->items_json ?? [])->sum(fn($i) => $i['qty'] ?? 1) }}</span>
                     </div>
                     <div class="flex justify-between text-slate-600 font-medium">
                         <span>Payment Method</span>
-                        <span class="text-slate-900 font-bold">In-House (Pay Coach Directly)</span>
+                        <span class="text-slate-900 font-bold">Pay by Check (School Billing)</span>
+                    </div>
+                @else
+                    @php
+                        $store = $order->teamStore;
+                        $isExempt = $store ? $store->isTaxExempt() : false;
+                        $receiptSubtotal = (float) ($order->subtotal > 0 ? $order->subtotal : $order->getCalculatedSubtotal($store));
+                        $receiptTax = $isExempt ? 0.00 : (float) ($order->tax_amount > 0 ? $order->tax_amount : round($receiptSubtotal * 0.075, 2));
+                        $receiptTotalDue = $order->total_paid > 0 ? (float) $order->total_paid : round($receiptSubtotal + $receiptTax, 2);
+                    @endphp
+                    <div class="flex justify-between text-slate-600 font-medium">
+                        <span>Subtotal</span>
+                        <span class="text-slate-900 font-bold">${{ number_format($receiptSubtotal, 2) }}</span>
+                    </div>
+                    <div class="flex justify-between text-slate-600 font-medium">
+                        <span>Sales Tax {{ $isExempt ? '(501(c)(3) Waived)' : '(7.5%)' }}</span>
+                        <span class="text-slate-900 font-bold">${{ number_format($receiptTax, 2) }}</span>
+                    </div>
+                    <div class="flex justify-between text-slate-600 font-medium">
+                        <span>Shipping & Delivery (Coach Batch)</span>
+                        <span class="text-emerald-700 font-bold">FREE</span>
+                    </div>
+                    <div class="pt-3 border-t border-slate-200 flex justify-between items-center text-sm font-black text-slate-900">
+                        <span class="uppercase tracking-wider">Total Due to Coach</span>
+                        <span class="text-lg text-emerald-700">${{ number_format($receiptTotalDue, 2) }}</span>
+                    </div>
+
+                    <div class="mt-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed">
+                        <p class="font-bold text-amber-950 mb-1">
+                            Total Due to Coach: ${{ number_format($receiptTotalDue, 2) }} {{ $isExempt ? '(Tax-Exempt)' : '(Includes applicable state sales tax)' }}
+                        </p>
+                        <p>Please remit this exact amount directly to your coach via cash, check, or team account.</p>
                     </div>
                 @endif
             </div>

@@ -363,19 +363,30 @@ class CoachController extends Controller
             "Expires"             => "0"
         ];
 
+        $isExempt = (bool) $store->isTaxExempt();
+        $taxRate = $isExempt ? 0.00 : 0.075;
+        $taxRateStr = $isExempt ? '0% (Exempt)' : '7.5%';
+
         $columns = [
             'Store Name', 'Order ID', 'Submission Date', 'Payment Mode', 'Payment Status',
             'Athlete First Name', 'Athlete Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price', 'Manufacture Price', 'Total Manufacture Price', 'Special Notes', 'Edited?'
+            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price',
+            'Tax Rate', 'Row Tax', 'Total Row With Tax',
+            'Athlete Subtotal', 'Athlete Tax', 'Athlete Total to Collect',
+            'Manufacture Price', 'Total Manufacture Price', 'Special Notes', 'Edited?'
         ];
 
-        $callback = function() use ($store, $orders, $columns) {
+        $callback = function() use ($store, $orders, $columns, $isExempt, $taxRate, $taxRateStr) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
             foreach ($orders as $order) {
                 if (is_array($order->items_json)) {
+                    $athleteSubtotal = (float) ($order->subtotal > 0 ? $order->subtotal : $order->getCalculatedSubtotal($store));
+                    $athleteTax = $isExempt ? 0.00 : (float) ($order->tax_amount > 0 ? $order->tax_amount : round($athleteSubtotal * $taxRate, 2));
+                    $athleteTotalToCollect = $order->total_paid > 0 ? (float) $order->total_paid : round($athleteSubtotal + $athleteTax, 2);
+
                     foreach ($order->items_json as $item) {
                         $typesStr = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
                         
@@ -401,6 +412,8 @@ class CoachController extends Controller
                         $prices = \App\Models\ParentOrder::getItemPrices($item, $store);
                         $itemPrice = $prices['retail_price'];
                         $totalRowPrice = $itemPrice * $qty;
+                        $rowTax = $isExempt ? 0.00 : round($totalRowPrice * $taxRate, 2);
+                        $totalRowWithTax = round($totalRowPrice + $rowTax, 2);
                         $mfgPrice = $prices['wholesale_price'];
                         $totalMfgPrice = $mfgPrice * $qty;
 
@@ -425,6 +438,12 @@ class CoachController extends Controller
                             $qty,
                             number_format($itemPrice, 2, '.', ''),
                             number_format($totalRowPrice, 2, '.', ''),
+                            $taxRateStr,
+                            number_format($rowTax, 2, '.', ''),
+                            number_format($totalRowWithTax, 2, '.', ''),
+                            number_format($athleteSubtotal, 2, '.', ''),
+                            number_format($athleteTax, 2, '.', ''),
+                            number_format($athleteTotalToCollect, 2, '.', ''),
                             number_format($mfgPrice, 2, '.', ''),
                             number_format($totalMfgPrice, 2, '.', ''),
                             $order->special_notes ?? '',
@@ -531,7 +550,7 @@ class CoachController extends Controller
             $itemsJson[] = $entry;
         }
 
-        $order->update([
+        $updateData = [
             'athlete_first_name'  => $request->athlete_first_name,
             'athlete_last_name'   => $request->athlete_last_name,
             'edit_pin'            => $request->filled('edit_pin') ? trim($request->edit_pin) : $order->edit_pin,
@@ -543,7 +562,39 @@ class CoachController extends Controller
             'items_json'          => $itemsJson,
             'is_edited'           => true,
             'edited_by'           => 'coach',
-        ]);
+        ];
+
+        if ($order->team_store_id && !$order->isPaid()) {
+            $store = $order->teamStore;
+            $newSubtotal = 0;
+            foreach ($itemsJson as $it) {
+                $qty = (int) ($it['qty'] ?? 1);
+                $prices = \App\Models\ParentOrder::getItemPrices($it, $store);
+                $newSubtotal += ($prices['retail_price'] * $qty);
+            }
+            $isTaxExempt = (bool) $store->isTaxExempt();
+            $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
+            $newTax = round($newSubtotal * $taxRate, 2);
+
+            if ($store->isOnlinePayment()) {
+                $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+                $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+                $preFee = $newSubtotal + $newTax;
+                $newTotal = round(($preFee + $feeFixed) / (1 - $feePercent), 2);
+                $newFee = round($newTotal - $preFee, 2);
+            } else {
+                $newFee = 0.00;
+                $newTotal = round($newSubtotal + $newTax, 2);
+            }
+
+            $updateData['subtotal'] = $newSubtotal;
+            $updateData['tax_amount'] = $newTax;
+            $updateData['fee_amount'] = $newFee;
+            $updateData['total_paid'] = $newTotal;
+            $updateData['total_retail_price'] = $newSubtotal;
+        }
+
+        $order->update($updateData);
 
         $fullName = trim($request->athlete_first_name . ' ' . $request->athlete_last_name);
 

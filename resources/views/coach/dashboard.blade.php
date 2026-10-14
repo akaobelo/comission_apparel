@@ -882,6 +882,37 @@
                                 No orders received yet. Share your store link with your team.
                             </div>
                         @else
+                            @if($store->isInHousePayment())
+                                @php
+                                    $isExempt = $store->isTaxExempt();
+                                    $coachSubtotal = 0.0;
+                                    $coachTax = 0.0;
+                                    $coachTotalToCollect = 0.0;
+                                    foreach ($store->parentOrders as $po) {
+                                        $sub = (float) ($po->subtotal > 0 ? $po->subtotal : $po->getCalculatedSubtotal($store));
+                                        $tax = $isExempt ? 0.00 : (float) ($po->tax_amount > 0 ? $po->tax_amount : round($sub * 0.075, 2));
+                                        $tot = $po->total_paid > 0 ? (float) $po->total_paid : round($sub + $tax, 2);
+                                        $coachSubtotal += $sub;
+                                        $coachTax += $tax;
+                                        $coachTotalToCollect += $tot;
+                                    }
+                                @endphp
+                                <div class="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                                        <span class="font-bold text-emerald-950 uppercase tracking-wider text-[11px]">Cash Collection Reconciliation</span>
+                                        <span class="text-emerald-700 font-semibold">({{ $totalAthletes }} Orders)</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-3 text-emerald-900 font-medium">
+                                        <span>Subtotal: <strong class="text-slate-900">${{ number_format($coachSubtotal, 2) }}</strong></span>
+                                        <span>Tax {{ $isExempt ? '(Exempt)' : '(7.5%)' }}: <strong class="text-slate-900">${{ number_format($coachTax, 2) }}</strong></span>
+                                        <span class="px-2.5 py-1 bg-emerald-700 text-white rounded-lg font-black tracking-wide shadow-sm">
+                                            Total to Collect: ${{ number_format($coachTotalToCollect, 2) }}
+                                        </span>
+                                    </div>
+                                </div>
+                            @endif
+
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                                 @foreach($store->parentOrders as $order)
                                 <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
@@ -909,7 +940,19 @@
                                                 <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200 tracking-wider">Pending Pay</span>
                                             @endif
                                         @else
-                                            <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 tracking-wider">In-House</span>
+                                            @php
+                                                $athSubtotal = (float) ($order->subtotal > 0 ? $order->subtotal : $order->getCalculatedSubtotal($store));
+                                                $athTax = $store->isTaxExempt() ? 0.00 : (float) ($order->tax_amount > 0 ? $order->tax_amount : round($athSubtotal * 0.075, 2));
+                                                $athTotal = $order->total_paid > 0 ? (float) $order->total_paid : round($athSubtotal + $athTax, 2);
+                                            @endphp
+                                            <div class="text-right">
+                                                <div class="text-[9px] text-slate-500 font-semibold leading-tight">
+                                                    ${{ number_format($athSubtotal, 2) }} + ${{ number_format($athTax, 2) }} tax
+                                                </div>
+                                                <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 tracking-wider inline-block mt-0.5" title="Cash to collect from athlete">
+                                                    Collect: ${{ number_format($athTotal, 2) }}
+                                                </span>
+                                            </div>
                                         @endif
                                         @if($order->is_edited)
                                             <span class="text-[10px] font-bold text-orange-500 uppercase">Edited</span>

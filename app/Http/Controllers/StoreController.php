@@ -218,11 +218,16 @@ class StoreController extends Controller
         $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
         $taxAmount = round($subtotal * $taxRate, 2);
 
-        $feePercent = (float) config('services.stripe.fee_percent', 0.029);
-        $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
-        $preFeeTotal = $subtotal + $taxAmount;
-        $grandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
-        $feeAmount = round($grandTotal - $preFeeTotal, 2);
+        if ($store->isOnlinePayment()) {
+            $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+            $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+            $preFeeTotal = $subtotal + $taxAmount;
+            $grandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
+            $feeAmount = round($grandTotal - $preFeeTotal, 2);
+        } else {
+            $feeAmount = 0.00;
+            $grandTotal = round($subtotal + $taxAmount, 2);
+        }
 
         $parentOrder = ParentOrder::create([
             'team_store_id'       => $store->id,
@@ -258,6 +263,12 @@ class StoreController extends Controller
         $store->user->notify(
             new \App\Notifications\ParentOrderPlaced($fullName, $store->name)
         );
+
+        if ($store->isInHousePayment()) {
+            $formattedTotal = '$' . number_format($grandTotal, 2);
+            $taxNote = $isTaxExempt ? 'Tax-Exempt' : 'includes state sales tax';
+            return back()->with('success', "Order successfully submitted for {$fullName}! Total Due to Coach: {$formattedTotal} ({$taxNote}). Please remit this amount directly to your coach.");
+        }
 
         return back()->with('success', 'Order successfully submitted for ' . $fullName . '! Your coach will review all team orders after the store deadline.');
     }
