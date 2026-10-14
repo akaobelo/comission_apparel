@@ -1853,7 +1853,7 @@
                 </div>
 
                 <!-- ADD NEW PACKAGE -->
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddPackage: false, init() { const k = 'admin_add_new_package'; this.expandedAddPackage = localStorage.getItem(k) === 'true'; $watch('expandedAddPackage', v => localStorage.setItem(k, v)) } }">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddPackage: {{ $errors->any() ? 'true' : 'false' }}, init() { const k = 'admin_add_new_package'; if (!{{ $errors->any() ? 'true' : 'false' }}) this.expandedAddPackage = localStorage.getItem(k) === 'true'; $watch('expandedAddPackage', v => localStorage.setItem(k, v)) } }">
                     <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expandedAddPackage = !expandedAddPackage">
                         <div>
                             <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Package / Design</h2>
@@ -1862,12 +1862,29 @@
                         <svg class="w-5 h-5 text-slate-400 transform transition-transform" :class="expandedAddPackage ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
                     <div class="p-5" x-show="expandedAddPackage" x-cloak>
-                        <form action="{{ route('admin.design.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                        <form action="{{ route('admin.design.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4"
+                              x-data="{ typesError: false }"
+                              @submit="
+                                  const checked = $el.querySelectorAll('input[name=\'types[]\']:checked');
+                                  if (checked.length === 0) {
+                                      $event.preventDefault();
+                                      typesError = true;
+                                      const first = $el.querySelector('input[name=\'types[]\']');
+                                      if (first) {
+                                          first.setCustomValidity('Please select at least one item type.');
+                                          first.reportValidity();
+                                          first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                      }
+                                      return false;
+                                  }
+                              ">
                         @csrf
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Design Name</label>
-                                <input type="text" name="name" required placeholder="e.g. Springfield Eagles - Home Jersey" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                                    Design Name <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="name" required value="{{ old('name') }}" placeholder="e.g. Springfield Eagles - Home Jersey" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name (Optional)</label>
@@ -1875,7 +1892,7 @@
                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
                                         <option value="">Select a Collection...</option>
                                         @foreach($allCollections->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE) as $col)
-                                            <option value="{{ $col->id }}">{{ $col->name }}</option>
+                                            <option value="{{ $col->id }}" {{ old('design_collection_id') == $col->id ? 'selected' : '' }}>{{ $col->name }}</option>
                                         @endforeach
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
@@ -1887,7 +1904,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div x-data="{
                                 open: false,
-                                search: '',
+                                search: '{{ old('sport', '') }}',
                                 options: window.availableSportsList,
                                 get filteredOptions() {
                                     if (this.search === '') return this.options;
@@ -1898,9 +1915,11 @@
                                     this.open = false;
                                 }
                             }" class="relative">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Categories</label>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                                    Categories <span class="text-red-500">*</span>
+                                </label>
                                 <div class="relative">
-                                    <input type="text" name="sport" x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Football, Basketball" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 pr-10 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
+                                    <input type="text" name="sport" required x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Football, Basketball" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 pr-10 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
                                     <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-700 focus:outline-none">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                     </button>
@@ -1913,14 +1932,16 @@
                             </div>
 
                             <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Package Category</label>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                                    Package Category <span class="text-red-500">*</span>
+                                </label>
                                 <div class="relative">
                                     <select name="category" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
                                         <option value="">Select Category</option>
-                                        <option value="package_a">Package A - Base Kit</option>
-                                        <option value="package_b">Package B - Standard</option>
-                                        <option value="package_c">Package C - Full Program</option>
-                                        <option value="individual">Individual Item</option>
+                                        <option value="package_a" {{ old('category') === 'package_a' ? 'selected' : '' }}>Package A - Base Kit</option>
+                                        <option value="package_b" {{ old('category') === 'package_b' ? 'selected' : '' }}>Package B - Standard</option>
+                                        <option value="package_c" {{ old('category') === 'package_c' ? 'selected' : '' }}>Package C - Full Program</option>
+                                        <option value="individual" {{ old('category') === 'individual' ? 'selected' : '' }}>Individual Item</option>
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -1929,11 +1950,20 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Item Types (Select all that apply)</label>
+                            <label class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                                <span>Item Types (Select all that apply)</span>
+                                <span class="text-red-500">*</span>
+                                <span x-show="typesError" x-cloak class="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded normal-case tracking-normal">
+                                    Please select at least one item type.
+                                </span>
+                            </label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                 @foreach($typeOptions as $val => $label)
                                 <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                                    <input type="checkbox" name="types[]" value="{{ $val }}" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                    <input type="checkbox" name="types[]" value="{{ $val }}"
+                                           {{ in_array($val, old('types', [])) ? 'checked' : '' }}
+                                           @change="typesError = false; const f = $el.form.querySelector('input[name=\'types[]\']'); if (f) f.setCustomValidity('');"
+                                           class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
                                     <span class="text-xs">{{ $label }}</span>
                                 </label>
                                 @endforeach
@@ -1941,7 +1971,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Product Description (Optional)</label>
-                            <textarea name="description" rows="3" placeholder="Outline the item(s) included, especially for packages..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm"></textarea>
+                            <textarea name="description" rows="3" placeholder="Outline the item(s) included, especially for packages..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">{{ old('description') }}</textarea>
                         </div>
                         <div class="grid grid-cols-3 gap-3">
                             <div>
@@ -1949,21 +1979,23 @@
                                 <input type="file" name="images[]" multiple accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-secondary file:text-white hover:file:bg-[#a11825]">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Wholesale Price ($)</label>
-                                <input type="number" step="0.01" name="wholesale_price" required placeholder="e.g. 45.00" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                                    Wholesale Price ($) <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number" step="0.01" name="wholesale_price" required value="{{ old('wholesale_price') }}" placeholder="e.g. 45.00" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Sort Order</label>
-                                <input type="number" name="sort_order" placeholder="Auto" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                <input type="number" name="sort_order" value="{{ old('sort_order') }}" placeholder="Auto" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
                         </div>
                         <div class="flex gap-4">
                             <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                                <input type="checkbox" name="has_name_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                <input type="checkbox" name="has_name_field" value="1" {{ old('has_name_field') ? 'checked' : '' }} class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
                                 <span class="text-xs font-bold uppercase tracking-wide">Name on Item</span>
                             </label>
                             <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                                <input type="checkbox" name="has_number_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                <input type="checkbox" name="has_number_field" value="1" {{ old('has_number_field') ? 'checked' : '' }} class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
                                 <span class="text-xs font-bold uppercase tracking-wide">Player Number</span>
                             </label>
                         </div>
@@ -1975,7 +2007,7 @@
                 </div>
 
                 <!-- ADD NEW DESIGN -->
-                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddDesign: false, init() { const k = 'admin_add_new_design'; this.expandedAddDesign = localStorage.getItem(k) === 'true'; $watch('expandedAddDesign', v => localStorage.setItem(k, v)) } }">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddDesign: {{ $errors->any() ? 'true' : 'false' }}, init() { const k = 'admin_add_new_design'; if (!{{ $errors->any() ? 'true' : 'false' }}) this.expandedAddDesign = localStorage.getItem(k) === 'true'; $watch('expandedAddDesign', v => localStorage.setItem(k, v)) } }">
                     <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expandedAddDesign = !expandedAddDesign">
                         <div>
                             <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Add New Design</h2>
@@ -1984,12 +2016,29 @@
                         <svg class="w-5 h-5 text-slate-400 transform transition-transform" :class="expandedAddDesign ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
                     <div class="p-5" x-show="expandedAddDesign" x-cloak>
-                        <form action="{{ route('admin.design.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                        <form action="{{ route('admin.design.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4"
+                              x-data="{ typesError: false }"
+                              @submit="
+                                  const checked = $el.querySelectorAll('input[name=\'types[]\']:checked');
+                                  if (checked.length === 0) {
+                                      $event.preventDefault();
+                                      typesError = true;
+                                      const first = $el.querySelector('input[name=\'types[]\']');
+                                      if (first) {
+                                          first.setCustomValidity('Please select at least one item type.');
+                                          first.reportValidity();
+                                          first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                      }
+                                      return false;
+                                  }
+                              ">
                         @csrf
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Design Name</label>
-                                <input type="text" name="name" required placeholder="e.g. Springfield Eagles - Home Jersey" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                                    Design Name <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="name" required value="{{ old('name') }}" placeholder="e.g. Springfield Eagles - Home Jersey" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name (Optional)</label>
@@ -1997,7 +2046,7 @@
                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
                                         <option value="">Select a Collection...</option>
                                         @foreach($allCollections->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE) as $col)
-                                            <option value="{{ $col->id }}">{{ $col->name }}</option>
+                                            <option value="{{ $col->id }}" {{ old('design_collection_id') == $col->id ? 'selected' : '' }}>{{ $col->name }}</option>
                                         @endforeach
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
@@ -2009,7 +2058,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div x-data="{
                                 open: false,
-                                search: '',
+                                search: '{{ old('sport', '') }}',
                                 options: window.availableSportsList,
                                 get filteredOptions() {
                                     if (this.search === '') return this.options;
@@ -2020,9 +2069,11 @@
                                     this.open = false;
                                 }
                             }" class="relative">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Categories</label>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                                    Categories <span class="text-red-500">*</span>
+                                </label>
                                 <div class="relative">
-                                    <input type="text" name="sport" x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Football, Basketball" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 pr-10 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
+                                    <input type="text" name="sport" required x-model="search" @focus="open = true" @click.away="open = false" placeholder="e.g. Football, Basketball" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 pr-10 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
                                     <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-700 focus:outline-none">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                     </button>
@@ -2035,14 +2086,16 @@
                             </div>
 
                             <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Package Category</label>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                                    Package Category <span class="text-red-500">*</span>
+                                </label>
                                 <div class="relative">
                                     <select name="category" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
                                         <option value="">Select Category</option>
-                                        <option value="package_a">Package A - Base Kit</option>
-                                        <option value="package_b">Package B - Standard</option>
-                                        <option value="package_c">Package C - Full Program</option>
-                                        <option value="individual" selected>Individual Item</option>
+                                        <option value="package_a" {{ old('category') === 'package_a' ? 'selected' : '' }}>Package A - Base Kit</option>
+                                        <option value="package_b" {{ old('category') === 'package_b' ? 'selected' : '' }}>Package B - Standard</option>
+                                        <option value="package_c" {{ old('category') === 'package_c' ? 'selected' : '' }}>Package C - Full Program</option>
+                                        <option value="individual" {{ old('category', 'individual') === 'individual' ? 'selected' : '' }}>Individual Item</option>
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -2051,11 +2104,20 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Item Types (Select all that apply)</label>
+                            <label class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                                <span>Item Types (Select all that apply)</span>
+                                <span class="text-red-500">*</span>
+                                <span x-show="typesError" x-cloak class="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded normal-case tracking-normal">
+                                    Please select at least one item type.
+                                </span>
+                            </label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                 @foreach($typeOptions as $val => $label)
                                 <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                                    <input type="checkbox" name="types[]" value="{{ $val }}" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                    <input type="checkbox" name="types[]" value="{{ $val }}"
+                                           {{ in_array($val, old('types', [])) ? 'checked' : '' }}
+                                           @change="typesError = false; const f = $el.form.querySelector('input[name=\'types[]\']'); if (f) f.setCustomValidity('');"
+                                           class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
                                     <span class="text-xs">{{ $label }}</span>
                                 </label>
                                 @endforeach
@@ -2063,7 +2125,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Product Description (Optional)</label>
-                            <textarea name="description" rows="3" placeholder="Outline the item(s) included, especially for packages..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm"></textarea>
+                            <textarea name="description" rows="3" placeholder="Outline the item(s) included, especially for packages..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">{{ old('description') }}</textarea>
                         </div>
                         <div class="grid grid-cols-3 gap-3">
                             <div>
@@ -2071,21 +2133,23 @@
                                 <input type="file" name="images[]" multiple accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-secondary file:text-white hover:file:bg-[#a11825]">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Wholesale Price ($)</label>
-                                <input type="number" step="0.01" name="wholesale_price" required placeholder="e.g. 45.00" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                                    Wholesale Price ($) <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number" step="0.01" name="wholesale_price" required value="{{ old('wholesale_price') }}" placeholder="e.g. 45.00" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Sort Order</label>
-                                <input type="number" name="sort_order" placeholder="Auto" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                <input type="number" name="sort_order" value="{{ old('sort_order') }}" placeholder="Auto" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
                         </div>
                         <div class="flex gap-4">
                             <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                                <input type="checkbox" name="has_name_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                <input type="checkbox" name="has_name_field" value="1" {{ old('has_name_field') ? 'checked' : '' }} class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
                                 <span class="text-xs font-bold uppercase tracking-wide">Name on Item</span>
                             </label>
                             <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                                <input type="checkbox" name="has_number_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                <input type="checkbox" name="has_number_field" value="1" {{ old('has_number_field') ? 'checked' : '' }} class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
                                 <span class="text-xs font-bold uppercase tracking-wide">Player Number</span>
                             </label>
                         </div>
