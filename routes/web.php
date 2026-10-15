@@ -352,6 +352,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     // Design catalog management
     Route::post('/admin/design/bulk-sort', [AdminController::class, 'bulkSortDesigns'])->name('admin.design.bulk-sort');
     Route::post('/admin/design/bulk-assign', [AdminController::class, 'bulkAssignDesigns'])->name('admin.design.bulk-assign');
+    Route::delete('/admin/design/bulk-delete', [AdminController::class, 'bulkDeleteDesigns'])->name('admin.design.bulk-delete');
     Route::post('/admin/design', [AdminController::class, 'createDesign'])->name('admin.design.create');
     Route::put('/admin/design/{design}', [AdminController::class, 'updateDesign'])->name('admin.design.update');
     Route::get('/admin/design/{design}', function () { return redirect()->route('admin.dashboard'); });

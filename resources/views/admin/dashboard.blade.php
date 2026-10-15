@@ -242,7 +242,7 @@
                         </div>
                     </div>
                     <div x-show="expanded" x-collapse>
-                        <div class="h-[380px] flex flex-col bg-white">
+                        <div class="h-[420px] lg:h-[380px] flex flex-col bg-white">
                             <div class="p-3 border-b border-slate-100 bg-white flex-shrink-0">
                                 <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md"
                                       hx-get="{{ route('admin.dashboard') }}"
@@ -264,18 +264,29 @@
                             @else
                                 <div id="update-active-stores-sortable-list" class="divide-y divide-slate-100 flex-1 overflow-y-auto">
                                     @foreach($productionStores as $store)
-                                    <div class="p-3.5 flex items-center justify-between gap-3 visible-sortable-item bg-white">
-                                        <div class="flex items-center gap-2.5 min-w-0">
-                                            <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-0.5 flex-shrink-0" title="Drag to reorder">
+                                    <div class="p-3 sm:p-3.5 visible-sortable-item bg-white hover:bg-slate-50/70 transition-colors">
+                                        <div class="flex items-start gap-2.5">
+                                            {{-- Drag Handle --}}
+                                            <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors p-1 -ml-1 flex-shrink-0 touch-none mt-0.5" title="Drag to reorder">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
                                             </div>
-                                            <div class="min-w-0">
-                                                <div class="font-bold text-xs sm:text-sm text-slate-900 truncate">{{ $store->name }}</div>
-                                                <div class="text-[11px] text-slate-500 truncate">{{ $store->user->name }} · {{ $store->parentOrders->count() }} orders</div>
+
+                                            <div class="min-w-0 flex-1">
+                                                {{-- Store Name & Details --}}
+                                                <div>
+                                                    <a href="{{ route('admin.store.edit', $store) }}" class="font-bold text-xs sm:text-sm text-slate-900 hover:text-secondary transition-colors break-words leading-snug block">
+                                                        {{ $store->name }}
+                                                    </a>
+                                                    <div class="text-[11px] text-slate-500 mt-0.5 truncate">
+                                                        {{ $store->user?->name ?? 'Unknown' }} · <span class="font-medium text-slate-700">{{ $store->parentOrders->count() }} orders</span>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Badges: Deadline & 501(c)(3) --}}
                                                 @if($store->order_deadline || $store->isTaxExempt())
-                                                <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                                <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
                                                     @if($store->order_deadline)
-                                                        <span class="text-[9px] font-bold text-{{ $store->order_deadline->isPast() ? 'red' : 'slate' }}-500 uppercase tracking-wide">
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide {{ $store->order_deadline->isPast() ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-slate-100 text-slate-600 border border-slate-200' }}">
                                                             Deadline: {{ $store->order_deadline->format('M d, Y') }}
                                                         </span>
                                                     @endif
@@ -286,33 +297,37 @@
                                                     @endif
                                                 </div>
                                                 @endif
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
-                                            <div class="flex items-center gap-1 mr-0.5">
-                                                <span class="text-[9px] font-black uppercase text-slate-400">Sort:</span>
-                                                <input type="number" 
-                                                       name="items[{{ $loop->index }}][order]" 
-                                                       value="{{ $store->sort_order }}" 
-                                                       class="w-12 bg-white border border-slate-300 rounded px-1.5 py-0.5 text-xs text-slate-900 text-center font-bold focus:border-primary focus:outline-none shadow-sm">
-                                            </div>
-                                            <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $store->id }}">
 
-                                            {{-- Quick Payment Mode Switcher --}}
-                                            <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="inline-block">
-                                                @csrf
-                                                <select name="payment_mode" onchange="this.form.submit()" title="Change payment collection method" class="text-[11px] font-bold rounded-md px-2 py-1 border shadow-sm cursor-pointer outline-none transition-colors {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100' : (($store->payment_mode ?? 'in_house') === 'check' ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100') }}">
-                                                    <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash</option>
-                                                    <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Stripe</option>
-                                                    <option value="check" {{ ($store->payment_mode ?? 'in_house') === 'check' ? 'selected' : '' }}>📑 Check (Waived)</option>
-                                                </select>
-                                            </form>
+                                                {{-- Actions & Sort Toolbar --}}
+                                                <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-[9px] font-black uppercase text-slate-400">Sort:</span>
+                                                        <input type="number" 
+                                                               name="items[{{ $loop->index }}][order]" 
+                                                               value="{{ $store->sort_order }}" 
+                                                               class="w-12 bg-white border border-slate-300 rounded px-1.5 py-0.5 text-xs text-slate-900 text-center font-bold focus:border-primary focus:outline-none shadow-sm">
+                                                        <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $store->id }}">
+                                                    </div>
 
-                                            <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this active store?')">
-                                                @csrf
-                                                <button type="submit" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded-md hover:bg-slate-100 transition-colors">Archive</button>
-                                            </form>
-                                            <a href="{{ route('admin.store.edit', $store) }}" class="px-2.5 py-1 bg-white border border-secondary text-secondary text-[11px] font-bold rounded-md hover:bg-secondary hover:text-white transition-colors">Edit</a>
+                                                    <div class="flex items-center gap-1.5 flex-wrap justify-end">
+                                                        {{-- Quick Payment Mode Switcher --}}
+                                                        <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="inline-block m-0">
+                                                            @csrf
+                                                            <select name="payment_mode" onchange="this.form.submit()" title="Change payment collection method" class="text-[11px] font-bold rounded-md px-2 py-1 border shadow-sm cursor-pointer outline-none transition-colors {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100' : (($store->payment_mode ?? 'in_house') === 'check' ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100') }}">
+                                                                <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash</option>
+                                                                <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Stripe</option>
+                                                                <option value="check" {{ ($store->payment_mode ?? 'in_house') === 'check' ? 'selected' : '' }}>📑 Check (Waived)</option>
+                                                            </select>
+                                                        </form>
+
+                                                        <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this active store?')" class="inline-block m-0">
+                                                            @csrf
+                                                            <button type="submit" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded-md hover:bg-slate-100 transition-colors">Archive</button>
+                                                        </form>
+                                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-2.5 py-1 bg-white border border-secondary text-secondary text-[11px] font-bold rounded-md hover:bg-secondary hover:text-white transition-colors">Edit</a>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     @endforeach
@@ -691,22 +706,22 @@
                                 <div class="text-xs font-bold uppercase tracking-wide text-slate-500">Archived Stores</div>
                             </div>
                             @foreach($archivedStores as $store)
-                            <div class="p-3.5 flex items-center justify-between gap-3 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
-                                <div>
-                                    <div class="font-bold text-xs sm:text-sm text-slate-700">{{ $store->name }}</div>
-                                    <div class="text-[11px] text-slate-500">
-                                        {{ $store->user->name }} · {{ $store->parentOrders->count() }} orders
+                            <div class="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-bold text-xs sm:text-sm text-slate-700 break-words">{{ $store->name }}</div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5">
+                                        {{ $store->user?->name ?? 'Unknown' }} · {{ $store->parentOrders->count() }} orders
                                         @if($store->updated_at)
                                             · Archived {{ $store->updated_at->format('M d, Y') }}
                                         @endif
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-1.5 flex-shrink-0">
-                                    <form action="{{ route('admin.stores.unarchive', $store) }}" method="POST" onsubmit="return confirm('Restore this store back to active production?')">
+                                <div class="flex items-center gap-1.5 flex-shrink-0 justify-end pt-1.5 sm:pt-0 border-t border-slate-200/60 sm:border-0">
+                                    <form action="{{ route('admin.stores.unarchive', $store) }}" method="POST" onsubmit="return confirm('Restore this store back to active production?')" class="inline-block m-0">
                                         @csrf
                                         <button type="submit" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">Unarchive</button>
                                     </form>
-                                    <form action="{{ route('admin.stores.delete', $store) }}" method="POST" onsubmit="return confirm('Delete this archived store and all related data? This cannot be undone.')">
+                                    <form action="{{ route('admin.stores.delete', $store) }}" method="POST" onsubmit="return confirm('Delete this archived store and all related data? This cannot be undone.')" class="inline-block m-0">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="px-2.5 py-1 bg-white border border-red-300 text-red-600 text-[11px] font-bold rounded hover:bg-red-50 transition-colors">Delete</button>
@@ -2259,7 +2274,7 @@
                             <div class="flex items-center gap-2">
                                 <button type="button" 
                                         @click="selectedDesigns = (selectedDesigns.length === filteredItems.length) ? [] : filteredItems.map(i => i.id)" 
-                                        class="px-2.5 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-50 transition-colors">
+                                        class="px-2.5 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
                                     <span x-text="selectedDesigns.length === filteredItems.length ? 'Deselect All' : 'Select All'"></span>
                                 </button>
                                 <span class="text-xs text-slate-500 font-bold uppercase tracking-wider" x-show="selectedDesigns.length > 0">
@@ -2267,19 +2282,34 @@
                                 </span>
                             </div>
                             
-                            <form action="{{ route('admin.design.bulk-assign') }}" method="POST" class="flex items-center gap-1.5" @submit="if(selectedDesigns.length === 0) { event.preventDefault(); alert('Please select at least one design to assign.'); }">
-                                @csrf
-                                <template x-for="id in selectedDesigns" :key="id">
-                                    <input type="hidden" name="design_ids[]" :value="id">
-                                </template>
-                                <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2.5 py-1.5 w-48 focus:border-primary focus:outline-none shadow-sm">
-                                    <option value="">Assign selected to...</option>
-                                    @foreach($allCoaches as $c)
-                                        <option value="{{ $c->id }}">{{ $c->teamStore?->name ?? $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
-                                    @endforeach
-                                </select>
-                                <button type="submit" class="text-xs font-bold uppercase px-3 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors">Mass Assign</button>
-                            </form>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <form action="{{ route('admin.design.bulk-assign') }}" method="POST" class="flex items-center gap-1.5" @submit="if(selectedDesigns.length === 0) { event.preventDefault(); alert('Please select at least one design to assign.'); }">
+                                    @csrf
+                                    <template x-for="id in selectedDesigns" :key="id">
+                                        <input type="hidden" name="design_ids[]" :value="id">
+                                    </template>
+                                    <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2.5 py-1.5 w-44 sm:w-48 focus:border-primary focus:outline-none shadow-sm">
+                                        <option value="">Assign selected to...</option>
+                                        @foreach($allCoaches as $c)
+                                            <option value="{{ $c->id }}">{{ $c->teamStore?->name ?? $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
+                                        @endforeach
+                                    </select>
+                                    <button type="submit" class="text-xs font-bold uppercase px-3 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors shadow-sm whitespace-nowrap">Mass Assign</button>
+                                </form>
+
+                                <form action="{{ route('admin.design.bulk-delete') }}" method="POST" class="flex items-center" @submit="if(selectedDesigns.length === 0) { event.preventDefault(); alert('Please select at least one design to delete.'); } else if(!confirm('Are you sure you want to permanently delete ' + selectedDesigns.length + ' selected design(s) from the catalog? This cannot be undone.')) { event.preventDefault(); }">
+                                    @csrf
+                                    @method('DELETE')
+                                    <template x-for="id in selectedDesigns" :key="id">
+                                        <input type="hidden" name="design_ids[]" :value="id">
+                                    </template>
+                                    <button type="submit" class="text-xs font-bold uppercase px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap" title="Permanently delete selected designs from catalog">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        <span>Mass Delete</span>
+                                        <span x-show="selectedDesigns.length > 0" x-text="'(' + selectedDesigns.length + ')'" class="font-extrabold"></span>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                         <div id="update-catalog-sortable-list-unassigned" class="update-catalog-sortable-list max-h-[900px] overflow-y-auto" data-is-collection="false">
                             @foreach($unassignedDesigns as $design)

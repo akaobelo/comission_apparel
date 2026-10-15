@@ -713,6 +713,42 @@ class AdminController extends Controller
             ->with('success', count($request->design_ids) . " designs successfully assigned to {$coach->first_name} {$coach->last_name}'s profile!");
     }
 
+    public function bulkDeleteDesigns(Request $request)
+    {
+        $request->validate([
+            'design_ids'   => ['required', 'array'],
+            'design_ids.*' => ['required', 'exists:design_catalog,id'],
+        ]);
+
+        $designs = DesignCatalog::whereIn('id', $request->design_ids)->get();
+        $count = 0;
+
+        foreach ($designs as $design) {
+            // Delete associated images
+            if (!empty($design->image_paths) && is_array($design->image_paths)) {
+                foreach ($design->image_paths as $path) {
+                    $pathToRemove = str_replace('/storage/', '', $path);
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+                }
+            } elseif (!empty($design->image_url)) {
+                $pathToRemove = str_replace('/storage/', '', $design->image_url);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pathToRemove);
+            }
+
+            // Delete associated store items so they are removed from all coach stores
+            \App\Models\StoreItem::where('design_catalog_id', $design->id)->delete();
+
+            // Detach from coaches pivot table
+            $design->coaches()->detach();
+
+            $design->delete();
+            $count++;
+        }
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "{$count} " . \Illuminate\Support\Str::plural('design', $count) . " successfully deleted from catalog.");
+    }
+
     public function bulkUpdateDesignCollections(Request $request)
     {
         $request->validate([
