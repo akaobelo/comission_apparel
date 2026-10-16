@@ -927,6 +927,45 @@ class CoachController extends Controller
         $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
         $taxAmount = $isTaxExempt ? 0.00 : round($subtotal * $taxRate, 2);
 
+        // Check if Pay by Check is active for this coach (via active store or any store owned by coach)
+        $activeStoreId = session('active_coach_store_id');
+        $activeStore = $activeStoreId ? $user->teamStores()->find($activeStoreId) : null;
+        $isCoachCheckPayment = ($activeStore && $activeStore->isCheckPayment()) 
+            || $user->teamStores()->where('payment_mode', 'check')->exists();
+
+        if ($isCoachCheckPayment) {
+            foreach ($draftOrders as $order) {
+                $orderSubtotal = (float) $order->getCalculatedSubtotal();
+                $orderTax = $isTaxExempt ? 0.00 : round($orderSubtotal * $taxRate, 2);
+                $order->update([
+                    'batch_id'       => $batchId,
+                    'status'         => 'Submitted to Admin',
+                    'payment_status' => 'not_applicable',
+                    'subtotal'       => $orderSubtotal,
+                    'tax_amount'     => $orderTax,
+                    'fee_amount'     => 0.00,
+                    'total_paid'     => round($orderSubtotal + $orderTax, 2),
+                ]);
+            }
+
+            // Notify Admin
+            try {
+                \Illuminate\Support\Facades\Notification::send(
+                    \App\Models\User::where('role', 'admin')->get(),
+                    new \App\Notifications\MasterOrderSubmitted((object) [
+                        'name' => ($user->organization ?: $user->name) . ' Direct Order (Pay by Check)',
+                        'user' => $user
+                    ])
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Notification failed on Pay by Check direct order: ' . $e->getMessage());
+            }
+
+            return redirect()->route('coach.dashboard')
+                ->with('success', 'Direct orders successfully submitted to production (Pay by Check)!')
+                ->with('activeCoachTab', 'order_status');
+        }
+
         $feePercent = (float) config('services.stripe.fee_percent', 0.029);
         $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
         $preFeeTotal = $subtotal + $taxAmount;

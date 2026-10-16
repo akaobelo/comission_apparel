@@ -562,7 +562,12 @@
                             $isTaxExempt = (bool) $user->is_tax_exempt;
                             $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
                             $draftTax = $isTaxExempt ? 0.00 : round($draftSubtotal * $taxRate, 2);
-                            if ($draftSubtotal > 0) {
+                            $isCheckPayment = ($store && $store->isCheckPayment()) || $user->teamStores()->where('payment_mode', 'check')->exists();
+
+                            if ($isCheckPayment) {
+                                $draftFee = 0.00;
+                                $draftGrandTotal = round($draftSubtotal + $draftTax, 2);
+                            } elseif ($draftSubtotal > 0) {
                                 $feePercent = (float) config('services.stripe.fee_percent', 0.029);
                                 $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
                                 $preFeeTotal = $draftSubtotal + $draftTax;
@@ -583,12 +588,24 @@
                                 <span>Sales Tax {{ $isTaxExempt ? '(501(c)(3) Exempt)' : '(7.5%)' }}</span>
                                 <span class="font-bold text-slate-900">${{ number_format($draftTax, 2) }}</span>
                             </div>
-                            <div class="flex justify-between text-slate-600">
-                                <span>Credit Card Fee</span>
-                                <span class="font-bold text-slate-900">${{ number_format($draftFee, 2) }}</span>
-                            </div>
+                            @if($isCheckPayment)
+                                <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 mt-2">
+                                    <div class="font-bold uppercase tracking-wider text-[11px] text-blue-900 flex items-center gap-1.5 mb-1">
+                                        <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        Payment Method: Pay by Check
+                                    </div>
+                                    <p class="text-[11px] text-blue-700 leading-relaxed">
+                                        Payment requirements have been waived for your school/organization. Your school will issue payment by check upon order receipt.
+                                    </p>
+                                </div>
+                            @else
+                                <div class="flex justify-between text-slate-600">
+                                    <span>Credit Card Fee</span>
+                                    <span class="font-bold text-slate-900">${{ number_format($draftFee, 2) }}</span>
+                                </div>
+                            @endif
                             <div class="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
-                                <span>Total Due</span>
+                                <span>Total {{ $isCheckPayment ? 'Order Amount' : 'Due' }}</span>
                                 <span class="text-primary font-black text-base">${{ number_format($draftGrandTotal, 2) }}</span>
                             </div>
                         </div>
@@ -597,21 +614,31 @@
                             <label class="flex items-start gap-2 cursor-pointer mb-4">
                                 <input type="checkbox" x-model="agreed" class="mt-0.5 rounded border-slate-300 text-primary focus:ring-primary">
                                 <span class="text-[11px] text-slate-600 leading-tight">
-                                    I understand and agree that <strong class="text-slate-900">all sales are final and nonrefundable</strong> once payment is processed. Orders will be submitted to production immediately upon payment.
+                                    I understand and agree that <strong class="text-slate-900">all sales are final and nonrefundable</strong>. Orders will be submitted to production immediately upon submission.
                                 </span>
                             </label>
 
-                            <form action="{{ route('coach.direct-order.finalize') }}" method="POST" target="_blank">
+                            <form action="{{ route('coach.direct-order.finalize') }}" method="POST" @if(!$isCheckPayment) target="_blank" @endif>
                                 @csrf
-                                <button type="submit" :disabled="!agreed" :class="agreed ? 'bg-secondary hover:bg-[#a11825] cursor-pointer' : 'bg-slate-300 cursor-not-allowed opacity-60'" class="btn text-white w-full py-3.5 text-xs font-bold uppercase tracking-widest shadow-sm flex items-center justify-center gap-2 transition-all">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                                    Pay Online & Submit (${{ number_format($draftGrandTotal, 2) }})
-                                </button>
+                                @if($isCheckPayment)
+                                    <button type="submit" :disabled="!agreed" :class="agreed ? 'bg-secondary hover:bg-[#a11825] cursor-pointer' : 'bg-slate-300 cursor-not-allowed opacity-60'" class="btn text-white w-full py-3.5 text-xs font-bold uppercase tracking-widest shadow-sm flex items-center justify-center gap-2 transition-all">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        Submit Draft to Production (Pay by Check)
+                                    </button>
+                                    <p class="text-[10px] text-blue-600 text-center mt-2 font-medium">
+                                        Payment requirements waived. Invoice / PO will be issued.
+                                    </p>
+                                @else
+                                    <button type="submit" :disabled="!agreed" :class="agreed ? 'bg-secondary hover:bg-[#a11825] cursor-pointer' : 'bg-slate-300 cursor-not-allowed opacity-60'" class="btn text-white w-full py-3.5 text-xs font-bold uppercase tracking-widest shadow-sm flex items-center justify-center gap-2 transition-all">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                        Pay Online & Submit (${{ number_format($draftGrandTotal, 2) }})
+                                    </button>
+                                    <p class="text-[10px] text-slate-400 text-center mt-2 flex items-center justify-center gap-1">
+                                        <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                        Secure checkout powered by Stripe
+                                    </p>
+                                @endif
                             </form>
-                            <p class="text-[10px] text-slate-400 text-center mt-2 flex items-center justify-center gap-1">
-                                <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                Secure checkout powered by Stripe
-                            </p>
                         </div>
                     @endif
                 </div>
@@ -1641,6 +1668,10 @@
                                         <span class="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
                                             <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                             PAID
+                                        </span>
+                                    @elseif($firstOrder->payment_status === 'not_applicable')
+                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                                            Pay by Check
                                         </span>
                                     @endif
                                 </div>

@@ -612,6 +612,10 @@
                                                     <span class="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold uppercase tracking-wider rounded-md border border-green-200">
                                                         ✓ Paid Online
                                                     </span>
+                                                @elseif($batchOrders->first()?->payment_status === 'not_applicable')
+                                                    <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold uppercase tracking-wider rounded-md border border-blue-200">
+                                                        📑 Pay by Check / PO
+                                                    </span>
                                                 @endif
                                             </div>
                                             <div class="mt-2.5 grid grid-cols-3 gap-2">
