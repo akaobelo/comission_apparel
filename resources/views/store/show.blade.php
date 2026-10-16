@@ -340,7 +340,7 @@
                                     <span class="text-xs font-black uppercase tracking-wider text-slate-900">Payment</span>
                                 </div>
                                 <p class="text-xs text-slate-600 leading-relaxed">
-                                    Please contact your store administrator to confirm how payment will be collected. Administrators may choose “Cash Collection,” where all funds are collected directly by the organization and submitted as a single payment, or “Online Credit Card Payment.” Online payment may be enabled after the store deadline has passed and the administrator has reviewed the order details. Once enabled, patrons can return to the store link, locate their order at the bottom of the page, and click to pay.
+                                    Please contact your store administrator to confirm how payment will be collected. Administrators may choose “Cash Collection,” where all funds are collected directly by the organization and submitted as a single payment, or “Online Credit Card Payment,” where you pay securely online with a credit card at checkout.
                                 </p>
                             </div>
 
@@ -863,14 +863,31 @@
                                     <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Payment Method</span>
                                     <span class="text-xs font-semibold text-emerald-100">Pay Coach Directly</span>
                                 </div>
-                            @else
+                            @elseif($store->isCheckPayment())
                                 <div x-show="getSubtotal() > 0" class="border-l border-emerald-600/70 pl-5">
                                     <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Estimated Subtotal</span>
                                     <span class="font-black text-white text-base">$<span x-text="getSubtotal().toFixed(2)">0.00</span></span>
                                 </div>
                                 <div class="hidden sm:block border-l border-emerald-600/70 pl-5">
-                                    <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Payment Timing</span>
-                                    <span class="text-xs font-semibold text-emerald-100">No payment collected today</span>
+                                    <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Payment Method</span>
+                                    <span class="text-xs font-semibold text-emerald-100">Pay by Check / PO (Waived)</span>
+                                </div>
+                            @else
+                                <div x-show="getSubtotal() > 0" class="border-l border-emerald-600/70 pl-3 sm:pl-4">
+                                    <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Subtotal</span>
+                                    <span class="font-bold text-white text-xs sm:text-sm">$<span x-text="getSubtotal().toFixed(2)">0.00</span></span>
+                                </div>
+                                <div x-show="getSubtotal() > 0 && !isTaxExempt" class="border-l border-emerald-600/70 pl-3 sm:pl-4">
+                                    <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Tax (7.5%)</span>
+                                    <span class="font-bold text-white text-xs sm:text-sm">$<span x-text="getTax().toFixed(2)">0.00</span></span>
+                                </div>
+                                <div x-show="getSubtotal() > 0" class="border-l border-emerald-600/70 pl-3 sm:pl-4">
+                                    <span class="text-emerald-200 font-bold uppercase text-[10px] tracking-wider block">Card Fee</span>
+                                    <span class="font-bold text-white text-xs sm:text-sm">$<span x-text="getProcessingFee().toFixed(2)">0.00</span></span>
+                                </div>
+                                <div x-show="getSubtotal() > 0" class="border-l border-emerald-600/70 pl-3 sm:pl-4 bg-emerald-900/70 px-3 py-1 rounded-lg border border-emerald-400/40">
+                                    <span class="text-emerald-200 font-black uppercase text-[10px] tracking-wider block">Total Due</span>
+                                    <span class="font-black text-white text-sm sm:text-base">$<span x-text="getGrandTotal().toFixed(2)">0.00</span></span>
                                 </div>
                             @endif
                         </div>
@@ -886,7 +903,11 @@
                                     :class="(!policyAgreed || Object.values(items).filter(i => i.selected).length === 0) ? 'opacity-50 cursor-not-allowed bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-white text-emerald-900 hover:bg-emerald-50 hover:shadow-xl hover:scale-[1.02] active:scale-95 shadow-lg'"
                                     class="w-full sm:w-auto px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 flex-shrink-0">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                <span>Submit My Order</span>
+                                @if($store->isOnlinePayment())
+                                    <span>Pay with Card</span>
+                                @else
+                                    <span>Submit My Order</span>
+                                @endif
                             </button>
                         </div>
                     </div>

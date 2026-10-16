@@ -94,7 +94,7 @@
                                 </select>
                                 <p class="text-xs text-slate-500 mt-2 leading-relaxed">
                                     <strong>Cash Collection:</strong> Coach collects funds directly from parents; Commission Apparel invoices coach for manufacturing.<br>
-                                    <strong>Online Credit Card Payment:</strong> Enabled post-closure after reviewing MOQ (15 items). Parents visit the store link, view their submitted order at the bottom, and pay via Stripe credit card checkout.<br>
+                                    <strong>Online Credit Card Payment:</strong> Parents pay securely via Stripe credit card checkout upon placing their order.<br>
                                     <strong>Pay by Check (Super Admin Only):</strong> Waives payment requirements for US high schools/programs that issue payment by mail/check after collecting items.
                                 </p>
                             </div>

@@ -664,8 +664,7 @@
                             <input type="radio" name="payment_mode" value="online" class="mt-1 text-primary focus:ring-primary">
                             <div>
                                 <span class="block text-xs font-bold text-slate-900 uppercase tracking-wide">Online Credit Card Payment</span>
-                                <span class="block text-[11px] text-slate-500 mt-1 leading-relaxed">This option is available once your store has closed and the total order is reviewed to ensure the minimum order quantity for each item is met.</span>
-                                <span class="block text-[11px] text-slate-500 mt-1 leading-relaxed">Once enabled, parents can go back to store’s link, click their order at the bottom of the page and make payment at that point.</span>
+                                <span class="block text-[11px] text-slate-500 mt-1 leading-relaxed">Parents pay securely online via Stripe credit card checkout upon placing their order.</span>
                                 <span class="block text-[11px] text-slate-500 mt-1 leading-relaxed">If you’ve marked up your items, proceeds earned from your sale will be sent to you via Intuit Quickbooks direct deposit once funds have cleared.</span>
                             </div>
                         </label>
@@ -1344,8 +1343,7 @@
                                         <input type="radio" name="payment_mode" value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'checked' : '' }} class="mt-0.5 text-primary focus:ring-primary">
                                         <div>
                                             <span class="block text-xs font-bold text-slate-900 uppercase">Online Credit Card Payment</span>
-                                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">This option is available once your store has closed and the total order is reviewed to ensure the minimum order quantity for each item is met.</p>
-                                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Once enabled, parents can go back to store’s link, click their order at the bottom of the page and make payment at that point.</p>
+                                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Parents pay securely online via Stripe credit card checkout upon placing their order.</p>
                                             <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">If you’ve marked up your items, proceeds earned from your sale will be sent to you via Intuit Quickbooks direct deposit once funds have cleared.</p>
                                         </div>
                                     </label>

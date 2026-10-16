@@ -162,7 +162,7 @@ class AdminController extends Controller
         $activeStoresQuery = TeamStore::whereIn('status', ['approved', 'submitted_to_admin'])
             ->where('is_archived', false)
             ->with(['user', 'parentOrders' => function($q) {
-                $q->where('is_archived', false);
+                $q->where('is_archived', false)->where('status', '!=', 'Pending Payment');
             }]);
 
         if ($request->filled('active_store_search')) {
@@ -1078,7 +1078,7 @@ class AdminController extends Controller
     public function editStore(TeamStore $store)
     {
         $store->load(['user', 'items', 'parentOrders' => function($q) {
-            $q->where('is_archived', false);
+            $q->where('is_archived', false)->where('status', '!=', 'Pending Payment');
         }]);
         $financials = \App\Models\ParentOrder::calculateBatchFinancials($store->parentOrders, $store);
         $allDesigns = \App\Models\DesignCatalog::orderBy('sort_order', 'asc')->get();
@@ -1457,7 +1457,7 @@ class AdminController extends Controller
     public function exportOrderCSV(TeamStore $store)
     {
         $store->load(['items', 'parentOrders' => function($q) {
-            $q->where('is_archived', false);
+            $q->where('is_archived', false)->where('status', '!=', 'Pending Payment');
         }]);
         $orders = $store->parentOrders;
 

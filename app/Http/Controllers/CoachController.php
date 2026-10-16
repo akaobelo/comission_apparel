@@ -32,7 +32,7 @@ class CoachController extends Controller
                 $q->orderBy('sort_order', 'asc');
             }, 'items.designCatalog', 'rosters']);
             // Get unbatched orders for the active store roster
-            $store->setRelation('parentOrders', $store->parentOrders()->whereNull('batch_id')->get());
+            $store->setRelation('parentOrders', $store->parentOrders()->whereNull('batch_id')->where('status', '!=', 'Pending Payment')->get());
         }
 
         // Designs assigned to this coach (for item builder)
@@ -350,7 +350,7 @@ class CoachController extends Controller
         if ($store->user_id !== request()->user()->id) abort(403);
 
         $store->load(['items', 'parentOrders' => function($q) {
-            $q->where('is_archived', false);
+            $q->where('is_archived', false)->where('status', '!=', 'Pending Payment');
         }]);
         $orders = $store->parentOrders;
 
@@ -1370,8 +1370,8 @@ class CoachController extends Controller
 
         $message = $twilio->generateReminderMessage($store);
         
-        $orderedPhones = $store->parentOrders()->whereNotNull('parent_phone')->pluck('parent_phone')->toArray();
-        $orderedEmails = $store->parentOrders()->whereNotNull('parent_email')->pluck('parent_email')->toArray();
+        $orderedPhones = $store->parentOrders()->where('status', '!=', 'Pending Payment')->whereNotNull('parent_phone')->pluck('parent_phone')->toArray();
+        $orderedEmails = $store->parentOrders()->where('status', '!=', 'Pending Payment')->whereNotNull('parent_email')->pluck('parent_email')->toArray();
 
         foreach ($store->rosters as $roster) {
             $hasOrdered = false;

@@ -44,7 +44,9 @@ class StoreController extends Controller
             ->with(['items' => function($q) {
                 $q->orderBy('sort_order', 'asc');
             }, 'items.designCatalog', 'parentOrders' => function($q) {
-                $q->whereNull('batch_id')->where('is_archived', false);
+                $q->whereNull('batch_id')
+                  ->where('is_archived', false)
+                  ->where('status', '!=', 'Pending Payment');
             }, 'user'])
             ->firstOrFail();
 
@@ -243,7 +245,7 @@ class StoreController extends Controller
             'special_notes'       => $request->special_notes,
             'edit_pin'            => trim($request->edit_pin),
             'items_json'          => $itemsJson,
-            'status'              => 'Submitted',
+            'status'              => $store->isOnlinePayment() ? 'Pending Payment' : 'Submitted',
             'payment_status'      => $store->isOnlinePayment() ? 'pending' : 'not_applicable',
             'subtotal'            => $subtotal,
             'tax_amount'          => $taxAmount,
@@ -253,6 +255,10 @@ class StoreController extends Controller
             'total_paid'          => $grandTotal,
             'total_retail_price'  => $subtotal,
         ]);
+
+        if ($store->isOnlinePayment()) {
+            return $this->createStripeCheckoutSession($store, $parentOrder);
+        }
 
         // If parent email or phone exists in roster, mark as ordered
         $store->rosters()->where(function($query) use ($request) {
@@ -335,6 +341,16 @@ class StoreController extends Controller
             'total_paid' => $totalPaid,
         ]);
 
+        return $this->createStripeCheckoutSession($store, $order);
+    }
+
+    protected function createStripeCheckoutSession(TeamStore $store, ParentOrder $order)
+    {
+        $fullName = $order->athlete_name;
+        $itemsJson = $order->items_json ?? [];
+        $taxAmount = (float) ($order->tax_amount ?? 0);
+        $feeAmount = (float) ($order->fee_amount ?? 0);
+
         $stripeSecret = config('services.stripe.secret');
 
         if ($stripeSecret) {
@@ -342,7 +358,7 @@ class StoreController extends Controller
                 $stripe = new \Stripe\StripeClient($stripeSecret);
 
                 $lineItems = [];
-                foreach ($refreshedItemsJson as $itemEntry) {
+                foreach ($itemsJson as $itemEntry) {
                     $unitPrice = (float) ($itemEntry['unit_price'] ?? 0);
                     $unitCents = max(50, intval(round($unitPrice * 100)));
                     $lineItems[] = [
@@ -426,6 +442,16 @@ class StoreController extends Controller
                 'paid_at'        => now(),
             ]);
 
+            $parentEmail = trim($order->parent_email);
+            $parentPhone = preg_replace('/[^0-9]/', '', (string)$order->parent_phone);
+            $store->rosters()->where(function($query) use ($parentEmail, $parentPhone) {
+                if ($parentEmail) $query->where('parent_email', $parentEmail);
+                if ($parentPhone) $query->orWhere('parent_phone', $parentPhone);
+            })->update(['has_ordered' => true]);
+
+            $fullName = $order->athlete_name;
+            $store->user->notify(new \App\Notifications\ParentOrderPlaced($fullName, $store->name));
+
             return redirect()->route('store.checkout.success', ['slug' => $store->slug, 'order' => $order->id])
                 ->with('success', 'Order payment confirmed (Stripe Test Simulation)!');
         }
@@ -481,7 +507,7 @@ class StoreController extends Controller
     {
         $store = TeamStore::where('slug', $slug)->firstOrFail();
         return redirect()->route('store.show', $store->slug)
-            ->with('error', 'Online payment was cancelled. You can complete payment at any time by clicking your order at the bottom of the page.');
+            ->with('error', 'Online payment was not completed. Your order has not been placed. You can return and complete checkout whenever you are ready.');
     }
 
     public function orderReceipt($slug, $orderId)
