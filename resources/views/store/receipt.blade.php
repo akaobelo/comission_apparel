@@ -159,9 +159,9 @@
                     @php
                         $store = $order->teamStore;
                         $isExempt = $store ? $store->isTaxExempt() : false;
-                        $receiptSubtotal = (float) ($order->subtotal > 0 ? $order->subtotal : $order->getCalculatedSubtotal($store));
-                        $receiptTax = $isExempt ? 0.00 : (float) ($order->tax_amount > 0 ? $order->tax_amount : round($receiptSubtotal * 0.075, 2));
-                        $receiptTotalDue = $order->total_paid > 0 ? (float) $order->total_paid : round($receiptSubtotal + $receiptTax, 2);
+                        $receiptSubtotal = (float) ($order->isPaid() && $order->subtotal > 0 ? $order->subtotal : $order->getCalculatedSubtotal($store));
+                        $receiptTax = $isExempt ? 0.00 : (float) ($order->isPaid() && $order->tax_amount > 0 ? $order->tax_amount : round($receiptSubtotal * 0.075, 2));
+                        $receiptTotalDue = ($order->isPaid() && $order->total_paid > 0) ? (float) $order->total_paid : round($receiptSubtotal + $receiptTax, 2);
                     @endphp
                     <div class="flex justify-between text-slate-600 font-medium">
                         <span>Subtotal</span>

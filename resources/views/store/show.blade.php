@@ -1484,9 +1484,9 @@
                                                 </div>
                                             @else
                                                 @php
-                                                    $cashOrderSubtotal = (float) ($order->subtotal > 0 ? $order->subtotal : $orderSubtotal);
-                                                    $cashOrderTax = $isTaxExempt ? 0.00 : ((float) ($order->tax_amount > 0 ? $order->tax_amount : round($cashOrderSubtotal * $taxRate, 2)));
-                                                    $cashOrderTotal = $order->total_paid > 0 ? (float) $order->total_paid : round($cashOrderSubtotal + $cashOrderTax, 2);
+                                                    $cashOrderSubtotal = (float) ($order->isPaid() && $order->subtotal > 0 ? $order->subtotal : $orderSubtotal);
+                                                    $cashOrderTax = $isTaxExempt ? 0.00 : ((float) ($order->isPaid() && $order->tax_amount > 0 ? $order->tax_amount : round($cashOrderSubtotal * $taxRate, 2)));
+                                                    $cashOrderTotal = ($order->isPaid() && $order->total_paid > 0) ? (float) $order->total_paid : round($cashOrderSubtotal + $cashOrderTax, 2);
                                                 @endphp
                                                 <div class="mt-5 p-4 rounded-xl bg-slate-50 border border-slate-200">
                                                     <div class="flex items-center justify-between mb-3">

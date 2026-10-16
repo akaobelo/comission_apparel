@@ -915,9 +915,9 @@
                                     $coachTax = 0.0;
                                     $coachTotalToCollect = 0.0;
                                     foreach ($store->parentOrders as $po) {
-                                        $sub = (float) ($po->subtotal > 0 ? $po->subtotal : $po->getCalculatedSubtotal($store));
-                                        $tax = $isExempt ? 0.00 : (float) ($po->tax_amount > 0 ? $po->tax_amount : round($sub * 0.075, 2));
-                                        $tot = $po->total_paid > 0 ? (float) $po->total_paid : round($sub + $tax, 2);
+                                        $sub = (float) ($po->isPaid() && $po->subtotal > 0 ? $po->subtotal : $po->getCalculatedSubtotal($store));
+                                        $tax = $isExempt ? 0.00 : (float) ($po->isPaid() && $po->tax_amount > 0 ? $po->tax_amount : round($sub * 0.075, 2));
+                                        $tot = ($po->isPaid() && $po->total_paid > 0) ? (float) $po->total_paid : round($sub + $tax, 2);
                                         $coachSubtotal += $sub;
                                         $coachTax += $tax;
                                         $coachTotalToCollect += $tot;
@@ -967,9 +967,9 @@
                                             @endif
                                         @else
                                             @php
-                                                $athSubtotal = (float) ($order->subtotal > 0 ? $order->subtotal : $order->getCalculatedSubtotal($store));
-                                                $athTax = $store->isTaxExempt() ? 0.00 : (float) ($order->tax_amount > 0 ? $order->tax_amount : round($athSubtotal * 0.075, 2));
-                                                $athTotal = $order->total_paid > 0 ? (float) $order->total_paid : round($athSubtotal + $athTax, 2);
+                                                $athSubtotal = (float) ($order->isPaid() && $order->subtotal > 0 ? $order->subtotal : $order->getCalculatedSubtotal($store));
+                                                $athTax = $store->isTaxExempt() ? 0.00 : (float) ($order->isPaid() && $order->tax_amount > 0 ? $order->tax_amount : round($athSubtotal * 0.075, 2));
+                                                $athTotal = ($order->isPaid() && $order->total_paid > 0) ? (float) $order->total_paid : round($athSubtotal + $athTax, 2);
                                             @endphp
                                             <div class="text-right">
                                                 <div class="text-[9px] text-slate-500 font-semibold leading-tight">

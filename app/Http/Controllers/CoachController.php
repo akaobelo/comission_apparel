@@ -383,9 +383,22 @@ class CoachController extends Controller
 
             foreach ($orders as $order) {
                 if (is_array($order->items_json)) {
-                    $athleteSubtotal = (float) ($order->subtotal > 0 ? $order->subtotal : $order->getCalculatedSubtotal($store));
-                    $athleteTax = $isExempt ? 0.00 : (float) ($order->tax_amount > 0 ? $order->tax_amount : round($athleteSubtotal * $taxRate, 2));
-                    $athleteTotalToCollect = $order->total_paid > 0 ? (float) $order->total_paid : round($athleteSubtotal + $athleteTax, 2);
+                    if ($order->isPaid() && (float) $order->subtotal > 0) {
+                        $athleteSubtotal = (float) $order->subtotal;
+                        $athleteTax = $isExempt ? 0.00 : (float) ($order->tax_amount > 0 ? $order->tax_amount : round($athleteSubtotal * $taxRate, 2));
+                        $athleteTotalToCollect = $order->total_paid > 0 ? (float) $order->total_paid : round($athleteSubtotal + $athleteTax, 2);
+                    } else {
+                        $athleteSubtotal = (float) $order->getCalculatedSubtotal($store);
+                        $athleteTax = $isExempt ? 0.00 : round($athleteSubtotal * $taxRate, 2);
+                        if ($store->isOnlinePayment() && !$order->isPaid()) {
+                            $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+                            $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+                            $preFee = $athleteSubtotal + $athleteTax;
+                            $athleteTotalToCollect = round(($preFee + $feeFixed) / (1 - $feePercent), 2);
+                        } else {
+                            $athleteTotalToCollect = round($athleteSubtotal + $athleteTax, 2);
+                        }
+                    }
 
                     foreach ($order->items_json as $item) {
                         $typesStr = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
