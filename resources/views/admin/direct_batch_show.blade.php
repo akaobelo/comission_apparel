@@ -131,9 +131,18 @@
                 <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
                     <h3 class="text-sm font-black uppercase tracking-wider text-slate-900">Batch Summary</h3>
                 </div>
-                <div class="p-6 space-y-4">
+                @php
+                    $isOnlinePayment = ($firstOrder->payment_status === 'paid' || $firstOrder->stripe_session_id || ($financials['total_online_paid'] ?? 0) > 0);
+                    $isCheckPayment = ($firstOrder->payment_status === 'not_applicable');
+                    $isTaxExempt = (bool) ($firstOrder->user?->is_tax_exempt);
+                @endphp
+                <div class="p-6 space-y-3">
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Coach</span><span class="font-bold text-slate-900 text-right">{{ $firstOrder->user->first_name ?? 'Unknown' }} {{ $firstOrder->user->last_name ?? '' }}<br><span class="text-xs font-normal text-slate-500">{{ $firstOrder->user->organization ?? '' }}</span></span></div>
-                    <div class="flex justify-between text-sm"><span class="text-slate-500">Submitted</span><span class="font-bold text-slate-900">{{ $firstOrder->created_at->format('M d, Y') }}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Submitted</span><span class="font-bold text-slate-900">{{ $firstOrder->created_at?->format('M d, Y') ?? '—' }}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Payment Mode</span>
+                        <span class="font-bold text-slate-900 uppercase text-xs">{{ $isOnlinePayment ? 'Online (Stripe)' : ($isCheckPayment ? 'Pay by Check' : 'In-House') }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Athletes Ordered</span><span class="font-bold text-slate-900">{{ $orders->count() }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Total Items</span><span class="font-bold text-slate-900">{{ $financials['total_items_sold'] ?? 0 }}</span></div>
                     <div class="flex justify-between text-sm items-center">
                         <span class="text-slate-500">Payment</span>
@@ -142,6 +151,10 @@
                                 <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                 Paid Online
                             </span>
+                        @elseif($isCheckPayment)
+                            <span class="inline-flex items-center gap-1 text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+                                Pay by Check
+                            </span>
                         @else
                             <span class="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
                                 Pending
@@ -149,9 +162,21 @@
                         @endif
                     </div>
                     
-                    <div class="pt-3 mt-3 border-t border-slate-200 space-y-3">
-                        <div class="flex justify-between text-sm"><span class="text-slate-500">Total</span><span class="font-bold text-slate-900">${{ number_format($financials['total_sales'] ?? 0, 2) }}</span></div>
-                        <div class="flex justify-between text-sm"><span class="text-slate-500">Due To TCA</span><span class="font-bold text-secondary">${{ number_format($financials['total_wholesale'] ?? 0, 2) }}</span></div>
+                    <div class="pt-3 mt-3 border-t border-slate-200 space-y-2.5">
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">Total Sales</span><span class="font-bold text-slate-900">${{ number_format($financials['total_sales'] ?? 0, 2) }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">Average order</span><span class="font-bold text-slate-900">${{ number_format($financials['average_order_value'] ?? 0, 2) }}</span></div>
+                        @if($isOnlinePayment)
+                            <div class="flex justify-between text-sm">
+                                <span class="text-slate-500">Sales Tax {{ $isTaxExempt ? '(501(c)(3) Waived)' : '(7.5%)' }}</span>
+                                <span class="font-bold {{ $isTaxExempt ? 'text-blue-700' : 'text-slate-700' }}">${{ number_format($financials['total_tax'] ?? 0, 2) }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm"><span class="text-slate-500">Processing Fee (Stripe)</span><span class="font-bold text-slate-600">${{ number_format($financials['total_fees'] ?? 0, 2) }}</span></div>
+                            <div class="flex justify-between text-sm pt-1 border-t border-slate-100"><span class="font-bold text-emerald-600">Online Payment (Stripe)</span><span class="font-bold text-emerald-600">${{ number_format($financials['total_online_paid'] ?? 0, 2) }}</span></div>
+                        @endif
+                        <div class="flex justify-between text-sm pt-1 border-t border-slate-100"><span class="font-bold text-secondary">Due to TCA</span><span class="font-bold text-secondary">${{ number_format($financials['total_wholesale'] ?? 0, 2) }}</span></div>
+                        @if(($financials['coach_profit_owed'] ?? 0) > 0)
+                            <div class="flex justify-between text-sm pt-1.5 border-t border-slate-100"><span class="text-indigo-900 font-bold">Store Profit Owed</span><span class="font-black text-indigo-600">${{ number_format($financials['coach_profit_owed'], 2) }}</span></div>
+                        @endif
                     </div>
                 </div>
             </div>

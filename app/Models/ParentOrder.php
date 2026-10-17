@@ -189,6 +189,9 @@ class ParentOrder extends Model
         $totalFees = 0;
         $totalOnlinePaid = 0;
 
+        $ordersCollection = collect($orders);
+        $seenReplicatedSessions = [];
+
         foreach ($orders as $order) {
             $orderTotal = 0;
             $orderWholesaleTotal = 0;
@@ -204,9 +207,51 @@ class ParentOrder extends Model
                     $prices = self::getItemPrices($orderedItem, $store);
                     $orderWholesaleTotal += ($prices['wholesale_price'] * $qty);
                 }
-                $orderTax = (float) ($order->tax_amount ?? 0);
-                $orderFees = (float) ($order->fee_amount ?? 0);
-                $orderOnlinePaid = (float) ($order->total_paid ?? 0);
+
+                $sessionId = $order->stripe_session_id;
+                $batchId = $order->batch_id;
+                $sessionKey = $sessionId ?: ($order->team_store_id ? null : ($batchId ? 'batch_' . $batchId : null));
+
+                if ($sessionKey) {
+                    $sharedOrders = $ordersCollection->filter(function($o) use ($sessionId, $batchId) {
+                        return $sessionId 
+                            ? ($o->stripe_session_id === $sessionId) 
+                            : ($o->batch_id === $batchId && !$o->team_store_id);
+                    });
+
+                    if ($sharedOrders->count() > 1) {
+                        $firstPaid = (float) $sharedOrders->first()->total_paid;
+                        $allIdenticalPaid = $sharedOrders->every(fn($o) => abs((float)$o->total_paid - $firstPaid) < 0.01);
+                        $sessionSubtotal = (float) $sharedOrders->sum(fn($o) => (float)($o->subtotal ?? 0));
+
+                        // If all orders in the shared batch/session have identical total_paid >= sessionSubtotal,
+                        // it indicates the batch-level totals were replicated on each order row.
+                        if ($allIdenticalPaid && $firstPaid >= ($sessionSubtotal - 0.01) && $firstPaid > 0) {
+                            if (!in_array($sessionKey, $seenReplicatedSessions)) {
+                                $seenReplicatedSessions[] = $sessionKey;
+                                $orderTax = (float) ($order->tax_amount ?? 0);
+                                $orderFees = (float) ($order->fee_amount ?? 0);
+                                $orderOnlinePaid = (float) ($order->total_paid ?? 0);
+                            } else {
+                                $orderTax = 0.0;
+                                $orderFees = 0.0;
+                                $orderOnlinePaid = 0.0;
+                            }
+                        } else {
+                            $orderTax = (float) ($order->tax_amount ?? 0);
+                            $orderFees = (float) ($order->fee_amount ?? 0);
+                            $orderOnlinePaid = (float) ($order->total_paid ?? 0);
+                        }
+                    } else {
+                        $orderTax = (float) ($order->tax_amount ?? 0);
+                        $orderFees = (float) ($order->fee_amount ?? 0);
+                        $orderOnlinePaid = (float) ($order->total_paid ?? 0);
+                    }
+                } else {
+                    $orderTax = (float) ($order->tax_amount ?? 0);
+                    $orderFees = (float) ($order->fee_amount ?? 0);
+                    $orderOnlinePaid = (float) ($order->total_paid ?? 0);
+                }
             } else {
                 // For UNPAID / PENDING orders: dynamically recalculate from current store item prices
                 foreach ($items as $orderedItem) {

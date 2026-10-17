@@ -1085,12 +1085,35 @@ class CoachController extends Controller
 
                 $session = $stripe->checkout->sessions->create($sessionParams);
 
+                $runningTax = 0.0;
+                $runningFee = 0.0;
+                $runningTotal = 0.0;
+                $orderCount = count($draftOrders);
+                $idx = 0;
+
                 foreach ($draftOrders as $order) {
+                    $idx++;
+                    $orderSubtotal = (float) ($order->subtotal ?? $order->getCalculatedSubtotal());
+                    $ratio = $subtotal > 0 ? ($orderSubtotal / $subtotal) : (1 / $orderCount);
+
+                    if ($idx === $orderCount) {
+                        $orderTax = round($taxAmount - $runningTax, 2);
+                        $orderFee = round($feeAmount - $runningFee, 2);
+                        $orderTotalPaid = round($grandTotal - $runningTotal, 2);
+                    } else {
+                        $orderTax = $isTaxExempt ? 0.00 : round($subtotal > 0 ? ($taxAmount * $ratio) : 0, 2);
+                        $orderFee = round($feeAmount * $ratio, 2);
+                        $orderTotalPaid = round($orderSubtotal + $orderTax + $orderFee, 2);
+                        $runningTax += $orderTax;
+                        $runningFee += $orderFee;
+                        $runningTotal += $orderTotalPaid;
+                    }
+
                     $order->update([
                         'stripe_session_id' => $session->id,
-                        'tax_amount'        => $taxAmount,
-                        'fee_amount'        => $feeAmount,
-                        'total_paid'        => $grandTotal,
+                        'tax_amount'        => $orderTax,
+                        'fee_amount'        => $orderFee,
+                        'total_paid'        => $orderTotalPaid,
                     ]);
                 }
 
