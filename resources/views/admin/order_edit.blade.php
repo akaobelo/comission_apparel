@@ -160,6 +160,99 @@
                 </div>
             </form>
 
+            <!-- Super Admin Financials, Tariffs & Rep Commission Controls -->
+            <div class="mt-10 pt-8 border-t-2 border-slate-200">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-sm font-black uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Financials, Tariffs & Partner Commission Management
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Enter actual manufacturing costs, tariffs, and fee deductions. The system recalculates net margin and rep commission payout.</p>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider border {{ $order->commission_status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($order->commission_status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">
+                        Status: {{ strtoupper($order->commission_status ?? 'pending') }}
+                    </span>
+                </div>
+
+                <form action="{{ route('admin.order.financials.update', $order) }}" method="POST" class="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
+                    @csrf
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Manufacturing Base ($)</label>
+                            <input type="number" step="0.01" min="0" name="manufacturing_cost" value="{{ old('manufacturing_cost', $order->manufacturing_cost) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <span class="text-[10px] text-slate-400">Wholesale cost</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Tariff Amount ($)</label>
+                            <input type="number" step="0.01" min="0" name="tariff_amount" value="{{ old('tariff_amount', $order->tariff_amount) }}" placeholder="e.g. 75.00" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <span class="text-[10px] text-slate-400">Import / freight tariff</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Processing / Fees ($)</label>
+                            <input type="number" step="0.01" min="0" name="fee_deduction" value="{{ old('fee_deduction', $order->fee_deduction) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <span class="text-[10px] text-slate-400">Merchant / extra fees</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Fundraising ($)</label>
+                            <input type="number" step="0.01" min="0" name="fundraising_amount" value="{{ old('fundraising_amount', $order->fundraising_amount) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <span class="text-[10px] text-slate-400">Coach kickback</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-200">
+                        <div>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Attributed Sales Partner</label>
+                            <select name="sales_rep_id" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <option value="">-- No Partner Assigned --</option>
+                                @foreach($salesReps as $rep)
+                                    <option value="{{ $rep->id }}" {{ (old('sales_rep_id', $order->sales_rep_id) == $rep->id) ? 'selected' : '' }}>
+                                        {{ $rep->name }} ({{ number_format($rep->getEffectiveCommissionRate(), 1) }}%)
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Commission Split (%)</label>
+                            <input type="number" step="0.1" min="0" max="100" name="applied_rep_commission_rate" value="{{ old('applied_rep_commission_rate', $order->applied_rep_commission_rate ?? $order->salesRep?->getEffectiveCommissionRate() ?? 50.00) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <span class="text-[10px] text-slate-400">Defaults to partner tier %</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Commission Status</label>
+                            <select name="commission_status" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <option value="pending" {{ old('commission_status', $order->commission_status) === 'pending' ? 'selected' : '' }}>Pending (In Production)</option>
+                                <option value="cleared" {{ old('commission_status', $order->commission_status) === 'cleared' ? 'selected' : '' }}>Cleared (Delivered & Settled)</option>
+                                <option value="paid" {{ old('commission_status', $order->commission_status) === 'paid' ? 'selected' : '' }}>Paid (Disbursed)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Financial Notes / Tariff Details</label>
+                        <input type="text" name="financial_notes" value="{{ old('financial_notes', $order->financial_notes) }}" placeholder="e.g. Freight surcharge on overseas shipment batch #104" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                    </div>
+
+                    <!-- Calculated Summary Banner -->
+                    <div class="p-3 bg-white border border-slate-200 rounded-lg flex items-center justify-between flex-wrap gap-4 text-xs font-mono">
+                        <div>
+                            <span class="text-slate-500">Retail Total:</span>
+                            <strong class="text-slate-900 font-bold">${{ number_format((float)($order->subtotal > 0 ? $order->subtotal : $order->total_retail_price), 2) }}</strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500">Current Net Margin:</span>
+                            <strong class="text-slate-900 font-bold">${{ number_format((float)$order->net_margin, 2) }}</strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500">Rep Payout:</span>
+                            <strong class="text-emerald-600 font-black text-sm">${{ number_format((float)$order->rep_commission_earned, 2) }}</strong>
+                        </div>
+                        <button type="submit" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-black uppercase tracking-wider transition-colors shadow-sm ml-auto">
+                            Update Financials & Tariffs
+                        </button>
+                    </div>
+                </form>
+            </div>
+
             <div class="mt-8 pt-6 border-t border-slate-200 flex justify-end">
                 <form action="{{ route('admin.order.delete', $order) }}" method="POST" onsubmit="return confirm('Are you sure you want to completely delete this order? This cannot be undone.')">
                     @csrf

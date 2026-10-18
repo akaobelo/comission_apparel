@@ -8,6 +8,7 @@ class TeamStore extends Model
 {
     protected $fillable = [
         'user_id',
+        'sales_rep_id',
         'name',
         'sport',
         'description',
@@ -98,6 +99,11 @@ class TeamStore extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function salesRep()
+    {
+        return $this->belongsTo(User::class, 'sales_rep_id');
     }
 
     public function items()

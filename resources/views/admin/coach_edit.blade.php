@@ -65,8 +65,20 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Commission Apparel Rep</label>
-                                <input type="text" name="sales_rep" value="{{ old('sales_rep', $user->sales_rep) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" placeholder="e.g. John Doe">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Commission Apparel Partner / Rep</label>
+                                <div class="space-y-2">
+                                    <select name="sales_rep_id" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                        <option value="">-- Select Registered Sales Partner --</option>
+                                        @if(isset($salesReps))
+                                            @foreach($salesReps as $rep)
+                                                <option value="{{ $rep->id }}" {{ (old('sales_rep_id', $user->sales_rep_id) == $rep->id) ? 'selected' : '' }}>
+                                                    {{ $rep->name }} ({{ number_format($rep->getEffectiveCommissionRate(), 1) }}% Tier Split)
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <input type="text" name="sales_rep" value="{{ old('sales_rep', $user->sales_rep) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-xs text-slate-700 focus:border-primary focus:outline-none shadow-sm" placeholder="Or enter custom partner name">
+                                </div>
                                 @error('sales_rep')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                             </div>
 

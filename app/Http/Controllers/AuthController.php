@@ -43,6 +43,16 @@ class AuthController extends Controller
                 return redirect('/coach/dashboard')->with('activeCoachTab', 'overview');
             }
 
+            if ($user->isSalesRep()) {
+                if ($user->status === 'declined') {
+                    Auth::logout();
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                    return back()->with('error', 'Your sales partner account has been deactivated. Please contact The Commission Apparel.');
+                }
+                return redirect()->route('rep.dashboard');
+            }
+
             return redirect('/');
         }
 
@@ -51,11 +61,12 @@ class AuthController extends Controller
         ])->onlyInput('email');
     }
 
-    public function showRegister()
+    public function showRegister(Request $request)
     {
         $sports = config('sports.categories');
+        $prefilledRep = $request->query('rep');
 
-        return view('auth.register', compact('sports'));
+        return view('auth.register', compact('sports', 'prefilledRep'));
     }
 
     public function register(Request $request)
@@ -84,6 +95,21 @@ class AuthController extends Controller
             $logoPath = \App\Services\ImageOptimizer::optimize($request->file('logo'), 'organization_logos');
         }
 
+        $salesRepUser = null;
+        $salesRepName = trim($validated['sales_rep'] ?? '');
+        if ($salesRepName !== '') {
+            $salesRepUser = User::where('referral_slug', $salesRepName)
+                ->orWhere('id', $salesRepName)
+                ->orWhere(function($sub) use ($salesRepName) {
+                    $parts = explode(' ', $salesRepName, 2);
+                    if (count($parts) === 2) {
+                        $sub->where('first_name', $parts[0])->where('last_name', $parts[1]);
+                    } else {
+                        $sub->where('first_name', $salesRepName)->orWhere('last_name', $salesRepName);
+                    }
+                })->first();
+        }
+
         $user = User::create([
             'first_name'   => $validated['first_name'],
             'last_name'    => $validated['last_name'],
@@ -95,7 +121,8 @@ class AuthController extends Controller
             'logo_path'    => $logoPath,
             'role'         => 'coach',
             'status'       => 'active', // Auto-approved — no admin gate
-            'sales_rep'    => $validated['sales_rep'] ?? null,
+            'sales_rep'    => $salesRepUser ? $salesRepUser->name : $salesRepName,
+            'sales_rep_id' => $salesRepUser ? $salesRepUser->id : null,
         ]);
 
         // Notify admin of new coach registration (for their awareness)

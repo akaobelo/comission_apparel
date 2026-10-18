@@ -7,8 +7,10 @@ use App\Http\Controllers\CoachController;
 use App\Http\Controllers\QuoteRequestController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\SalesRepController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\CoachMiddleware;
+use App\Http\Middleware\SalesRepMiddleware;
 
 // ─── Public UI ──────────────────────────────────────────────────────────────
 Route::get('/', function () { 
@@ -336,6 +338,14 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     Route::post('/coach/direct-order/archive/{batchId}', [CoachController::class, 'archiveDirectOrderBatch'])->name('coach.direct-order.archive');
 });
 
+// ─── Sales Representative / Partner Portal ──────────────────────────────────
+Route::middleware(['auth', SalesRepMiddleware::class])->group(function () {
+    Route::get('/rep/dashboard', [SalesRepController::class, 'dashboard'])->name('rep.dashboard');
+    Route::post('/rep/client', [SalesRepController::class, 'createClient'])->name('rep.client.create');
+    Route::get('/rep/store/{store}/export', [SalesRepController::class, 'exportStoreCSV'])->name('rep.store.export');
+    Route::get('/rep/ledger/export', [SalesRepController::class, 'exportLedgerCSV'])->name('rep.ledger.export');
+});
+
 // ─── Admin Portal ────────────────────────────────────────────────────────────
 Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
@@ -458,6 +468,12 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::put('/admin/sales-agents/{agent}', [AdminController::class, 'updateSalesAgent'])->name('admin.sales-agent.update');
     Route::delete('/admin/sales-agents/{agent}', [AdminController::class, 'deleteSalesAgent'])->name('admin.sales-agent.delete');
     Route::post('/admin/sales-agents/bulk-sort', [AdminController::class, 'bulkSortSalesAgents'])->name('admin.sales-agent.bulk-sort');
+
+    // Sales Reps & Financial Tariffs Admin CRUD
+    Route::post('/admin/sales-reps', [AdminController::class, 'createSalesRepUser'])->name('admin.sales-rep.create');
+    Route::post('/admin/sales-reps/{user}/update', [AdminController::class, 'updateSalesRepUser'])->name('admin.sales-rep.update');
+    Route::post('/admin/order/{order}/financials', [AdminController::class, 'updateOrderFinancials'])->name('admin.order.financials.update');
+    Route::post('/admin/direct-batch/{batch_id}/financials', [AdminController::class, 'updateBatchFinancials'])->name('admin.direct-batch.financials.update');
 });
 Route::post('/coach/store/{store}/blast', [App\Http\Controllers\CoachController::class, 'sendReminderBlast'])->name('coach.store.blast')->middleware(['auth', \App\Http\Middleware\CoachMiddleware::class]);
 Route::delete('/coach/store/{store}/roster/{roster}', [App\Http\Controllers\CoachController::class, 'removeRoster'])->name('coach.store.roster.remove')->middleware(['auth', \App\Http\Middleware\CoachMiddleware::class]);

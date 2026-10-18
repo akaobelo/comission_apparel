@@ -198,6 +198,88 @@
                         @endif
                     </div>
                 </div>
+
+                <!-- Batch Tariffs & Partner Commission Allocation -->
+                <div class="mt-6 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                        <h3 class="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"/></svg>
+                            Tariffs & Partner Split
+                        </h3>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">{{ $orders->count() }} Orders in Batch</span>
+                    </div>
+
+                    @php
+                        $batchMfg = $orders->sum(fn($o) => (float)$o->manufacturing_cost);
+                        if ($batchMfg <= 0) $batchMfg = (float)($financials['total_wholesale'] ?? 0);
+                        $batchTariff = $orders->sum(fn($o) => (float)$o->tariff_amount);
+                        $batchFees = $orders->sum(fn($o) => (float)$o->fee_deduction);
+                        $assignedRepId = $firstOrder->sales_rep_id ?: ($firstOrder->user?->sales_rep_id ?? null);
+                        $currentRep = $assignedRepId ? $salesReps->firstWhere('id', $assignedRepId) : null;
+                        $batchRepEarned = $orders->sum(fn($o) => (float)$o->rep_commission_earned);
+                    @endphp
+
+                    <form action="{{ route('admin.direct-batch.financials.update', $batchId) }}" method="POST" class="p-5 space-y-3.5">
+                        @csrf
+                        <div>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Total Manufacturing Cost ($)</label>
+                            <input type="number" step="0.01" min="0" name="manufacturing_cost" value="{{ old('manufacturing_cost', $batchMfg) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <span class="text-[10px] text-slate-400">Total base cost across all batch items</span>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Batch Tariff Amount ($)</label>
+                            <input type="number" step="0.01" min="0" name="tariff_amount" value="{{ old('tariff_amount', $batchTariff) }}" placeholder="e.g. 75.00" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <span class="text-[10px] text-slate-400">Import / freight tariff allocated to batch</span>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Extra Fee Deductions ($)</label>
+                            <input type="number" step="0.01" min="0" name="fee_deduction" value="{{ old('fee_deduction', $batchFees) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Sales Partner</label>
+                            <select name="sales_rep_id" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <option value="">-- No Partner Assigned --</option>
+                                @foreach($salesReps as $rep)
+                                    <option value="{{ $rep->id }}" {{ ($assignedRepId == $rep->id) ? 'selected' : '' }}>
+                                        {{ $rep->name }} ({{ number_format($rep->getEffectiveCommissionRate(), 1) }}%)
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Split %</label>
+                                <input type="number" step="0.1" min="0" max="100" name="applied_rep_commission_rate" value="{{ old('applied_rep_commission_rate', $firstOrder->applied_rep_commission_rate ?? $currentRep?->getEffectiveCommissionRate() ?? 50.00) }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Status</label>
+                                <select name="commission_status" class="w-full bg-white border border-slate-300 rounded px-2 py-1.5 text-xs font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                    <option value="pending" {{ $firstOrder->commission_status === 'pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="cleared" {{ $firstOrder->commission_status === 'cleared' ? 'selected' : '' }}>Cleared</option>
+                                    <option value="paid" {{ $firstOrder->commission_status === 'paid' ? 'selected' : '' }}>Paid</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Notes</label>
+                            <input type="text" name="financial_notes" value="{{ old('financial_notes', $firstOrder->financial_notes) }}" placeholder="e.g. Schedule A tariff deduction applied" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        </div>
+
+                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded flex justify-between items-center text-xs font-mono">
+                            <span class="text-slate-500">Rep Payout Total:</span>
+                            <span class="font-black text-emerald-600 text-sm">${{ number_format($batchRepEarned, 2) }}</span>
+                        </div>
+
+                        <button type="submit" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-black uppercase tracking-wider transition-colors shadow-sm">
+                            Apply Tariffs & Recalculate Split
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

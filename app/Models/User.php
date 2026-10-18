@@ -30,6 +30,10 @@ class User extends Authenticatable
         'sport',
         'logo_path',
         'sales_rep',
+        'sales_rep_id',
+        'partner_category',
+        'commission_rate',
+        'referral_slug',
         'is_tax_exempt',
     ];
 
@@ -54,12 +58,29 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_tax_exempt' => 'boolean',
+            'commission_rate' => 'decimal:2',
         ];
     }
 
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function isSalesRep(): bool
+    {
+        return in_array($this->role, ['sales_rep', 'partner', 'agent']);
+    }
+
+    public function getEffectiveCommissionRate(): float
+    {
+        return (float) ($this->commission_rate ?? 50.00);
+    }
+
+    public function getReferralUrlAttribute(): string
+    {
+        $slug = $this->referral_slug ?: $this->id;
+        return url('/register?rep=' . $slug);
     }
 
     public function getNameAttribute()
@@ -97,5 +118,29 @@ class User extends Authenticatable
     public function teamStores()
     {
         return $this->hasMany(TeamStore::class);
+    }
+
+    // Coach assigned to a Sales Rep
+    public function assignedSalesRep()
+    {
+        return $this->belongsTo(User::class, 'sales_rep_id');
+    }
+
+    // Sales Rep has many assigned Coaches/Clients
+    public function assignedClients()
+    {
+        return $this->hasMany(User::class, 'sales_rep_id');
+    }
+
+    // Sales Rep stores
+    public function salesRepTeamStores()
+    {
+        return $this->hasMany(TeamStore::class, 'sales_rep_id');
+    }
+
+    // Sales Rep orders
+    public function salesRepOrders()
+    {
+        return $this->hasMany(ParentOrder::class, 'sales_rep_id');
     }
 }

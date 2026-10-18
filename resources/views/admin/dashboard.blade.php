@@ -123,6 +123,9 @@
             <button @click="setTab('stores')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'stores' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Stores & Orders</button>
             <button @click="setTab('total_sales')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'total_sales' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Total Sales</button>
             <button @click="setTab('coaches')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'coaches' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Coaches</button>
+            <button @click="setTab('sales_reps')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'sales_reps' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">
+                Sales Partners ({{ $salesReps->count() }})
+            </button>
             <button @click="setTab('catalog')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'catalog' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Design Catalog</button>
             <button @click="setTab('landing')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'landing' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Landing Page Settings</button>
             <button @click="setTab('news')" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'news' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">News & Stories</button>
@@ -1778,6 +1781,249 @@
                 </div>
             </div>
 
+        </div>
+
+        {{-- ═══ SALES PARTNERS / REPS TAB ═══ --}}
+        <div x-show="activeAdminTab === 'sales_reps'" x-cloak class="space-y-8" x-data="{
+            createRepModal: false,
+            editRepModal: false,
+            activeEditRep: null,
+            openEditRep(rep) {
+                this.activeEditRep = rep;
+                this.editRepModal = true;
+            }
+        }">
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                            Sales Partners & Dealer Network
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">Configure representative commission rates (30%–50%), manage dealer categories, and track multi-client sales performance.</p>
+                    </div>
+                    <button type="button" @click="createRepModal = true" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm whitespace-nowrap">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                        + Add Sales Partner
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-3.5">Partner Name / Email</th>
+                                <th class="px-6 py-3.5">Category Tier</th>
+                                <th class="px-6 py-3.5 text-center">Commission Split</th>
+                                <th class="px-6 py-3.5 text-center">Clients</th>
+                                <th class="px-6 py-3.5 text-center">Stores</th>
+                                <th class="px-6 py-3.5 text-right">Commission Earned</th>
+                                <th class="px-6 py-3.5 text-center">Status</th>
+                                <th class="px-6 py-3.5 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($salesReps as $rep)
+                                @php
+                                    $repOrders = $rep->salesRepOrders ?? collect();
+                                    $totalEarned = $repOrders->sum(fn($o) => (float)$o->rep_commission_earned);
+                                    $pendingEarned = $repOrders->where('commission_status', 'pending')->sum(fn($o) => (float)$o->rep_commission_earned);
+                                @endphp
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="font-bold text-slate-900">{{ $rep->name }}</div>
+                                        <div class="text-xs text-slate-500 font-mono">{{ $rep->email }} @if($rep->phone) · {{ $rep->phone }} @endif</div>
+                                        <div class="text-[10px] text-slate-400 mt-0.5">Slug: <code class="text-primary font-bold">{{ $rep->referral_slug ?: $rep->id }}</code></div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-full border
+                                            {{ $rep->partner_category === 'established_business' ? 'bg-purple-50 text-purple-800 border-purple-200' : ($rep->partner_category === 'authorized_business' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-slate-100 text-slate-700 border-slate-200') }}">
+                                            {{ $rep->partner_category ? str_replace('_', ' ', $rep->partner_category) : 'Sales Rep' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="font-mono font-black text-slate-900 text-sm bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
+                                            {{ number_format($rep->getEffectiveCommissionRate(), 1) }}%
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $rep->assigned_clients_count }}</td>
+                                    <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $rep->sales_rep_team_stores_count }}</td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="font-mono font-black text-emerald-600 text-sm">${{ number_format($totalEarned, 2) }}</div>
+                                        <div class="text-[10px] text-slate-400">${{ number_format($pendingEarned, 2) }} pending</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full border
+                                            {{ $rep->status === 'active' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200' }}">
+                                            {{ $rep->status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <button type="button" @click="openEditRep({
+                                            id: {{ $rep->id }},
+                                            first_name: '{{ addslashes($rep->first_name) }}',
+                                            last_name: '{{ addslashes($rep->last_name) }}',
+                                            email: '{{ addslashes($rep->email) }}',
+                                            phone: '{{ addslashes($rep->phone ?? '') }}',
+                                            partner_category: '{{ $rep->partner_category ?? 'independent_sales' }}',
+                                            commission_rate: {{ $rep->commission_rate ?? 50.00 }},
+                                            referral_slug: '{{ addslashes($rep->referral_slug ?? '') }}',
+                                            status: '{{ $rep->status ?? 'active' }}',
+                                            updateUrl: '{{ route('admin.sales-rep.update', $rep) }}'
+                                        })" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider transition-colors border border-slate-300">
+                                            Edit Rate / Tier
+                                        </button>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="px-6 py-12 text-center text-slate-500">
+                                        <p class="font-bold text-base text-slate-700 mb-1">No sales partners registered yet</p>
+                                        <p class="text-xs text-slate-400">Click "+ Add Sales Partner" above to create an account for Marcus or any of your 4 representatives.</p>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MODAL: CREATE SALES REP -->
+            <div x-show="createRepModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;" x-cloak>
+                <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden" @click.outside="createRepModal = false">
+                    <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                        <h3 class="text-base font-black uppercase tracking-tight text-slate-900">Add Sales Representative / Partner</h3>
+                        <button type="button" @click="createRepModal = false" class="text-slate-400 hover:text-slate-700 text-2xl font-black">&times;</button>
+                    </div>
+                    <form action="{{ route('admin.sales-rep.create') }}" method="POST" class="p-6 space-y-4">
+                        @csrf
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">First Name *</label>
+                                <input type="text" name="first_name" required class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Last Name *</label>
+                                <input type="text" name="last_name" required class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Email (Login Username) *</label>
+                            <input type="email" name="email" required placeholder="rep@speedcapital.com" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Phone</label>
+                                <input type="text" name="phone" placeholder="e.g. (813) 000-0000" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Initial Password *</label>
+                                <input type="password" name="password" required minlength="8" placeholder="Min 8 characters" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Agreement Category *</label>
+                                <select name="partner_category" required class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                    <option value="independent_sales">Independent Sales (30%)</option>
+                                    <option value="authorized_business">Authorized Business (40%)</option>
+                                    <option value="established_business" selected>Approved Established (50%)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Commission Rate (%) *</label>
+                                <input type="number" step="0.1" min="0" max="100" name="commission_rate" value="50.0" required class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Referral Link Slug (Optional)</label>
+                            <input type="text" name="referral_slug" placeholder="e.g. marcus (leave blank to auto-generate)" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <span class="text-[10px] text-slate-400">Used for commissionapparel.com/register?rep=[slug]</span>
+                        </div>
+
+                        <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                            <button type="button" @click="createRepModal = false" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-xs font-bold uppercase hover:bg-slate-50">Cancel</button>
+                            <button type="submit" class="px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider shadow-sm">Save Partner</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- MODAL: EDIT SALES REP -->
+            <div x-show="editRepModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;" x-cloak>
+                <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden" @click.outside="editRepModal = false">
+                    <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                        <h3 class="text-base font-black uppercase tracking-tight text-slate-900">Edit Sales Partner & Rate</h3>
+                        <button type="button" @click="editRepModal = false" class="text-slate-400 hover:text-slate-700 text-2xl font-black">&times;</button>
+                    </div>
+                    <form :action="activeEditRep ? activeEditRep.updateUrl : '#'" method="POST" class="p-6 space-y-4">
+                        @csrf
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">First Name *</label>
+                                <input type="text" name="first_name" :value="activeEditRep?.first_name" required class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Last Name *</label>
+                                <input type="text" name="last_name" :value="activeEditRep?.last_name" required class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Email *</label>
+                            <input type="email" name="email" :value="activeEditRep?.email" required class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Phone</label>
+                                <input type="text" name="phone" :value="activeEditRep?.phone" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Status *</label>
+                                <select name="status" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                    <option value="active" :selected="activeEditRep?.status === 'active'">Active</option>
+                                    <option value="declined" :selected="activeEditRep?.status === 'declined'">Deactivated / Declined</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Agreement Category *</label>
+                                <select name="partner_category" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                    <option value="independent_sales" :selected="activeEditRep?.partner_category === 'independent_sales'">Independent Sales (30%)</option>
+                                    <option value="authorized_business" :selected="activeEditRep?.partner_category === 'authorized_business'">Authorized Business (40%)</option>
+                                    <option value="established_business" :selected="activeEditRep?.partner_category === 'established_business'">Approved Established (50%)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Commission Split (%) *</label>
+                                <input type="number" step="0.1" min="0" max="100" name="commission_rate" :value="activeEditRep?.commission_rate" required class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Referral Slug</label>
+                            <input type="text" name="referral_slug" :value="activeEditRep?.referral_slug" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Change Password (Leave blank to keep)</label>
+                            <input type="password" name="password" minlength="8" placeholder="New password" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        </div>
+
+                        <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                            <button type="button" @click="editRepModal = false" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-xs font-bold uppercase hover:bg-slate-50">Cancel</button>
+                            <button type="submit" class="px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider shadow-sm">Update Partner</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
         {{-- ═══ DESIGN CATALOG TAB ═══ --}}

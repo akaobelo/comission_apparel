@@ -413,12 +413,17 @@ class AdminController extends Controller
 
         $newsArticles = NewsArticle::orderBy('sort_order', 'asc')->orderBy('published_at', 'desc')->get();
         $landingSettings = SiteSetting::all()->pluck('value', 'key');
+        
+        $salesReps = User::whereIn('role', ['sales_rep', 'partner', 'agent'])
+            ->withCount(['assignedClients', 'salesRepTeamStores', 'salesRepOrders'])
+            ->with(['salesRepOrders'])
+            ->get();
 
         return view('admin.dashboard', compact(
             'coaches', 'pendingStores', 'finalizedStoreBatches', 'finalizedStoreBatchesPaginator',
             'unassignedDesigns', 'allCollections', 'productionStores', 'quoteRequests', 'quoteRequestsTotal', 'newQuoteRequestsCount', 'landingCollections', 'allStores', 'allCoaches',
             'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'finalizedDirectBatchesPaginator', 'archivedOrderBatches', 'globalSalesSummary', 'archivedBatchesPaginator',
-            'salesAgents', 'newsArticles', 'landingSettings'
+            'salesAgents', 'newsArticles', 'landingSettings', 'salesReps'
         ));
     }
 
@@ -432,7 +437,8 @@ class AdminController extends Controller
             ->orderByDesc('id')
             ->get();
         $assignedDesignIds = $user->designCatalog()->pluck('design_catalog_id')->toArray();
-        return view('admin.coach_edit', compact('user', 'designCatalog', 'assignedDesignIds'));
+        $salesReps = User::whereIn('role', ['sales_rep', 'partner', 'agent'])->get();
+        return view('admin.coach_edit', compact('user', 'designCatalog', 'assignedDesignIds', 'salesReps'));
     }
 
     public function updateCoach(Request $request, User $user)
@@ -448,10 +454,35 @@ class AdminController extends Controller
             'sport'        => ['required', 'string', 'max:100'],
             'status'       => ['required', 'in:active,declined'],
             'sales_rep'    => ['nullable', 'string', 'max:255'],
+            'sales_rep_id' => ['nullable', 'exists:users,id'],
             'is_tax_exempt'=> ['nullable', 'boolean'],
         ]);
 
         $validated['is_tax_exempt'] = $request->boolean('is_tax_exempt');
+
+        if ($request->filled('sales_rep_id')) {
+            $rep = User::find($request->sales_rep_id);
+            if ($rep) {
+                $validated['sales_rep_id'] = $rep->id;
+                $validated['sales_rep'] = $rep->name;
+            }
+        } elseif ($request->filled('sales_rep')) {
+            $repName = trim($request->sales_rep);
+            $rep = User::where('referral_slug', $repName)
+                ->orWhere('id', $repName)
+                ->orWhere(function($sub) use ($repName) {
+                    $parts = explode(' ', $repName, 2);
+                    if (count($parts) === 2) {
+                        $sub->where('first_name', $parts[0])->where('last_name', $parts[1]);
+                    } else {
+                        $sub->where('first_name', $repName)->orWhere('last_name', $repName);
+                    }
+                })->first();
+            $validated['sales_rep_id'] = $rep?->id;
+        } else {
+            $validated['sales_rep_id'] = null;
+            $validated['sales_rep'] = null;
+        }
 
         $user->update($validated);
 
@@ -513,6 +544,152 @@ class AdminController extends Controller
         return response($csv)
             ->header('Content-Type', 'text/csv')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    // ─── SALES REP & PARTNER MANAGEMENT ──────────────────────────────────────────
+
+    public function createSalesRepUser(Request $request)
+    {
+        $validated = $request->validate([
+            'first_name'       => ['required', 'string', 'max:255'],
+            'last_name'        => ['required', 'string', 'max:255'],
+            'email'            => ['required', 'email', 'max:255', 'unique:users'],
+            'password'         => ['required', 'string', 'min:8'],
+            'phone'            => ['nullable', 'string', 'max:20'],
+            'partner_category' => ['required', 'string', 'in:independent_sales,authorized_business,established_business'],
+            'commission_rate'  => ['required', 'numeric', 'min:0', 'max:100'],
+            'referral_slug'    => ['nullable', 'string', 'alpha_dash', 'max:50', 'unique:users,referral_slug'],
+        ]);
+
+        $slug = $validated['referral_slug'] ?: \Illuminate\Support\Str::slug($validated['first_name'] . '-' . $validated['last_name']);
+        // Ensure uniqueness if auto-generated
+        $originalSlug = $slug;
+        $counter = 1;
+        while (User::where('referral_slug', $slug)->exists()) {
+            $slug = "{$originalSlug}-{$counter}";
+            $counter++;
+        }
+
+        $rep = User::create([
+            'first_name'       => $validated['first_name'],
+            'last_name'        => $validated['last_name'],
+            'email'            => strtolower($validated['email']),
+            'password'         => \Illuminate\Support\Facades\Hash::make($validated['password']),
+            'phone'            => $validated['phone'] ?? '',
+            'organization'     => 'Sales Partner',
+            'sport'            => 'General',
+            'role'             => 'sales_rep',
+            'status'           => 'active',
+            'partner_category' => $validated['partner_category'],
+            'commission_rate'  => $validated['commission_rate'],
+            'referral_slug'    => $slug,
+        ]);
+
+        return redirect()->back()->with('success', "Sales Partner {$rep->name} successfully registered at {$rep->commission_rate}% commission rate.");
+    }
+
+    public function updateSalesRepUser(Request $request, User $user)
+    {
+        if (!$user->isSalesRep()) abort(404);
+
+        $validated = $request->validate([
+            'first_name'       => ['required', 'string', 'max:255'],
+            'last_name'        => ['required', 'string', 'max:255'],
+            'email'            => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'phone'            => ['nullable', 'string', 'max:20'],
+            'partner_category' => ['required', 'string', 'in:independent_sales,authorized_business,established_business'],
+            'commission_rate'  => ['required', 'numeric', 'min:0', 'max:100'],
+            'referral_slug'    => ['nullable', 'string', 'alpha_dash', 'max:50', 'unique:users,referral_slug,' . $user->id],
+            'status'           => ['required', 'in:active,declined'],
+            'password'         => ['nullable', 'string', 'min:8'],
+        ]);
+
+        if (!empty($validated['password'])) {
+            $validated['password'] = \Illuminate\Support\Facades\Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
+        }
+
+        $user->update($validated);
+
+        return redirect()->back()->with('success', "Sales Partner {$user->name} updated successfully.");
+    }
+
+    public function updateOrderFinancials(Request $request, ParentOrder $order)
+    {
+        $validated = $request->validate([
+            'manufacturing_cost'          => ['nullable', 'numeric', 'min:0'],
+            'tariff_amount'               => ['nullable', 'numeric', 'min:0'],
+            'fee_deduction'               => ['nullable', 'numeric', 'min:0'],
+            'fundraising_amount'          => ['nullable', 'numeric', 'min:0'],
+            'sales_rep_id'                => ['nullable', 'exists:users,id'],
+            'applied_rep_commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'commission_status'           => ['required', 'in:pending,cleared,paid'],
+            'financial_notes'             => ['nullable', 'string'],
+        ]);
+
+        $order->manufacturing_cost = (float) ($validated['manufacturing_cost'] ?? 0);
+        $order->tariff_amount = (float) ($validated['tariff_amount'] ?? 0);
+        $order->fee_deduction = (float) ($validated['fee_deduction'] ?? 0);
+        $order->fundraising_amount = (float) ($validated['fundraising_amount'] ?? 0);
+        $order->commission_status = $validated['commission_status'];
+        $order->financial_notes = $validated['financial_notes'] ?? null;
+
+        if ($request->filled('sales_rep_id')) {
+            $order->sales_rep_id = $request->sales_rep_id;
+        }
+
+        if ($order->commission_status === 'paid' && !$order->paid_to_rep_at) {
+            $order->paid_to_rep_at = now();
+        }
+
+        $rateOverride = $validated['applied_rep_commission_rate'] !== null ? (float)$validated['applied_rep_commission_rate'] : null;
+        $order->calculateAndApplyCommission($rateOverride);
+        $order->save();
+
+        return redirect()->back()->with('success', "Order #{$order->id} financials, tariffs, and rep commission updated.");
+    }
+
+    public function updateBatchFinancials(Request $request, $batchId)
+    {
+        $validated = $request->validate([
+            'manufacturing_cost'          => ['nullable', 'numeric', 'min:0'],
+            'tariff_amount'               => ['nullable', 'numeric', 'min:0'],
+            'fee_deduction'               => ['nullable', 'numeric', 'min:0'],
+            'sales_rep_id'                => ['nullable', 'exists:users,id'],
+            'applied_rep_commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'commission_status'           => ['required', 'in:pending,cleared,paid'],
+            'financial_notes'             => ['nullable', 'string'],
+        ]);
+
+        $orders = ParentOrder::where('batch_id', $batchId)->where('status', '!=', 'Draft')->get();
+        if ($orders->isEmpty()) {
+            return redirect()->back()->with('error', 'No orders found in this batch.');
+        }
+
+        $count = $orders->count();
+        $mfgPerOrder = (float) ($validated['manufacturing_cost'] ?? 0) / $count;
+        $tariffPerOrder = (float) ($validated['tariff_amount'] ?? 0) / $count;
+        $feePerOrder = (float) ($validated['fee_deduction'] ?? 0) / $count;
+
+        foreach ($orders as $order) {
+            $order->manufacturing_cost = round($mfgPerOrder, 2);
+            $order->tariff_amount = round($tariffPerOrder, 2);
+            $order->fee_deduction = round($feePerOrder, 2);
+            $order->commission_status = $validated['commission_status'];
+            $order->financial_notes = $validated['financial_notes'] ?? null;
+            if ($request->filled('sales_rep_id')) {
+                $order->sales_rep_id = $request->sales_rep_id;
+            }
+            if ($order->commission_status === 'paid' && !$order->paid_to_rep_at) {
+                $order->paid_to_rep_at = now();
+            }
+            $rateOverride = $validated['applied_rep_commission_rate'] !== null ? (float)$validated['applied_rep_commission_rate'] : null;
+            $order->calculateAndApplyCommission($rateOverride);
+            $order->save();
+        }
+
+        return redirect()->back()->with('success', "Batch {$batchId} updated with tariffs and recalculated rep commissions across {$count} orders.");
     }
 
     // ─── DESIGN CATALOG MANAGEMENT ───────────────────────────────────────────────
@@ -1343,8 +1520,9 @@ class AdminController extends Controller
         $firstOrder = $orders->first();
         $coach = $firstOrder?->user;
         $coachStores = $coach ? $coach->teamStores : collect();
+        $salesReps = User::whereIn('role', ['sales_rep', 'partner', 'agent'])->get();
 
-        return view('admin.direct_batch_show', compact('batchId', 'orders', 'financials', 'firstOrder', 'coachStores', 'store'));
+        return view('admin.direct_batch_show', compact('batchId', 'orders', 'financials', 'firstOrder', 'coachStores', 'store', 'salesReps'));
     }
 
     public function updateDirectBatchStore(Request $request, $batchId)
@@ -1401,9 +1579,10 @@ class AdminController extends Controller
 
     public function editOrder(ParentOrder $order)
     {
-        $order->load('teamStore.user');
+        $order->load(['teamStore.user', 'salesRep']);
         $sizeChart = DesignCatalog::sizeChart();
-        return view('admin.order_edit', compact('order', 'sizeChart'));
+        $salesReps = User::whereIn('role', ['sales_rep', 'partner', 'agent'])->get();
+        return view('admin.order_edit', compact('order', 'sizeChart', 'salesReps'));
     }
 
     public function updateOrder(Request $request, ParentOrder $order)

@@ -40,9 +40,20 @@ class ParentOrder extends Model
         'stripe_payment_intent_id',
         'paid_at',
         'user_id',
+        'sales_rep_id',
         'batch_id',
         'order_type',
         'is_archived',
+        'manufacturing_cost',
+        'tariff_amount',
+        'fee_deduction',
+        'fundraising_amount',
+        'net_margin',
+        'applied_rep_commission_rate',
+        'rep_commission_earned',
+        'commission_status',
+        'paid_to_rep_at',
+        'financial_notes',
     ];
 
     public function isDirectOrder(): bool
@@ -108,6 +119,14 @@ class ParentOrder extends Model
         'total_paid'      => 'decimal:2',
         'paid_at'         => 'datetime',
         'is_archived' => 'boolean',
+        'manufacturing_cost' => 'decimal:2',
+        'tariff_amount'      => 'decimal:2',
+        'fee_deduction'      => 'decimal:2',
+        'fundraising_amount' => 'decimal:2',
+        'net_margin'         => 'decimal:2',
+        'applied_rep_commission_rate' => 'decimal:2',
+        'rep_commission_earned'       => 'decimal:2',
+        'paid_to_rep_at'     => 'datetime',
     ];
 
     public function teamStore()
@@ -118,6 +137,44 @@ class ParentOrder extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function salesRep()
+    {
+        return $this->belongsTo(User::class, 'sales_rep_id');
+    }
+
+    /**
+     * Compute Net Margin and Rep Commission Payout
+     * Formula:
+     * Qualifying Sales = Subtotal / Total Paid (excluding taxes)
+     * Net Margin = max(0, Qualifying Sales - (Manufacturing Cost + Tariff + Fee Deductions + Fundraising))
+     * Rep Payout = Net Margin * (Rep Commission Rate / 100)
+     */
+    public function calculateAndApplyCommission(?float $rateOverride = null): void
+    {
+        $sales = (float) ($this->subtotal > 0 ? $this->subtotal : $this->total_retail_price);
+        $mfg = (float) $this->manufacturing_cost;
+        $tariff = (float) $this->tariff_amount;
+        $fee = (float) $this->fee_deduction;
+        $fundraising = (float) $this->fundraising_amount;
+
+        $netMargin = max(0.0, $sales - ($mfg + $tariff + $fee + $fundraising));
+        $this->net_margin = round($netMargin, 2);
+
+        $rate = $rateOverride;
+        if ($rate === null) {
+            if ($this->applied_rep_commission_rate !== null) {
+                $rate = (float) $this->applied_rep_commission_rate;
+            } elseif ($this->salesRep) {
+                $rate = $this->salesRep->getEffectiveCommissionRate();
+            } else {
+                $rate = 50.00;
+            }
+        }
+
+        $this->applied_rep_commission_rate = round($rate, 2);
+        $this->rep_commission_earned = round($netMargin * ($rate / 100.0), 2);
     }
 
     protected static function initDesignsCache()

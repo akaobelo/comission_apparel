@@ -76,12 +76,37 @@
                 <a href="{{ route('our-team') }}" class="text-white hover:text-secondary transition-colors">Our Team</a>
                 <a href="/quote" class="text-white hover:text-secondary transition-colors">Request A Quote</a>
                 <div class="h-6 w-px bg-slate-700"></div>
-                <a href="/coach/dashboard" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
-                    <span class="relative z-10 flex items-center gap-2">
-                        <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
-                        Dashboard Sign-in
-                    </span>
-                </a>
+                @auth
+                    @if(auth()->user()->isAdmin())
+                        <a href="{{ route('admin.dashboard') }}" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
+                            <span class="relative z-10 flex items-center gap-2">
+                                <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
+                                Admin Portal
+                            </span>
+                        </a>
+                    @elseif(auth()->user()->isSalesRep())
+                        <a href="{{ route('rep.dashboard') }}" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
+                            <span class="relative z-10 flex items-center gap-2">
+                                <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
+                                Partner Portal
+                            </span>
+                        </a>
+                    @else
+                        <a href="/coach/dashboard" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
+                            <span class="relative z-10 flex items-center gap-2">
+                                <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
+                                Coach Dashboard
+                            </span>
+                        </a>
+                    @endif
+                @else
+                    <a href="/login" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
+                        <span class="relative z-10 flex items-center gap-2">
+                            <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
+                            Dashboard Sign-in
+                        </span>
+                    </a>
+                @endauth
             </nav>
 
             <!-- Mobile Menu Button -->
