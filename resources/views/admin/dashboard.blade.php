@@ -119,28 +119,66 @@
     </div>
 
     {{-- Admin Navigation Tabs --}}
-    <div class="bg-white border border-slate-200 rounded-xl px-6 pt-4 mb-8 shadow-sm">
-        <div class="flex flex-wrap items-center gap-x-8 gap-y-2 pb-1 scrollbar-hide">
-            <button @click="setTab('stores')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'stores' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Stores & Orders</button>
-            <button @click="setTab('total_sales')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'total_sales' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Total Sales</button>
-            <button @click="setTab('coaches')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'coaches' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Coaches</button>
-            <button @click="setTab('catalog')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'catalog' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Design Catalog</button>
-            <button @click="setTab('landing')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'landing' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Landing Page Settings</button>
-            <button @click="setTab('news')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'news' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">News & Stories</button>
-            <button @click="setTab('testimonials')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'testimonials' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Testimonials</button>
-            <button @click="setTab('sizing_charts')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'sizing_charts' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Sizing Charts</button>
-            <button @click="setTab('sales_agents')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'sales_agents' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Sales Agents</button>
-            <button @click="setTab('campaigns')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'campaigns' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Campaign Stores</button>
-            <button @click="setTab('security')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'security' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Security Logs</button>
-            <button @click="setTab('active_team_stores')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'active_team_stores' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Active Team Stores</button>
-            <button @click="setTab('quote_inquiries')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'quote_inquiries' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">
+    <div class="bg-white border border-slate-200 rounded-xl px-6 pt-4 pb-4 mb-8 shadow-sm">
+        {{-- Primary Navigation --}}
+        <div class="flex overflow-x-auto items-center gap-6 md:gap-8 pb-3 border-b border-slate-100 scrollbar-hide text-sm">
+            <button @click="setTab('stores')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="['stores', 'active_team_stores', 'quote_inquiries', 'finalized_master_orders', 'finalized_direct_orders'].includes(activeAdminTab) ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Stores & Orders</button>
+            <button @click="setTab('total_sales')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'total_sales' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Total Sales</button>
+            <button @click="setTab('coaches')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'coaches' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Coaches</button>
+            <button @click="setTab('catalog')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'catalog' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Design Catalog</button>
+            <button @click="setTab('landing')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'landing' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Landing Page Settings</button>
+            <button @click="setTab('news')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'news' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">News & Stories</button>
+            <button @click="setTab('testimonials')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'testimonials' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Testimonials</button>
+            <button @click="setTab('sizing_charts')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'sizing_charts' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Sizing Charts</button>
+            <button @click="setTab('sales_agents')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'sales_agents' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Sales Agents</button>
+            <button @click="setTab('campaigns')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'campaigns' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Campaign Stores</button>
+            <button @click="setTab('security')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'security' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Security Logs</button>
+        </div>
+
+        {{-- Sub-Navigation (Stores & Orders Dedicated Workspaces) --}}
+        <div x-show="['stores', 'active_team_stores', 'quote_inquiries', 'finalized_master_orders', 'finalized_direct_orders'].includes(activeAdminTab)" 
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0 -translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             class="pt-3 flex flex-wrap items-center gap-2">
+            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 mr-1 flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                View Mode:
+            </span>
+            <button @click="setTab('stores')" 
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 shadow-sm"
+                    :class="activeAdminTab === 'stores' ? 'bg-secondary text-white shadow-secondary/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                Snapshot Overview
+            </button>
+            <button @click="setTab('active_team_stores')" 
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 shadow-sm"
+                    :class="activeAdminTab === 'active_team_stores' ? 'bg-secondary text-white shadow-secondary/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'">
+                Active Stores
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-black" :class="activeAdminTab === 'active_team_stores' ? 'bg-white/20 text-white' : 'bg-green-100 text-green-800'">{{ $productionStores->count() }}</span>
+            </button>
+            <button @click="setTab('quote_inquiries')" 
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 shadow-sm"
+                    :class="activeAdminTab === 'quote_inquiries' ? 'bg-secondary text-white shadow-secondary/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'">
                 Quote Inquiries
                 @if($newQuoteRequestsCount > 0)
-                    <span class="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-blue-500 text-white">{{ $newQuoteRequestsCount }}</span>
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-black" :class="activeAdminTab === 'quote_inquiries' ? 'bg-white text-secondary' : 'bg-blue-600 text-white'">{{ $newQuoteRequestsCount }}</span>
+                @else
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-black" :class="activeAdminTab === 'quote_inquiries' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'">{{ $quoteRequestsTotal }}</span>
                 @endif
             </button>
-            <button @click="setTab('finalized_master_orders')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'finalized_master_orders' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Finalized Master Orders</button>
-            <button @click="setTab('finalized_direct_orders')" class="pb-3 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'finalized_direct_orders' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Finalized Direct Orders</button>
+            <button @click="setTab('finalized_master_orders')" 
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 shadow-sm"
+                    :class="activeAdminTab === 'finalized_master_orders' ? 'bg-secondary text-white shadow-secondary/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'">
+                Finalized Master Orders
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-black" :class="activeAdminTab === 'finalized_master_orders' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'">{{ isset($finalizedStoreBatchesPaginator) ? $finalizedStoreBatchesPaginator->total() : $finalizedStoreBatches->count() }}</span>
+            </button>
+            <button @click="setTab('finalized_direct_orders')" 
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 shadow-sm"
+                    :class="activeAdminTab === 'finalized_direct_orders' ? 'bg-secondary text-white shadow-secondary/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'">
+                Finalized Direct Orders
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-black" :class="activeAdminTab === 'finalized_direct_orders' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-800'">{{ isset($finalizedDirectBatchesPaginator) ? $finalizedDirectBatchesPaginator->total() : $finalizedDirectOrderBatches->count() }}</span>
+            </button>
         </div>
     </div>
 
