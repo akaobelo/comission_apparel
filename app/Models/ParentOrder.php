@@ -41,8 +41,19 @@ class ParentOrder extends Model
         'paid_at',
         'user_id',
         'batch_id',
+        'order_type',
         'is_archived',
     ];
+
+    public function isDirectOrder(): bool
+    {
+        return ($this->order_type ?? '') === 'direct' || is_null($this->team_store_id);
+    }
+
+    public function isMasterOrder(): bool
+    {
+        return !$this->isDirectOrder();
+    }
 
     public function isPaid(): bool
     {
@@ -210,13 +221,13 @@ class ParentOrder extends Model
 
                 $sessionId = $order->stripe_session_id;
                 $batchId = $order->batch_id;
-                $sessionKey = $sessionId ?: ($order->team_store_id ? null : ($batchId ? 'batch_' . $batchId : null));
+                $sessionKey = $sessionId ?: ($order->isDirectOrder() && $batchId ? 'batch_' . $batchId : null);
 
                 if ($sessionKey) {
                     $sharedOrders = $ordersCollection->filter(function($o) use ($sessionId, $batchId) {
                         return $sessionId 
                             ? ($o->stripe_session_id === $sessionId) 
-                            : ($o->batch_id === $batchId && !$o->team_store_id);
+                            : ($o->batch_id === $batchId && $o->isDirectOrder());
                     });
 
                     if ($sharedOrders->count() > 1) {

@@ -104,6 +104,7 @@ class AdminController extends Controller
 
         // Finalized store batches paginated by batch_id
         $finalizedStoreBatchQuery = ParentOrder::whereNotNull('team_store_id')
+            ->where('order_type', '!=', 'direct')
             ->whereNotNull('batch_id')
             ->where('status', '!=', 'Pending')
             ->where('is_archived', false)
@@ -179,7 +180,10 @@ class AdminController extends Controller
         $productionStores = $activeStoresQuery->orderBy('sort_order', 'asc')->orderByDesc('created_at')->orderByDesc('id')->get();
 
         // Finalized direct orders paginated by batch_id
-        $finalizedDirectBatchQuery = ParentOrder::whereNull('team_store_id')
+        $finalizedDirectBatchQuery = ParentOrder::where(function($q) {
+                $q->where('order_type', 'direct')
+                  ->orWhereNull('team_store_id');
+            })
             ->whereNotNull('batch_id')
             ->whereNotIn('status', ['Pending', 'Draft'])
             ->where('is_archived', false)
@@ -192,7 +196,7 @@ class AdminController extends Controller
             ->withQueryString();
 
         $finalizedDirectOrderBatches = ParentOrder::whereIn('batch_id', $finalizedDirectBatchIds->pluck('batch_id'))
-            ->with('user')
+            ->with(['user', 'teamStore'])
             ->get()
             ->groupBy('batch_id');
 
@@ -201,7 +205,8 @@ class AdminController extends Controller
                 return $directBatchIdOrder[$batchId] ?? 999999;
             })
             ->map(function ($orders) {
-                $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, null);
+                $store = $orders->first()?->teamStore;
+                $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, $store);
                 return [
                     'orders' => $orders,
                     'financials' => $financials,
@@ -1326,17 +1331,35 @@ class AdminController extends Controller
     public function showDirectBatch($batchId)
     {
         $orders = ParentOrder::where('batch_id', $batchId)
-            ->with('user')
+            ->with(['user', 'teamStore'])
             ->get();
 
         if ($orders->isEmpty()) {
             return redirect()->route('admin.dashboard')->with('error', 'Direct Order Batch not found or empty.');
         }
 
-        $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, null);
+        $store = $orders->first()?->teamStore;
+        $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, $store);
         $firstOrder = $orders->first();
+        $coach = $firstOrder?->user;
+        $coachStores = $coach ? $coach->teamStores : collect();
 
-        return view('admin.direct_batch_show', compact('batchId', 'orders', 'financials', 'firstOrder'));
+        return view('admin.direct_batch_show', compact('batchId', 'orders', 'financials', 'firstOrder', 'coachStores', 'store'));
+    }
+
+    public function updateDirectBatchStore(Request $request, $batchId)
+    {
+        $request->validate([
+            'team_store_id' => 'required|exists:team_stores,id',
+        ]);
+
+        ParentOrder::where('batch_id', $batchId)->update([
+            'team_store_id' => $request->team_store_id,
+        ]);
+
+        $store = TeamStore::find($request->team_store_id);
+
+        return back()->with('success', 'Batch profile/store has been updated to "' . ($store?->name ?? 'selected store') . '".');
     }
 
     public function markDirectBatchAddressed($batchId)
@@ -1350,6 +1373,7 @@ class AdminController extends Controller
     public function markStoreBatchAddressed($batchId)
     {
         ParentOrder::whereNotNull('team_store_id')
+            ->where('order_type', '!=', 'direct')
             ->where('batch_id', $batchId)
             ->update(['status' => 'Processing', 'is_archived' => true]);
             
@@ -1465,11 +1489,17 @@ class AdminController extends Controller
 
     public function deleteOrder(ParentOrder $order)
     {
+        $isDirect = $order->isDirectOrder();
         $store = $order->teamStore;
         $batchId = $order->batch_id;
         $fullName = trim($order->athlete_first_name . ' ' . $order->athlete_last_name);
         $order->delete();
         
+        if ($isDirect && $batchId) {
+            return redirect()->route('admin.direct-batch.show', $batchId)
+                ->with('success', "Order for {$fullName} has been deleted.");
+        }
+
         if ($store) {
             return redirect()->route('admin.store.edit', $store)
                 ->with('success', "Order for {$fullName} has been deleted.");

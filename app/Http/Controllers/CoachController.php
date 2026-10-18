@@ -38,12 +38,57 @@ class CoachController extends Controller
         // Designs assigned to this coach (for item builder)
         $assignedDesigns = $user->designCatalog()->latest()->get();
 
-        // All batched orders placed by the coach (Direct Orders AND Store Orders)
-        $batchedOrders = $user->parentOrders()->whereNotNull('batch_id')->where('is_archived', false)->latest()->get();
-        $archivedBatchedOrders = $user->parentOrders()->whereNotNull('batch_id')->where('is_archived', true)->latest()->get();
-        
-        // Draft Direct Orders
-        $directOrders = $user->parentOrders()->whereNull('team_store_id')->where('status', 'Draft')->where('is_archived', false)->latest()->get();
+        // Draft Direct Orders scoped to active store
+        $directOrdersQuery = $user->parentOrders()
+            ->where(function($q) {
+                $q->where('order_type', 'direct')
+                  ->orWhereNull('order_type');
+            })
+            ->where('status', 'Draft')
+            ->where('is_archived', false);
+
+        if ($store) {
+            $directOrdersQuery->where(function($q) use ($store, $stores) {
+                $q->where('team_store_id', $store->id);
+                if ($stores->count() <= 1) {
+                    $q->orWhereNull('team_store_id');
+                }
+            });
+        }
+        $directOrders = $directOrdersQuery->latest()->get();
+
+        // Batched orders scoped to the active store (Direct Orders AND Store Orders)
+        $batchedOrdersQuery = ParentOrder::whereNotNull('batch_id')
+            ->where('is_archived', false);
+
+        $archivedBatchedOrdersQuery = ParentOrder::whereNotNull('batch_id')
+            ->where('is_archived', true);
+
+        if ($store) {
+            $batchedOrdersQuery->where(function($q) use ($store, $user, $stores) {
+                $q->where('team_store_id', $store->id);
+                if ($stores->count() <= 1) {
+                    $q->orWhere(function($q2) use ($user) {
+                        $q2->where('user_id', $user->id)->whereNull('team_store_id');
+                    });
+                }
+            });
+
+            $archivedBatchedOrdersQuery->where(function($q) use ($store, $user, $stores) {
+                $q->where('team_store_id', $store->id);
+                if ($stores->count() <= 1) {
+                    $q->orWhere(function($q2) use ($user) {
+                        $q2->where('user_id', $user->id)->whereNull('team_store_id');
+                    });
+                }
+            });
+        } else {
+            $batchedOrdersQuery->where('user_id', $user->id);
+            $archivedBatchedOrdersQuery->where('user_id', $user->id);
+        }
+
+        $batchedOrders = $batchedOrdersQuery->with(['teamStore', 'user'])->latest()->get();
+        $archivedBatchedOrders = $archivedBatchedOrdersQuery->with(['teamStore', 'user'])->latest()->get();
 
         // Group batched orders by batch
         $directOrderBatches = $batchedOrders->groupBy('batch_id')->sortByDesc(function ($orders) {
@@ -473,7 +518,7 @@ class CoachController extends Controller
 
     public function editOrder(Request $request, ParentOrder $order)
     {
-        if ($order->team_store_id) {
+        if (!$order->isDirectOrder()) {
             $store = $order->teamStore;
             if ($store->user_id !== $request->user()->id) abort(403);
 
@@ -521,14 +566,14 @@ class CoachController extends Controller
                 ];
             });
 
-            $store = null;
+            $store = $order->teamStore;
             return view('coach.order_edit', compact('order', 'store', 'sizeChart', 'availableItems'));
         }
     }
 
     public function updateOrder(Request $request, ParentOrder $order)
     {
-        if ($order->team_store_id) {
+        if (!$order->isDirectOrder()) {
             $store = $order->teamStore;
             if ($store->user_id !== $request->user()->id) abort(403);
         } else {
@@ -585,11 +630,11 @@ class CoachController extends Controller
                 $prices = \App\Models\ParentOrder::getItemPrices($it, $store);
                 $newSubtotal += ($prices['retail_price'] * $qty);
             }
-            $isTaxExempt = (bool) $store->isTaxExempt();
+            $isTaxExempt = (bool) ($store ? $store->isTaxExempt() : $request->user()->is_tax_exempt);
             $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
             $newTax = round($newSubtotal * $taxRate, 2);
 
-            if ($store->isOnlinePayment()) {
+            if ($store && $store->isOnlinePayment()) {
                 $feePercent = (float) config('services.stripe.fee_percent', 0.029);
                 $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
                 $preFee = $newSubtotal + $newTax;
@@ -611,7 +656,7 @@ class CoachController extends Controller
 
         $fullName = trim($request->athlete_first_name . ' ' . $request->athlete_last_name);
 
-        if (!$order->team_store_id) {
+        if ($order->isDirectOrder()) {
             return redirect()->route('coach.dashboard')
                 ->with('success', "Order for {$fullName} has been updated.")
                 ->with('activeCoachTab', 'create_order');
@@ -623,7 +668,7 @@ class CoachController extends Controller
 
     public function deleteOrder(Request $request, ParentOrder $order)
     {
-        if ($order->team_store_id) {
+        if (!$order->isDirectOrder()) {
             $store = $order->teamStore;
             if ($store->user_id !== $request->user()->id) abort(403);
             
@@ -882,9 +927,13 @@ class CoachController extends Controller
             $lineSubtotal += ($unitPrice * $qty);
         }
 
+        $activeStoreId = session('active_coach_store_id');
+        $activeStore = $activeStoreId ? $user->teamStores()->find($activeStoreId) : $user->teamStores()->first();
+
         ParentOrder::create([
             'user_id'             => $user->id,
-            'team_store_id'       => null,
+            'team_store_id'       => $activeStore?->id,
+            'order_type'          => 'direct',
             'athlete_first_name'  => $firstName ?: 'Direct',
             'athlete_last_name'   => $lastName ?: 'Order',
             'gender'              => $request->filled('gender') ? trim($request->gender) : null,
@@ -904,11 +953,26 @@ class CoachController extends Controller
     public function finalizeDirectOrders(Request $request)
     {
         $user = $request->user();
+        $activeStoreId = session('active_coach_store_id');
+        $activeStore = $activeStoreId ? $user->teamStores()->find($activeStoreId) : $user->teamStores()->first();
         
-        $draftOrders = $user->parentOrders()
-            ->whereNull('team_store_id')
-            ->where('status', 'Draft')
-            ->get();
+        $draftOrdersQuery = $user->parentOrders()
+            ->where(function($q) {
+                $q->where('order_type', 'direct')
+                  ->orWhereNull('order_type');
+            })
+            ->where('status', 'Draft');
+
+        if ($activeStore) {
+            $draftOrdersQuery->where(function($q) use ($activeStore, $user) {
+                $q->where('team_store_id', $activeStore->id);
+                if ($user->teamStores()->count() <= 1) {
+                    $q->orWhereNull('team_store_id');
+                }
+            });
+        }
+
+        $draftOrders = $draftOrdersQuery->get();
 
         if ($draftOrders->isEmpty()) {
             return redirect()->route('coach.dashboard')
@@ -941,8 +1005,6 @@ class CoachController extends Controller
         $taxAmount = $isTaxExempt ? 0.00 : round($subtotal * $taxRate, 2);
 
         // Check if Pay by Check is active for this coach (via active store or any store owned by coach)
-        $activeStoreId = session('active_coach_store_id');
-        $activeStore = $activeStoreId ? $user->teamStores()->find($activeStoreId) : null;
         $isCoachCheckPayment = ($activeStore && $activeStore->isCheckPayment()) 
             || $user->teamStores()->where('payment_mode', 'check')->exists();
 
@@ -952,6 +1014,8 @@ class CoachController extends Controller
                 $orderTax = $isTaxExempt ? 0.00 : round($orderSubtotal * $taxRate, 2);
                 $order->update([
                     'batch_id'       => $batchId,
+                    'team_store_id'  => $order->team_store_id ?: $activeStore?->id,
+                    'order_type'     => 'direct',
                     'status'         => 'Submitted to Admin',
                     'payment_status' => 'not_applicable',
                     'subtotal'       => $orderSubtotal,
@@ -962,11 +1026,12 @@ class CoachController extends Controller
             }
 
             // Notify Admin
+            $storeOrgName = $activeStore?->name ?? $user->organization ?: $user->name;
             try {
                 \Illuminate\Support\Facades\Notification::send(
                     \App\Models\User::where('role', 'admin')->get(),
                     new \App\Notifications\MasterOrderSubmitted((object) [
-                        'name' => ($user->organization ?: $user->name) . ' Direct Order (Pay by Check)',
+                        'name' => $storeOrgName . ' Direct Order (Pay by Check)',
                         'user' => $user
                     ])
                 );
@@ -990,6 +1055,8 @@ class CoachController extends Controller
         foreach ($draftOrders as $order) {
             $order->update([
                 'batch_id'       => $batchId,
+                'team_store_id'  => $order->team_store_id ?: $activeStore?->id,
+                'order_type'     => 'direct',
                 'payment_status' => 'pending_payment',
             ]);
         }
@@ -1069,7 +1136,8 @@ class CoachController extends Controller
                         'type'         => 'direct_order',
                         'batch_id'     => $batchId,
                         'user_id'      => $user->id,
-                        'organization' => $user->organization ?? '',
+                        'store_id'     => $activeStore?->id,
+                        'organization' => $activeStore?->name ?? $user->organization ?? '',
                         'subtotal'     => $subtotal,
                         'tax_amount'   => $taxAmount,
                         'fee_amount'   => $feeAmount,
@@ -1126,6 +1194,8 @@ class CoachController extends Controller
             // Local dev simulation when Stripe secret is not configured
             foreach ($draftOrders as $order) {
                 $order->update([
+                    'team_store_id'  => $order->team_store_id ?: $activeStore?->id,
+                    'order_type'     => 'direct',
                     'status'         => 'Submitted to Admin',
                     'payment_status' => 'paid',
                     'paid_at'        => now(),
@@ -1134,10 +1204,11 @@ class CoachController extends Controller
             }
 
             // Notify Admin
+            $storeOrgName = $activeStore?->name ?? $user->organization ?: $user->name;
             \Illuminate\Support\Facades\Notification::send(
                 \App\Models\User::where('role', 'admin')->get(),
                 new \App\Notifications\MasterOrderSubmitted((object) [
-                    'name' => ($user->organization ?: $user->name) . ' Direct Order (Paid Online)',
+                    'name' => $storeOrgName . ' Direct Order (Paid Online)',
                     'user' => $user
                 ])
             );
@@ -1154,7 +1225,7 @@ class CoachController extends Controller
         $batchId = $request->query('batch_id');
         $sessionId = $request->query('session_id');
 
-        $orders = ParentOrder::where('batch_id', $batchId)
+        $orders = ParentOrder::with('teamStore')->where('batch_id', $batchId)
             ->where('user_id', $user->id)
             ->get();
 
@@ -1179,16 +1250,18 @@ class CoachController extends Controller
                         $order->update([
                             'status'                   => 'Submitted to Admin',
                             'payment_status'           => 'paid',
+                            'order_type'               => 'direct',
                             'stripe_payment_intent_id' => $session->payment_intent,
                             'paid_at'                  => now(),
                         ]);
                     }
 
                     if (!$alreadyNotified) {
+                        $storeOrgName = $firstOrder->teamStore?->name ?? $user->organization ?: $user->name;
                         \Illuminate\Support\Facades\Notification::send(
                             \App\Models\User::where('role', 'admin')->get(),
                             new \App\Notifications\MasterOrderSubmitted((object) [
-                                'name' => ($user->organization ?: $user->name) . ' Direct Order (Paid Online)',
+                                'name' => $storeOrgName . ' Direct Order (Paid Online)',
                                 'user' => $user
                             ])
                         );

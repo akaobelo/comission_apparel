@@ -8,7 +8,7 @@
             Back to Dashboard
         </a>
         <span class="text-slate-300">/</span>
-        <span class="text-slate-700 font-bold uppercase tracking-wide">Direct Order Batch: {{ $batchId }}</span>
+        <span class="text-slate-700 font-bold uppercase tracking-wide">Direct Order Batch: {{ $batchId }} @if($store) — <span class="text-primary font-black">{{ $store->name }}</span> @endif</span>
     </div>
 
     @if(session('success'))
@@ -137,7 +137,26 @@
                     $isTaxExempt = (bool) ($firstOrder->user?->is_tax_exempt);
                 @endphp
                 <div class="p-6 space-y-3">
-                    <div class="flex justify-between text-sm"><span class="text-slate-500">Coach</span><span class="font-bold text-slate-900 text-right">{{ $firstOrder->user->first_name ?? 'Unknown' }} {{ $firstOrder->user->last_name ?? '' }}<br><span class="text-xs font-normal text-slate-500">{{ $firstOrder->user->organization ?? '' }}</span></span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Coach</span><span class="font-bold text-slate-900 text-right">{{ $firstOrder->user->first_name ?? 'Unknown' }} {{ $firstOrder->user->last_name ?? '' }}<br><span class="text-xs font-normal text-slate-500">{{ $firstOrder->user->email ?? $firstOrder->user->organization ?? '' }}</span></span></div>
+                    <div class="flex justify-between text-sm items-center">
+                        <span class="text-slate-500">Profile / Store</span>
+                        <div class="text-right">
+                            @if(isset($coachStores) && $coachStores->isNotEmpty())
+                                <form action="{{ route('admin.direct-batch.store.update', $batchId) }}" method="POST">
+                                    @csrf
+                                    <select name="team_store_id" onchange="if(confirm('Reassign this batch to ' + this.options[this.selectedIndex].text + '?')) { this.form.submit(); } else { this.value = '{{ $store?->id }}'; }" class="text-xs font-bold text-slate-800 bg-slate-50 border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-primary max-w-[210px] truncate shadow-sm">
+                                        @foreach($coachStores as $cs)
+                                            <option value="{{ $cs->id }}" {{ ($store && $store->id === $cs->id) ? 'selected' : '' }}>
+                                                {{ $cs->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </form>
+                            @else
+                                <span class="font-bold text-slate-900">{{ $store?->name ?? $firstOrder->user?->organization ?? '—' }}</span>
+                            @endif
+                        </div>
+                    </div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Submitted</span><span class="font-bold text-slate-900">{{ $firstOrder->created_at?->format('M d, Y') ?? '—' }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Payment Mode</span>
                         <span class="font-bold text-slate-900 uppercase text-xs">{{ $isOnlinePayment ? 'Online (Stripe)' : ($isCheckPayment ? 'Pay by Check' : 'In-House') }}</span>

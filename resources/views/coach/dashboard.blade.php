@@ -49,7 +49,7 @@
                     Coach Portal
                 </div>
                 <h1 class="text-3xl font-black uppercase text-slate-900">Welcome, {{ $user->name }}</h1>
-                <p class="text-slate-600 text-sm mt-1">{{ $user->organization }} · {{ $user->sport }}</p>
+                <p class="text-slate-600 text-sm mt-1">{{ $store ? $store->name : $user->organization }} · {{ ($store && $store->sport) ? $store->sport : $user->sport }}</p>
             </div>
         </div>
         <form action="{{ route('logout') }}" method="POST">
@@ -1627,7 +1627,8 @@
                             $isArchived = $batch['archived'];
                             $firstOrder = $batchOrders->first();
                             $status = $firstOrder->status ?? 'Submitted to Admin';
-                            $isMaster = !is_null($firstOrder->team_store_id);
+                            $isDirect = $firstOrder->isDirectOrder();
+                            $isMaster = !$isDirect;
 
                             $statusBadge = $isArchived ? 'ARCHIVED' : ($status === 'Shipped' ? 'SHIPPED' : strtoupper($status));
                             $totalItems = $batchOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
@@ -1642,7 +1643,7 @@
 
                             $typeText = $isMaster ? 'MASTER ORDER' : 'DIRECT ORDER';
                             $typeColor = $isMaster ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800';
-                            $batchTitle = $isMaster ? $firstOrder->teamStore->name : 'Direct Order Batch';
+                            $batchTitle = $isMaster ? ($firstOrder->teamStore?->name ?? 'Store Order Batch') : 'Direct Order Batch';
                         @endphp
                         <div x-data="{ expanded: localStorage.getItem('coachBatchExpanded_{{ $batchId }}') === 'true' }" x-init="$watch('expanded', val => localStorage.setItem('coachBatchExpanded_{{ $batchId }}', val))" class="border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors">
                             <div @click="expanded = !expanded" class="grid grid-cols-12 gap-4 px-6 py-4 items-center cursor-pointer">
@@ -1650,6 +1651,9 @@
                                     <svg class="w-4 h-4 text-slate-400 transition-transform" :class="expanded ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                     <div>
                                         <div class="font-bold text-slate-900 text-sm">{{ $batchTitle }}</div>
+                                        @if($isDirect && $firstOrder->teamStore)
+                                            <div class="text-[11px] font-semibold text-primary truncate">{{ $firstOrder->teamStore->name }}</div>
+                                        @endif
                                         <div class="text-xs text-slate-500">{{ $batchOrders->count() }} Athlete(s)</div>
                                     </div>
                                 </div>
@@ -1771,7 +1775,7 @@
                                                 $isTaxExempt = (bool) ($firstOrder->user?->is_tax_exempt);
                                             @endphp
                                             <div class="p-6 space-y-3">
-                                                <div class="flex justify-between text-sm"><span class="text-slate-500">Coach</span><span class="font-bold text-slate-900 text-right">{{ $firstOrder->user->first_name ?? 'Unknown' }} {{ $firstOrder->user->last_name ?? '' }}<br><span class="text-xs font-normal text-slate-500">{{ $firstOrder->user->organization ?? '' }}</span></span></div>
+                                                <div class="flex justify-between text-sm"><span class="text-slate-500">Coach</span><span class="font-bold text-slate-900 text-right">{{ $firstOrder->user->first_name ?? 'Unknown' }} {{ $firstOrder->user->last_name ?? '' }}<br><span class="text-xs font-normal text-slate-500">{{ $firstOrder->teamStore?->name ?? $firstOrder->user->organization ?? '' }}</span></span></div>
                                                 <div class="flex justify-between text-sm"><span class="text-slate-500">Submitted</span><span class="font-bold text-slate-900">{{ $firstOrder->created_at?->format('M d, Y') ?? '—' }}</span></div>
                                                 <div class="flex justify-between text-sm"><span class="text-slate-500">Payment Mode</span>
                                                     <span class="font-bold text-slate-900 uppercase text-xs">{{ $isOnlinePayment ? 'Online (Stripe)' : ($isCheckPayment ? 'Pay by Check' : 'In-House') }}</span>

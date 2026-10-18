@@ -602,7 +602,7 @@
                                         <div class="min-w-0">
                                             <div class="font-black text-slate-900 uppercase text-sm truncate">Direct Order Batch</div>
                                             <div class="text-xs text-slate-500 mt-0.5 truncate">
-                                                Coach: {{ $coach?->name ?? 'Unknown' }} — {{ $coach?->organization ?? '—' }}
+                                                Coach: {{ $coach?->name ?? 'Unknown' }} — {{ $batchOrders->first()?->teamStore?->name ?? $coach?->organization ?? '—' }}
                                             </div>
                                             <div class="mt-1 flex items-center gap-2 flex-wrap">
                                                 <span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md border border-slate-200">
@@ -742,16 +742,24 @@
                             @foreach($archivedOrderBatches as $batchId => $batchData)
                             @php
                                 $orders = $batchData['orders'];
-                                $store = $orders->first()->teamStore;
-                                $coach = $orders->first()->user;
+                                $firstOrder = $orders->first();
+                                $store = $firstOrder?->teamStore;
+                                $coach = $firstOrder?->user;
                                 $latestArchiveDate = $orders->max('updated_at');
+                                $isDirect = $firstOrder?->isDirectOrder();
                             @endphp
                             <div class="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 opacity-75 hover:opacity-100 transition-opacity">
                                 <div>
-                                    <div class="font-bold text-xs sm:text-sm text-slate-700">{{ $store ? $store->name : 'Direct Order Batch' }}</div>
+                                    <div class="font-bold text-xs sm:text-sm text-slate-700">
+                                        @if($isDirect)
+                                            {{ $store ? $store->name . ' (Direct Order)' : 'Direct Order Batch' }}
+                                        @else
+                                            {{ $store ? $store->name : ($coach?->organization ?? 'Store Batch') }}
+                                        @endif
+                                    </div>
                                     <div class="text-[11px] text-slate-500">
                                         {{ $coach?->name ?? 'Unknown Coach' }} · {{ $orders->count() }} orders
-                                        @if($store) · Team Store @endif
+                                        @if($isDirect) · Direct Order @elseif($store) · Team Store @endif
                                         @if($latestArchiveDate)
                                             · Archived {{ \Carbon\Carbon::parse($latestArchiveDate)->format('M d, Y') }}
                                         @endif
@@ -759,10 +767,10 @@
                                     <div class="text-[10px] text-slate-400 mt-0.5">Batch ID: {{ $batchId }}</div>
                                 </div>
                                 <div class="flex items-center gap-1.5 flex-shrink-0">
-                                    @if($store)
-                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">View Store</a>
-                                    @else
+                                    @if($isDirect)
                                         <a href="{{ route('admin.direct-batch.show', $batchId) }}" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">View Batch</a>
+                                    @elseif($store)
+                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">View Store</a>
                                     @endif
                                     <form action="{{ route('admin.archived-orders.delete', $batchId) }}" method="POST" onsubmit="return confirm('Permanently delete this archived order batch? This cannot be undone.')">
                                         @csrf

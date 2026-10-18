@@ -86,7 +86,7 @@ class StripeWebhookController extends Controller
                             \Illuminate\Support\Facades\Notification::send(
                                 \App\Models\User::where('role', 'admin')->get(),
                                 new \App\Notifications\MasterOrderSubmitted((object) [
-                                    'name' => ($firstOrder->user->organization ?: $firstOrder->user->name) . ' Direct Order (Paid Online)',
+                                    'name' => ($firstOrder->teamStore?->name ?? $firstOrder->user->organization ?: $firstOrder->user->name) . ' Direct Order (Paid Online)',
                                     'user' => $firstOrder->user
                                 ])
                             );

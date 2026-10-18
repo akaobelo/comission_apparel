@@ -3,7 +3,7 @@
 @section('content')
 <div class="max-w-3xl mx-auto px-6 pb-8 pt-32 lg:pt-40">
     <div class="flex items-center gap-4 mb-8">
-        @if($order->teamStore)
+        @if(!$order->isDirectOrder() && $order->teamStore)
             <a href="{{ route('admin.store.edit', $order->teamStore) }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-bold uppercase tracking-wide">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 Back to Store
@@ -25,10 +25,10 @@
     <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
         <div class="p-6 border-b border-slate-200 bg-slate-50">
             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Order Editor</h2>
-            @if($order->teamStore)
+            @if(!$order->isDirectOrder() && $order->teamStore)
                 <p class="text-sm text-slate-500 mt-1">Store: {{ $order->teamStore->name }} · Submitted {{ $order->created_at->format('M d, Y') }}</p>
             @else
-                <p class="text-sm text-slate-500 mt-1">Direct Order Batch: {{ $order->batch_id }} · Submitted {{ $order->created_at->format('M d, Y') }}</p>
+                <p class="text-sm text-slate-500 mt-1">Direct Order Batch: {{ $order->batch_id }} @if($order->teamStore) · {{ $order->teamStore->name }} @endif · Submitted {{ $order->created_at->format('M d, Y') }}</p>
             @endif
             @if($order->is_edited)
                 <div class="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-orange-100 border border-orange-200 text-orange-700 text-xs font-bold rounded">
@@ -152,7 +152,7 @@
 
                 <div class="flex gap-3 pt-2">
                     <button type="submit" class="btn btn-primary py-3 px-8 text-sm uppercase tracking-wider">Save Changes</button>
-                    @if($order->teamStore)
+                    @if(!$order->isDirectOrder() && $order->teamStore)
                         <a href="{{ route('admin.store.edit', $order->teamStore) }}" class="btn btn-outline py-3 px-6 text-sm uppercase tracking-wider">Cancel</a>
                     @else
                         <a href="{{ route('admin.direct-batch.show', $order->batch_id) }}" class="btn btn-outline py-3 px-6 text-sm uppercase tracking-wider">Cancel</a>
