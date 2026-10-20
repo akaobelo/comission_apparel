@@ -171,7 +171,7 @@ Route::get('/catalog', function () {
         });
     }
 
-    $orphanedDesigns = $orphanedQuery->orderBy('sort_order', 'desc')
+    $orphanedDesigns = $orphanedQuery->orderBy('sort_order', 'asc')
         ->orderBy('created_at', 'desc')
         ->paginate(15, ['*'], 'orphaned_page')
         ->withQueryString();
@@ -226,7 +226,7 @@ Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request,
         });
     }
     
-    $designCatalog = $designCatalogQuery->orderBy('sort_order', 'desc')->orderBy('created_at', 'desc')->get();
+    $designCatalog = $designCatalogQuery->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
     
     $availableSports = \App\Models\DesignCatalog::where('design_collection_id', $collectionModel->id)
         ->whereNotNull('sport')

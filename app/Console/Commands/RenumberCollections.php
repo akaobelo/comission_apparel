@@ -13,7 +13,7 @@ class RenumberCollections extends Command
      *
      * @var string
      */
-    protected $signature = 'collections:renumber';
+    protected $signature = 'collections:renumber {--invert : Invert order so items currently ordered DESC on store become sequential 1..N in ASC} {--collection= : Specific collection ID or name to renumber}';
 
     /**
      * The console command description.
@@ -27,14 +27,20 @@ class RenumberCollections extends Command
      */
     public function handle()
     {
-        $this->info('Starting renumbering process...');
+        $invert = $this->option('invert');
+        $this->info('Starting renumbering process' . ($invert ? ' (INVERTING store desc -> asc)' : '') . '...');
 
-        $collections = DesignCollection::all();
+        $collectionsQuery = DesignCollection::query();
+        if ($specific = $this->option('collection')) {
+            $collectionsQuery->where('id', $specific)->orWhere('name', 'like', "%{$specific}%");
+        }
+        $collections = $collectionsQuery->get();
         $totalUpdated = 0;
+        $orderDirection = $invert ? 'desc' : 'asc';
 
         foreach ($collections as $collection) {
             $items = DesignCatalog::where('design_collection_id', $collection->id)
-                        ->orderBy('sort_order', 'asc')
+                        ->orderBy('sort_order', $orderDirection)
                         ->orderBy('created_at', 'desc')
                         ->get();
                         
@@ -48,18 +54,20 @@ class RenumberCollections extends Command
             }
         }
 
-        // Also renumber unassigned items
-        $unassigned = DesignCatalog::whereNull('design_collection_id')
-                        ->orderBy('sort_order', 'asc')
-                        ->orderBy('created_at', 'desc')
-                        ->get();
-        $sort = 1;
-        foreach ($unassigned as $item) {
-            if ($item->sort_order !== $sort) {
-                $item->update(['sort_order' => $sort]);
-                $totalUpdated++;
+        // Also renumber unassigned items if no specific collection targeted
+        if (!$this->option('collection')) {
+            $unassigned = DesignCatalog::whereNull('design_collection_id')
+                            ->orderBy('sort_order', $orderDirection)
+                            ->orderBy('created_at', 'desc')
+                            ->get();
+            $sort = 1;
+            foreach ($unassigned as $item) {
+                if ($item->sort_order !== $sort) {
+                    $item->update(['sort_order' => $sort]);
+                    $totalUpdated++;
+                }
+                $sort++;
             }
-            $sort++;
         }
 
         $this->info("Successfully renumbered $totalUpdated items!");

@@ -43,7 +43,7 @@
             ->get()
             ->map(function ($item) {
                 $firstDesign = \App\Models\DesignCatalog::where('collection_name', $item->collection_name)
-                    ->orderBy('sort_order', 'desc')
+                    ->orderBy('sort_order', 'asc')
                     ->first();
                 return (object) [
                     'name' => $item->collection_name,
@@ -55,7 +55,7 @@
     if (!isset($orphanedDesigns)) {
         $orphanedDesigns = \App\Models\DesignCatalog::whereNull('collection_name')
             ->orWhere('collection_name', '')
-            ->orderBy('sort_order', 'desc')
+            ->orderBy('sort_order', 'asc')
             ->orderBy('created_at', 'desc')
             ->get();
     }
