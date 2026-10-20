@@ -58,21 +58,32 @@
                 </p>
             </div>
 
-            <!-- Referral Link Widget -->
-            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 lg:min-w-[380px]">
-                <label class="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-1.5">
-                    Your Personal Coach Recruitment Link
-                </label>
-                <div class="flex items-center gap-2">
-                    <input type="text" readonly value="{{ $referralUrl }}" class="w-full text-xs bg-white border border-slate-200 rounded px-3 py-2 text-slate-700 font-mono focus:outline-none select-all">
-                    <button type="button" @click="copyLink()" class="px-4 py-2 bg-slate-900 text-white rounded text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center gap-1.5 whitespace-nowrap shadow-sm">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                        <span x-text="copied ? 'Copied!' : 'Copy'"></span>
-                    </button>
+            <div class="flex flex-col sm:flex-row items-stretch gap-3 lg:min-w-[460px]">
+                <!-- Referral Link Widget -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex-grow">
+                    <label class="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-1.5">
+                        Your Personal Coach Recruitment Link
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" readonly value="{{ $referralUrl }}" class="w-full text-xs bg-white border border-slate-200 rounded px-3 py-2 text-slate-700 font-mono focus:outline-none select-all">
+                        <button type="button" @click="copyLink()" class="px-4 py-2 bg-slate-900 text-white rounded text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center gap-1.5 whitespace-nowrap shadow-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                            <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1.5">
+                        Any coach registering via this link is automatically locked to your book of business.
+                    </p>
                 </div>
-                <p class="text-[10px] text-slate-400 mt-1.5">
-                    Any coach registering via this link is automatically locked to your book of business.
-                </p>
+
+                <!-- Sign Out Form -->
+                <form action="{{ route('logout') }}" method="POST" class="flex-shrink-0 flex items-stretch">
+                    @csrf
+                    <button type="submit" class="w-full sm:w-auto px-4 py-3 sm:py-0 bg-slate-50 hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-600 hover:text-red-600 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex sm:flex-col items-center justify-center gap-1.5 shadow-sm" title="Sign Out of Partner Portal">
+                        <svg class="w-4 h-4 text-slate-400 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        <span>Sign Out</span>
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -319,7 +330,7 @@
 
     <!-- MODAL: ADD CLIENT -->
     <div x-show="addClientModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;" x-cloak>
-        <div class="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden" @click.outside="addClientModal = false">
+        <div class="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                 <div>
                     <h3 class="text-base font-black uppercase tracking-tight text-slate-900">Register New Athletic Client</h3>
@@ -348,7 +359,12 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Sport / Program *</label>
-                        <input type="text" name="sport" required placeholder="e.g. Track & Field" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        <select name="sport" required class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <option value="">-- Select Sport / Program --</option>
+                            @foreach(config('sports.categories') as $cat)
+                                <option value="{{ $cat }}" {{ old('sport') === $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Phone *</label>

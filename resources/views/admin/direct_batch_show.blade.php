@@ -211,20 +211,21 @@
 
                     @php
                         $batchMfg = $orders->sum(fn($o) => (float)$o->manufacturing_cost);
-                        if ($batchMfg <= 0) $batchMfg = (float)($financials['total_wholesale'] ?? 0);
+                        $hasCustomMfg = $orders->contains(fn($o) => (float)$o->manufacturing_cost > 0);
                         $batchTariff = $orders->sum(fn($o) => (float)$o->tariff_amount);
                         $batchFees = $orders->sum(fn($o) => (float)$o->fee_deduction);
                         $assignedRepId = $firstOrder->sales_rep_id ?: ($firstOrder->user?->sales_rep_id ?? null);
                         $currentRep = $assignedRepId ? $salesReps->firstWhere('id', $assignedRepId) : null;
                         $batchRepEarned = $orders->sum(fn($o) => (float)$o->rep_commission_earned);
+                        $batchNetMargin = $orders->sum(fn($o) => (float)$o->net_margin);
                     @endphp
 
                     <form action="{{ route('admin.direct-batch.financials.update', $batchId) }}" method="POST" class="p-5 space-y-3.5">
                         @csrf
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Total Manufacturing Cost ($)</label>
-                            <input type="number" step="0.01" min="0" name="manufacturing_cost" value="{{ old('manufacturing_cost', $batchMfg) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                            <span class="text-[10px] text-slate-400">Total base cost across all batch items</span>
+                            <input type="number" step="0.01" min="0" name="manufacturing_cost" value="{{ old('manufacturing_cost', $hasCustomMfg ? $batchMfg : '') }}" placeholder="Enter factory production base cost" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <span class="text-[10px] text-slate-400">Actual factory cost to produce items (deducted from gross to find net profit)</span>
                         </div>
 
                         <div>
@@ -270,9 +271,15 @@
                             <input type="text" name="financial_notes" value="{{ old('financial_notes', $firstOrder->financial_notes) }}" placeholder="e.g. Schedule A tariff deduction applied" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                         </div>
 
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded flex justify-between items-center text-xs font-mono">
-                            <span class="text-slate-500">Rep Payout Total:</span>
-                            <span class="font-black text-emerald-600 text-sm">${{ number_format($batchRepEarned, 2) }}</span>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded space-y-1.5 text-xs font-mono">
+                            <div class="flex justify-between items-center text-slate-500">
+                                <span>Batch Net Margin:</span>
+                                <span class="font-bold text-slate-900">${{ number_format($batchNetMargin, 2) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-slate-500 border-t border-slate-200 pt-1.5">
+                                <span>Rep Payout Total:</span>
+                                <span class="font-black text-emerald-600 text-sm">${{ number_format($batchRepEarned, 2) }}</span>
+                            </div>
                         </div>
 
                         <button type="submit" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-black uppercase tracking-wider transition-colors shadow-sm">

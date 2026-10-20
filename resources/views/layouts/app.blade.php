@@ -77,28 +77,38 @@
                 <a href="/quote" class="text-white hover:text-secondary transition-colors">Request A Quote</a>
                 <div class="h-6 w-px bg-slate-700"></div>
                 @auth
-                    @if(auth()->user()->isAdmin())
-                        <a href="{{ route('admin.dashboard') }}" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
-                            <span class="relative z-10 flex items-center gap-2">
-                                <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
-                                Admin Portal
-                            </span>
-                        </a>
-                    @elseif(auth()->user()->isSalesRep())
-                        <a href="{{ route('rep.dashboard') }}" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
-                            <span class="relative z-10 flex items-center gap-2">
-                                <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
-                                Partner Portal
-                            </span>
-                        </a>
-                    @else
-                        <a href="/coach/dashboard" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
-                            <span class="relative z-10 flex items-center gap-2">
-                                <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
-                                Coach Dashboard
-                            </span>
-                        </a>
-                    @endif
+                    <div class="flex items-center gap-2.5">
+                        @if(auth()->user()->isAdmin())
+                            <a href="{{ route('admin.dashboard') }}" class="relative group py-2 px-4 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
+                                <span class="relative z-10 flex items-center gap-2">
+                                    <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
+                                    Admin Portal
+                                </span>
+                            </a>
+                        @elseif(auth()->user()->isSalesRep())
+                            <a href="{{ route('rep.dashboard') }}" class="relative group py-2 px-4 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
+                                <span class="relative z-10 flex items-center gap-2">
+                                    <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
+                                    Partner Portal
+                                </span>
+                            </a>
+                        @else
+                            <a href="/coach/dashboard" class="relative group py-2 px-4 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
+                                <span class="relative z-10 flex items-center gap-2">
+                                    <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
+                                    Coach Dashboard
+                                </span>
+                            </a>
+                        @endif
+
+                        <form action="{{ route('logout') }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="py-2 px-3 text-xs font-bold tracking-wider uppercase border border-slate-700 hover:border-red-500/50 text-slate-300 hover:text-red-400 bg-slate-900/60 hover:bg-red-500/10 transition-all rounded-md shadow-sm flex items-center gap-1.5" title="Sign Out">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                <span>Sign Out</span>
+                            </button>
+                        </form>
+                    </div>
                 @else
                     <a href="/login" class="relative group py-2 px-5 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
                         <span class="relative z-10 flex items-center gap-2">
@@ -125,11 +135,37 @@
                 <a href="{{ route('how-it-works') }}" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">How It Works</a>
                 <a href="{{ route('our-team') }}" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Our Team</a>
                 <a href="/quote" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Request A Quote</a>
-                <div class="flex flex-col gap-4 mt-4">
-                    <a href="/coach/dashboard" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-4 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">
-                        <img src="/images/LR.png" alt="LR Logo" class="h-5 w-auto object-contain" loading="lazy">
-                        Dashboard Sign-in
-                    </a>
+                <div class="flex flex-col gap-3 mt-4">
+                    @auth
+                        @if(auth()->user()->isAdmin())
+                            <a href="{{ route('admin.dashboard') }}" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-3.5 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">
+                                <img src="/images/LR.png" alt="LR Logo" class="h-5 w-auto object-contain" loading="lazy">
+                                Admin Portal
+                            </a>
+                        @elseif(auth()->user()->isSalesRep())
+                            <a href="{{ route('rep.dashboard') }}" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-3.5 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">
+                                <img src="/images/LR.png" alt="LR Logo" class="h-5 w-auto object-contain" loading="lazy">
+                                Partner Portal
+                            </a>
+                        @else
+                            <a href="/coach/dashboard" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-3.5 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">
+                                <img src="/images/LR.png" alt="LR Logo" class="h-5 w-auto object-contain" loading="lazy">
+                                Coach Dashboard
+                            </a>
+                        @endif
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full btn border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 py-3 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase rounded shadow-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                Sign Out
+                            </button>
+                        </form>
+                    @else
+                        <a href="/login" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-4 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">
+                            <img src="/images/LR.png" alt="LR Logo" class="h-5 w-auto object-contain" loading="lazy">
+                            Dashboard Sign-in
+                        </a>
+                    @endauth
                 </div>
             </nav>
         </div>

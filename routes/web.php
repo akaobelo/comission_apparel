@@ -470,6 +470,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/sales-agents/bulk-sort', [AdminController::class, 'bulkSortSalesAgents'])->name('admin.sales-agent.bulk-sort');
 
     // Sales Reps & Financial Tariffs Admin CRUD
+    Route::get('/admin/sales-reps/{user}', [AdminController::class, 'showSalesRepUser'])->name('admin.sales-rep.show');
     Route::post('/admin/sales-reps', [AdminController::class, 'createSalesRepUser'])->name('admin.sales-rep.create');
     Route::post('/admin/sales-reps/{user}/update', [AdminController::class, 'updateSalesRepUser'])->name('admin.sales-rep.update');
     Route::post('/admin/order/{order}/financials', [AdminController::class, 'updateOrderFinancials'])->name('admin.order.financials.update');

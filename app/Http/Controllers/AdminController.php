@@ -588,6 +588,47 @@ class AdminController extends Controller
         return redirect()->back()->with('success', "Sales Partner {$rep->name} successfully registered at {$rep->commission_rate}% commission rate.");
     }
 
+    public function showSalesRepUser(User $user)
+    {
+        if (!$user->isSalesRep()) {
+            abort(404);
+        }
+
+        $clients = $user->assignedClients()->withCount(['teamStores', 'parentOrders'])->latest()->get();
+        $stores = $user->salesRepTeamStores()->with(['user'])->withCount('parentOrders')->latest()->get();
+        $orders = $user->salesRepOrders()->with(['teamStore', 'user'])->latest()->get();
+
+        $totalQualifyingSales = $orders->sum(fn($o) => (float)($o->subtotal > 0 ? $o->subtotal : $o->total_retail_price));
+        $totalManufacturingCost = $orders->sum(fn($o) => (float)$o->manufacturing_cost);
+        $totalTariffs = $orders->sum(fn($o) => (float)$o->tariff_amount);
+        $totalFees = $orders->sum(fn($o) => (float)$o->fee_deduction);
+        $totalNetMargin = $orders->sum(fn($o) => (float)$o->net_margin);
+
+        $pendingCommission = $orders->where('commission_status', 'pending')->sum(fn($o) => (float)$o->rep_commission_earned);
+        $clearedCommission = $orders->where('commission_status', 'cleared')->sum(fn($o) => (float)$o->rep_commission_earned);
+        $paidCommission = $orders->where('commission_status', 'paid')->sum(fn($o) => (float)$o->rep_commission_earned);
+        $lifetimeCommissionEarned = $orders->sum(fn($o) => (float)$o->rep_commission_earned);
+
+        $referralUrl = $user->referral_url;
+
+        return view('admin.sales_rep_show', compact(
+            'user',
+            'clients',
+            'stores',
+            'orders',
+            'totalQualifyingSales',
+            'totalManufacturingCost',
+            'totalTariffs',
+            'totalFees',
+            'totalNetMargin',
+            'pendingCommission',
+            'clearedCommission',
+            'paidCommission',
+            'lifetimeCommissionEarned',
+            'referralUrl'
+        ));
+    }
+
     public function updateSalesRepUser(Request $request, User $user)
     {
         if (!$user->isSalesRep()) abort(404);

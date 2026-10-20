@@ -1831,7 +1831,10 @@
                                 @endphp
                                 <tr class="hover:bg-slate-50 transition-colors">
                                     <td class="px-6 py-4">
-                                        <div class="font-bold text-slate-900">{{ $rep->name }}</div>
+                                        <a href="{{ route('admin.sales-rep.show', $rep) }}" class="font-bold text-slate-900 hover:text-primary transition-colors flex items-center gap-1.5 group">
+                                            <span>{{ $rep->name }}</span>
+                                            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                        </a>
                                         <div class="text-xs text-slate-500 font-mono">{{ $rep->email }} @if($rep->phone) · {{ $rep->phone }} @endif</div>
                                         <div class="text-[10px] text-slate-400 mt-0.5">Slug: <code class="text-primary font-bold">{{ $rep->referral_slug ?: $rep->id }}</code></div>
                                     </td>
@@ -1859,20 +1862,25 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <button type="button" @click="openEditRep({
-                                            id: {{ $rep->id }},
-                                            first_name: '{{ addslashes($rep->first_name) }}',
-                                            last_name: '{{ addslashes($rep->last_name) }}',
-                                            email: '{{ addslashes($rep->email) }}',
-                                            phone: '{{ addslashes($rep->phone ?? '') }}',
-                                            partner_category: '{{ $rep->partner_category ?? 'independent_sales' }}',
-                                            commission_rate: {{ $rep->commission_rate ?? 50.00 }},
-                                            referral_slug: '{{ addslashes($rep->referral_slug ?? '') }}',
-                                            status: '{{ $rep->status ?? 'active' }}',
-                                            updateUrl: '{{ route('admin.sales-rep.update', $rep) }}'
-                                        })" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider transition-colors border border-slate-300">
-                                            Edit Rate / Tier
-                                        </button>
+                                        <div class="flex items-center justify-end gap-2">
+                                            <a href="{{ route('admin.sales-rep.show', $rep) }}" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-colors shadow-sm whitespace-nowrap">
+                                                View Profile
+                                            </a>
+                                            <button type="button" @click="openEditRep({
+                                                id: {{ $rep->id }},
+                                                first_name: '{{ addslashes($rep->first_name) }}',
+                                                last_name: '{{ addslashes($rep->last_name) }}',
+                                                email: '{{ addslashes($rep->email) }}',
+                                                phone: '{{ addslashes($rep->phone ?? '') }}',
+                                                partner_category: '{{ $rep->partner_category ?? 'independent_sales' }}',
+                                                commission_rate: {{ $rep->commission_rate ?? 50.00 }},
+                                                referral_slug: '{{ addslashes($rep->referral_slug ?? '') }}',
+                                                status: '{{ $rep->status ?? 'active' }}',
+                                                updateUrl: '{{ route('admin.sales-rep.update', $rep) }}'
+                                            })" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider transition-colors border border-slate-300 whitespace-nowrap">
+                                                Edit Rate
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -1890,7 +1898,7 @@
 
             <!-- MODAL: CREATE SALES REP -->
             <div x-show="createRepModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;" x-cloak>
-                <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden" @click.outside="createRepModal = false">
+                <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
                     <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                         <h3 class="text-base font-black uppercase tracking-tight text-slate-900">Add Sales Representative / Partner</h3>
                         <button type="button" @click="createRepModal = false" class="text-slate-400 hover:text-slate-700 text-2xl font-black">&times;</button>
@@ -1955,7 +1963,7 @@
 
             <!-- MODAL: EDIT SALES REP -->
             <div x-show="editRepModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;" x-cloak>
-                <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden" @click.outside="editRepModal = false">
+                <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
                     <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                         <h3 class="text-base font-black uppercase tracking-tight text-slate-900">Edit Sales Partner & Rate</h3>
                         <button type="button" @click="editRepModal = false" class="text-slate-400 hover:text-slate-700 text-2xl font-black">&times;</button>

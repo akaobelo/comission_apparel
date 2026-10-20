@@ -111,6 +111,20 @@ class SalesRepPlatformTest extends TestCase
     }
 
     /**
+     * Test sales rep can log out successfully.
+     */
+    public function test_sales_rep_can_logout()
+    {
+        $rep = User::factory()->create([
+            'role' => 'sales_rep',
+        ]);
+
+        $response = $this->actingAs($rep)->post('/logout');
+        $response->assertRedirect('/');
+        $this->assertGuest();
+    }
+
+    /**
      * Test manual tariff, fee deduction, and net margin calculation based on Luke's red notes.
      */
     public function test_luke_manual_tariffs_and_net_commission_calculation()
@@ -160,4 +174,33 @@ class SalesRepPlatformTest extends TestCase
         $this->assertEquals('cleared', $order->commission_status);
         $this->assertEquals(40.0, (float)$order->applied_rep_commission_rate);
     }
+
+    /**
+     * Test admin can view sales partner profile with assigned clients and ledger.
+     */
+    public function test_admin_can_view_sales_partner_profile()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $rep = User::factory()->create([
+            'first_name'      => 'Marcus',
+            'last_name'       => 'Robinson',
+            'role'            => 'sales_rep',
+            'commission_rate' => 50.0,
+            'referral_slug'   => 'marcus',
+        ]);
+
+        $coach = User::factory()->create([
+            'role'         => 'coach',
+            'sales_rep_id' => $rep->id,
+            'organization' => 'Westlake High',
+        ]);
+
+        $response = $this->actingAs($admin)->get("/admin/sales-reps/{$rep->id}");
+
+        $response->assertOk();
+        $response->assertSee('Marcus Robinson');
+        $response->assertSee('Westlake High');
+        $response->assertSee('Partner Profile');
+    }
 }
+
