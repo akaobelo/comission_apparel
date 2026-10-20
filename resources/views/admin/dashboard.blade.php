@@ -568,7 +568,7 @@
                                                             <div class="text-xs font-black text-slate-900">{{ $quoteRequest->target_delivery_date?->format('M d, Y') ?? 'Not provided' }}</div>
                                                         </div>
                                                         <div class="bg-slate-50 rounded-lg p-2 border border-slate-200">
-                                                            <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">TCA Sales Rep</div>
+                                                            <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">TCA Agent</div>
                                                             <div class="text-xs font-black text-secondary">{{ $quoteRequest->sales_rep ?: '—' }}</div>
                                                         </div>
                                                     </div>
@@ -1041,7 +1041,7 @@
                                                 <div class="text-sm font-black text-slate-900">{{ $quoteRequest->target_delivery_date?->format('M d, Y') ?? 'Not provided' }}</div>
                                             </div>
                                             <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
-                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">TCA Sales Rep</div>
+                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">TCA Agent</div>
                                                 <div class="text-sm font-black text-secondary">{{ $quoteRequest->sales_rep ?: '—' }}</div>
                                             </div>
                                         </div>
