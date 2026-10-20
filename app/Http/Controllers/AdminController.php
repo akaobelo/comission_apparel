@@ -1192,6 +1192,10 @@ class AdminController extends Controller
             }
         }
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Store items updated.']);
+        }
+
         return redirect()->route('admin.store.edit', $store)
             ->with('success', 'Store item pricing updated.');
     }
