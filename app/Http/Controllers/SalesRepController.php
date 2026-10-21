@@ -67,7 +67,7 @@ class SalesRepController extends Controller
                 $ord->sales_rep_id = $user->id;
                 $dirty = true;
             }
-            if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0) {
+            if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0 || (float)$ord->subtotal == 0 || (float)$ord->manufacturing_cost == 0) {
                 $ord->calculateAndApplyCommission($repRate);
                 $dirty = true;
             }
@@ -77,8 +77,8 @@ class SalesRepController extends Controller
         }
 
         // Financial Metrics
-        $totalQualifyingSales = $orders->sum(fn($o) => (float)($o->subtotal > 0 ? $o->subtotal : $o->total_retail_price));
-        $totalManufacturingCost = $orders->sum(fn($o) => (float)$o->manufacturing_cost);
+        $totalQualifyingSales = $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales());
+        $totalManufacturingCost = $orders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost());
         $totalTariffs = $orders->sum(fn($o) => (float)$o->tariff_amount);
         $totalFees = $orders->sum(fn($o) => (float)$o->fee_deduction);
         $totalNetMargin = $orders->sum(fn($o) => (float)$o->net_margin);

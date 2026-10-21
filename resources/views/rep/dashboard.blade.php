@@ -106,8 +106,8 @@
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
             <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Taxes & Fees</p>
-            <div class="text-2xl font-black text-slate-700">${{ number_format($totalManufacturingCost + $totalTariffs + $totalFees, 2) }}</div>
-            <p class="text-[10px] text-slate-400 mt-1">Deducted costs & fees</p>
+            <div class="text-2xl font-black text-slate-700">${{ number_format($totalTariffs + $totalFees, 2) }}</div>
+            <p class="text-[10px] text-slate-400 mt-1">Deducted fees (Base Mfg: ${{ number_format($totalManufacturingCost, 2) }})</p>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
             <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Net Margin</p>

@@ -238,8 +238,8 @@
 
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
             <span class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Taxes & Fees</span>
-            <span class="block text-xl font-black text-slate-900 font-mono">${{ number_format($totalManufacturingCost + $totalTariffs + $totalFees, 2) }}</span>
-            <span class="text-[10px] text-slate-400">Deducted costs & fees</span>
+            <span class="block text-xl font-black text-slate-900 font-mono">${{ number_format($totalTariffs + $totalFees, 2) }}</span>
+            <span class="text-[10px] text-slate-400">Deducted fees (Base Mfg: ${{ number_format($totalManufacturingCost, 2) }})</span>
         </div>
 
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">

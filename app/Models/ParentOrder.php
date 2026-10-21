@@ -144,6 +144,40 @@ class ParentOrder extends Model
         return $this->belongsTo(User::class, 'sales_rep_id');
     }
 
+    public function getEffectiveQualifyingSales($store = null): float
+    {
+        if ((float) $this->subtotal > 0) {
+            return (float) $this->subtotal;
+        }
+        if ((float) $this->total_retail_price > 0) {
+            return (float) $this->total_retail_price;
+        }
+        $calculated = $this->getCalculatedSubtotal($store);
+        if ($calculated > 0) {
+            return $calculated;
+        }
+        if ((float) $this->total_paid > 0) {
+            return max(0.0, (float) $this->total_paid - (float) $this->tax_amount - (float) $this->fee_amount);
+        }
+        return 0.0;
+    }
+
+    public function getEffectiveManufacturingCost($store = null): float
+    {
+        if ((float) $this->manufacturing_cost > 0) {
+            return (float) $this->manufacturing_cost;
+        }
+        $store = $store ?: $this->teamStore;
+        $items = is_array($this->items_json) ? $this->items_json : [];
+        $totalWholesale = 0.0;
+        foreach ($items as $item) {
+            $qty = max(1, (int) ($item['qty'] ?? 1));
+            $prices = self::getItemPrices($item, $store);
+            $totalWholesale += ($prices['wholesale_price'] * $qty);
+        }
+        return (float) $totalWholesale;
+    }
+
     /**
      * Compute Net Margin and Rep Commission Payout
      * Formula:
@@ -153,11 +187,21 @@ class ParentOrder extends Model
      */
     public function calculateAndApplyCommission(?float $rateOverride = null): void
     {
-        $sales = (float) ($this->subtotal > 0 ? $this->subtotal : $this->total_retail_price);
-        $mfg = (float) $this->manufacturing_cost;
+        $sales = $this->getEffectiveQualifyingSales();
+        $mfg = $this->getEffectiveManufacturingCost();
         $tariff = (float) $this->tariff_amount;
         $fee = (float) $this->fee_deduction;
         $fundraising = (float) $this->fundraising_amount;
+
+        if ($this->subtotal <= 0 && $sales > 0) {
+            $this->subtotal = round($sales, 2);
+        }
+        if ($this->total_retail_price <= 0 && $sales > 0) {
+            $this->total_retail_price = round($sales, 2);
+        }
+        if ($this->manufacturing_cost <= 0 && $mfg > 0) {
+            $this->manufacturing_cost = round($mfg, 2);
+        }
 
         $netMargin = max(0.0, $sales - ($mfg + $tariff + $fee + $fundraising));
         $this->net_margin = round($netMargin, 2);
@@ -403,8 +447,8 @@ class ParentOrder extends Model
             $coach = $first->user ?: $store?->user;
             $isDirect = $first->isDirectOrder();
 
-            $gross = (float) $batchOrders->sum(fn($o) => (float)($o->subtotal > 0 ? $o->subtotal : $o->total_retail_price));
-            $baseCost = (float) $batchOrders->sum(fn($o) => (float)$o->manufacturing_cost);
+            $gross = (float) $batchOrders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales($store));
+            $baseCost = (float) $batchOrders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost($store));
             $tariffsFees = (float) $batchOrders->sum(fn($o) => (float)($o->tariff_amount + $o->fee_deduction));
             $netMargin = (float) $batchOrders->sum(fn($o) => (float)$o->net_margin);
             $commission = (float) $batchOrders->sum(fn($o) => (float)$o->rep_commission_earned);

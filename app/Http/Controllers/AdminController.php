@@ -606,12 +606,53 @@ class AdminController extends Controller
             abort(404);
         }
 
-        $clients = $user->assignedClients()->withCount(['teamStores', 'parentOrders'])->latest()->get();
-        $stores = $user->salesRepTeamStores()->with(['user'])->withCount('parentOrders')->latest()->get();
-        $orders = $user->salesRepOrders()->with(['teamStore', 'user'])->latest()->get();
+        $clientIds = User::where('sales_rep_id', $user->id)->pluck('id')->toArray();
+        $storeIds = TeamStore::where('sales_rep_id', $user->id)
+            ->orWhereIn('user_id', $clientIds)
+            ->pluck('id')
+            ->toArray();
 
-        $totalQualifyingSales = $orders->sum(fn($o) => (float)($o->subtotal > 0 ? $o->subtotal : $o->total_retail_price));
-        $totalManufacturingCost = $orders->sum(fn($o) => (float)$o->manufacturing_cost);
+        $clients = User::where('sales_rep_id', $user->id)
+            ->withCount(['teamStores', 'parentOrders'])
+            ->latest()
+            ->get();
+
+        $stores = TeamStore::where('sales_rep_id', $user->id)
+            ->orWhereIn('user_id', $clientIds)
+            ->with(['user'])
+            ->withCount('parentOrders')
+            ->latest()
+            ->get();
+
+        $orders = ParentOrder::where(function($q) use ($user, $clientIds, $storeIds) {
+                $q->where('sales_rep_id', $user->id)
+                  ->orWhereIn('user_id', $clientIds)
+                  ->orWhereIn('team_store_id', $storeIds);
+            })
+            ->where('status', '!=', 'Draft')
+            ->with(['teamStore', 'user', 'teamStore.items'])
+            ->latest()
+            ->get();
+
+        // Automatically stamp rep attribution and sync financials
+        $repRate = $user->getEffectiveCommissionRate();
+        foreach ($orders as $ord) {
+            $dirty = false;
+            if (!$ord->sales_rep_id) {
+                $ord->sales_rep_id = $user->id;
+                $dirty = true;
+            }
+            if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0 || (float)$ord->subtotal == 0 || (float)$ord->manufacturing_cost == 0) {
+                $ord->calculateAndApplyCommission($repRate);
+                $dirty = true;
+            }
+            if ($dirty) {
+                $ord->save();
+            }
+        }
+
+        $totalQualifyingSales = $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales());
+        $totalManufacturingCost = $orders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost());
         $totalTariffs = $orders->sum(fn($o) => (float)$o->tariff_amount);
         $totalFees = $orders->sum(fn($o) => (float)$o->fee_deduction);
         $totalNetMargin = $orders->sum(fn($o) => (float)$o->net_margin);
@@ -1419,7 +1460,10 @@ class AdminController extends Controller
             })->update(['payment_status' => 'pending']);
         } else {
             $store->parentOrders()->where('payment_status', 'pending')
-                  ->update(['payment_status' => 'not_applicable']);
+                  ->update([
+                      'payment_status' => 'not_applicable',
+                      'status'         => 'Submitted',
+                  ]);
         }
 
         $label = match($validated['payment_mode']) {
