@@ -674,6 +674,28 @@ class AdminController extends Controller
         return redirect()->back()->with('success', "Sales Partner {$user->name} updated successfully.");
     }
 
+    public function updateSalesRepAvatar(Request $request, User $user)
+    {
+        if (!$user->isSalesRep()) abort(404);
+
+        $request->validate([
+            'profile_image' => ['required', 'image', 'max:15360'],
+        ]);
+
+        $path = \App\Services\ImageOptimizer::optimize($request->file('profile_image'), 'partner_avatars');
+        $user->update(['logo_path' => $path]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'avatar_url' => $user->profile_image_url,
+                'message' => 'Profile photo cropped and updated successfully.',
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Profile photo updated successfully.');
+    }
+
     public function updateOrderFinancials(Request $request, ParentOrder $order)
     {
         $validated = $request->validate([
