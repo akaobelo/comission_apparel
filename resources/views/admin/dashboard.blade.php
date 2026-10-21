@@ -549,12 +549,16 @@
                                         <div class="p-4">
                                             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                                                 <div class="min-w-0">
-                                                    <div class="font-bold text-slate-900 text-sm">
-                                                        {{ $quoteRequest->organization_name }}
+                                                    <div class="font-bold text-slate-900 text-sm flex items-center gap-2 flex-wrap">
+                                                        <span>{{ $quoteRequest->organization_name }}</span>
                                                         <span class="text-slate-500 font-medium">· {{ $quoteRequest->apparel_category }}</span>
+                                                        @if($quoteRequest->lead_source === 'landing_page_free_mockup')
+                                                            <span class="px-1.5 py-0.2 bg-purple-100 text-purple-800 text-[9px] font-black uppercase rounded border border-purple-200">Free Mockup Lead</span>
+                                                        @endif
                                                     </div>
                                                     <div class="text-xs text-slate-500 mt-0.5">
                                                         {{ $quoteRequest->first_name }} {{ $quoteRequest->last_name }} · {{ $quoteRequest->position_title }}
+                                                        @if($quoteRequest->organization_type) <span class="text-slate-400">({{ $quoteRequest->organization_type }})</span> @endif
                                                     </div>
                                                     <div class="text-xs text-slate-500">
                                                         {{ $quoteRequest->email }} · {{ $quoteRequest->phone }}
@@ -562,7 +566,7 @@
                                                     <div class="mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2">
                                                         <div class="bg-slate-50 rounded-lg p-2 border border-slate-200">
                                                             <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Estimated Qty</div>
-                                                            <div class="text-xs font-black text-slate-900">{{ $quoteRequest->estimated_quantity }}</div>
+                                                            <div class="text-xs font-black text-slate-900">{{ $quoteRequest->raw_quantity ?: $quoteRequest->estimated_quantity }}</div>
                                                         </div>
                                                         <div class="bg-slate-50 rounded-lg p-2 border border-slate-200">
                                                             <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Package</div>
@@ -1025,6 +1029,9 @@
                                         <div class="flex items-center gap-2.5 flex-wrap">
                                             <span class="font-black text-slate-900 text-base">{{ $quoteRequest->organization_name }}</span>
                                             <span class="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md border border-slate-200">{{ $quoteRequest->apparel_category }}</span>
+                                            @if($quoteRequest->lead_source === 'landing_page_free_mockup')
+                                                <span class="px-2 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-black uppercase rounded-md border border-purple-200">Free Mockup Ad Lead</span>
+                                            @endif
                                             @if($quoteRequest->status === 'new' || !$quoteRequest->status)
                                                 <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black uppercase rounded-md border border-amber-200">New Inquiry</span>
                                             @else
@@ -1032,14 +1039,17 @@
                                             @endif
                                         </div>
                                         <div class="text-xs text-slate-600 mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
-                                            <div><span class="font-bold text-slate-800">{{ $quoteRequest->first_name }} {{ $quoteRequest->last_name }}</span> · {{ $quoteRequest->position_title }}</div>
+                                            <div>
+                                                <span class="font-bold text-slate-800">{{ $quoteRequest->first_name }} {{ $quoteRequest->last_name }}</span> · {{ $quoteRequest->position_title }}
+                                                @if($quoteRequest->organization_type) <span class="text-slate-500">({{ $quoteRequest->organization_type }})</span> @endif
+                                            </div>
                                             <div>✉ {{ $quoteRequest->email }}</div>
                                             <div>📞 {{ $quoteRequest->phone }}</div>
                                         </div>
                                         <div class="mt-3.5 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl">
                                             <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
                                                 <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Estimated Qty</div>
-                                                <div class="text-sm font-black text-slate-900">{{ $quoteRequest->estimated_quantity }}</div>
+                                                <div class="text-sm font-black text-slate-900">{{ $quoteRequest->raw_quantity ?: $quoteRequest->estimated_quantity }}</div>
                                             </div>
                                             <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
                                                 <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Package</div>
@@ -1054,6 +1064,15 @@
                                                 <div class="text-sm font-black text-secondary">{{ $quoteRequest->sales_rep ?: '—' }}</div>
                                             </div>
                                         </div>
+                                        @if($quoteRequest->utm_source || $quoteRequest->utm_campaign || $quoteRequest->utm_medium)
+                                            <div class="mt-2.5 inline-flex flex-wrap items-center gap-2 bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-lg text-xs text-purple-900">
+                                                <span class="font-black uppercase tracking-wider text-[10px] text-purple-700">Ad Campaign:</span>
+                                                @if($quoteRequest->utm_source) <span>Source: <strong>{{ $quoteRequest->utm_source }}</strong></span> @endif
+                                                @if($quoteRequest->utm_medium) <span>· Medium: <strong>{{ $quoteRequest->utm_medium }}</strong></span> @endif
+                                                @if($quoteRequest->utm_campaign) <span>· Campaign: <strong>{{ $quoteRequest->utm_campaign }}</strong></span> @endif
+                                                @if($quoteRequest->utm_content) <span>· Content: <strong>{{ $quoteRequest->utm_content }}</strong></span> @endif
+                                            </div>
+                                        @endif
                                         @if($quoteRequest->design_vision)
                                             <div class="mt-3.5 p-3.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 leading-relaxed max-w-4xl">
                                                 <span class="font-bold uppercase tracking-wider text-[10px] text-slate-500 block mb-1">Design Vision & Notes:</span>

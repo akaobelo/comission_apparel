@@ -20,6 +20,14 @@ class QuoteRequest extends Model
         'design_vision',
         'sales_rep',
         'status',
+        'organization_type',
+        'lead_source',
+        'raw_quantity',
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_term',
+        'utm_content',
     ];
 
     protected function casts(): array
