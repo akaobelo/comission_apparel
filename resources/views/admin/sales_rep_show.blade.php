@@ -534,15 +534,12 @@
                         <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
                             <tr>
                                 <th class="px-4 py-3.5 text-center">Sort</th>
-                                <th class="px-5 py-3.5">Store / Event Name</th>
+                                <th class="px-5 py-3.5">Store Name</th>
                                 <th class="px-5 py-3.5">Coach / Organization</th>
                                 <th class="px-4 py-3.5 text-center">Orders</th>
-                                <th class="px-4 py-3.5">Order Type</th>
+                                <th class="px-4 py-3.5 text-secondary font-black">Order Type</th>
                                 <th class="px-4 py-3.5">Payment Method</th>
-                                <th class="px-4 py-3.5 text-right">Gross Sales</th>
-                                <th class="px-4 py-3.5 text-right">Net Margin</th>
                                 <th class="px-4 py-3.5 text-right">Commission</th>
-                                <th class="px-4 py-3.5 text-center">Status</th>
                                 <th class="px-5 py-3.5 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -553,15 +550,15 @@
                                     <td class="px-4 py-4 text-center">
                                         <div class="inline-flex items-center gap-1.5 font-mono text-xs text-slate-400">
                                             <span class="text-slate-300 font-bold text-sm leading-none select-none">≡</span>
-                                            <span class="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-black text-xs shadow-2xs">
+                                            <span class="w-8 h-7 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-800 font-bold text-xs shadow-2xs">
                                                 {{ $loop->iteration }}
                                             </span>
                                         </div>
                                     </td>
 
-                                    {{-- Store / Event Name --}}
+                                    {{-- Store Name --}}
                                     <td class="px-5 py-4">
-                                        <div class="font-bold text-slate-900 group-hover:text-primary transition-colors">
+                                        <div class="font-bold text-slate-900 group-hover:text-primary transition-colors text-sm">
                                             {{ $batch->store_name }}
                                         </div>
                                         @if($batch->slug)
@@ -573,13 +570,13 @@
 
                                     {{-- Coach / Organization --}}
                                     <td class="px-5 py-4">
-                                        <div class="font-bold text-slate-900">{{ $batch->coach_name }}</div>
+                                        <div class="font-bold text-slate-900 text-sm">{{ $batch->coach_name }}</div>
                                         <div class="text-xs text-slate-500">{{ $batch->organization }}</div>
                                     </td>
 
                                     {{-- Orders Count --}}
                                     <td class="px-4 py-4 text-center">
-                                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-black font-mono rounded-full bg-slate-100 text-slate-800 border border-slate-200">
+                                        <span class="inline-flex items-center px-3 py-1 text-xs font-bold font-mono rounded-full bg-slate-100 text-slate-800 border border-slate-200">
                                             {{ $batch->order_count }} {{ \Illuminate\Support\Str::plural('order', $batch->order_count) }}
                                         </span>
                                     </td>
@@ -587,11 +584,11 @@
                                     {{-- Order Type --}}
                                     <td class="px-4 py-4">
                                         @if($batch->is_direct)
-                                            <span class="inline-flex items-center px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border bg-purple-50 text-purple-700 border-purple-200">
+                                            <span class="inline-flex items-center px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md bg-purple-50 text-purple-700 border border-purple-200 shadow-2xs">
                                                 FINALIZED DIRECT ORDERS
                                             </span>
                                         @else
-                                            <span class="inline-flex items-center px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border bg-blue-50 text-blue-700 border-blue-200">
+                                            <span class="inline-flex items-center px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
                                                 FINALIZED MASTER ORDERS
                                             </span>
                                         @endif
@@ -600,61 +597,48 @@
                                     {{-- Payment Method --}}
                                     <td class="px-4 py-4">
                                         @if($batch->payment_method === 'Stripe')
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs">
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs">
                                                 <span>💳</span> Stripe
                                             </span>
                                         @elseif($batch->payment_method === 'Check')
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-800 border border-blue-300 shadow-2xs">
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-blue-50 text-blue-800 border border-blue-300 shadow-2xs">
                                                 <span>📑</span> Check
                                             </span>
                                         @else
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs">
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs">
                                                 <span>💵</span> Cash
                                             </span>
                                         @endif
                                     </td>
 
-                                    {{-- Gross Sales --}}
-                                    <td class="px-4 py-4 text-right font-mono font-bold text-slate-900">
-                                        ${{ number_format($batch->gross, 2) }}
-                                    </td>
-
-                                    {{-- Net Margin --}}
-                                    <td class="px-4 py-4 text-right font-mono font-bold text-slate-900">
-                                        ${{ number_format($batch->net_margin, 2) }}
-                                    </td>
-
                                     {{-- Commission --}}
-                                    <td class="px-4 py-4 text-right font-mono font-black text-emerald-600 text-sm">
-                                        ${{ number_format($batch->commission, 2) }}
-                                    </td>
-
-                                    {{-- Status --}}
-                                    <td class="px-4 py-4 text-center">
-                                        <span class="inline-flex px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full border
-                                            {{ $batch->status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($batch->status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">
-                                            {{ $batch->status }}
-                                        </span>
+                                    <td class="px-4 py-4 text-right">
+                                        <div class="font-black font-mono text-emerald-600 text-sm">
+                                            ${{ number_format($batch->commission, 2) }}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 font-mono">
+                                            Gross: ${{ number_format($batch->gross, 2) }}
+                                        </div>
                                     </td>
 
                                     {{-- Actions --}}
                                     <td class="px-5 py-4 text-right" @click.stop>
-                                        <div class="flex items-center justify-end gap-2">
+                                        <div class="flex items-center justify-end gap-2.5">
                                             @if($batch->slug)
-                                                <a href="{{ route('store.show', $batch->slug) }}" target="_blank" class="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-600 rounded text-xs font-bold border border-slate-200 transition-colors" title="View Public Store">
-                                                    View Store ↗
+                                                <a href="{{ route('store.show', $batch->slug) }}" target="_blank" class="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
+                                                    View Store
+                                                    <svg class="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                 </a>
                                             @endif
-                                            <button type="button" @click="selectedBatchKey = '{{ $batch->key }}'" class="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-black uppercase tracking-wider transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer">
-                                                <span>Breakdown</span>
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                            <button type="button" @click="selectedBatchKey = '{{ $batch->key }}'" class="px-3 py-1 bg-white border border-secondary text-secondary hover:bg-secondary hover:text-white rounded-md text-xs font-bold uppercase tracking-wider transition-colors shadow-2xs cursor-pointer">
+                                                Edit
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="px-6 py-12 text-center text-slate-500 font-sans">
+                                    <td colspan="8" class="px-6 py-12 text-center text-slate-500 font-sans">
                                         No order batches recorded for this sales partner yet.
                                     </td>
                                 </tr>
