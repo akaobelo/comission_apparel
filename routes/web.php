@@ -474,6 +474,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/sales-reps', [AdminController::class, 'createSalesRepUser'])->name('admin.sales-rep.create');
     Route::post('/admin/sales-reps/{user}/update', [AdminController::class, 'updateSalesRepUser'])->name('admin.sales-rep.update');
     Route::post('/admin/sales-reps/{user}/avatar', [AdminController::class, 'updateSalesRepAvatar'])->name('admin.sales-rep.avatar');
+    Route::post('/admin/sales-reps/{user}/unassign-coach/{coach}', [AdminController::class, 'unassignCoachFromSalesRep'])->name('admin.sales-rep.unassign-coach');
     Route::post('/admin/order/{order}/financials', [AdminController::class, 'updateOrderFinancials'])->name('admin.order.financials.update');
     Route::post('/admin/direct-batch/{batch_id}/financials', [AdminController::class, 'updateBatchFinancials'])->name('admin.direct-batch.financials.update');
 });

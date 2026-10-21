@@ -2,10 +2,21 @@
 @section('title', 'Review Direct Order Batch | Admin')
 @section('content')
 <div class="max-w-7xl mx-auto px-6 pb-8 pt-32 lg:pt-40">
+    @php
+        $returnUrl = request('return_to');
+        if (!$returnUrl) {
+            $referer = request()->headers->get('referer');
+            if ($referer && str_contains($referer, 'sales-rep')) {
+                $returnUrl = $referer;
+            }
+        }
+        $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'orders']);
+        $backLabel = ($returnUrl && str_contains($returnUrl, 'sales-rep')) ? 'Back to Sales Partner' : 'Back to Dashboard';
+    @endphp
     <div class="flex items-center gap-4 mb-8">
-        <a href="{{ route('admin.dashboard') }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-bold uppercase tracking-wide">
+        <a href="{{ $backUrl }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-bold uppercase tracking-wide">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            Back to Dashboard
+            {{ $backLabel }}
         </a>
         <span class="text-slate-300">/</span>
         <span class="text-slate-700 font-bold uppercase tracking-wide">Direct Order Batch: {{ $batchId }} @if($store) — <span class="text-primary font-black">{{ $store->name }}</span> @endif</span>

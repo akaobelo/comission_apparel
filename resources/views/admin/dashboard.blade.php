@@ -1866,14 +1866,14 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <span class="font-inter font-bold text-slate-900 text-sm bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
+                                        <span class="font-sans font-bold text-slate-900 text-sm bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
                                             {{ number_format($rep->getEffectiveCommissionRate(), 1) }}%
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $rep->assigned_clients_count }}</td>
                                     <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $rep->sales_rep_team_stores_count }}</td>
                                     <td class="px-6 py-4 text-right">
-                                        <div class="font-inter font-bold text-emerald-600 text-sm">${{ number_format($totalEarned, 2) }}</div>
+                                        <div class="font-sans font-bold text-emerald-600 text-sm">${{ number_format($totalEarned, 2) }}</div>
                                         <div class="text-[10px] text-slate-400">${{ number_format($pendingEarned, 2) }} pending</div>
                                     </td>
                                     <td class="px-6 py-4 text-center">
@@ -2052,12 +2052,18 @@
 
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Referral Slug</label>
-                            <input type="text" name="referral_slug" :value="activeEditRep?.referral_slug" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <input type="text" name="referral_slug" :value="activeEditRep?.referral_slug" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Change Password (Leave blank to keep)</label>
-                            <input type="password" name="password" minlength="8" placeholder="New password" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Change Password (Optional)</label>
+                                <input type="password" id="modal_edit_partner_password" name="password" minlength="8" placeholder="Leave blank to keep" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Confirm Password</label>
+                                <input type="password" name="password_confirmation" minlength="8" placeholder="Re-enter password" oninput="this.setCustomValidity(document.getElementById('modal_edit_partner_password').value && this.value !== document.getElementById('modal_edit_partner_password').value ? 'Passwords do not match.' : '')" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            </div>
                         </div>
 
                         <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">

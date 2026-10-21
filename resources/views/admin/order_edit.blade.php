@@ -2,18 +2,22 @@
 @section('title', 'Edit Order | Admin')
 @section('content')
 <div class="max-w-3xl mx-auto px-6 pb-8 pt-32 lg:pt-40">
+    @php
+        $returnUrl = request('return_to');
+        if (!$returnUrl) {
+            $referer = request()->headers->get('referer');
+            if ($referer && str_contains($referer, 'sales-rep')) {
+                $returnUrl = $referer;
+            }
+        }
+        $cancelUrl = $returnUrl ?: (!$order->isDirectOrder() && $order->teamStore ? route('admin.store.edit', $order->teamStore) : ($order->batch_id ? route('admin.direct-batch.show', $order->batch_id) : route('admin.dashboard', ['tab' => 'orders'])));
+        $backLabel = ($returnUrl && str_contains($returnUrl, 'sales-rep')) ? 'Back to Sales Partner' : (!$order->isDirectOrder() && $order->teamStore ? 'Back to Store' : 'Back to Batch');
+    @endphp
     <div class="flex items-center gap-4 mb-8">
-        @if(!$order->isDirectOrder() && $order->teamStore)
-            <a href="{{ route('admin.store.edit', $order->teamStore) }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-bold uppercase tracking-wide">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                Back to Store
-            </a>
-        @else
-            <a href="{{ route('admin.direct-batch.show', $order->batch_id) }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-bold uppercase tracking-wide">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                Back to Batch
-            </a>
-        @endif
+        <a href="{{ $cancelUrl }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            {{ $backLabel }}
+        </a>
         <span class="text-slate-300">/</span>
         <span class="text-slate-700 font-bold">Editing: {{ $order->athlete_first_name }} {{ $order->athlete_last_name }}'s Order</span>
     </div>
@@ -152,11 +156,7 @@
 
                 <div class="flex gap-3 pt-2">
                     <button type="submit" class="btn btn-primary py-3 px-8 text-sm uppercase tracking-wider">Save Changes</button>
-                    @if(!$order->isDirectOrder() && $order->teamStore)
-                        <a href="{{ route('admin.store.edit', $order->teamStore) }}" class="btn btn-outline py-3 px-6 text-sm uppercase tracking-wider">Cancel</a>
-                    @else
-                        <a href="{{ route('admin.direct-batch.show', $order->batch_id) }}" class="btn btn-outline py-3 px-6 text-sm uppercase tracking-wider">Cancel</a>
-                    @endif
+                    <a href="{{ $cancelUrl }}" class="btn btn-outline py-3 px-6 text-sm uppercase tracking-wider">Cancel</a>
                 </div>
             </form>
 

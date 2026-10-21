@@ -133,34 +133,34 @@
     <!-- Financial Key Metrics Grid -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Qualifying Sales</p>
-            <div class="text-2xl font-bold tracking-tight text-slate-900 font-inter">${{ number_format($totalQualifyingSales, 2) }}</div>
-            <p class="text-[11px] text-slate-400 mt-1">Gross order revenue</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-sans">Qualifying Sales</p>
+            <div class="text-2xl font-bold tracking-tight text-slate-900 font-sans">${{ number_format($totalQualifyingSales, 2) }}</div>
+            <p class="text-[11px] text-slate-400 mt-1 font-sans">Gross order revenue</p>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Taxes & Fees</p>
-            <div class="text-2xl font-bold tracking-tight text-slate-700 font-inter">${{ number_format($totalTariffs + $totalFees, 2) }}</div>
-            <p class="text-[11px] text-slate-400 mt-1">Deducted fees (Base Mfg: ${{ number_format($totalManufacturingCost, 2) }})</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-sans">Taxes & Fees</p>
+            <div class="text-2xl font-bold tracking-tight text-slate-700 font-sans">${{ number_format($totalTariffs + $totalFees, 2) }}</div>
+            <p class="text-[11px] text-slate-400 mt-1 font-sans">Deducted fees (Base Mfg: ${{ number_format($totalManufacturingCost, 2) }})</p>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Net Margin</p>
-            <div class="text-2xl font-bold tracking-tight text-slate-900 font-inter">${{ number_format($totalNetMargin, 2) }}</div>
-            <p class="text-[11px] text-slate-400 mt-1">Commissionable pool</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-sans">Net Margin</p>
+            <div class="text-2xl font-bold tracking-tight text-slate-900 font-sans">${{ number_format($totalNetMargin, 2) }}</div>
+            <p class="text-[11px] text-slate-400 mt-1 font-sans">Commissionable pool</p>
         </div>
         <div class="bg-white border border-amber-200 bg-amber-50/40 rounded-xl p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wider text-amber-800 mb-1.5">Pending Payout</p>
-            <div class="text-2xl font-bold tracking-tight text-amber-600 font-inter">${{ number_format($pendingCommission, 2) }}</div>
-            <p class="text-[11px] text-amber-600/80 mt-1">In active production</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-amber-800 mb-1.5 font-sans">Pending Payout</p>
+            <div class="text-2xl font-bold tracking-tight text-amber-600 font-sans">${{ number_format($pendingCommission, 2) }}</div>
+            <p class="text-[11px] text-amber-600/80 mt-1 font-sans">In active production</p>
         </div>
         <div class="bg-white border border-blue-200 bg-blue-50/40 rounded-xl p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wider text-blue-800 mb-1.5">Cleared Payout</p>
-            <div class="text-2xl font-bold tracking-tight text-blue-600 font-inter">${{ number_format($clearedCommission, 2) }}</div>
-            <p class="text-[11px] text-blue-600/80 mt-1">Ready for monthly deposit</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-blue-800 mb-1.5 font-sans">Cleared Payout</p>
+            <div class="text-2xl font-bold tracking-tight text-blue-600 font-sans">${{ number_format($clearedCommission, 2) }}</div>
+            <p class="text-[11px] text-blue-600/80 mt-1 font-sans">Ready for monthly deposit</p>
         </div>
         <div class="bg-white border border-emerald-200 bg-emerald-50/40 rounded-xl p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wider text-emerald-800 mb-1.5">Lifetime Paid</p>
-            <div class="text-2xl font-bold tracking-tight text-emerald-600 font-inter">${{ number_format($paidCommission, 2) }}</div>
-            <p class="text-[11px] text-emerald-600/80 mt-1">Disbursed via QuickBooks</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-emerald-800 mb-1.5 font-sans">Lifetime Paid</p>
+            <div class="text-2xl font-bold tracking-tight text-emerald-600 font-sans">${{ number_format($paidCommission, 2) }}</div>
+            <p class="text-[11px] text-emerald-600/80 mt-1 font-sans">Disbursed via QuickBooks</p>
         </div>
     </div>
 
@@ -190,7 +190,7 @@
     <div x-show="activeTab === 'clients'" class="space-y-6">
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                <h3 class="text-sm font-black uppercase tracking-wider text-slate-900">Assigned Athletic Programs & Coaches</h3>
+                <h3 class="text-sm font-black uppercase tracking-wider text-slate-900">Assigned Clients & Organizations</h3>
                 <span class="text-xs font-bold text-slate-500">{{ $clients->count() }} Accounts Active</span>
             </div>
             <div class="overflow-x-auto">
@@ -198,8 +198,8 @@
                     <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
                         <tr>
                             <th class="px-6 py-3.5">Organization / School</th>
-                            <th class="px-6 py-3.5">Primary Coach Contact</th>
-                            <th class="px-6 py-3.5">Sport</th>
+                            <th class="px-6 py-3.5">Primary Contact</th>
+                            <th class="px-6 py-3.5">Category</th>
                             <th class="px-6 py-3.5 text-center">Stores</th>
                             <th class="px-6 py-3.5 text-center">Orders</th>
                             <th class="px-6 py-3.5">Onboarded</th>
@@ -227,7 +227,7 @@
                             <tr>
                                 <td colspan="6" class="px-6 py-12 text-center text-slate-500">
                                     <p class="font-bold text-base text-slate-700 mb-1">No clients assigned yet</p>
-                                    <p class="text-xs text-slate-400">Share your recruitment link or click "+ Register New Client" above to onboard your first athletic program.</p>
+                                    <p class="text-xs text-slate-400">Share your recruitment link or click "+ Register New Client" above to onboard your first client organization.</p>
                                 </td>
                             </tr>
                         @endforelse
@@ -249,7 +249,7 @@
                     <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
                         <tr>
                             <th class="px-6 py-3.5">Store Name</th>
-                            <th class="px-6 py-3.5">Coach / Program</th>
+                            <th class="px-6 py-3.5">Organization / Admin</th>
                             <th class="px-6 py-3.5 text-center">Orders Placed</th>
                             <th class="px-6 py-3.5">Deadline</th>
                             <th class="px-6 py-3.5">Status</th>
@@ -264,7 +264,7 @@
                                         {{ $s->name }}
                                         <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                     </a>
-                                    <div class="text-xs text-slate-400">Sport: {{ $s->sport }}</div>
+                                    <div class="text-xs text-slate-400">Category: {{ $s->sport ?: ($s->user?->sport ?: 'Athletics') }}</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-slate-800">{{ $s->user?->organization }}</div>
@@ -482,7 +482,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-5 font-inter text-center">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-5 font-sans text-center">
                         <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 font-sans">Orders</span>
                             <span class="text-base font-bold text-slate-900">{{ $batch->order_count }}</span>
@@ -551,12 +551,12 @@
                                             <div class="font-bold text-slate-800 text-xs">{{ $ord->user?->organization ?? $ord->user?->name ?? '—' }}</div>
                                             <div class="text-[11px] text-slate-500">{{ $ord->teamStore?->name ?? 'Direct Order' }}</div>
                                         </td>
-                                        <td class="px-4 py-4 text-right font-inter font-semibold text-slate-900">${{ number_format($gross, 2) }}</td>
-                                        <td class="px-4 py-4 text-right font-inter text-slate-600">-${{ number_format((float)$ord->manufacturing_cost, 2) }}</td>
-                                        <td class="px-4 py-4 text-right font-inter text-slate-500">-${{ number_format($deductions, 2) }}</td>
-                                        <td class="px-4 py-4 text-right font-inter font-semibold text-slate-900">${{ number_format((float)$ord->net_margin, 2) }}</td>
-                                        <td class="px-4 py-4 text-center font-inter font-bold text-primary text-xs">{{ number_format($appliedRate, 1) }}%</td>
-                                        <td class="px-4 py-4 text-right font-inter font-bold text-emerald-600 text-base">${{ number_format((float)$ord->rep_commission_earned, 2) }}</td>
+                                        <td class="px-4 py-4 text-right font-semibold text-slate-900">${{ number_format($gross, 2) }}</td>
+                                        <td class="px-4 py-4 text-right text-slate-600">-${{ number_format((float)$ord->manufacturing_cost, 2) }}</td>
+                                        <td class="px-4 py-4 text-right text-slate-500">-${{ number_format($deductions, 2) }}</td>
+                                        <td class="px-4 py-4 text-right font-semibold text-slate-900">${{ number_format((float)$ord->net_margin, 2) }}</td>
+                                        <td class="px-4 py-4 text-center font-bold text-primary text-xs">{{ number_format($appliedRate, 1) }}%</td>
+                                        <td class="px-4 py-4 text-right font-bold text-emerald-600 text-base">${{ number_format((float)$ord->rep_commission_earned, 2) }}</td>
                                         <td class="px-4 py-4 text-center">
                                             <span class="inline-flex px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full border
                                                 {{ $ord->commission_status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($ord->commission_status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">
@@ -626,12 +626,12 @@
                                         <div class="font-bold text-slate-800 text-xs">{{ $ord->user?->organization ?? $ord->user?->name ?? '—' }}</div>
                                         <div class="text-[11px] text-slate-500">{{ $ord->teamStore?->name ?? 'Direct Order Batch' }}</div>
                                     </td>
-                                    <td class="px-4 py-4 text-right font-inter font-semibold text-slate-900">${{ number_format($gross, 2) }}</td>
-                                    <td class="px-4 py-4 text-right font-inter text-slate-600">-${{ number_format((float)$ord->manufacturing_cost, 2) }}</td>
-                                    <td class="px-4 py-4 text-right font-inter text-slate-500">-${{ number_format($deductions, 2) }}</td>
-                                    <td class="px-4 py-4 text-right font-inter font-semibold text-slate-900">${{ number_format((float)$ord->net_margin, 2) }}</td>
-                                    <td class="px-4 py-4 text-center font-inter font-bold text-primary text-xs">{{ number_format($appliedRate, 1) }}%</td>
-                                    <td class="px-4 py-4 text-right font-inter font-bold text-emerald-600 text-base">${{ number_format((float)$ord->rep_commission_earned, 2) }}</td>
+                                    <td class="px-4 py-4 text-right font-semibold text-slate-900">${{ number_format($gross, 2) }}</td>
+                                    <td class="px-4 py-4 text-right text-slate-600">-${{ number_format((float)$ord->manufacturing_cost, 2) }}</td>
+                                    <td class="px-4 py-4 text-right text-slate-500">-${{ number_format($deductions, 2) }}</td>
+                                    <td class="px-4 py-4 text-right font-semibold text-slate-900">${{ number_format((float)$ord->net_margin, 2) }}</td>
+                                    <td class="px-4 py-4 text-center font-bold text-primary text-xs">{{ number_format($appliedRate, 1) }}%</td>
+                                    <td class="px-4 py-4 text-right font-bold text-emerald-600 text-base">${{ number_format((float)$ord->rep_commission_earned, 2) }}</td>
                                     <td class="px-4 py-4 text-center">
                                         <span class="inline-flex px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full border
                                             {{ $ord->commission_status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($ord->commission_status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">

@@ -2,10 +2,27 @@
 @section('title', 'Edit Store | Admin')
 @section('content')
 <div class="max-w-5xl mx-auto px-6 pb-8 pt-32 lg:pt-40">
+    @php
+        $returnUrl = request('return_to');
+        if (!$returnUrl) {
+            $referer = request()->headers->get('referer');
+            if ($referer && str_contains($referer, 'sales-rep')) {
+                $returnUrl = $referer;
+            }
+        }
+        if (!$returnUrl) {
+            $rep = $store->salesRep ?: $store->user?->assignedSalesRep;
+            if ($rep) {
+                $returnUrl = route('admin.sales-rep.show', ['user' => $rep, 'tab' => 'stores']);
+            }
+        }
+        $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'stores']);
+        $backLabel = ($returnUrl && str_contains($returnUrl, 'sales-rep')) ? 'Back to Sales Partner' : 'Back to Dashboard';
+    @endphp
     <div class="flex items-center gap-4 mb-8">
-        <a href="{{ route('admin.dashboard') }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-bold uppercase tracking-wide">
+        <a href="{{ $backUrl }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            Back to Dashboard
+            {{ $backLabel }}
         </a>
         <span class="text-slate-300">/</span>
         <span class="text-slate-700 font-bold">Store: {{ $store->name }}</span>
@@ -24,8 +41,11 @@
                     <p class="text-sm text-slate-500 mt-1">Coach: {{ $store->user->name }} — {{ $store->user->organization }}</p>
                 </div>
                 <div class="p-6">
-                    <form action="{{ route('admin.store.update', $store) }}" method="POST" class="space-y-5">
+                    <form action="{{ route('admin.store.update', array_filter(['store' => $store, 'return_to' => $returnUrl])) }}" method="POST" class="space-y-5">
                         @csrf
+                        @if($returnUrl)
+                            <input type="hidden" name="return_to" value="{{ $returnUrl }}">
+                        @endif
                         <div class="grid grid-cols-2 gap-5">
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Store Name</label>

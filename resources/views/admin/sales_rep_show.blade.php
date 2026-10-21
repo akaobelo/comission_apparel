@@ -3,31 +3,153 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 pt-32 lg:pt-40" x-data="{
-    activeTab: (new URLSearchParams(window.location.search)).get('tab') || '{{ request('tab', 'overview') }}',
+    activeTab: '{{ request('tab', 'overview') }}',
+    viewMode: 'batches',
+    selectedBatchKey: null,
     copied: false,
     cropperModal: false,
     cropperInstance: null,
     cropSaving: false,
     currentAvatarUrl: '{{ $user->profile_image_url }}',
+    tabHistory: [],
+
     init() {
         const urlParams = new URLSearchParams(window.location.search);
-        const tab = urlParams.get('tab');
-        if (tab) {
-            this.activeTab = tab;
+        const urlTab = urlParams.get('tab');
+        const urlBatch = urlParams.get('batch');
+        const urlView = urlParams.get('view');
+
+        if (urlTab) {
+            this.activeTab = urlTab;
         } else {
             const saved = sessionStorage.getItem('sales_rep_tab_{{ $user->id }}');
             if (saved) {
                 this.activeTab = saved;
             }
         }
+        if (urlBatch) {
+            this.selectedBatchKey = urlBatch;
+        }
+        if (urlView) {
+            this.viewMode = urlView;
+        }
+
+        this.tabHistory = [this.activeTab];
+
+        // Replace initial state with full parameters
+        const u = new URL(window.location);
+        u.searchParams.set('tab', this.activeTab);
+        if (this.selectedBatchKey) {
+            u.searchParams.set('batch', this.selectedBatchKey);
+        } else {
+            u.searchParams.delete('batch');
+        }
+        window.history.replaceState({
+            tab: this.activeTab,
+            batch: this.selectedBatchKey,
+            view: this.viewMode
+        }, '', u);
+
+        // Listen to browser Back / Forward buttons for step-by-step navigation
+        window.addEventListener('popstate', (e) => {
+            const p = new URLSearchParams(window.location.search);
+            this.activeTab = p.get('tab') || (e.state && e.state.tab) || 'overview';
+            this.selectedBatchKey = p.get('batch') || (e.state && e.state.batch) || null;
+            this.viewMode = p.get('view') || (e.state && e.state.view) || 'batches';
+            sessionStorage.setItem('sales_rep_tab_{{ $user->id }}', this.activeTab);
+        });
     },
-    setTab(t) {
+
+    setTab(t, push = true) {
+        if (this.activeTab === t && !this.selectedBatchKey) return;
         this.activeTab = t;
+        this.selectedBatchKey = null;
+        if (this.tabHistory[this.tabHistory.length - 1] !== t) {
+            this.tabHistory.push(t);
+        }
         sessionStorage.setItem('sales_rep_tab_{{ $user->id }}', t);
+
         const u = new URL(window.location);
         u.searchParams.set('tab', t);
-        window.history.replaceState({}, '', u);
+        u.searchParams.delete('batch');
+
+        if (push) {
+            window.history.pushState({ tab: t, batch: null, view: this.viewMode }, '', u);
+        }
     },
+
+    openBatch(key, push = true) {
+        this.selectedBatchKey = key;
+        this.viewMode = 'batches';
+
+        const u = new URL(window.location);
+        u.searchParams.set('tab', 'orders');
+        u.searchParams.set('batch', key);
+
+        if (push) {
+            window.history.pushState({ tab: 'orders', batch: key, view: 'batches' }, '', u);
+        }
+        window.scrollTo({ top: 320, behavior: 'smooth' });
+    },
+
+    closeBatch(push = true) {
+        if (!this.selectedBatchKey) return;
+        this.selectedBatchKey = null;
+
+        const u = new URL(window.location);
+        u.searchParams.set('tab', 'orders');
+        u.searchParams.delete('batch');
+
+        if (push) {
+            window.history.pushState({ tab: 'orders', batch: null, view: this.viewMode }, '', u);
+        }
+    },
+
+    setViewMode(m, push = true) {
+        this.viewMode = m;
+        this.selectedBatchKey = null;
+
+        const u = new URL(window.location);
+        u.searchParams.set('tab', 'orders');
+        u.searchParams.set('view', m);
+        u.searchParams.delete('batch');
+
+        if (push) {
+            window.history.pushState({ tab: 'orders', batch: null, view: m }, '', u);
+        }
+    },
+
+    goBackStep() {
+        // Step 1: If viewing an open batch detail, step back to order batches list
+        if (this.selectedBatchKey) {
+            this.closeBatch(true);
+            return;
+        }
+
+        // Step 2: If in all_orders view mode, step back to batches view
+        if (this.activeTab === 'orders' && this.viewMode === 'all_orders') {
+            this.setViewMode('batches', true);
+            return;
+        }
+
+        // Step 3: If on any sub-tab (clients, stores, orders), step back to previous tab or overview
+        if (this.activeTab !== 'overview') {
+            if (this.tabHistory.length > 1) {
+                this.tabHistory.pop(); // remove current tab
+                const prev = this.tabHistory[this.tabHistory.length - 1];
+                if (prev && prev !== this.activeTab) {
+                    this.setTab(prev, true);
+                    return;
+                }
+            }
+            this.setTab('overview', true);
+            return;
+        }
+
+        // Step 4: If on overview, navigate back to Sales Partners list
+        window.location.href = '{{ route('admin.dashboard', ['tab' => 'sales_reps']) }}';
+    },
+
     copyLink() {
         navigator.clipboard.writeText('{{ $referralUrl }}');
         this.copied = true;
@@ -104,14 +226,24 @@
         }, 'image/jpeg', 0.92);
     }
 }">
-    <!-- Breadcrumb & Back -->
-    <div class="flex items-center gap-3 mb-6">
-        <a href="{{ route('admin.dashboard', ['tab' => 'sales_reps']) }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            Back to Sales Partners
+    <!-- Breadcrumb & Step-by-Step Back Navigation -->
+    <div class="flex items-center gap-2 sm:gap-3 mb-6 flex-wrap">
+        <button type="button" @click="goBackStep()" class="text-slate-600 hover:text-primary transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider cursor-pointer group">
+            <svg class="w-4 h-4 text-slate-400 group-hover:text-primary transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            <span x-text="selectedBatchKey ? 'Back to Order Batches' : (activeTab !== 'overview' ? 'Back to Overview' : 'Back to Sales Partners')">Back to Sales Partners</span>
+        </button>
+        <span class="text-slate-300">/</span>
+        <a href="{{ route('admin.dashboard', ['tab' => 'sales_reps']) }}" class="text-slate-400 hover:text-slate-700 text-xs font-bold uppercase tracking-wider transition-colors" title="Return to Sales Partners List">
+            Sales Partners
         </a>
         <span class="text-slate-300">/</span>
-        <span class="text-slate-700 font-bold text-xs uppercase tracking-wider">Partner Profile</span>
+        <span class="text-slate-700 font-bold text-xs uppercase tracking-wider" x-text="activeTab === 'overview' ? 'Partner Profile' : (activeTab === 'clients' ? 'Assigned Clients' : (activeTab === 'stores' ? 'Team Stores' : 'Commission Statements'))">Partner Profile</span>
+        <template x-if="selectedBatchKey">
+            <span class="flex items-center gap-2 text-slate-300">
+                <span>/</span>
+                <span class="text-primary font-bold text-xs uppercase tracking-wider">Batch Details</span>
+            </span>
+        </template>
     </div>
 
     @if(session('success'))
@@ -264,39 +396,39 @@
     <!-- 6 KPI Metric Cards -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <span class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Qualifying Sales</span>
-            <span class="block text-2xl font-bold tracking-tight text-slate-900 font-inter">${{ number_format($totalQualifyingSales, 2) }}</span>
-            <span class="text-[11px] text-slate-400 mt-1 block">Gross order revenue</span>
+            <span class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-sans">Qualifying Sales</span>
+            <span class="block text-2xl font-bold tracking-tight text-slate-900 font-sans">${{ number_format($totalQualifyingSales, 2) }}</span>
+            <span class="text-[11px] text-slate-400 mt-1 block font-sans">Gross order revenue</span>
         </div>
 
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <span class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Taxes & Fees</span>
-            <span class="block text-2xl font-bold tracking-tight text-slate-900 font-inter">${{ number_format($totalTariffs + $totalFees, 2) }}</span>
-            <span class="text-[11px] text-slate-400 mt-1 block">Deducted fees (Base Mfg: ${{ number_format($totalManufacturingCost, 2) }})</span>
+            <span class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-sans">Taxes & Fees</span>
+            <span class="block text-2xl font-bold tracking-tight text-slate-900 font-sans">${{ number_format($totalTariffs + $totalFees, 2) }}</span>
+            <span class="text-[11px] text-slate-400 mt-1 block font-sans">Deducted fees (Base Mfg: ${{ number_format($totalManufacturingCost, 2) }})</span>
         </div>
 
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <span class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Net Margin</span>
-            <span class="block text-2xl font-bold tracking-tight text-slate-900 font-inter">${{ number_format($totalNetMargin, 2) }}</span>
-            <span class="text-[11px] text-slate-400 mt-1 block">Commissionable pool</span>
+            <span class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-sans">Net Margin</span>
+            <span class="block text-2xl font-bold tracking-tight text-slate-900 font-sans">${{ number_format($totalNetMargin, 2) }}</span>
+            <span class="text-[11px] text-slate-400 mt-1 block font-sans">Commissionable pool</span>
         </div>
 
         <div class="bg-white border border-amber-200/80 rounded-xl p-4 shadow-sm bg-gradient-to-br from-white to-amber-50/30">
-            <span class="block text-xs font-semibold uppercase tracking-wider text-amber-700 mb-1.5">Pending Payout</span>
-            <span class="block text-2xl font-bold tracking-tight text-amber-600 font-inter">${{ number_format($pendingCommission, 2) }}</span>
-            <span class="text-[11px] text-amber-600/80 mt-1 block">In active production</span>
+            <span class="block text-xs font-semibold uppercase tracking-wider text-amber-700 mb-1.5 font-sans">Pending Payout</span>
+            <span class="block text-2xl font-bold tracking-tight text-amber-600 font-sans">${{ number_format($pendingCommission, 2) }}</span>
+            <span class="text-[11px] text-amber-600/80 mt-1 block font-sans">In active production</span>
         </div>
 
         <div class="bg-white border border-blue-200/80 rounded-xl p-4 shadow-sm bg-gradient-to-br from-white to-blue-50/30">
-            <span class="block text-xs font-semibold uppercase tracking-wider text-blue-700 mb-1.5">Cleared Payout</span>
-            <span class="block text-2xl font-bold tracking-tight text-blue-600 font-inter">${{ number_format($clearedCommission, 2) }}</span>
-            <span class="text-[11px] text-blue-600/80 mt-1 block">Ready for deposit</span>
+            <span class="block text-xs font-semibold uppercase tracking-wider text-blue-700 mb-1.5 font-sans">Cleared Payout</span>
+            <span class="block text-2xl font-bold tracking-tight text-blue-600 font-sans">${{ number_format($clearedCommission, 2) }}</span>
+            <span class="text-[11px] text-blue-600/80 mt-1 block font-sans">Ready for deposit</span>
         </div>
 
         <div class="bg-white border border-emerald-200/80 rounded-xl p-4 shadow-sm bg-gradient-to-br from-white to-emerald-50/30">
-            <span class="block text-xs font-semibold uppercase tracking-wider text-emerald-700 mb-1.5">Lifetime Paid</span>
-            <span class="block text-2xl font-bold tracking-tight text-emerald-600 font-inter">${{ number_format($paidCommission, 2) }}</span>
-            <span class="text-[11px] text-emerald-600/80 mt-1 block">Disbursed via QuickBooks</span>
+            <span class="block text-xs font-semibold uppercase tracking-wider text-emerald-700 mb-1.5 font-sans">Lifetime Paid</span>
+            <span class="block text-2xl font-bold tracking-tight text-emerald-600 font-sans">${{ number_format($paidCommission, 2) }}</span>
+            <span class="text-[11px] text-emerald-600/80 mt-1 block font-sans">Disbursed via QuickBooks</span>
         </div>
     </div>
 
@@ -306,7 +438,7 @@
             Partner Settings & Profile
         </button>
         <button type="button" @click="setTab('clients')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'clients' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
-            Assigned Coaches & Clients ({{ $clients->count() }})
+            Assigned Clients ({{ $clients->count() }})
         </button>
         <button type="button" @click="setTab('stores')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'stores' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
             Team Stores & Pipeline ({{ $stores->count() }})
@@ -375,7 +507,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Commission Split Rate (%) *</label>
-                        <input type="number" step="0.1" min="0" max="100" name="commission_rate" value="{{ old('commission_rate', $user->commission_rate ?? 50.00) }}" required class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        <input type="number" step="0.1" min="0" max="100" name="commission_rate" value="{{ old('commission_rate', $user->commission_rate ?? 50.00) }}" required class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                     </div>
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Account Status *</label>
@@ -389,12 +521,25 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Personal Referral Slug</label>
-                        <input type="text" name="referral_slug" value="{{ old('referral_slug', $user->referral_slug) }}" placeholder="e.g. arven" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm font-mono text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        <input type="text" name="referral_slug" value="{{ old('referral_slug', $user->referral_slug) }}" placeholder="e.g. arven" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                         <span class="text-[11px] text-slate-400 mt-1 block">Used for commissionapparel.com/register?rep=[slug]</span>
                     </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Reset Password (Leave blank to keep current)</label>
-                        <input type="password" name="password" minlength="8" placeholder="Minimum 8 characters" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        <input type="password" id="partner_reset_password" name="password" minlength="8" placeholder="Minimum 8 characters" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        @error('password')
+                            <p class="text-xs text-red-500 font-bold mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Confirm Password</label>
+                        <input type="password" id="partner_reset_password_confirmation" name="password_confirmation" minlength="8" placeholder="Re-enter new password" oninput="this.setCustomValidity(document.getElementById('partner_reset_password').value && this.value !== document.getElementById('partner_reset_password').value ? 'Passwords do not match.' : '')" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        @error('password_confirmation')
+                            <p class="text-xs text-red-500 font-bold mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 
@@ -407,12 +552,12 @@
         </div>
     </div>
 
-    <!-- TAB 2: ASSIGNED COACHES & CLIENTS -->
+    <!-- TAB 2: ASSIGNED CLIENTS -->
     <div x-show="activeTab === 'clients'" class="space-y-6">
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
             <div class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                 <div>
-                    <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Athletic Programs & Coaches ({{ $clients->count() }})</h3>
+                    <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Assigned Clients & Organizations ({{ $clients->count() }})</h3>
                     <p class="text-xs text-slate-500 mt-0.5">All clients linked directly to this representative's book of business.</p>
                 </div>
             </div>
@@ -421,8 +566,8 @@
                     <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
                         <tr>
                             <th class="px-6 py-3.5">Organization / School</th>
-                            <th class="px-6 py-3.5">Primary Coach Contact</th>
-                            <th class="px-6 py-3.5">Sport</th>
+                            <th class="px-6 py-3.5">Primary Contact</th>
+                            <th class="px-6 py-3.5">Category</th>
                             <th class="px-6 py-3.5 text-center">Stores</th>
                             <th class="px-6 py-3.5 text-center">Orders</th>
                             <th class="px-6 py-3.5">Onboarded</th>
@@ -446,15 +591,24 @@
                                 <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $client->parent_orders_count }}</td>
                                 <td class="px-6 py-4 text-xs text-slate-500">{{ $client->created_at?->format('M d, Y') ?? '—' }}</td>
                                 <td class="px-6 py-4 text-right">
-                                    <a href="{{ route('admin.coach.edit', ['user' => $client, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'clients'])]) }}" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors">
-                                        Manage Coach →
-                                    </a>
+                                    <div class="flex items-center justify-end gap-2">
+                                        <a href="{{ route('admin.coach.edit', ['user' => $client, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'clients'])]) }}" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap">
+                                            Manage Client →
+                                        </a>
+                                        <form action="{{ route('admin.sales-rep.unassign-coach', ['user' => $user, 'coach' => $client]) }}" method="POST" onsubmit="return confirm('Are you sure you want to unassign {{ addslashes($client->name) }} ({{ addslashes($client->organization) }}) from {{ addslashes($user->name) }}?\n\nAll historical orders and earned commissions will remain permanently accounted for in {{ addslashes($user->name) }}\'s commission statements, but this coach will no longer be assigned to them.')">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-800 rounded text-xs font-bold uppercase tracking-wider border border-red-200 transition-colors whitespace-nowrap flex items-center gap-1 shadow-2xs" title="Unassign Client from this Partner">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6"/></svg>
+                                                <span>Unassign</span>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
                                 <td colspan="7" class="px-6 py-12 text-center text-slate-500">
-                                    No coaches or athletic programs linked to this partner yet.
+                                    No clients or organizations linked to this partner yet.
                                 </td>
                             </tr>
                         @endforelse
@@ -478,8 +632,8 @@
                     <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
                         <tr>
                             <th class="px-6 py-3.5">Store / Event</th>
-                            <th class="px-6 py-3.5">School / Coach</th>
-                            <th class="px-6 py-3.5">Sport</th>
+                            <th class="px-6 py-3.5">Organization / Admin</th>
+                            <th class="px-6 py-3.5">Category</th>
                             <th class="px-6 py-3.5 text-center">Status</th>
                             <th class="px-6 py-3.5 text-center">Orders</th>
                             <th class="px-6 py-3.5 text-right">Actions</th>
@@ -497,7 +651,9 @@
                                     <div class="text-xs text-slate-500">{{ $st->user?->name }}</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="inline-flex px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-slate-100 text-slate-700">{{ $st->sport }}</span>
+                                    <span class="inline-flex px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-slate-100 text-slate-700">
+                                        {{ $st->sport ?: ($st->user?->sport ?: 'Athletics') }}
+                                    </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="inline-flex px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full border
@@ -505,10 +661,10 @@
                                         {{ $st->status }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-center font-bold font-inter text-slate-900">{{ $st->parent_orders_count }}</td>
+                                <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $st->parent_orders_count }}</td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        <a href="{{ route('admin.store.edit', $st) }}" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors">
+                                        <a href="{{ route('admin.store.edit', ['store' => $st, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'stores'])]) }}" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors">
                                             Manage Store →
                                         </a>
                                         @if($st->slug)
@@ -533,10 +689,7 @@
     </div>
 
     <!-- TAB 4: COMMISSION STATEMENTS & ORDERS -->
-    <div x-show="activeTab === 'orders'" class="space-y-6" x-data="{
-        viewMode: 'batches', // 'batches' or 'all_orders'
-        selectedBatchKey: null,
-    }">
+    <div x-show="activeTab === 'orders'" class="space-y-6">
         <!-- STEP 1: GROUPED ORDER BATCHES / STORES (Default Overview) -->
         <div x-show="viewMode === 'batches' && !selectedBatchKey" class="space-y-6">
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -552,10 +705,10 @@
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-bold text-slate-400">View:</span>
                         <div class="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm text-xs font-bold">
-                            <button type="button" @click="viewMode = 'batches'" class="px-3 py-1 rounded-md transition-colors bg-slate-900 text-white font-black uppercase tracking-wider">
+                            <button type="button" @click="setViewMode('batches')" class="px-3 py-1 rounded-md transition-colors bg-slate-900 text-white font-black uppercase tracking-wider">
                                 Grouped Batches ({{ $orderBatches->count() }})
                             </button>
-                            <button type="button" @click="viewMode = 'all_orders'" class="px-3 py-1 rounded-md transition-colors text-slate-600 hover:text-slate-900 uppercase tracking-wider">
+                            <button type="button" @click="setViewMode('all_orders')" class="px-3 py-1 rounded-md transition-colors text-slate-600 hover:text-slate-900 uppercase tracking-wider">
                                 All Orders ({{ $orders->count() }})
                             </button>
                         </div>
@@ -578,7 +731,7 @@
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @forelse($orderBatches as $batch)
-                                <tr @click="selectedBatchKey = '{{ $batch->key }}'" class="hover:bg-slate-50 transition-colors cursor-pointer group">
+                                <tr @click="openBatch('{{ $batch->key }}')" class="hover:bg-slate-50 transition-colors cursor-pointer group">
                                     {{-- Sort # --}}
                                     <td class="px-4 py-4 text-center">
                                         <div class="inline-flex items-center gap-1.5 font-mono text-xs text-slate-400">
@@ -646,10 +799,10 @@
 
                                     {{-- Commission --}}
                                     <td class="px-4 py-4 text-right">
-                                        <div class="font-bold font-inter text-emerald-600 text-sm">
+                                        <div class="font-bold text-emerald-600 text-sm">
                                             ${{ number_format($batch->commission, 2) }}
                                         </div>
-                                        <div class="text-[10px] text-slate-400 font-inter">
+                                        <div class="text-[10px] text-slate-400">
                                             Gross: ${{ number_format($batch->gross, 2) }}
                                         </div>
                                     </td>
@@ -663,7 +816,7 @@
                                                     <svg class="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                 </a>
                                             @endif
-                                            <button type="button" @click="selectedBatchKey = '{{ $batch->key }}'" class="px-3 py-1 bg-white border border-secondary text-secondary hover:bg-secondary hover:text-white rounded-md text-xs font-bold uppercase tracking-wider transition-colors shadow-2xs cursor-pointer">
+                                            <button type="button" @click="openBatch('{{ $batch->key }}')" class="px-3 py-1 bg-white border border-secondary text-secondary hover:bg-secondary hover:text-white rounded-md text-xs font-bold uppercase tracking-wider transition-colors shadow-2xs cursor-pointer">
                                                 Edit
                                             </button>
                                         </div>
@@ -687,17 +840,17 @@
             <div x-show="viewMode === 'batches' && selectedBatchKey === '{{ $batch->key }}'" class="space-y-6" style="display: none;">
                 {{-- Back Navigation & Header Bar --}}
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <button type="button" @click="selectedBatchKey = null" class="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm cursor-pointer w-fit">
+                    <button type="button" @click="closeBatch()" class="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm cursor-pointer w-fit">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         <span>← Back to Order Batches</span>
                     </button>
                     <div class="flex items-center gap-2">
                         @if($batch->is_direct && $batch->batch_id)
-                            <a href="{{ route('admin.direct-batch.show', $batch->batch_id) }}" class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-colors shadow-sm inline-flex items-center gap-1.5">
+                            <a href="{{ route('admin.direct-batch.show', ['batch' => $batch->batch_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'batch' => $batch->key])]) }}" class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-colors shadow-sm inline-flex items-center gap-1.5">
                                 Edit Batch Taxes & Fees →
                             </a>
                         @elseif($batch->store_id)
-                            <a href="{{ route('admin.store.edit', $batch->store_id) }}" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-colors shadow-sm inline-flex items-center gap-1.5">
+                            <a href="{{ route('admin.store.edit', ['store' => $batch->store_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'batch' => $batch->key])]) }}" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-colors shadow-sm inline-flex items-center gap-1.5">
                                 Manage Store →
                             </a>
                         @endif
@@ -735,7 +888,7 @@
                     </div>
 
                     {{-- Metrics Strip --}}
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-5 font-inter text-center">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-5 font-sans text-center">
                         <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 font-sans">Orders</span>
                             <span class="text-base font-bold text-slate-900">{{ $batch->order_count }}</span>
@@ -801,7 +954,7 @@
                                         $rate = (float)($ord->applied_rep_commission_rate ?? $user->getEffectiveCommissionRate());
                                         $earned = (float)$ord->rep_commission_earned;
                                     @endphp
-                                    <tr class="hover:bg-slate-50 transition-colors text-xs font-inter">
+                                    <tr class="hover:bg-slate-50 transition-colors text-xs font-sans">
                                         <td class="px-5 py-3.5">
                                             <div class="font-bold text-slate-900">#{{ $ord->id }}</div>
                                             <div class="text-[10px] text-slate-400 font-sans">{{ $ord->created_at?->format('M d, Y') ?? '—' }}</div>
@@ -825,13 +978,13 @@
                                                 {{ $ord->commission_status ?: 'pending' }}
                                             </span>
                                         </td>
-                                        <td class="px-5 py-3.5 text-right font-sans">
+                                        <td class="px-5 py-3.5 text-right font-sans whitespace-nowrap">
                                             @if($ord->isDirectOrder() && $ord->batch_id)
-                                                <a href="{{ route('admin.direct-batch.show', $ord->batch_id) }}" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-[11px] font-bold uppercase tracking-wider border border-slate-300 transition-colors">
+                                                <a href="{{ route('admin.direct-batch.show', ['batch' => $ord->batch_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'batch' => $batch->key])]) }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
                                                     Edit Batch →
                                                 </a>
                                             @else
-                                                <a href="{{ route('admin.order.edit', $ord) }}" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-[11px] font-bold uppercase tracking-wider border border-slate-300 transition-colors">
+                                                <a href="{{ route('admin.order.edit', ['order' => $ord, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'batch' => $batch->key])]) }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
                                                     Edit Taxes & Fees →
                                                 </a>
                                             @endif
@@ -860,10 +1013,10 @@
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-bold text-slate-400">View:</span>
                         <div class="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm text-xs font-bold">
-                            <button type="button" @click="viewMode = 'batches'" class="px-3 py-1 rounded-md transition-colors text-slate-600 hover:text-slate-900 uppercase tracking-wider">
+                            <button type="button" @click="setViewMode('batches')" class="px-3 py-1 rounded-md transition-colors text-slate-600 hover:text-slate-900 uppercase tracking-wider">
                                 Grouped Batches ({{ $orderBatches->count() }})
                             </button>
-                            <button type="button" @click="viewMode = 'all_orders'" class="px-3 py-1 rounded-md transition-colors bg-slate-900 text-white font-black uppercase tracking-wider">
+                            <button type="button" @click="setViewMode('all_orders')" class="px-3 py-1 rounded-md transition-colors bg-slate-900 text-white font-black uppercase tracking-wider">
                                 All Orders ({{ $orders->count() }})
                             </button>
                         </div>
@@ -874,16 +1027,16 @@
                     <table class="w-full text-left text-sm text-slate-600">
                         <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
                             <tr>
-                                <th class="px-5 py-3.5">Order / Batch</th>
-                                <th class="px-5 py-3.5">Client / Store</th>
-                                <th class="px-5 py-3.5 text-right">Gross Sales</th>
-                                <th class="px-5 py-3.5 text-right">Base Cost</th>
-                                <th class="px-5 py-3.5 text-right">Taxes & Fees</th>
-                                <th class="px-5 py-3.5 text-right">Net Margin</th>
-                                <th class="px-5 py-3.5 text-center">Split %</th>
-                                <th class="px-5 py-3.5 text-right">Commission</th>
-                                <th class="px-5 py-3.5 text-center">Status</th>
-                                <th class="px-5 py-3.5 text-right">Action</th>
+                                <th class="px-5 py-3.5 whitespace-nowrap">Order / Batch</th>
+                                <th class="px-5 py-3.5 min-w-[160px]">Client / Store</th>
+                                <th class="px-5 py-3.5 text-right whitespace-nowrap">Gross Sales</th>
+                                <th class="px-5 py-3.5 text-right whitespace-nowrap">Base Cost</th>
+                                <th class="px-5 py-3.5 text-right whitespace-nowrap">Taxes & Fees</th>
+                                <th class="px-5 py-3.5 text-right whitespace-nowrap">Net Margin</th>
+                                <th class="px-5 py-3.5 text-center whitespace-nowrap">Split %</th>
+                                <th class="px-5 py-3.5 text-right whitespace-nowrap">Commission</th>
+                                <th class="px-5 py-3.5 text-center whitespace-nowrap">Status</th>
+                                <th class="px-5 py-3.5 text-right whitespace-nowrap">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -896,37 +1049,37 @@
                                     $rate = (float)($ord->applied_rep_commission_rate ?? $user->getEffectiveCommissionRate());
                                     $earned = (float)$ord->rep_commission_earned;
                                 @endphp
-                                <tr class="hover:bg-slate-50 transition-colors text-xs font-inter">
-                                    <td class="px-5 py-3.5">
+                                <tr class="hover:bg-slate-50 transition-colors text-xs font-sans">
+                                    <td class="px-5 py-3.5 whitespace-nowrap">
                                         <div class="font-bold text-slate-900">#{{ $ord->id }}</div>
                                         <div class="text-[10px] text-slate-400 font-sans">{{ $ord->created_at?->format('M d, Y') ?? '—' }}</div>
                                         @if($ord->batch_id)
                                             <div class="text-[9px] text-slate-400 font-mono truncate max-w-[120px]">Batch: {{ substr($ord->batch_id, 0, 8) }}...</div>
                                         @endif
                                     </td>
-                                    <td class="px-5 py-3.5 font-sans">
+                                    <td class="px-5 py-3.5 font-sans min-w-[160px]">
                                         <div class="font-bold text-slate-900">{{ $ord->teamStore?->name ?? $ord->user?->organization ?? 'Direct Order' }}</div>
                                         <div class="text-[10px] text-slate-500">{{ $ord->user?->name ?? 'Coach' }}</div>
                                     </td>
-                                    <td class="px-5 py-3.5 text-right font-bold text-slate-900">${{ number_format($gross, 2) }}</td>
-                                    <td class="px-5 py-3.5 text-right text-slate-600">${{ number_format($base, 2) }}</td>
-                                    <td class="px-5 py-3.5 text-right text-slate-600">${{ number_format($tariffsFees, 2) }}</td>
-                                    <td class="px-5 py-3.5 text-right font-bold text-slate-900">${{ number_format($margin, 2) }}</td>
-                                    <td class="px-5 py-3.5 text-center font-bold text-slate-700">{{ number_format($rate, 1) }}%</td>
-                                    <td class="px-5 py-3.5 text-right font-black text-emerald-600 text-sm">${{ number_format($earned, 2) }}</td>
-                                    <td class="px-5 py-3.5 text-center font-sans">
+                                    <td class="px-5 py-3.5 text-right font-bold text-slate-900 whitespace-nowrap">${{ number_format($gross, 2) }}</td>
+                                    <td class="px-5 py-3.5 text-right text-slate-600 whitespace-nowrap">${{ number_format($base, 2) }}</td>
+                                    <td class="px-5 py-3.5 text-right text-slate-600 whitespace-nowrap">${{ number_format($tariffsFees, 2) }}</td>
+                                    <td class="px-5 py-3.5 text-right font-bold text-slate-900 whitespace-nowrap">${{ number_format($margin, 2) }}</td>
+                                    <td class="px-5 py-3.5 text-center font-bold text-slate-700 whitespace-nowrap">{{ number_format($rate, 1) }}%</td>
+                                    <td class="px-5 py-3.5 text-right font-black text-emerald-600 text-sm whitespace-nowrap">${{ number_format($earned, 2) }}</td>
+                                    <td class="px-5 py-3.5 text-center font-sans whitespace-nowrap">
                                         <span class="inline-flex px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full border
                                             {{ $ord->commission_status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($ord->commission_status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">
                                             {{ $ord->commission_status ?: 'pending' }}
                                         </span>
                                     </td>
-                                    <td class="px-5 py-3.5 text-right font-sans">
+                                    <td class="px-5 py-3.5 text-right font-sans whitespace-nowrap">
                                         @if($ord->isDirectOrder() && $ord->batch_id)
-                                            <a href="{{ route('admin.direct-batch.show', $ord->batch_id) }}" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-[11px] font-bold uppercase tracking-wider border border-slate-300 transition-colors">
+                                            <a href="{{ route('admin.direct-batch.show', ['batch' => $ord->batch_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'view' => 'all_orders'])]) }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
                                                 Edit Batch →
                                             </a>
                                         @else
-                                            <a href="{{ route('admin.order.edit', $ord) }}" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-[11px] font-bold uppercase tracking-wider border border-slate-300 transition-colors">
+                                            <a href="{{ route('admin.order.edit', ['order' => $ord, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'view' => 'all_orders'])]) }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
                                                 Edit Taxes & Fees →
                                             </a>
                                         @endif

@@ -460,6 +460,8 @@ class AdminController extends Controller
 
         $validated['is_tax_exempt'] = $request->boolean('is_tax_exempt');
 
+        $oldRepId = $user->sales_rep_id;
+
         if ($request->filled('sales_rep_id')) {
             $rep = User::find($request->sales_rep_id);
             if ($rep) {
@@ -482,6 +484,35 @@ class AdminController extends Controller
         } else {
             $validated['sales_rep_id'] = null;
             $validated['sales_rep'] = null;
+        }
+
+        // When a coach is unassigned or transferred to another rep, permanently preserve
+        // all historical orders under the original sales rep so earned commissions are preserved.
+        $newRepId = $validated['sales_rep_id'] ?? null;
+        if ($oldRepId && $oldRepId != $newRepId) {
+            $oldRep = User::find($oldRepId);
+            if ($oldRep) {
+                $coachStoreIds = TeamStore::where('user_id', $user->id)->pluck('id')->toArray();
+                ParentOrder::where(function($q) use ($user, $coachStoreIds) {
+                        $q->where('user_id', $user->id)
+                          ->orWhereIn('team_store_id', $coachStoreIds);
+                    })
+                    ->where(function($q) use ($oldRep) {
+                        $q->whereNull('sales_rep_id')
+                          ->orWhere('sales_rep_id', $oldRep->id);
+                    })
+                    ->each(function($ord) use ($oldRep) {
+                        $ord->sales_rep_id = $oldRep->id;
+                        if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0) {
+                            $ord->calculateAndApplyCommission($oldRep->getEffectiveCommissionRate());
+                        }
+                        $ord->save();
+                    });
+
+                TeamStore::where('user_id', $user->id)
+                    ->where('sales_rep_id', $oldRep->id)
+                    ->update(['sales_rep_id' => null]);
+            }
         }
 
         $user->update($validated);
@@ -718,7 +749,7 @@ class AdminController extends Controller
             'commission_rate'  => ['required', 'numeric', 'min:0', 'max:100'],
             'referral_slug'    => ['nullable', 'string', 'alpha_dash', 'max:50', 'unique:users,referral_slug,' . $user->id],
             'status'           => ['required', 'in:active,declined'],
-            'password'         => ['nullable', 'string', 'min:8'],
+            'password'         => ['nullable', 'string', 'min:8', 'confirmed'],
             'profile_image'    => ['nullable', 'image', 'max:10240'],
         ]);
 
@@ -758,6 +789,58 @@ class AdminController extends Controller
         }
 
         return redirect()->back()->with('success', 'Profile photo updated successfully.');
+    }
+
+    public function unassignCoachFromSalesRep(Request $request, User $user, User $coach)
+    {
+        if (!$user->isSalesRep()) {
+            abort(404);
+        }
+        if ($coach->role !== 'coach') {
+            abort(404);
+        }
+
+        // 1. Ensure all historical orders belonging to this coach or their team stores are permanently stamped with this sales rep and commission calculations
+        $repRate = $user->getEffectiveCommissionRate();
+        $coachStoreIds = TeamStore::where('user_id', $coach->id)->pluck('id')->toArray();
+
+        $ordersToPreserve = ParentOrder::where(function($q) use ($coach, $coachStoreIds) {
+                $q->where('user_id', $coach->id)
+                  ->orWhereIn('team_store_id', $coachStoreIds);
+            })
+            ->where(function($q) use ($user) {
+                $q->whereNull('sales_rep_id')
+                  ->orWhere('sales_rep_id', $user->id);
+            })
+            ->get();
+
+        foreach ($ordersToPreserve as $ord) {
+            $dirty = false;
+            if ($ord->sales_rep_id != $user->id) {
+                $ord->sales_rep_id = $user->id;
+                $dirty = true;
+            }
+            if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0 || (float)$ord->subtotal == 0 || (float)$ord->manufacturing_cost == 0) {
+                $ord->calculateAndApplyCommission($repRate);
+                $dirty = true;
+            }
+            if ($dirty) {
+                $ord->save();
+            }
+        }
+
+        // 2. Unassign the coach from this sales rep
+        $coach->sales_rep_id = null;
+        $coach->sales_rep = null;
+        $coach->save();
+
+        // 3. Clear sales_rep_id on the coach's team stores so future orders do not auto-attribute
+        TeamStore::where('user_id', $coach->id)
+            ->where('sales_rep_id', $user->id)
+            ->update(['sales_rep_id' => null]);
+
+        return redirect()->route('admin.sales-rep.show', ['user' => $user, 'tab' => 'clients'])
+            ->with('success', "Coach {$coach->name} ({$coach->organization}) has been unassigned. All historical orders and commission statements remain permanently preserved for {$user->name}.");
     }
 
     public function updateOrderFinancials(Request $request, ParentOrder $order)
@@ -1462,7 +1545,12 @@ class AdminController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.store.edit', $store)
+        $redirectParams = ['store' => $store];
+        if ($request->filled('return_to')) {
+            $redirectParams['return_to'] = $request->input('return_to');
+        }
+
+        return redirect()->route('admin.store.edit', $redirectParams)
             ->with('success', "Store \"{$store->name}\" has been updated.");
     }
 
