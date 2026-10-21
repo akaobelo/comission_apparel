@@ -27,16 +27,19 @@ src="https://www.facebook.com/tr?id={{ config('services.meta.pixel_id') }}&ev=Pa
 @endif
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&amp;display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-body{margin:0;background:#f8fafc}
+*, html, body, h1, h2, h3, h4, h5, h6, p, span, a, input, select, textarea, button, label, div {
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+body{margin:0;background:#f8fafc;color:#0f172a}
 a{color:#cd202c}a:hover{color:#a11825}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 .org-btn{min-height:46px;padding:0 12px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;border:1px solid #cbd5e1;background:#fff;color:#334155;transition:all 0.2s ease}
 .org-btn.on{border:2px solid #cd202c;background:#fdecee;color:#8b111a}
 @media (max-width:640px){h1{font-size:44px !important}h2{font-size:34px !important}}
-input,select,textarea,button{font-family:inherit}
 .mockup-item{transition:transform 0.25s ease, box-shadow 0.25s ease}
 .mockup-item:hover{transform:translateY(-4px);box-shadow:0 14px 28px rgba(0,0,0,0.1)}
 </style>
