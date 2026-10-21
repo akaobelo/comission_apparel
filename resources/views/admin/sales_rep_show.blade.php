@@ -1001,19 +1001,19 @@
                                         <td class="px-5 py-3.5 text-right font-bold text-slate-900">${{ number_format($margin, 2) }}</td>
                                         <td class="px-5 py-3.5 text-center font-bold text-slate-700">{{ number_format($rate, 1) }}%</td>
                                         <td class="px-5 py-3.5 text-right font-black text-emerald-600 text-sm">${{ number_format($earned, 2) }}</td>
-                                        <td class="px-5 py-3.5 text-center font-sans">
+                                        <td class="px-5 py-3.5 text-center font-sans align-middle">
                                             <span class="inline-flex px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full border
                                                 {{ $ord->commission_status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($ord->commission_status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">
                                                 {{ $ord->commission_status ?: 'pending' }}
                                             </span>
                                         </td>
-                                        <td class="px-5 py-3.5 text-right font-sans whitespace-nowrap">
+                                        <td class="px-5 pr-6 py-3.5 text-right font-sans whitespace-nowrap align-middle">
                                             @if($ord->isDirectOrder() && $ord->batch_id)
-                                                <a href="{{ route('admin.direct-batch.show', ['batch_id' => $ord->batch_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'batch' => $batch->key])]) }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
+                                                <a href="{{ route('admin.direct-batch.show', ['batch_id' => $ord->batch_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'batch' => $batch->key])]) }}" class="px-2.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-full text-[9px] font-black uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
                                                     Edit Batch →
                                                 </a>
                                             @else
-                                                <a href="{{ route('admin.order.edit', ['order' => $ord, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'batch' => $batch->key])]) }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
+                                                <a href="{{ route('admin.order.edit', ['order' => $ord, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'batch' => $batch->key])]) }}" class="px-2.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-full text-[9px] font-black uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
                                                     Edit Taxes & Fees →
                                                 </a>
                                             @endif
@@ -1065,7 +1065,7 @@
                                 <th class="px-5 py-3.5 text-center whitespace-nowrap">Split %</th>
                                 <th class="px-5 py-3.5 text-right whitespace-nowrap">Commission</th>
                                 <th class="px-5 py-3.5 text-center whitespace-nowrap">Status</th>
-                                <th class="px-5 py-3.5 text-right whitespace-nowrap">Action</th>
+                                <th class="px-5 pr-6 py-3.5 text-right whitespace-nowrap">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -1096,19 +1096,19 @@
                                     <td class="px-5 py-3.5 text-right font-bold text-slate-900 whitespace-nowrap">${{ number_format($margin, 2) }}</td>
                                     <td class="px-5 py-3.5 text-center font-bold text-slate-700 whitespace-nowrap">{{ number_format($rate, 1) }}%</td>
                                     <td class="px-5 py-3.5 text-right font-black text-emerald-600 text-sm whitespace-nowrap">${{ number_format($earned, 2) }}</td>
-                                    <td class="px-5 py-3.5 text-center font-sans whitespace-nowrap">
+                                    <td class="px-5 py-3.5 text-center font-sans whitespace-nowrap align-middle">
                                         <span class="inline-flex px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full border
                                             {{ $ord->commission_status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($ord->commission_status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">
                                             {{ $ord->commission_status ?: 'pending' }}
                                         </span>
                                     </td>
-                                    <td class="px-5 py-3.5 text-right font-sans whitespace-nowrap">
+                                    <td class="px-5 pr-6 py-3.5 text-right font-sans whitespace-nowrap align-middle">
                                         @if($ord->isDirectOrder() && $ord->batch_id)
-                                            <a href="{{ route('admin.direct-batch.show', ['batch_id' => $ord->batch_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'view' => 'all_orders'])]) }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
+                                            <a href="{{ route('admin.direct-batch.show', ['batch_id' => $ord->batch_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'view' => 'all_orders'])]) }}" class="px-2.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-full text-[9px] font-black uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
                                                 Edit Batch →
                                             </a>
                                         @else
-                                            <a href="{{ route('admin.order.edit', ['order' => $ord, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'view' => 'all_orders'])]) }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
+                                            <a href="{{ route('admin.order.edit', ['order' => $ord, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'view' => 'all_orders'])]) }}" class="px-2.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-full text-[9px] font-black uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
                                                 Edit Taxes & Fees →
                                             </a>
                                         @endif
