@@ -10,6 +10,12 @@
                 $returnUrl = $referer;
             }
         }
+        if (!$returnUrl) {
+            $batchRep = $firstOrder?->salesRep ?: $firstOrder?->user?->assignedSalesRep;
+            if ($batchRep) {
+                $returnUrl = route('admin.sales-rep.show', ['user' => $batchRep, 'tab' => 'orders', 'batch' => 'batch_' . $batchId]);
+            }
+        }
         $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'orders']);
         $backLabel = ($returnUrl && str_contains($returnUrl, 'sales-rep')) ? 'Back to Sales Partner' : 'Back to Dashboard';
     @endphp
@@ -233,6 +239,9 @@
 
                     <form action="{{ route('admin.direct-batch.financials.update', $batchId) }}" method="POST" class="p-5 space-y-3.5">
                         @csrf
+                        @if($returnUrl)
+                            <input type="hidden" name="return_to" value="{{ $returnUrl }}">
+                        @endif
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Total Manufacturing Cost ($)</label>
                             <input type="number" step="0.01" min="0" name="manufacturing_cost" value="{{ old('manufacturing_cost', $hasCustomMfg ? $batchMfg : '') }}" placeholder="Enter factory production base cost" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">

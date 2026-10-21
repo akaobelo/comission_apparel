@@ -1801,6 +1801,12 @@
             openEditRep(rep) {
                 this.activeEditRep = rep;
                 this.editRepModal = true;
+                this.$nextTick(() => {
+                    const p = document.getElementById('modal_edit_partner_password');
+                    const c = document.getElementById('modal_edit_partner_password_confirmation');
+                    if (p) p.value = '';
+                    if (c) { c.value = ''; c.setCustomValidity(''); }
+                });
             }
         }">
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -2057,12 +2063,18 @@
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Change Password (Optional)</label>
-                                <input type="password" id="modal_edit_partner_password" name="password" minlength="8" placeholder="Leave blank to keep" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Change Password (Leave blank to keep)</label>
+                                <input type="password" id="modal_edit_partner_password" name="password" minlength="8" placeholder="Minimum 8 characters" oninput="const c = document.getElementById('modal_edit_partner_password_confirmation'); if (c && c.value) { c.setCustomValidity(c.value !== this.value ? 'Passwords do not match.' : ''); }" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                @error('password')
+                                    <p class="text-xs text-red-500 font-bold mt-1">{{ $message }}</p>
+                                @enderror
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Confirm Password</label>
-                                <input type="password" name="password_confirmation" minlength="8" placeholder="Re-enter password" oninput="this.setCustomValidity(document.getElementById('modal_edit_partner_password').value && this.value !== document.getElementById('modal_edit_partner_password').value ? 'Passwords do not match.' : '')" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <input type="password" id="modal_edit_partner_password_confirmation" name="password_confirmation" minlength="8" placeholder="Re-enter new password" oninput="const p = document.getElementById('modal_edit_partner_password'); this.setCustomValidity(p && p.value && this.value !== p.value ? 'Passwords do not match.' : '');" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                @error('password_confirmation')
+                                    <p class="text-xs text-red-500 font-bold mt-1">{{ $message }}</p>
+                                @enderror
                             </div>
                         </div>
 
