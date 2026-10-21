@@ -260,6 +260,7 @@
                                         @csrf
                                         <button class="px-3 py-1.5 bg-white border border-red-300 text-red-600 hover:bg-red-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Decline</button>
                                     </form>
+                                    <a href="{{ route('store.show', $store->slug) }}" target="_blank" class="px-3 py-1.5 bg-white border border-slate-300 text-blue-600 hover:text-blue-800 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">View Store ↗</a>
                                     <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Edit</a>
                                 </div>
                             </div>
@@ -369,6 +370,10 @@
                                                             </select>
                                                         </form>
 
+                                                        <a href="{{ route('store.show', $store->slug) }}" target="_blank" class="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
+                                                            <span>View Store</span>
+                                                            <svg class="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                                        </a>
                                                         <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this active store?')" class="inline-block m-0">
                                                             @csrf
                                                             <button type="submit" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded-md hover:bg-slate-100 transition-colors">Archive</button>
@@ -955,7 +960,11 @@
                                             </form>
                                         </td>
                                         <td class="px-5 py-4 text-right">
-                                            <div class="flex items-center justify-end gap-2">
+                                            <div class="flex items-center justify-end gap-3">
+                                                <a href="{{ route('store.show', $store->slug) }}" target="_blank" class="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
+                                                    <span>View Store</span>
+                                                    <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                                </a>
                                                 <a href="{{ route('admin.store.edit', $store) }}" class="px-3.5 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
                                                 <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this active store?')" class="inline-block m-0">
                                                     @csrf
