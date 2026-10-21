@@ -264,7 +264,7 @@
                             <th class="px-6 py-3.5 text-center">Orders Placed</th>
                             <th class="px-6 py-3.5">Deadline</th>
                             <th class="px-6 py-3.5">Status</th>
-                            <th class="px-6 py-3.5 text-right">Production Action</th>
+                            <th class="px-6 py-3.5 text-right">Store Productivity</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -292,9 +292,9 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <a href="{{ route('rep.store.export', $s) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-colors shadow-sm">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                        Master CSV
+                                    <a href="{{ $s->slug ? route('store.show', $s->slug) : '#' }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-colors shadow-sm">
+                                        <span>View Store</span>
+                                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                     </a>
                                 </td>
                             </tr>
