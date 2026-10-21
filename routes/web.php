@@ -46,8 +46,8 @@ Route::get('/', function () {
         'banner_image'        => $landingSettings['hero_banner_image'] ?? $landingSettings['hero_media_path'] ?? asset('images/hero-banner.jpeg'),
         'cta_primary_text'    => $landingSettings['hero_cta_primary_text'] ?? 'Request Free 3D Mockup',
         'cta_primary_url'     => $landingSettings['hero_cta_primary_url'] ?? '/quote',
-        'cta_secondary_text'  => $landingSettings['hero_cta_secondary_text'] ?? 'Find Your Team Store',
-        'cta_secondary_url'   => $landingSettings['hero_cta_secondary_url'] ?? route('store.search'),
+        'cta_secondary_text'  => $landingSettings['hero_cta_secondary_text'] ?? 'Explore Collections',
+        'cta_secondary_url'   => $landingSettings['hero_cta_secondary_url'] ?? route('catalog.index'),
     ];
 
     $proofSettings = [

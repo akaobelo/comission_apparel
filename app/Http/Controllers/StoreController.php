@@ -11,6 +11,10 @@ class StoreController extends Controller
 {
     public function search(Request $request)
     {
+        if (!auth()->check() || !auth()->user()->isAdmin()) {
+            return redirect('/');
+        }
+
         $query = TeamStore::query()
             ->with('user')
             ->whereIn('status', ['approved', 'submitted_to_admin'])

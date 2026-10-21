@@ -65,8 +65,13 @@ class StorefrontPrivacyAndSortingTest extends TestCase
         $showResponse->assertDontSee('CoachSecretFirst');
         $showResponse->assertDontSee('CoachSecretLast');
 
-        // 2. Search page
-        $searchResponse = $this->get(route('store.search', ['q' => 'Spartans']));
+        // 2. Search page: public is redirected to /
+        $publicSearchResponse = $this->get(route('store.search', ['q' => 'Spartans']));
+        $publicSearchResponse->assertRedirect('/');
+
+        // Admin can still access search
+        $admin = User::factory()->create(['role' => 'admin']);
+        $searchResponse = $this->actingAs($admin)->get(route('store.search', ['q' => 'Spartans']));
         $searchResponse->assertStatus(200);
         $searchResponse->assertSee('Spartans Cheer 2026');
         $searchResponse->assertSee('Cheer');
