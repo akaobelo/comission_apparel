@@ -373,4 +373,97 @@ class ParentOrder extends Model
             'average_order_value' => $ordersCount > 0 ? $totalSales / $ordersCount : 0,
         ];
     }
+
+    /**
+     * Group orders into batches (Finalized Master Store or Direct Orders)
+     * for Sales Partner commission review.
+     */
+    public static function groupOrdersIntoBatches($orders, $rep = null)
+    {
+        $ordersCollection = collect($orders);
+        if ($ordersCollection->isEmpty()) {
+            return collect();
+        }
+
+        $grouped = $ordersCollection->groupBy(function ($order) {
+            if (!empty($order->batch_id)) {
+                return 'batch_' . $order->batch_id;
+            }
+            if (!empty($order->team_store_id)) {
+                return 'store_' . $order->team_store_id;
+            }
+            return 'order_' . $order->id;
+        });
+
+        $batches = collect();
+
+        foreach ($grouped as $key => $batchOrders) {
+            $first = $batchOrders->first();
+            $store = $first->teamStore;
+            $coach = $first->user ?: $store?->user;
+            $isDirect = $first->isDirectOrder();
+
+            $gross = (float) $batchOrders->sum(fn($o) => (float)($o->subtotal > 0 ? $o->subtotal : $o->total_retail_price));
+            $baseCost = (float) $batchOrders->sum(fn($o) => (float)$o->manufacturing_cost);
+            $tariffsFees = (float) $batchOrders->sum(fn($o) => (float)($o->tariff_amount + $o->fee_deduction));
+            $netMargin = (float) $batchOrders->sum(fn($o) => (float)$o->net_margin);
+            $commission = (float) $batchOrders->sum(fn($o) => (float)$o->rep_commission_earned);
+
+            if ($store) {
+                $storeName = $store->name;
+                $slug = $store->slug;
+            } elseif (!empty($first->batch_id)) {
+                $storeName = 'Direct Batch #' . substr($first->batch_id, 0, 8);
+                $slug = null;
+            } else {
+                $storeName = 'Direct Order #' . $first->id;
+                $slug = null;
+            }
+
+            $coachName = $coach?->name ?? 'Coach';
+            $organization = $coach?->organization ?? $store?->name ?? 'Athletic Program';
+
+            $paymentMode = 'Cash';
+            if ($store && $store->payment_mode) {
+                $paymentMode = match($store->payment_mode) {
+                    'online' => 'Stripe',
+                    'check'  => 'Check',
+                    default  => 'Cash',
+                };
+            } elseif ($batchOrders->contains(fn($o) => !empty($o->stripe_session_id) || !empty($o->stripe_payment_intent_id))) {
+                $paymentMode = 'Stripe';
+            }
+
+            $allPaid = $batchOrders->every(fn($o) => $o->commission_status === 'paid');
+            $hasCleared = $batchOrders->contains(fn($o) => $o->commission_status === 'cleared');
+            $status = $allPaid ? 'paid' : ($hasCleared ? 'cleared' : 'pending');
+
+            $batches->push((object)[
+                'key'              => $key,
+                'batch_id'         => $first->batch_id,
+                'store_id'         => $first->team_store_id,
+                'store'            => $store,
+                'store_name'       => $storeName,
+                'slug'             => $slug,
+                'coach_name'       => $coachName,
+                'organization'     => $organization,
+                'is_direct'        => $isDirect,
+                'order_type'       => $isDirect ? 'FINALIZED DIRECT ORDERS' : 'FINALIZED MASTER ORDERS',
+                'order_type_badge' => $isDirect ? 'direct' : 'master',
+                'payment_method'   => $paymentMode,
+                'order_count'      => $batchOrders->count(),
+                'gross'            => $gross,
+                'base_cost'        => $baseCost,
+                'taxes_fees'       => $tariffsFees,
+                'net_margin'       => $netMargin,
+                'commission'       => $commission,
+                'split_rate'       => (float)($first->applied_rep_commission_rate ?? ($rep ? $rep->getEffectiveCommissionRate() : 50.0)),
+                'status'           => $status,
+                'latest_date'      => $batchOrders->max('created_at'),
+                'orders'           => $batchOrders,
+            ]);
+        }
+
+        return $batches->sortByDesc('latest_date')->values();
+    }
 }

@@ -89,12 +89,14 @@ class SalesRepController extends Controller
         $lifetimeCommissionEarned = $orders->sum(fn($o) => (float)$o->rep_commission_earned);
 
         $referralUrl = $user->referral_url;
+        $orderBatches = \App\Models\ParentOrder::groupOrdersIntoBatches($orders, $user);
 
         return view('rep.dashboard', compact(
             'user',
             'clients',
             'stores',
             'orders',
+            'orderBatches',
             'totalQualifyingSales',
             'totalManufacturingCost',
             'totalTariffs',
