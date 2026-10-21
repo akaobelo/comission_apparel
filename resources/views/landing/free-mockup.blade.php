@@ -45,10 +45,10 @@ input,select,textarea,button{font-family:inherit}
 <div style="width: 100%; background: #f8fafc; color: #0f172a; font-family: 'Outfit', 'Segoe UI', sans-serif; line-height: 1.5">
 
 <!-- NAV -->
-<header style="position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,0.95); backdrop-filter: blur(24px); border-bottom: 1px solid #f1f5f9">
+<header style="position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,0.98); backdrop-filter: blur(24px); border-bottom: 1px solid #f1f5f9">
 <div style="max-width: 1240px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap">
 <a href="#top" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: #0f172a">
-  <img src="/images/New%20Logo.png" alt="The Commission Apparel Logo" style="height: 44px; width: auto; object-fit: contain;">
+  <img src="/images/New%20Logo%20Dark.png" alt="The Commission Apparel Logo" style="height: 40px; width: auto; object-fit: contain; display: block;" onerror="this.src='/images/New%20Logo.png'; this.style.filter='brightness(0)';">
 </a>
 <nav style="display: flex; align-items: center; gap: 22px; flex-wrap: wrap">
 <a href="#team-store" style="color: #475569; text-decoration: none; font-weight: 500; font-size: 15px">Team Store</a>
