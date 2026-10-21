@@ -97,6 +97,39 @@
         </div>
     </div>
 
+    <!-- Date Filter Bar -->
+    <div class="mb-6 bg-white border border-slate-200 rounded-xl p-3 sm:p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span class="text-xs font-black uppercase tracking-wider text-slate-700">Filter Orders by Date:</span>
+            @if(($dateFilter ?? 'all') !== 'all')
+                <span class="inline-flex px-2 py-0.5 text-[10px] font-black rounded-full bg-primary/10 text-primary uppercase">
+                    Active Filter
+                </span>
+            @endif
+        </div>
+        <div class="flex items-center gap-1.5 flex-wrap">
+            @php
+                $filters = [
+                    'all'             => 'All Time',
+                    'today'           => 'Today',
+                    'this_week'       => 'This Week',
+                    'this_month'      => 'This Month',
+                    'this_quarter'    => 'This Quarter',
+                    'last_six_months' => 'Last 6 Months',
+                    'this_year'       => 'This Year',
+                ];
+                $activeFilter = $dateFilter ?? 'all';
+            @endphp
+            @foreach($filters as $key => $label)
+                <a href="{{ request()->fullUrlWithQuery(['date_filter' => $key]) }}"
+                   class="px-3 py-1 rounded-lg text-xs font-bold transition-all {{ $activeFilter === $key ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200' }}">
+                    {{ $label }}
+                </a>
+            @endforeach
+        </div>
+    </div>
+
     <!-- Financial Key Metrics Grid -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">

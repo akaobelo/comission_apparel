@@ -76,6 +76,26 @@ class SalesRepController extends Controller
             }
         }
 
+        // Date Filtering
+        $dateFilter = $request->query('date_filter', 'all');
+        $now = \Carbon\Carbon::now();
+        $startDate = match ($dateFilter) {
+            'today'           => $now->copy()->startOfDay(),
+            'this_week'       => $now->copy()->startOfWeek(),
+            'this_month'      => $now->copy()->startOfMonth(),
+            'this_quarter'    => $now->copy()->firstOfQuarter()->startOfDay(),
+            'last_six_months' => $now->copy()->subMonths(6)->startOfDay(),
+            'this_year'       => $now->copy()->startOfYear(),
+            default           => null,
+        };
+
+        if ($startDate) {
+            $orders = $orders->filter(function($o) use ($startDate) {
+                $orderDate = $o->created_at ?: $o->paid_at;
+                return $orderDate && $orderDate->gte($startDate);
+            });
+        }
+
         // Financial Metrics
         $totalQualifyingSales = $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales());
         $totalManufacturingCost = $orders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost());
@@ -97,6 +117,7 @@ class SalesRepController extends Controller
             'stores',
             'orders',
             'orderBatches',
+            'dateFilter',
             'totalQualifyingSales',
             'totalManufacturingCost',
             'totalTariffs',

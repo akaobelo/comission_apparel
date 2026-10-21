@@ -600,7 +600,7 @@ class AdminController extends Controller
         return redirect()->back()->with('success', "Sales Partner {$rep->name} successfully registered at {$rep->commission_rate}% commission rate.");
     }
 
-    public function showSalesRepUser(User $user)
+    public function showSalesRepUser(Request $request, User $user)
     {
         if (!$user->isSalesRep()) {
             abort(404);
@@ -651,6 +651,26 @@ class AdminController extends Controller
             }
         }
 
+        // Date Filtering
+        $dateFilter = $request->query('date_filter', 'all');
+        $now = \Carbon\Carbon::now();
+        $startDate = match ($dateFilter) {
+            'today'           => $now->copy()->startOfDay(),
+            'this_week'       => $now->copy()->startOfWeek(),
+            'this_month'      => $now->copy()->startOfMonth(),
+            'this_quarter'    => $now->copy()->firstOfQuarter()->startOfDay(),
+            'last_six_months' => $now->copy()->subMonths(6)->startOfDay(),
+            'this_year'       => $now->copy()->startOfYear(),
+            default           => null,
+        };
+
+        if ($startDate) {
+            $orders = $orders->filter(function($o) use ($startDate) {
+                $orderDate = $o->created_at ?: $o->paid_at;
+                return $orderDate && $orderDate->gte($startDate);
+            });
+        }
+
         $totalQualifyingSales = $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales());
         $totalManufacturingCost = $orders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost());
         $totalTariffs = $orders->sum(fn($o) => (float)$o->tariff_amount);
@@ -671,6 +691,7 @@ class AdminController extends Controller
             'stores',
             'orders',
             'orderBatches',
+            'dateFilter',
             'totalQualifyingSales',
             'totalManufacturingCost',
             'totalTariffs',
