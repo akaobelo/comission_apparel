@@ -8,9 +8,7 @@
             $returnUrl = route('admin.sales-rep.show', ['user' => $user->assignedSalesRep, 'tab' => 'clients']);
         }
         $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'coaches']);
-        $backLabel = $returnUrl && $user->assignedSalesRep 
-            ? 'Back to ' . $user->assignedSalesRep->name . ' (Partner Profile)'
-            : ($returnUrl ? 'Back to Partner Profile' : 'Back to Coaches');
+        $backLabel = $returnUrl ? 'Back to Partner Profile' : 'Back to Dashboard';
     @endphp
     <div class="flex items-center gap-4 mb-8">
         <a href="{{ $backUrl }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide">
