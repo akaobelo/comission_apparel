@@ -29,6 +29,9 @@
                     'uniform_package_bronze' => 'Uniform Package (Bronze)',
                     'uniform_package_custom' => 'Uniform Package (Custom)',
                 ];
+                $archivedStoresCount = $archivedStores instanceof \Illuminate\Pagination\LengthAwarePaginator ? $archivedStores->total() : $archivedStores->count();
+                $archivedBatchesCount = $archivedBatchesPaginator instanceof \Illuminate\Pagination\LengthAwarePaginator ? $archivedBatchesPaginator->total() : (is_countable($archivedBatchesPaginator) ? count($archivedBatchesPaginator) : 0);
+                $totalArchivedCount = $archivedStoresCount + $archivedBatchesCount;
             @endphp
 <script>
     window.availableSportsList = {!! json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) !!};
@@ -122,7 +125,7 @@
     <div class="bg-white border border-slate-200 rounded-xl px-6 pt-4 pb-4 mb-8 shadow-sm">
         {{-- Primary Navigation --}}
         <div class="flex overflow-x-auto items-center gap-6 md:gap-8 pb-3 border-b border-slate-100 scrollbar-hide text-sm">
-            <button @click="setTab('stores')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="['stores', 'active_team_stores', 'quote_inquiries', 'finalized_master_orders', 'finalized_direct_orders'].includes(activeAdminTab) ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Stores & Orders</button>
+            <button @click="setTab('stores')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="['stores', 'active_team_stores', 'quote_inquiries', 'finalized_master_orders', 'finalized_direct_orders', 'archived_stores_orders'].includes(activeAdminTab) ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Stores & Orders</button>
             <button @click="setTab('total_sales')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'total_sales' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Total Sales</button>
             <button @click="setTab('coaches')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'coaches' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Coaches</button>
             <button @click="setTab('catalog')" class="pb-2 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeAdminTab === 'catalog' ? 'border-secondary text-secondary' : 'border-transparent text-slate-500 hover:text-slate-900'">Design Catalog</button>
@@ -136,7 +139,7 @@
         </div>
 
         {{-- Sub-Navigation (Stores & Orders Dedicated Workspaces) --}}
-        <div x-show="['stores', 'active_team_stores', 'quote_inquiries', 'finalized_master_orders', 'finalized_direct_orders'].includes(activeAdminTab)" 
+        <div x-show="['stores', 'active_team_stores', 'quote_inquiries', 'finalized_master_orders', 'finalized_direct_orders', 'archived_stores_orders'].includes(activeAdminTab)" 
              x-transition:enter="transition ease-out duration-150"
              x-transition:enter-start="opacity-0 -translate-y-1"
              x-transition:enter-end="opacity-100 translate-y-0"
@@ -178,6 +181,13 @@
                     :class="activeAdminTab === 'finalized_direct_orders' ? 'bg-secondary text-white shadow-secondary/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'">
                 Finalized Direct Orders
                 <span class="px-1.5 py-0.2 rounded text-[10px] font-black" :class="activeAdminTab === 'finalized_direct_orders' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-800'">{{ isset($finalizedDirectBatchesPaginator) ? $finalizedDirectBatchesPaginator->total() : $finalizedDirectOrderBatches->count() }}</span>
+            </button>
+            <button @click="setTab('archived_stores_orders')" 
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 shadow-sm"
+                    :class="activeAdminTab === 'archived_stores_orders' ? 'bg-secondary text-white shadow-secondary/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                Archived Stores & Orders
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-black" :class="activeAdminTab === 'archived_stores_orders' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'">{{ $totalArchivedCount }}</span>
             </button>
         </div>
     </div>
@@ -737,8 +747,11 @@
                         <p class="text-xs text-slate-400 mt-0.5">Past orders that have been archived for production auditing.</p>
                     </div>
                     <div class="flex items-center gap-3 text-slate-400">
-                        <span class="text-xs font-bold text-slate-500">{{ $archivedStores->total() }} Stores</span>
-                        <span class="text-xs font-bold text-slate-500">{{ $archivedBatchesPaginator->total() }} Batches</span>
+                        <button type="button" @click.stop="setTab('archived_stores_orders')" class="text-xs font-bold text-secondary hover:underline flex items-center gap-1 mr-1">
+                            Full Page View ↗
+                        </button>
+                        <span class="text-xs font-bold text-slate-500">{{ $archivedStoresCount }} Stores</span>
+                        <span class="text-xs font-bold text-slate-500">{{ $archivedBatchesCount }} Batches</span>
                         <svg class="w-5 h-5 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
                 </div>
@@ -1339,6 +1352,253 @@
                                 {{ $finalizedDirectBatchesPaginator->links() }}
                             </div>
                         @endif
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        {{-- ═══ ARCHIVED STORES & ORDERS TAB (FULL PAGE VIEW) ═══ --}}
+        <div x-show="activeAdminTab === 'archived_stores_orders'" x-cloak class="space-y-6" x-data="{ archiveFilter: 'all' }">
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                Archived Stores & Orders
+                            </h2>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-slate-200 text-slate-800 border border-slate-300">{{ $archivedStoresCount }} Stores</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-slate-200 text-slate-800 border border-slate-300">{{ $archivedBatchesCount }} Batches</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Archived team stores and past order batches preserved for auditing and production history in full-page management view.</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row items-center gap-3">
+                        <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-sm w-full"
+                              hx-get="{{ route('admin.dashboard') }}"
+                              hx-target="#archived-stores-orders-full-results"
+                              hx-select="#archived-stores-orders-full-results"
+                              hx-swap="outerHTML"
+                              hx-trigger="input from:input[name='archive_search'] delay:300ms, submit"
+                              hx-push-url="true">
+                            <input type="text" name="archive_search" value="{{ request('archive_search') }}" placeholder="Search archived stores and batches..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                            <button type="submit" class="px-3.5 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
+                            @if(request('archive_search'))
+                                <a href="{{ route('admin.dashboard') }}" class="px-3 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</a>
+                            @endif
+                        </form>
+                    </div>
+                </div>
+
+                {{-- Filter bar --}}
+                <div class="px-6 py-3 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 mr-2">Filter View:</span>
+                    <button type="button" @click="archiveFilter = 'all'" 
+                            class="px-3 py-1 rounded-md text-xs font-bold transition-all shadow-sm"
+                            :class="archiveFilter === 'all' ? 'bg-secondary text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'">
+                        All Archive ({{ $totalArchivedCount }})
+                    </button>
+                    <button type="button" @click="archiveFilter = 'stores'" 
+                            class="px-3 py-1 rounded-md text-xs font-bold transition-all shadow-sm"
+                            :class="archiveFilter === 'stores' ? 'bg-secondary text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'">
+                        Archived Stores ({{ $archivedStoresCount }})
+                    </button>
+                    <button type="button" @click="archiveFilter = 'batches'" 
+                            class="px-3 py-1 rounded-md text-xs font-bold transition-all shadow-sm"
+                            :class="archiveFilter === 'batches' ? 'bg-secondary text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'">
+                        Archived Order Batches ({{ $archivedBatchesCount }})
+                    </button>
+                </div>
+
+                <div id="archived-stores-orders-full-results">
+                    @if($archivedStores->isEmpty() && $archivedOrderBatches->isEmpty())
+                        <div class="p-12 text-center text-slate-400 text-sm">No archived stores or order batches found.</div>
+                    @else
+                        {{-- ── SECTION 1: ARCHIVED TEAM STORES ── --}}
+                        <div x-show="archiveFilter === 'all' || archiveFilter === 'stores'" class="border-b border-slate-200 last:border-b-0">
+                            <div class="px-6 py-4 bg-slate-100/70 border-b border-slate-200 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                    <h3 class="text-sm font-black uppercase tracking-wider text-slate-800">Archived Team Stores</h3>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-200 text-slate-700">{{ $archivedStoresCount }}</span>
+                                </div>
+                                <span class="text-xs text-slate-500 font-medium">Inactive stores closed from public order taking</span>
+                            </div>
+
+                            @if($archivedStores->isEmpty())
+                                <div class="p-8 text-center text-slate-400 text-sm">No archived stores found.</div>
+                            @else
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left whitespace-nowrap">
+                                        <thead class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            <tr>
+                                                <th class="px-6 py-3.5">Store Name</th>
+                                                <th class="px-6 py-3.5">Coach / Organization</th>
+                                                <th class="px-6 py-3.5">Package Type</th>
+                                                <th class="px-6 py-3.5 text-center">Orders</th>
+                                                <th class="px-6 py-3.5">Archived Date</th>
+                                                <th class="px-6 py-3.5 text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100 text-sm">
+                                            @foreach($archivedStores as $store)
+                                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                                <td class="px-6 py-4">
+                                                    <div class="font-bold text-slate-900 flex items-center gap-2">
+                                                        <a href="{{ route('admin.store.edit', $store) }}" class="text-sm hover:text-secondary transition-colors">{{ $store->name }}</a>
+                                                    </div>
+                                                    <div class="text-xs text-slate-400 mt-0.5">Slug: {{ $store->slug }}</div>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <div class="font-semibold text-slate-800 text-sm">{{ $store->user?->name ?? 'Unknown' }}</div>
+                                                    <div class="text-xs text-slate-500">{{ $store->user?->organization ?? 'No Organization' }}</div>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold uppercase bg-slate-100 text-slate-700 border border-slate-200">
+                                                        {{ str_replace('_', ' ', $store->package_type ?? 'N/A') }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-6 py-4 text-center">
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-700">
+                                                        {{ $store->parentOrders->count() }} orders
+                                                    </span>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <div class="text-xs font-semibold text-slate-700">
+                                                        {{ $store->updated_at ? $store->updated_at->format('M d, Y') : '—' }}
+                                                    </div>
+                                                    @if($store->updated_at)
+                                                        <div class="text-[10px] text-slate-400">{{ $store->updated_at->diffForHumans() }}</div>
+                                                    @endif
+                                                </td>
+                                                <td class="px-6 py-4 text-right">
+                                                    <div class="flex items-center justify-end gap-2">
+                                                        <form action="{{ route('admin.stores.unarchive', $store) }}" method="POST" onsubmit="return confirm('Restore this store back to active production?')" class="inline-block m-0">
+                                                            @csrf
+                                                            <button type="submit" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-sm">Unarchive</button>
+                                                        </form>
+                                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-sm">View Store</a>
+                                                        <form action="{{ route('admin.stores.delete', $store) }}" method="POST" onsubmit="return confirm('Delete this archived store and all related data? This cannot be undone.')" class="inline-block m-0">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="px-3 py-1.5 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors shadow-sm">Delete</button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @if($archivedStores instanceof \Illuminate\Pagination\LengthAwarePaginator && $archivedStores->hasPages())
+                                    <div class="p-4 border-t border-slate-200 bg-white" hx-boost="true" hx-target="#archived-stores-orders-full-results" hx-select="#archived-stores-orders-full-results" hx-swap="outerHTML">
+                                        {{ $archivedStores->links() }}
+                                    </div>
+                                @endif
+                            @endif
+                        </div>
+
+                        {{-- ── SECTION 2: ARCHIVED ORDER BATCHES ── --}}
+                        <div x-show="archiveFilter === 'all' || archiveFilter === 'batches'" class="border-b border-slate-200 last:border-b-0">
+                            <div class="px-6 py-4 bg-slate-100/70 border-b border-slate-200 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                    <h3 class="text-sm font-black uppercase tracking-wider text-slate-800">Archived Order Batches</h3>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-200 text-slate-700">{{ $archivedBatchesCount }}</span>
+                                </div>
+                                <span class="text-xs text-slate-500 font-medium">Historical order batches archived after processing</span>
+                            </div>
+
+                            @if($archivedOrderBatches->isEmpty())
+                                <div class="p-8 text-center text-slate-400 text-sm">No archived order batches found.</div>
+                            @else
+                                <div class="divide-y divide-slate-100">
+                                    @foreach($archivedOrderBatches as $batchId => $batchData)
+                                    @php
+                                        $orders = $batchData['orders'];
+                                        $firstOrder = $orders->first();
+                                        $store = $firstOrder?->teamStore;
+                                        $coach = $firstOrder?->user;
+                                        $latestArchiveDate = $orders->max('updated_at');
+                                        $isDirect = $firstOrder?->isDirectOrder();
+                                        $totalAthletes = $orders->count();
+                                        $totalItems = $orders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
+                                        $financials = $batchData['financials'] ?? null;
+                                    @endphp
+                                    <div class="p-6 hover:bg-slate-50/60 transition-colors">
+                                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center gap-2.5 flex-wrap">
+                                                    <span class="font-black text-slate-900 text-base uppercase">
+                                                        @if($isDirect)
+                                                            {{ $store ? $store->name : 'Direct Order Batch' }}
+                                                        @else
+                                                            {{ $store ? $store->name : ($coach?->organization ?? 'Store Batch') }}
+                                                        @endif
+                                                    </span>
+                                                    @if($isDirect)
+                                                        <span class="px-2 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-black uppercase tracking-wider rounded border border-purple-200">Direct Order</span>
+                                                    @elseif($store)
+                                                        <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-black uppercase tracking-wider rounded border border-blue-200">Team Store</span>
+                                                    @endif
+                                                    <span class="text-xs text-slate-400 font-bold uppercase">Batch ID: {{ $batchId }}</span>
+                                                    @if($latestArchiveDate)
+                                                        <span class="text-xs text-slate-500 font-medium">· Archived {{ \Carbon\Carbon::parse($latestArchiveDate)->format('M d, Y') }}</span>
+                                                    @endif
+                                                </div>
+                                                <div class="text-xs text-slate-600 mt-1">
+                                                    Coach: <span class="font-bold text-slate-800">{{ $coach?->name ?? 'Unknown Coach' }}</span> — {{ $coach?->organization ?? ($store?->name ?? '—') }}
+                                                </div>
+                                                <div class="mt-3.5 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-xl">
+                                                    <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
+                                                        <div class="text-xl font-black text-primary">{{ $totalAthletes }}</div>
+                                                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Orders</div>
+                                                    </div>
+                                                    <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
+                                                        <div class="text-xl font-black text-slate-900">{{ $totalItems }}</div>
+                                                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
+                                                    </div>
+                                                    <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
+                                                        <div class="text-xl font-black text-green-600">${{ number_format($financials['total_collected'] ?? 0, 2) }}</div>
+                                                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Collected</div>
+                                                    </div>
+                                                    <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
+                                                        <div class="text-sm font-bold text-slate-900 mt-1">{{ $latestArchiveDate ? \Carbon\Carbon::parse($latestArchiveDate)->format('M d, Y') : '—' }}</div>
+                                                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Archived Date</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-shrink-0">
+                                                @if($isDirect)
+                                                    <div class="flex flex-col gap-2 min-w-[140px]">
+                                                        <a href="{{ route('admin.direct-batch.show', $batchId) }}" class="px-3.5 py-1.5 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-primary/90 transition-colors text-center shadow-sm">View Batch</a>
+                                                        <div class="flex gap-1.5">
+                                                            <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-2 py-1 bg-white border border-slate-300 text-slate-700 text-[10px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-50 transition-colors text-center shadow-sm">Roster</a>
+                                                            <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-2 py-1 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate</a>
+                                                        </div>
+                                                    </div>
+                                                @elseif($store)
+                                                    <div class="min-w-[120px]">
+                                                        <a href="{{ route('admin.store.edit', $store) }}" class="block px-3.5 py-2 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-primary/90 transition-colors text-center shadow-sm">View Store</a>
+                                                    </div>
+                                                @endif
+                                                <form action="{{ route('admin.archived-orders.delete', $batchId) }}" method="POST" onsubmit="return confirm('Permanently delete this archived order batch? This cannot be undone.')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="w-full px-3.5 py-2 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors shadow-sm whitespace-nowrap">Delete Batch</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                                @if($archivedBatchesPaginator instanceof \Illuminate\Pagination\LengthAwarePaginator && $archivedBatchesPaginator->hasPages())
+                                    <div class="p-4 border-t border-slate-200 bg-white" hx-boost="true" hx-target="#archived-stores-orders-full-results" hx-select="#archived-stores-orders-full-results" hx-swap="outerHTML">
+                                        {{ $archivedBatchesPaginator->links() }}
+                                    </div>
+                                @endif
+                            @endif
+                        </div>
                     @endif
                 </div>
             </div>
