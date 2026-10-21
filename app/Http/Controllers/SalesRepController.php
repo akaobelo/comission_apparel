@@ -36,6 +36,7 @@ class SalesRepController extends Controller
 
         // Assigned Clients (Coaches / Schools)
         $clients = User::where('sales_rep_id', $user->id)
+            ->with(['teamStores'])
             ->withCount(['teamStores', 'parentOrders'])
             ->orderBy('created_at', 'desc')
             ->get();

@@ -577,9 +577,22 @@
                     <tbody class="divide-y divide-slate-100">
                         @forelse($clients as $client)
                             <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4 font-bold text-slate-900">{{ $client->organization }}</td>
                                 <td class="px-6 py-4">
-                                    <div class="font-bold text-slate-900">{{ $client->name }}</div>
+                                    @php
+                                        $primaryStore = $client->teamStores->first();
+                                    @endphp
+                                    @if($primaryStore)
+                                        <a href="{{ route('admin.store.edit', ['store' => $primaryStore, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'clients'])]) }}" class="font-bold text-slate-900 hover:text-primary hover:underline transition-colors block" title="Edit Store: {{ $primaryStore->name }}">
+                                            {{ $client->organization }}
+                                        </a>
+                                    @else
+                                        <div class="font-bold text-slate-900">{{ $client->organization }}</div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    <a href="{{ route('admin.coach.edit', ['user' => $client, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'clients'])]) }}" class="font-bold text-slate-900 hover:text-primary hover:underline transition-colors block" title="Edit Coach">
+                                        {{ $client->name }}
+                                    </a>
                                     <div class="text-xs text-slate-500">{{ $client->email }} @if($client->phone) · {{ $client->phone }} @endif</div>
                                 </td>
                                 <td class="px-6 py-4">
@@ -644,7 +657,7 @@
                             <tr class="hover:bg-slate-50 transition-colors">
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-slate-900">{{ $st->name }}</div>
-                                    <div class="text-[10px] text-slate-400 font-mono">Deadline: {{ $st->order_deadline ? \Carbon\Carbon::parse($st->order_deadline)->format('M d, Y') : 'Rolling' }}</div>
+                                    <div class="text-[10px] text-slate-400 font-sans">Deadline: {{ $st->order_deadline ? \Carbon\Carbon::parse($st->order_deadline)->format('M d, Y') : 'Rolling' }}</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-slate-900">{{ $st->user?->organization ?? '—' }}</div>
@@ -734,7 +747,7 @@
                                 <tr @click="openBatch('{{ $batch->key }}')" class="hover:bg-slate-50 transition-colors cursor-pointer group">
                                     {{-- Sort # --}}
                                     <td class="px-4 py-4 text-center">
-                                        <div class="inline-flex items-center gap-1.5 font-mono text-xs text-slate-400">
+                                        <div class="inline-flex items-center gap-1.5 font-sans text-xs text-slate-400">
                                             <span class="text-slate-300 font-bold text-sm leading-none select-none">≡</span>
                                             <span class="w-8 h-7 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-800 font-bold text-xs shadow-2xs">
                                                 {{ $loop->iteration }}
@@ -748,9 +761,9 @@
                                             {{ $batch->store_name }}
                                         </div>
                                         @if($batch->slug)
-                                            <div class="text-[11px] text-slate-400 font-mono">Slug: {{ $batch->slug }}</div>
+                                            <div class="text-[11px] text-slate-400 font-sans">Slug: {{ $batch->slug }}</div>
                                         @elseif($batch->batch_id)
-                                            <div class="text-[10px] text-slate-400 font-mono">Batch: {{ substr($batch->batch_id, 0, 12) }}...</div>
+                                            <div class="text-[10px] text-slate-400 font-sans">Batch: {{ substr($batch->batch_id, 0, 12) }}...</div>
                                         @endif
                                     </td>
 
@@ -762,7 +775,7 @@
 
                                     {{-- Orders Count --}}
                                     <td class="px-4 py-4 text-center">
-                                        <span class="inline-flex items-center px-3 py-1 text-xs font-bold font-mono rounded-full bg-slate-100 text-slate-800 border border-slate-200">
+                                        <span class="inline-flex items-center px-3 py-1 text-xs font-bold font-sans rounded-full bg-slate-100 text-slate-800 border border-slate-200">
                                             {{ $batch->order_count }} {{ \Illuminate\Support\Str::plural('order', $batch->order_count) }}
                                         </span>
                                     </td>
@@ -880,7 +893,7 @@
                             <div class="text-xs text-slate-500 mt-1 flex items-center gap-3 flex-wrap">
                                 <span>Client: <strong class="text-slate-700">{{ $batch->coach_name }}</strong> ({{ $batch->organization }})</span>
                                 @if($batch->batch_id)
-                                    <span>· Batch ID: <strong class="font-mono text-slate-700">{{ $batch->batch_id }}</strong></span>
+                                    <span>· Batch ID: <strong class="font-sans text-slate-700">{{ $batch->batch_id }}</strong></span>
                                 @endif
                                 <span>· Payment: <strong class="text-slate-700">{{ $batch->payment_method }}</strong></span>
                             </div>
@@ -959,7 +972,7 @@
                                             <div class="font-bold text-slate-900">#{{ $ord->id }}</div>
                                             <div class="text-[10px] text-slate-400 font-sans">{{ $ord->created_at?->format('M d, Y') ?? '—' }}</div>
                                             @if($ord->batch_id)
-                                                <div class="text-[9px] text-slate-400 font-mono truncate max-w-[120px]">Batch: {{ substr($ord->batch_id, 0, 8) }}...</div>
+                                                <div class="text-[9px] text-slate-400 font-sans truncate max-w-[120px]">Batch: {{ substr($ord->batch_id, 0, 8) }}...</div>
                                             @endif
                                         </td>
                                         <td class="px-5 py-3.5 font-sans">
@@ -1054,7 +1067,7 @@
                                         <div class="font-bold text-slate-900">#{{ $ord->id }}</div>
                                         <div class="text-[10px] text-slate-400 font-sans">{{ $ord->created_at?->format('M d, Y') ?? '—' }}</div>
                                         @if($ord->batch_id)
-                                            <div class="text-[9px] text-slate-400 font-mono truncate max-w-[120px]">Batch: {{ substr($ord->batch_id, 0, 8) }}...</div>
+                                            <div class="text-[9px] text-slate-400 font-sans truncate max-w-[120px]">Batch: {{ substr($ord->batch_id, 0, 8) }}...</div>
                                         @endif
                                     </td>
                                     <td class="px-5 py-3.5 font-sans min-w-[160px]">

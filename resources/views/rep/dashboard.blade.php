@@ -209,13 +209,24 @@
                         @forelse($clients as $c)
                             <tr class="hover:bg-slate-50 transition-colors">
                                 <td class="px-6 py-4">
-                                    <div class="font-bold text-slate-900">{{ $c->organization }}</div>
+                                    @php
+                                        $primaryStore = $c->teamStores->first();
+                                    @endphp
+                                    @if($primaryStore)
+                                        <a href="{{ route('admin.store.edit', ['store' => $primaryStore, 'return_to' => url()->full()]) }}" class="font-bold text-slate-900 hover:text-primary hover:underline transition-colors inline-block" title="Edit Store: {{ $primaryStore->name }}">
+                                            {{ $c->organization }}
+                                        </a>
+                                    @else
+                                        <div class="font-bold text-slate-900">{{ $c->organization }}</div>
+                                    @endif
                                     @if($c->is_tax_exempt)
                                         <span class="inline-block mt-0.5 text-[10px] font-black uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">501(c)(3) Exempt</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="font-medium text-slate-900">{{ $c->name }}</div>
+                                    <a href="{{ route('admin.coach.edit', ['user' => $c, 'return_to' => url()->full()]) }}" class="font-medium text-slate-900 hover:text-primary hover:underline transition-colors inline-block" title="Edit Coach">
+                                        {{ $c->name }}
+                                    </a>
                                     <div class="text-xs text-slate-500">{{ $c->email }} · {{ $c->phone }}</div>
                                 </td>
                                 <td class="px-6 py-4 font-bold text-slate-700">{{ $c->sport }}</td>
@@ -271,7 +282,7 @@
                                     <div class="text-xs text-slate-500">{{ $s->user?->name }}</div>
                                 </td>
                                 <td class="px-6 py-4 text-center font-black text-slate-900">{{ $s->parent_orders_count }}</td>
-                                <td class="px-6 py-4 text-xs font-mono">
+                                <td class="px-6 py-4 text-xs font-medium text-slate-600">
                                     {{ $s->order_deadline ? $s->order_deadline->format('M d, Y') : 'Open Ended' }}
                                 </td>
                                 <td class="px-6 py-4">
@@ -354,31 +365,31 @@
                             @forelse($orderBatches as $batch)
                                 <tr @click="selectedBatchKey = '{{ $batch->key }}'" class="hover:bg-slate-50 transition-colors cursor-pointer group">
                                     <td class="px-4 py-4 text-center">
-                                        <div class="inline-flex items-center gap-1.5 font-mono text-xs text-slate-400">
+                                        <div class="inline-flex items-center gap-1.5 text-xs text-slate-400 font-sans">
                                             <span class="text-slate-300 font-bold text-sm leading-none select-none">≡</span>
-                                            <span class="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-black text-xs">
+                                            <span class="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-bold text-xs font-sans">
                                                 {{ $loop->iteration }}
                                             </span>
                                         </div>
                                     </td>
-                                    <td class="px-5 py-4">
+                                    <td class="px-5 py-4 font-sans">
                                         <div class="font-bold text-slate-900 group-hover:text-primary transition-colors">
                                             {{ $batch->store_name }}
                                         </div>
                                         @if($batch->slug)
-                                            <div class="text-[11px] text-slate-400 font-mono">Slug: {{ $batch->slug }}</div>
+                                            <div class="text-[11px] text-slate-400 font-sans">Slug: {{ $batch->slug }}</div>
                                         @endif
                                     </td>
-                                    <td class="px-5 py-4">
+                                    <td class="px-5 py-4 font-sans">
                                         <div class="font-bold text-slate-800">{{ $batch->organization }}</div>
                                         <div class="text-xs text-slate-500">{{ $batch->coach_name }}</div>
                                     </td>
-                                    <td class="px-4 py-4 text-center">
-                                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-black font-mono rounded-full bg-slate-100 text-slate-800 border border-slate-200">
+                                    <td class="px-4 py-4 text-center font-sans">
+                                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-800 border border-slate-200 font-sans">
                                             {{ $batch->order_count }} {{ \Illuminate\Support\Str::plural('order', $batch->order_count) }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-4">
+                                    <td class="px-4 py-4 font-sans">
                                         @if($batch->is_direct)
                                             <span class="inline-flex items-center px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border bg-purple-50 text-purple-700 border-purple-200">
                                                 FINALIZED DIRECT ORDERS
@@ -389,7 +400,7 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-4">
+                                    <td class="px-4 py-4 font-sans">
                                         @if($batch->payment_method === 'Stripe')
                                             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
                                                 <span>💳</span> Stripe
@@ -404,13 +415,13 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-4 text-right font-mono font-bold text-slate-900">
+                                    <td class="px-4 py-4 text-right font-semibold text-slate-900">
                                         ${{ number_format($batch->gross, 2) }}
                                     </td>
-                                    <td class="px-4 py-4 text-right font-mono font-bold text-slate-900">
+                                    <td class="px-4 py-4 text-right font-semibold text-slate-900">
                                         ${{ number_format($batch->net_margin, 2) }}
                                     </td>
-                                    <td class="px-4 py-4 text-right font-mono font-black text-emerald-600 text-sm">
+                                    <td class="px-4 py-4 text-right font-bold text-emerald-600 text-base">
                                         ${{ number_format($batch->commission, 2) }}
                                     </td>
                                     <td class="px-4 py-4 text-center">
@@ -444,8 +455,8 @@
             <div x-show="viewMode === 'batches' && selectedBatchKey === '{{ $batch->key }}'" class="space-y-6" style="display: none;">
                 {{-- Back Navigation --}}
                 <div class="flex items-center justify-between">
-                    <button type="button" @click="selectedBatchKey = null" class="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    <button type="button" @click="selectedBatchKey = null" class="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-md hover:shadow-lg cursor-pointer">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
                         <span>← Back to Order Batches</span>
                     </button>
                     @if($batch->slug)
@@ -540,11 +551,11 @@
                                         $appliedRate = (float)($ord->applied_rep_commission_rate ?? $user->getEffectiveCommissionRate());
                                     @endphp
                                     <tr class="hover:bg-slate-50 transition-colors">
-                                        <td class="px-4 py-4 font-mono text-xs text-slate-900">
+                                        <td class="px-4 py-4 font-sans font-bold text-xs text-slate-900">
                                             #{{ $ord->id }}
                                             <div class="text-[10px] text-slate-400 font-sans">{{ $ord->created_at->format('M d, Y') }}</div>
                                             @if($ord->batch_id)
-                                                <div class="text-[9px] text-slate-400 font-mono truncate max-w-[120px]">Batch: {{ substr($ord->batch_id, 0, 8) }}...</div>
+                                                <div class="text-[9px] text-slate-400 font-sans truncate max-w-[120px]">Batch: {{ substr($ord->batch_id, 0, 8) }}...</div>
                                             @endif
                                         </td>
                                         <td class="px-4 py-4">
@@ -618,7 +629,7 @@
                                     $appliedRate = (float)($ord->applied_rep_commission_rate ?? $user->getEffectiveCommissionRate());
                                 @endphp
                                 <tr class="hover:bg-slate-50 transition-colors">
-                                    <td class="px-4 py-4 font-mono text-xs text-slate-900">
+                                    <td class="px-4 py-4 font-sans font-bold text-xs text-slate-900">
                                         #{{ $ord->id }}
                                         <div class="text-[10px] text-slate-400">{{ $ord->created_at->format('M d, Y') }}</div>
                                     </td>

@@ -644,6 +644,7 @@ class AdminController extends Controller
             ->toArray();
 
         $clients = User::where('sales_rep_id', $user->id)
+            ->with(['teamStores'])
             ->withCount(['teamStores', 'parentOrders'])
             ->latest()
             ->get();
