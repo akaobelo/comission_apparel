@@ -3,6 +3,7 @@
 @section('content')
 <div class="max-w-[1500px] mx-auto px-6 pb-16 pt-28 lg:pt-36" x-data="{
     activeTab: 'clients',
+    storeSearch: '',
     addClientModal: false,
     copied: false,
     copyLink() {
@@ -251,9 +252,32 @@
     <!-- TAB 2: TEAM STORES & PRODUCTION -->
     <div x-show="activeTab === 'stores'" class="space-y-6" style="display: none;">
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                <h3 class="text-sm font-black uppercase tracking-wider text-slate-900">Client Team Stores & Production Pipeline</h3>
-                <span class="text-xs font-bold text-slate-500">{{ $stores->count() }} Stores</span>
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-sm font-black uppercase tracking-wider text-slate-900">Client Team Stores & Production Pipeline</h3>
+                    <span class="text-xs font-bold text-slate-500">{{ $stores->count() }} Stores</span>
+                </div>
+                <div class="relative w-full sm:w-64">
+                    <input 
+                        type="text" 
+                        x-model="storeSearch" 
+                        placeholder="Search stores..." 
+                        class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-7 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors shadow-2xs font-sans"
+                    >
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <button 
+                        type="button" 
+                        x-show="storeSearch" 
+                        @click="storeSearch = ''" 
+                        class="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 text-xs font-bold leading-none p-0.5"
+                        style="display: none;"
+                        title="Clear search"
+                    >
+                        &times;
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-slate-600">
@@ -269,7 +293,10 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @forelse($stores as $s)
-                            <tr class="hover:bg-slate-50 transition-colors">
+                            <tr 
+                                x-show="!storeSearch || '{{ strtolower(addslashes($s->name . ' ' . ($s->user?->organization ?? '') . ' ' . ($s->user?->name ?? '') . ' ' . ($s->sport ?: ($s->user?->sport ?: 'Athletics')) . ' ' . $s->status)) }}'.includes(storeSearch.toLowerCase().trim())"
+                                class="hover:bg-slate-50 transition-colors"
+                            >
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
                                         @php

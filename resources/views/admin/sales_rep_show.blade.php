@@ -4,6 +4,7 @@
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 pt-32 lg:pt-40" x-data="{
     activeTab: '{{ request('tab', 'overview') }}',
+    storeSearch: '',
     viewMode: 'batches',
     selectedBatchKey: null,
     copied: false,
@@ -634,10 +635,31 @@
     <!-- TAB 3: TEAM STORES & PIPELINE -->
     <div x-show="activeTab === 'stores'" class="space-y-6">
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            <div class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div class="p-6 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Partner Team Stores ({{ $stores->count() }})</h3>
                     <p class="text-xs text-slate-500 mt-0.5">Team apparel stores and direct bulk batches managed by this partner.</p>
+                </div>
+                <div class="relative w-full sm:w-64">
+                    <input 
+                        type="text" 
+                        x-model="storeSearch" 
+                        placeholder="Search stores..." 
+                        class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-7 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors shadow-2xs font-sans"
+                    >
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <button 
+                        type="button" 
+                        x-show="storeSearch" 
+                        @click="storeSearch = ''" 
+                        class="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 text-xs font-bold leading-none p-0.5"
+                        style="display: none;"
+                        title="Clear search"
+                    >
+                        &times;
+                    </button>
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -654,7 +676,10 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @forelse($stores as $st)
-                            <tr class="hover:bg-slate-50 transition-colors">
+                            <tr 
+                                x-show="!storeSearch || '{{ strtolower(addslashes($st->name . ' ' . ($st->user?->organization ?? '') . ' ' . ($st->user?->name ?? '') . ' ' . ($st->sport ?: ($st->user?->sport ?: 'Athletics')) . ' ' . $st->status)) }}'.includes(storeSearch.toLowerCase().trim())" 
+                                class="hover:bg-slate-50 transition-colors"
+                            >
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
                                         @php
@@ -693,12 +718,13 @@
                                 <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $st->parent_orders_count }}</td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        <a href="{{ route('admin.store.edit', ['store' => $st, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'stores'])]) }}" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors">
+                                        <a href="{{ route('admin.store.edit', ['store' => $st, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'stores'])]) }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-md text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors shadow-2xs whitespace-nowrap">
                                             Manage Store →
                                         </a>
                                         @if($st->slug)
-                                            <a href="{{ route('store.show', $st->slug) }}" target="_blank" class="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-600 rounded text-xs font-bold uppercase tracking-wider border border-slate-200 transition-colors" title="View Public Store">
-                                                ↗
+                                            <a href="{{ route('store.show', $st->slug) }}" target="_blank" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-xs font-bold uppercase tracking-wider transition-colors inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap" title="View Public Store">
+                                                <span>View Store</span>
+                                                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                             </a>
                                         @endif
                                     </div>
