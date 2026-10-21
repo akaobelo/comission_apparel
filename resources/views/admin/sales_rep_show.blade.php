@@ -3,8 +3,27 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 pt-32 lg:pt-40" x-data="{
-    activeTab: 'overview',
+    activeTab: (new URLSearchParams(window.location.search)).get('tab') || '{{ request('tab', 'overview') }}',
     copied: false,
+    init() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+        if (tab) {
+            this.activeTab = tab;
+        } else {
+            const saved = sessionStorage.getItem('sales_rep_tab_{{ $user->id }}');
+            if (saved) {
+                this.activeTab = saved;
+            }
+        }
+    },
+    setTab(t) {
+        this.activeTab = t;
+        sessionStorage.setItem('sales_rep_tab_{{ $user->id }}', t);
+        const u = new URL(window.location);
+        u.searchParams.set('tab', t);
+        window.history.replaceState({}, '', u);
+    },
     copyLink() {
         navigator.clipboard.writeText('{{ $referralUrl }}');
         this.copied = true;
@@ -32,15 +51,19 @@
     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 lg:p-8 mb-8">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div class="flex items-start gap-4">
-                <div class="w-16 h-16 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-2xl tracking-tight shadow-md flex-shrink-0">
-                    {{ strtoupper(substr($user->first_name ?: 'S', 0, 1) . substr($user->last_name ?: 'P', 0, 1)) }}
-                </div>
+                @if($user->profile_image_url)
+                    <img src="{{ $user->profile_image_url }}" alt="{{ $user->name }}" class="w-16 h-16 rounded-2xl object-cover shadow-md flex-shrink-0 border border-slate-200">
+                @else
+                    <div class="w-16 h-16 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-2xl tracking-tight shadow-md flex-shrink-0">
+                        {{ strtoupper(substr($user->first_name ?: 'S', 0, 1) . substr($user->last_name ?: 'P', 0, 1)) }}
+                    </div>
+                @endif
                 <div>
                     <div class="flex flex-wrap items-center gap-2 mb-1.5">
                         <h1 class="text-2xl font-black uppercase tracking-tight text-slate-900">{{ $user->name }}</h1>
                         <span class="inline-flex px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full border
                             {{ $user->partner_category === 'established_business' ? 'bg-purple-50 text-purple-800 border-purple-200' : ($user->partner_category === 'authorized_business' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-slate-100 text-slate-700 border-slate-200') }}">
-                            {{ $user->partner_category ? str_replace('_', ' ', $user->partner_category) : 'Sales Partner' }}
+                            {{ $user->partner_category_label }}
                         </span>
                         <span class="inline-flex px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full border {{ $user->status === 'active' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200' }}">
                             {{ $user->status }}
@@ -90,9 +113,9 @@
         </div>
 
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <span class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Base & Tariffs</span>
+            <span class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Taxes & Fees</span>
             <span class="block text-xl font-black text-slate-900 font-mono">${{ number_format($totalManufacturingCost + $totalTariffs + $totalFees, 2) }}</span>
-            <span class="text-[10px] text-slate-400">Deducted base costs</span>
+            <span class="text-[10px] text-slate-400">Deducted costs & fees</span>
         </div>
 
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
@@ -122,16 +145,16 @@
 
     <!-- Navigation Tabs -->
     <div class="border-b border-slate-200 mb-8 flex items-center gap-6 overflow-x-auto">
-        <button type="button" @click="activeTab = 'overview'" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'overview' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
+        <button type="button" @click="setTab('overview')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'overview' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
             Partner Settings & Profile
         </button>
-        <button type="button" @click="activeTab = 'clients'" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'clients' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
+        <button type="button" @click="setTab('clients')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'clients' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
             Assigned Coaches & Clients ({{ $clients->count() }})
         </button>
-        <button type="button" @click="activeTab = 'stores'" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'stores' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
+        <button type="button" @click="setTab('stores')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'stores' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
             Team Stores & Pipeline ({{ $stores->count() }})
         </button>
-        <button type="button" @click="activeTab = 'orders'" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
+        <button type="button" @click="setTab('orders')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
             Commission Statements & Orders ({{ $orders->count() }})
         </button>
     </div>
@@ -143,8 +166,25 @@
                 <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Edit Partner Agreement & Account</h3>
                 <p class="text-xs text-slate-500 mt-0.5">Configure commission splits, referral codes, and partner tiers.</p>
             </div>
-            <form action="{{ route('admin.sales-rep.update', $user) }}" method="POST" class="p-6 space-y-5">
+            <form action="{{ route('admin.sales-rep.update', $user) }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
                 @csrf
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Profile Photo / Avatar</label>
+                    <div class="flex items-center gap-4">
+                        @if($user->profile_image_url)
+                            <img src="{{ $user->profile_image_url }}" alt="Profile preview" class="w-14 h-14 rounded-xl object-cover border border-slate-200 shadow-sm flex-shrink-0">
+                        @else
+                            <div class="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                No Photo
+                            </div>
+                        @endif
+                        <div class="flex-1">
+                            <input type="file" name="profile_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer">
+                            <span class="text-[11px] text-slate-400 block mt-1">Upload JPEG, PNG, or WebP (max 10MB). Automatically resized and optimized.</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">First Name *</label>
@@ -171,9 +211,9 @@
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Agreement Category Tier *</label>
                         <select name="partner_category" required class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                            <option value="independent_sales" {{ old('partner_category', $user->partner_category) === 'independent_sales' ? 'selected' : '' }}>Independent Sales (30%)</option>
-                            <option value="authorized_business" {{ old('partner_category', $user->partner_category) === 'authorized_business' ? 'selected' : '' }}>Authorized Business (40%)</option>
-                            <option value="established_business" {{ old('partner_category', $user->partner_category) === 'established_business' ? 'selected' : '' }}>Approved Established (50%)</option>
+                            <option value="independent_sales" {{ old('partner_category', $user->partner_category) === 'independent_sales' ? 'selected' : '' }}>Independent Sales Agent</option>
+                            <option value="authorized_business" {{ old('partner_category', $user->partner_category) === 'authorized_business' ? 'selected' : '' }}>Authorized Business Partner</option>
+                            <option value="established_business" {{ old('partner_category', $user->partner_category) === 'established_business' ? 'selected' : '' }}>Establish Business Partner</option>
                         </select>
                     </div>
                     <div>
@@ -249,7 +289,7 @@
                                 <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $client->parent_orders_count }}</td>
                                 <td class="px-6 py-4 text-xs text-slate-500">{{ $client->created_at?->format('M d, Y') ?? '—' }}</td>
                                 <td class="px-6 py-4 text-right">
-                                    <a href="{{ route('admin.coach.edit', $client) }}" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors">
+                                    <a href="{{ route('admin.coach.edit', ['user' => $client, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'clients'])]) }}" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider border border-slate-300 transition-colors">
                                         Manage Coach →
                                     </a>
                                 </td>
@@ -352,7 +392,7 @@
                             <th class="px-5 py-3.5">Client / Store</th>
                             <th class="px-5 py-3.5 text-right">Gross Sales</th>
                             <th class="px-5 py-3.5 text-right">Base Cost</th>
-                            <th class="px-5 py-3.5 text-right">Tariffs & Fees</th>
+                            <th class="px-5 py-3.5 text-right">Taxes & Fees</th>
                             <th class="px-5 py-3.5 text-right">Net Margin</th>
                             <th class="px-5 py-3.5 text-center">Split %</th>
                             <th class="px-5 py-3.5 text-right">Commission</th>
@@ -401,7 +441,7 @@
                                         </a>
                                     @else
                                         <a href="{{ route('admin.order.edit', $ord) }}" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-[11px] font-bold uppercase tracking-wider border border-slate-300 transition-colors">
-                                            Edit Tariffs →
+                                            Edit Taxes & Fees →
                                         </a>
                                     @endif
                                 </td>

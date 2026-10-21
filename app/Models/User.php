@@ -77,6 +77,30 @@ class User extends Authenticatable
         return (float) ($this->commission_rate ?? 50.00);
     }
 
+    public function getProfileImageUrlAttribute(): ?string
+    {
+        if (!$this->logo_path) {
+            return null;
+        }
+        if (\Illuminate\Support\Str::startsWith($this->logo_path, ['http://', 'https://'])) {
+            return $this->logo_path;
+        }
+        if (\Illuminate\Support\Str::startsWith($this->logo_path, '/storage/')) {
+            return asset($this->logo_path);
+        }
+        return asset('storage/' . $this->logo_path);
+    }
+
+    public function getPartnerCategoryLabelAttribute(): string
+    {
+        return match ($this->partner_category) {
+            'independent_sales' => 'Independent Sales Agent',
+            'authorized_business' => 'Authorized Business Partner',
+            'established_business' => 'Establish Business Partner',
+            default => $this->partner_category ? ucwords(str_replace('_', ' ', $this->partner_category)) : 'Sales Partner',
+        };
+    }
+
     public function getReferralUrlAttribute(): string
     {
         $slug = $this->referral_slug ?: $this->id;

@@ -35,27 +35,36 @@
     <!-- Header Section -->
     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 lg:p-8 mb-8">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div>
-                <div class="flex items-center gap-3 flex-wrap">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">
-                        <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                        Authorized Sales Partner
-                    </span>
-                    <span class="px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase bg-slate-100 text-slate-700 border border-slate-200">
-                        Tier Rate: <strong class="text-slate-900">{{ number_format($user->getEffectiveCommissionRate(), 1) }}%</strong> Net Margin Split
-                    </span>
-                    @if($user->partner_category)
-                        <span class="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
-                            {{ str_replace('_', ' ', $user->partner_category) }}
+            <div class="flex items-start gap-4">
+                @if($user->profile_image_url)
+                    <img src="{{ $user->profile_image_url }}" alt="{{ $user->name }}" class="w-16 h-16 rounded-2xl object-cover shadow-md flex-shrink-0 border border-slate-200">
+                @else
+                    <div class="w-16 h-16 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-2xl tracking-tight shadow-md flex-shrink-0">
+                        {{ strtoupper(substr($user->first_name ?: 'S', 0, 1) . substr($user->last_name ?: 'P', 0, 1)) }}
+                    </div>
+                @endif
+                <div>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">
+                            <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                            Authorized Sales Partner
                         </span>
-                    @endif
+                        <span class="px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase bg-slate-100 text-slate-700 border border-slate-200">
+                            Tier Rate: <strong class="text-slate-900">{{ number_format($user->getEffectiveCommissionRate(), 1) }}%</strong> Net Margin Split
+                        </span>
+                        @if($user->partner_category)
+                            <span class="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
+                                {{ $user->partner_category_label }}
+                            </span>
+                        @endif
+                    </div>
+                    <h1 class="text-2xl lg:text-3xl font-black text-slate-900 uppercase tracking-tight mt-2">
+                        Welcome back, {{ $user->name }}
+                    </h1>
+                    <p class="text-sm text-slate-500 mt-1">
+                        Manage your assigned clients, monitor team store fulfillment, and track itemized commission statements.
+                    </p>
                 </div>
-                <h1 class="text-2xl lg:text-3xl font-black text-slate-900 uppercase tracking-tight mt-2">
-                    Welcome back, {{ $user->name }}
-                </h1>
-                <p class="text-sm text-slate-500 mt-1">
-                    Manage your assigned clients, monitor team store fulfillment, and track itemized commission statements.
-                </p>
             </div>
 
             <div class="flex flex-col sm:flex-row items-stretch gap-3 lg:min-w-[460px]">
@@ -96,9 +105,9 @@
             <p class="text-[10px] text-slate-400 mt-1">Gross order revenue</p>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Base & Tariffs</p>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Taxes & Fees</p>
             <div class="text-2xl font-black text-slate-700">${{ number_format($totalManufacturingCost + $totalTariffs + $totalFees, 2) }}</div>
-            <p class="text-[10px] text-slate-400 mt-1">Deducted Schedule A costs</p>
+            <p class="text-[10px] text-slate-400 mt-1">Deducted costs & fees</p>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
             <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Net Margin</p>
@@ -279,7 +288,7 @@
                             <th class="px-4 py-3.5">Client / Store</th>
                             <th class="px-4 py-3.5 text-right">Retail Gross</th>
                             <th class="px-4 py-3.5 text-right">Mfg Wholesale</th>
-                            <th class="px-4 py-3.5 text-right">Tariffs & Fees</th>
+                            <th class="px-4 py-3.5 text-right">Taxes & Fees</th>
                             <th class="px-4 py-3.5 text-right">Net Margin</th>
                             <th class="px-4 py-3.5 text-center">Split %</th>
                             <th class="px-4 py-3.5 text-right">Your Payout</th>

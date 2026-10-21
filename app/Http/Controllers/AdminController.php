@@ -486,7 +486,12 @@ class AdminController extends Controller
 
         $user->update($validated);
 
-        return redirect()->route('admin.dashboard')
+        if ($request->filled('return_to')) {
+            return redirect($request->input('return_to'))
+                ->with('success', "Coach {$user->name}'s profile has been updated.");
+        }
+
+        return redirect()->route('admin.dashboard', ['tab' => 'coaches'])
             ->with('success', "Coach {$user->name}'s profile has been updated.");
     }
 
@@ -554,12 +559,18 @@ class AdminController extends Controller
             'first_name'       => ['required', 'string', 'max:255'],
             'last_name'        => ['required', 'string', 'max:255'],
             'email'            => ['required', 'email', 'max:255', 'unique:users'],
-            'password'         => ['required', 'string', 'min:8'],
+            'password'         => ['required', 'string', 'min:8', 'confirmed'],
             'phone'            => ['nullable', 'string', 'max:20'],
             'partner_category' => ['required', 'string', 'in:independent_sales,authorized_business,established_business'],
             'commission_rate'  => ['required', 'numeric', 'min:0', 'max:100'],
             'referral_slug'    => ['nullable', 'string', 'alpha_dash', 'max:50', 'unique:users,referral_slug'],
+            'profile_image'    => ['nullable', 'image', 'max:10240'],
         ]);
+
+        $logoPath = null;
+        if ($request->hasFile('profile_image')) {
+            $logoPath = \App\Services\ImageOptimizer::optimize($request->file('profile_image'), 'partner_avatars');
+        }
 
         $slug = $validated['referral_slug'] ?: \Illuminate\Support\Str::slug($validated['first_name'] . '-' . $validated['last_name']);
         // Ensure uniqueness if auto-generated
@@ -583,6 +594,7 @@ class AdminController extends Controller
             'partner_category' => $validated['partner_category'],
             'commission_rate'  => $validated['commission_rate'],
             'referral_slug'    => $slug,
+            'logo_path'        => $logoPath,
         ]);
 
         return redirect()->back()->with('success', "Sales Partner {$rep->name} successfully registered at {$rep->commission_rate}% commission rate.");
@@ -643,7 +655,13 @@ class AdminController extends Controller
             'referral_slug'    => ['nullable', 'string', 'alpha_dash', 'max:50', 'unique:users,referral_slug,' . $user->id],
             'status'           => ['required', 'in:active,declined'],
             'password'         => ['nullable', 'string', 'min:8'],
+            'profile_image'    => ['nullable', 'image', 'max:10240'],
         ]);
+
+        if ($request->hasFile('profile_image')) {
+            $path = \App\Services\ImageOptimizer::optimize($request->file('profile_image'), 'partner_avatars');
+            $validated['logo_path'] = $path;
+        }
 
         if (!empty($validated['password'])) {
             $validated['password'] = \Illuminate\Support\Facades\Hash::make($validated['password']);

@@ -108,6 +108,13 @@
     <div x-data="{
         activeAdminTab: 'stores',
         init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabParam = urlParams.get('tab');
+            if (tabParam) {
+                this.activeAdminTab = tabParam;
+                localStorage.setItem('adminActiveTab', tabParam);
+                return;
+            }
             const savedTab = localStorage.getItem('adminActiveTab');
             if (savedTab) {
                 this.activeAdminTab = savedTab;
@@ -116,6 +123,9 @@
         setTab(tab) {
             this.activeAdminTab = tab;
             localStorage.setItem('adminActiveTab', tab);
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tab);
+            window.history.replaceState({}, '', url);
         }
     }">
         {{-- Admin Navigation Tabs --}}
@@ -1831,17 +1841,28 @@
                                 @endphp
                                 <tr class="hover:bg-slate-50 transition-colors">
                                     <td class="px-6 py-4">
-                                        <a href="{{ route('admin.sales-rep.show', $rep) }}" class="font-bold text-slate-900 hover:text-primary transition-colors flex items-center gap-1.5 group">
-                                            <span>{{ $rep->name }}</span>
-                                            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                        </a>
-                                        <div class="text-xs text-slate-500 font-mono">{{ $rep->email }} @if($rep->phone) · {{ $rep->phone }} @endif</div>
-                                        <div class="text-[10px] text-slate-400 mt-0.5">Slug: <code class="text-primary font-bold">{{ $rep->referral_slug ?: $rep->id }}</code></div>
+                                        <div class="flex items-center gap-3">
+                                            @if($rep->profile_image_url)
+                                                <img src="{{ $rep->profile_image_url }}" alt="{{ $rep->name }}" class="w-9 h-9 rounded-lg object-cover border border-slate-200 shadow-xs flex-shrink-0">
+                                            @else
+                                                <div class="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                                    {{ strtoupper(substr($rep->first_name ?: 'S', 0, 1) . substr($rep->last_name ?: 'P', 0, 1)) }}
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <a href="{{ route('admin.sales-rep.show', $rep) }}" class="font-bold text-slate-900 hover:text-primary transition-colors flex items-center gap-1.5 group">
+                                                    <span>{{ $rep->name }}</span>
+                                                    <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                                </a>
+                                                <div class="text-xs text-slate-500 font-mono">{{ $rep->email }} @if($rep->phone) · {{ $rep->phone }} @endif</div>
+                                                <div class="text-[10px] text-slate-400 mt-0.5">Slug: <code class="text-primary font-bold">{{ $rep->referral_slug ?: $rep->id }}</code></div>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4">
                                         <span class="inline-flex px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-full border
                                             {{ $rep->partner_category === 'established_business' ? 'bg-purple-50 text-purple-800 border-purple-200' : ($rep->partner_category === 'authorized_business' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-slate-100 text-slate-700 border-slate-200') }}">
-                                            {{ $rep->partner_category ? str_replace('_', ' ', $rep->partner_category) : 'Sales Rep' }}
+                                            {{ $rep->partner_category_label }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-center">
@@ -1903,7 +1924,7 @@
                         <h3 class="text-base font-black uppercase tracking-tight text-slate-900">Add Sales Representative / Partner</h3>
                         <button type="button" @click="createRepModal = false" class="text-slate-400 hover:text-slate-700 text-2xl font-black">&times;</button>
                     </div>
-                    <form action="{{ route('admin.sales-rep.create') }}" method="POST" class="p-6 space-y-4">
+                    <form action="{{ route('admin.sales-rep.create') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
                         @csrf
                         <div class="grid grid-cols-2 gap-4">
                             <div>
@@ -1917,18 +1938,28 @@
                         </div>
 
                         <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Profile Photo / Avatar (Optional)</label>
+                            <input type="file" name="profile_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 cursor-pointer">
+                        </div>
+
+                        <div>
                             <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Email (Login Username) *</label>
                             <input type="email" name="email" required placeholder="rep@speedcapital.com" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                         </div>
 
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Phone</label>
+                            <input type="text" name="phone" placeholder="e.g. (813) 000-0000" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        </div>
+
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Phone</label>
-                                <input type="text" name="phone" placeholder="e.g. (813) 000-0000" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Initial Password *</label>
+                                <input type="password" name="password" id="partner_password" required minlength="8" placeholder="Min 8 characters" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Initial Password *</label>
-                                <input type="password" name="password" required minlength="8" placeholder="Min 8 characters" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Confirm Password *</label>
+                                <input type="password" name="password_confirmation" id="partner_password_confirmation" required minlength="8" placeholder="Re-enter password" oninput="this.setCustomValidity(this.value !== document.getElementById('partner_password').value ? 'Passwords do not match.' : '')" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                             </div>
                         </div>
 
@@ -1936,9 +1967,9 @@
                             <div>
                                 <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Agreement Category *</label>
                                 <select name="partner_category" required class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                                    <option value="independent_sales">Independent Sales (30%)</option>
-                                    <option value="authorized_business">Authorized Business (40%)</option>
-                                    <option value="established_business" selected>Approved Established (50%)</option>
+                                    <option value="independent_sales">Independent Sales Agent</option>
+                                    <option value="authorized_business">Authorized Business Partner</option>
+                                    <option value="established_business" selected>Establish Business Partner</option>
                                 </select>
                             </div>
                             <div>
@@ -1968,8 +1999,12 @@
                         <h3 class="text-base font-black uppercase tracking-tight text-slate-900">Edit Sales Partner & Rate</h3>
                         <button type="button" @click="editRepModal = false" class="text-slate-400 hover:text-slate-700 text-2xl font-black">&times;</button>
                     </div>
-                    <form :action="activeEditRep ? activeEditRep.updateUrl : '#'" method="POST" class="p-6 space-y-4">
+                    <form :action="activeEditRep ? activeEditRep.updateUrl : '#'" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
                         @csrf
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Update Profile Photo / Avatar (Optional)</label>
+                            <input type="file" name="profile_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 cursor-pointer">
+                        </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold uppercase text-slate-600 mb-1">First Name *</label>
@@ -2004,9 +2039,9 @@
                             <div>
                                 <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Agreement Category *</label>
                                 <select name="partner_category" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                                    <option value="independent_sales" :selected="activeEditRep?.partner_category === 'independent_sales'">Independent Sales (30%)</option>
-                                    <option value="authorized_business" :selected="activeEditRep?.partner_category === 'authorized_business'">Authorized Business (40%)</option>
-                                    <option value="established_business" :selected="activeEditRep?.partner_category === 'established_business'">Approved Established (50%)</option>
+                                    <option value="independent_sales" :selected="activeEditRep?.partner_category === 'independent_sales'">Independent Sales Agent</option>
+                                    <option value="authorized_business" :selected="activeEditRep?.partner_category === 'authorized_business'">Authorized Business Partner</option>
+                                    <option value="established_business" :selected="activeEditRep?.partner_category === 'established_business'">Establish Business Partner</option>
                                 </select>
                             </div>
                             <div>

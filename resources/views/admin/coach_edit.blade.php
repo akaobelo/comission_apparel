@@ -2,10 +2,20 @@
 @section('title', 'Edit Coach | Admin')
 @section('content')
 <div class="max-w-5xl mx-auto px-6 pb-8 pt-32 lg:pt-40">
+    @php
+        $returnUrl = request('return_to');
+        if (!$returnUrl && $user->assignedSalesRep) {
+            $returnUrl = route('admin.sales-rep.show', ['user' => $user->assignedSalesRep, 'tab' => 'clients']);
+        }
+        $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'coaches']);
+        $backLabel = $returnUrl && $user->assignedSalesRep 
+            ? 'Back to ' . $user->assignedSalesRep->name . ' (Partner Profile)'
+            : ($returnUrl ? 'Back to Partner Profile' : 'Back to Coaches');
+    @endphp
     <div class="flex items-center gap-4 mb-8">
-        <a href="{{ route('admin.dashboard') }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-bold uppercase tracking-wide">
+        <a href="{{ $backUrl }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            Back to Dashboard
+            {{ $backLabel }}
         </a>
         <span class="text-slate-300">/</span>
         <span class="text-slate-700 font-bold">Editing: {{ $user->name }}</span>
@@ -25,6 +35,7 @@
                 <div class="p-6">
                     <form action="{{ route('admin.coach.update', $user) }}" method="POST" class="space-y-5">
                         @csrf
+                        <input type="hidden" name="return_to" value="{{ $backUrl }}">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">First Name</label>
