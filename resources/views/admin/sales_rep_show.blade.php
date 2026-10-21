@@ -656,8 +656,24 @@
                         @forelse($stores as $st)
                             <tr class="hover:bg-slate-50 transition-colors">
                                 <td class="px-6 py-4">
-                                    <div class="font-bold text-slate-900">{{ $st->name }}</div>
-                                    <div class="text-[10px] text-slate-400 font-sans">Deadline: {{ $st->order_deadline ? \Carbon\Carbon::parse($st->order_deadline)->format('M d, Y') : 'Rolling' }}</div>
+                                    <div class="flex items-center gap-3">
+                                        @php
+                                            $storeLogo = $st->logo_url;
+                                        @endphp
+                                        <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 flex-shrink-0 flex items-center justify-center overflow-hidden shadow-2xs">
+                                            @if($storeLogo)
+                                                <img src="{{ $storeLogo }}" alt="{{ $st->name }}" class="w-full h-full object-contain p-1" loading="lazy">
+                                            @else
+                                                <div class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs uppercase tracking-wider select-none">
+                                                    {{ strtoupper(substr($st->name, 0, 2)) }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="font-bold text-slate-900">{{ $st->name }}</div>
+                                            <div class="text-[10px] text-slate-400 font-sans">Deadline: {{ $st->order_deadline ? \Carbon\Carbon::parse($st->order_deadline)->format('M d, Y') : 'Rolling' }}</div>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-slate-900">{{ $st->user?->organization ?? '—' }}</div>

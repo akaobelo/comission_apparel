@@ -271,11 +271,27 @@
                         @forelse($stores as $s)
                             <tr class="hover:bg-slate-50 transition-colors">
                                 <td class="px-6 py-4">
-                                    <a href="/store/{{ $s->slug }}" target="_blank" class="font-bold text-slate-900 hover:text-primary transition-colors flex items-center gap-1.5">
-                                        {{ $s->name }}
-                                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                    </a>
-                                    <div class="text-xs text-slate-400">Category: {{ $s->sport ?: ($s->user?->sport ?: 'Athletics') }}</div>
+                                    <div class="flex items-center gap-3">
+                                        @php
+                                            $storeLogo = $s->logo_url;
+                                        @endphp
+                                        <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 flex-shrink-0 flex items-center justify-center overflow-hidden shadow-2xs">
+                                            @if($storeLogo)
+                                                <img src="{{ $storeLogo }}" alt="{{ $s->name }}" class="w-full h-full object-contain p-1" loading="lazy">
+                                            @else
+                                                <div class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs uppercase tracking-wider select-none">
+                                                    {{ strtoupper(substr($s->name, 0, 2)) }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="min-w-0">
+                                            <a href="{{ $s->slug ? route('store.show', $s->slug) : '#' }}" target="_blank" class="font-bold text-slate-900 hover:text-primary transition-colors inline-flex items-center gap-1.5 group">
+                                                <span>{{ $s->name }}</span>
+                                                <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-primary transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                            </a>
+                                            <div class="text-xs text-slate-400">Category: {{ $s->sport ?: ($s->user?->sport ?: 'Athletics') }}</div>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-slate-800">{{ $s->user?->organization }}</div>
