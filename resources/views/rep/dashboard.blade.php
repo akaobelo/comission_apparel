@@ -331,6 +331,86 @@
     <div x-show="activeTab === 'ledger'" class="space-y-6" style="display: none;" x-data="{
         viewMode: 'batches',
         selectedBatchKey: null,
+        perPage: 15,
+        orderPage: 1,
+        batchPage: 1,
+        batchItemPages: {},
+
+        get totalOrders() {
+            return {{ $orders->count() }};
+        },
+        get totalOrderPages() {
+            return Math.ceil(this.totalOrders / this.perPage) || 1;
+        },
+        isOrderVisible(idx) {
+            const start = (this.orderPage - 1) * this.perPage;
+            return idx >= start && idx < (start + this.perPage);
+        },
+        getOrderPageNumbers() {
+            const total = this.totalOrderPages;
+            const current = this.orderPage;
+            const delta = 2;
+            const range = [];
+            for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
+                range.push(i);
+            }
+            if (current - delta > 2) range.unshift('...');
+            if (current + delta < total - 1) range.push('...');
+            range.unshift(1);
+            if (total > 1) range.push(total);
+            return range;
+        },
+
+        get totalBatches() {
+            return {{ $orderBatches->count() }};
+        },
+        get totalBatchPages() {
+            return Math.ceil(this.totalBatches / this.perPage) || 1;
+        },
+        isBatchVisible(idx) {
+            const start = (this.batchPage - 1) * this.perPage;
+            return idx >= start && idx < (start + this.perPage);
+        },
+        getBatchPageNumbers() {
+            const total = this.totalBatchPages;
+            const current = this.batchPage;
+            const delta = 2;
+            const range = [];
+            for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
+                range.push(i);
+            }
+            if (current - delta > 2) range.unshift('...');
+            if (current + delta < total - 1) range.push('...');
+            range.unshift(1);
+            if (total > 1) range.push(total);
+            return range;
+        },
+
+        getBatchItemPage(key) {
+            return this.batchItemPages[key] || 1;
+        },
+        setBatchItemPage(key, page) {
+            this.batchItemPages[key] = page;
+        },
+        isBatchItemVisible(key, idx) {
+            const page = this.getBatchItemPage(key);
+            const start = (page - 1) * this.perPage;
+            return idx >= start && idx < (start + this.perPage);
+        },
+        getBatchItemPageNumbers(key, count) {
+            const total = Math.ceil(count / this.perPage) || 1;
+            const current = this.getBatchItemPage(key);
+            const delta = 2;
+            const range = [];
+            for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
+                range.push(i);
+            }
+            if (current - delta > 2) range.unshift('...');
+            if (current + delta < total - 1) range.push('...');
+            range.unshift(1);
+            if (total > 1) range.push(total);
+            return range;
+        }
     }">
         {{-- STEP 1: GROUPED ORDER BATCHES / STORES --}}
         <div x-show="viewMode === 'batches' && !selectedBatchKey" class="space-y-6">
@@ -379,7 +459,7 @@
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @forelse($orderBatches as $batch)
-                                <tr @click="selectedBatchKey = '{{ $batch->key }}'" class="hover:bg-slate-50 transition-colors cursor-pointer group">
+                                <tr x-show="isBatchVisible({{ $loop->index }})" @click="selectedBatchKey = '{{ $batch->key }}'" class="hover:bg-slate-50 transition-colors cursor-pointer group">
                                     <td class="px-4 py-4 text-center">
                                         <div class="inline-flex items-center gap-1.5 text-xs text-slate-400 font-sans">
                                             <span class="text-slate-300 font-bold text-sm leading-none select-none">≡</span>
@@ -462,6 +542,46 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                {{-- Pagination for Grouped Batches --}}
+                <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="text-xs text-slate-500 font-sans">
+                        Showing <span class="font-bold text-slate-900" x-text="totalBatches > 0 ? (batchPage - 1) * perPage + 1 : 0"></span>
+                        to <span class="font-bold text-slate-900" x-text="Math.min(batchPage * perPage, totalBatches)"></span>
+                        of <span class="font-bold text-slate-900">{{ $orderBatches->count() }}</span> batches
+                    </div>
+                    <div class="flex items-center gap-1 font-sans" x-show="totalBatchPages > 1">
+                        <button type="button" 
+                                @click="if(batchPage > 1) { batchPage--; $el.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' }); }"
+                                :disabled="batchPage === 1"
+                                class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-colors"
+                                :class="batchPage === 1 ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-white' : 'border-slate-300 text-slate-700 hover:bg-slate-100 bg-white cursor-pointer shadow-2xs'">
+                            &larr; Prev
+                        </button>
+                        <template x-for="(p, i) in getBatchPageNumbers()" :key="i">
+                            <span>
+                                <template x-if="p === '...'">
+                                    <span class="px-2 py-1 text-xs text-slate-400 select-none">...</span>
+                                </template>
+                                <template x-if="p !== '...'">
+                                    <button type="button" 
+                                            @click="batchPage = p; $el.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' });"
+                                            class="min-w-[32px] h-8 px-2 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                                            :class="batchPage === p ? 'bg-slate-900 text-white font-black' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'"
+                                            x-text="p">
+                                    </button>
+                                </template>
+                            </span>
+                        </template>
+                        <button type="button" 
+                                @click="if(batchPage < totalBatchPages) { batchPage++; $el.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' }); }"
+                                :disabled="batchPage === totalBatchPages"
+                                class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-colors"
+                                :class="batchPage === totalBatchPages ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-white' : 'border-slate-300 text-slate-700 hover:bg-slate-100 bg-white cursor-pointer shadow-2xs'">
+                            Next &rarr;
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -566,7 +686,7 @@
                                         $deductions = (float)($ord->tariff_amount + $ord->fee_deduction + $ord->fundraising_amount);
                                         $appliedRate = (float)($ord->applied_rep_commission_rate ?? $user->getEffectiveCommissionRate());
                                     @endphp
-                                    <tr class="hover:bg-slate-50 transition-colors">
+                                    <tr x-show="isBatchItemVisible('{{ $batch->key }}', {{ $loop->index }})" class="hover:bg-slate-50 transition-colors">
                                         <td class="px-4 py-4 font-sans font-bold text-xs text-slate-900">
                                             #{{ $ord->id }}
                                             <div class="text-[10px] text-slate-400 font-sans">{{ $ord->created_at->format('M d, Y') }}</div>
@@ -595,6 +715,48 @@
                             </tbody>
                         </table>
                     </div>
+
+                    {{-- Pagination for Orders inside this Batch --}}
+                    @if($batch->order_count > 15)
+                        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="text-xs text-slate-500 font-sans">
+                                Showing <span class="font-bold text-slate-900" x-text="(getBatchItemPage('{{ $batch->key }}') - 1) * perPage + 1"></span>
+                                to <span class="font-bold text-slate-900" x-text="Math.min(getBatchItemPage('{{ $batch->key }}') * perPage, {{ $batch->order_count }})"></span>
+                                of <span class="font-bold text-slate-900">{{ $batch->order_count }}</span> orders in batch
+                            </div>
+                            <div class="flex items-center gap-1 font-sans">
+                                <button type="button" 
+                                        @click="if(getBatchItemPage('{{ $batch->key }}') > 1) { setBatchItemPage('{{ $batch->key }}', getBatchItemPage('{{ $batch->key }}') - 1); $el.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' }); }"
+                                        :disabled="getBatchItemPage('{{ $batch->key }}') === 1"
+                                        class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-colors"
+                                        :class="getBatchItemPage('{{ $batch->key }}') === 1 ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-white' : 'border-slate-300 text-slate-700 hover:bg-slate-100 bg-white cursor-pointer shadow-2xs'">
+                                    &larr; Prev
+                                </button>
+                                <template x-for="(p, i) in getBatchItemPageNumbers('{{ $batch->key }}', {{ $batch->order_count }})" :key="i">
+                                    <span>
+                                        <template x-if="p === '...'">
+                                            <span class="px-2 py-1 text-xs text-slate-400 select-none">...</span>
+                                        </template>
+                                        <template x-if="p !== '...'">
+                                            <button type="button" 
+                                                    @click="setBatchItemPage('{{ $batch->key }}', p); $el.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' });"
+                                                    class="min-w-[32px] h-8 px-2 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                                                    :class="getBatchItemPage('{{ $batch->key }}') === p ? 'bg-slate-900 text-white font-black' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'"
+                                                    x-text="p">
+                                            </button>
+                                        </template>
+                                    </span>
+                                </template>
+                                <button type="button" 
+                                        @click="if(getBatchItemPage('{{ $batch->key }}') < Math.ceil({{ $batch->order_count }} / perPage)) { setBatchItemPage('{{ $batch->key }}', getBatchItemPage('{{ $batch->key }}') + 1); $el.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' }); }"
+                                        :disabled="getBatchItemPage('{{ $batch->key }}') >= Math.ceil({{ $batch->order_count }} / perPage)"
+                                        class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-colors"
+                                        :class="getBatchItemPage('{{ $batch->key }}') >= Math.ceil({{ $batch->order_count }} / perPage) ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-white' : 'border-slate-300 text-slate-700 hover:bg-slate-100 bg-white cursor-pointer shadow-2xs'">
+                                    Next &rarr;
+                                </button>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         @endforeach
@@ -644,7 +806,7 @@
                                     $deductions = (float)($ord->tariff_amount + $ord->fee_deduction + $ord->fundraising_amount);
                                     $appliedRate = (float)($ord->applied_rep_commission_rate ?? $user->getEffectiveCommissionRate());
                                 @endphp
-                                <tr class="hover:bg-slate-50 transition-colors">
+                                <tr x-show="isOrderVisible({{ $loop->index }})" class="hover:bg-slate-50 transition-colors">
                                     <td class="px-4 py-4 font-sans font-bold text-xs text-slate-900">
                                         #{{ $ord->id }}
                                         <div class="text-[10px] text-slate-400">{{ $ord->created_at->format('M d, Y') }}</div>
@@ -675,6 +837,46 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                {{-- Pagination for All Individual Orders --}}
+                <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="text-xs text-slate-500 font-sans">
+                        Showing <span class="font-bold text-slate-900" x-text="totalOrders > 0 ? (orderPage - 1) * perPage + 1 : 0"></span>
+                        to <span class="font-bold text-slate-900" x-text="Math.min(orderPage * perPage, totalOrders)"></span>
+                        of <span class="font-bold text-slate-900">{{ $orders->count() }}</span> orders
+                    </div>
+                    <div class="flex items-center gap-1 font-sans" x-show="totalOrderPages > 1">
+                        <button type="button" 
+                                @click="if(orderPage > 1) { orderPage--; $el.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' }); }"
+                                :disabled="orderPage === 1"
+                                class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-colors"
+                                :class="orderPage === 1 ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-white' : 'border-slate-300 text-slate-700 hover:bg-slate-100 bg-white cursor-pointer shadow-2xs'">
+                            &larr; Prev
+                        </button>
+                        <template x-for="(p, i) in getOrderPageNumbers()" :key="i">
+                            <span>
+                                <template x-if="p === '...'">
+                                    <span class="px-2 py-1 text-xs text-slate-400 select-none">...</span>
+                                </template>
+                                <template x-if="p !== '...'">
+                                    <button type="button" 
+                                            @click="orderPage = p; $el.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' });"
+                                            class="min-w-[32px] h-8 px-2 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                                            :class="orderPage === p ? 'bg-slate-900 text-white font-black' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'"
+                                            x-text="p">
+                                    </button>
+                                </template>
+                            </span>
+                        </template>
+                        <button type="button" 
+                                @click="if(orderPage < totalOrderPages) { orderPage++; $el.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' }); }"
+                                :disabled="orderPage === totalOrderPages"
+                                class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-colors"
+                                :class="orderPage === totalOrderPages ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-white' : 'border-slate-300 text-slate-700 hover:bg-slate-100 bg-white cursor-pointer shadow-2xs'">
+                            Next &rarr;
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
