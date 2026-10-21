@@ -21,7 +21,13 @@ class QuoteRequestController extends Controller
 
     public function showLandingPage()
     {
-        return view('landing.free-mockup');
+        $collections = \App\Models\LandingCollection::where('is_active', true)
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->take(6)
+            ->get();
+
+        return view('landing.free-mockup', compact('collections'));
     }
 
     public function store(Request $request)

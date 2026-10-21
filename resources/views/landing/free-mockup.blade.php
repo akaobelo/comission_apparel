@@ -340,88 +340,42 @@ Secure form. Minimum 10 units per item.
 <a href="#quote" style="display: inline-flex; align-items: center; min-height: 50px; padding: 0 24px; border-radius: 8px; border: 1px solid #cbd5e1; color: #1e293b; text-decoration: none; font-weight: 700; font-size: 14px; letter-spacing: 1px; text-transform: uppercase">Request free mockup</a>
 </div>
 
-<!-- 6 REAL COLLECTION MOCKUPS -->
+<!-- 6 REAL COLLECTION MOCKUPS (Dynamic from Database with Fallbacks) -->
 <div style="margin-top: 44px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px">
-
-<!-- Mockup 1: Lane 4 Track Club -->
-<div class="mockup-item" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden">
-<div style="height: 240px; background: #14161f; display: flex; align-items: center; justify-content: center; overflow: hidden">
-<img src="/storage/collections/6odXiWOp1Qy9bwt9T8zH9lQBRfDzGzmXVYzCf8J2.png" alt="Lane 4 Track Club Uniforms" style="width: 100%; height: 100%; object-fit: cover;">
-</div>
-<div style="padding: 20px 22px 24px">
-<div style="display: flex; justify-content: space-between; gap: 8px; align-items: center">
-<span style="padding: 4px 10px; border-radius: 4px; background: #0a0a0a; color: #ffffff; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase">Track &amp; Field</span>
-<span style="font-size: 13px; font-weight: 600; color: #64748b">Club Program</span>
-</div>
-<div style="margin-top: 12px; font-size: 20px; font-weight: 900; text-transform: uppercase">Lane 4 Track Club</div>
-</div>
-</div>
-
-<!-- Mockup 2: Ohio Heat Track Club -->
-<div class="mockup-item" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden">
-<div style="height: 240px; background: #14161f; display: flex; align-items: center; justify-content: center; overflow: hidden">
-<img src="/storage/collections/exp8P6hDX4y80CULL56VlxllLlvkbtR05FCCf4rY.png" alt="Ohio Heat Track Club" style="width: 100%; height: 100%; object-fit: cover;">
-</div>
-<div style="padding: 20px 22px 24px">
-<div style="display: flex; justify-content: space-between; gap: 8px; align-items: center">
-<span style="padding: 4px 10px; border-radius: 4px; background: #0a0a0a; color: #ffffff; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase">Track &amp; Field</span>
-<span style="font-size: 13px; font-weight: 600; color: #64748b">Columbus, OH</span>
-</div>
-<div style="margin-top: 12px; font-size: 20px; font-weight: 900; text-transform: uppercase">Ohio Heat Track Club</div>
-</div>
-</div>
-
-<!-- Mockup 3: Hermitage High School -->
-<div class="mockup-item" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden">
-<div style="height: 240px; background: #14161f; display: flex; align-items: center; justify-content: center; overflow: hidden">
-<img src="/storage/collections/ogBoUuLlCThLkrA9DyM9rzwYTz5rclgzMgwemMa2.png" alt="Hermitage High School" style="width: 100%; height: 100%; object-fit: cover;">
-</div>
-<div style="padding: 20px 22px 24px">
-<div style="display: flex; justify-content: space-between; gap: 8px; align-items: center">
-<span style="padding: 4px 10px; border-radius: 4px; background: #0a0a0a; color: #ffffff; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase">Track &amp; Field</span>
-<span style="font-size: 13px; font-weight: 600; color: #64748b">Richmond, VA</span>
-</div>
-<div style="margin-top: 12px; font-size: 20px; font-weight: 900; text-transform: uppercase">Hermitage High School</div>
-</div>
-</div>
-
-<!-- Mockup 4: Savage Eagles -->
-<div class="mockup-item" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden">
-<div style="height: 240px; background: #14161f; display: flex; align-items: center; justify-content: center; overflow: hidden">
-<img src="/storage/collections/lfnaYGdWl373ZNQRcb1ZifiJlFxpaeXPYWlkIVZ5.png" alt="Savage Eagles Baseball Club" style="width: 100%; height: 100%; object-fit: cover;">
-</div>
-<div style="padding: 20px 22px 24px">
-<div style="display: flex; justify-content: space-between; gap: 8px; align-items: center">
-<span style="padding: 4px 10px; border-radius: 4px; background: #0a0a0a; color: #ffffff; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase">Baseball</span>
-<span style="font-size: 13px; font-weight: 600; color: #64748b">Club Baseball</span>
-</div>
-<div style="margin-top: 12px; font-size: 20px; font-weight: 900; text-transform: uppercase">Savage Eagles</div>
-</div>
-</div>
-
-<!-- Mockup 5: Tabernacle Baptist -->
-<div class="mockup-item" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden">
-<div style="height: 240px; background: #14161f; display: flex; align-items: center; justify-content: center; overflow: hidden">
-<img src="/storage/collections/66p6QFY49qWteEgJsrmkKpjc6mrZU6UCz6puSopC.jpg" alt="Tabernacle Baptist Academy" style="width: 100%; height: 100%; object-fit: cover;">
-</div>
-<div style="padding: 20px 22px 24px">
-<div style="display: flex; justify-content: space-between; gap: 8px; align-items: center">
-<span style="padding: 4px 10px; border-radius: 4px; background: #0a0a0a; color: #ffffff; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase">Basketball</span>
-<span style="font-size: 13px; font-weight: 600; color: #64748b">Freeport, Bahamas</span>
-</div>
-<div style="margin-top: 12px; font-size: 20px; font-weight: 900; text-transform: uppercase">Tabernacle Baptist</div>
-</div>
-</div>
-
-<!-- Mockup 6: Nesbitt Fitness -->
-<div class="mockup-item" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden">
-<div style="height: 240px; background: #14161f; display: flex; align-items: center; justify-content: center; overflow: hidden">
-<img src="/storage/collections/Qei9hDHWMEvaGk6L8ftxYQXbnJiD9SAco0zn61EV.png" alt="Nesbitt Fitness" style="width: 100%; height: 100%; object-fit: cover;">
-</div>
-<div style="padding: 20px 22px 24px">
-<div style="display: flex; justify-content: space-between; gap: 8px; align-items: center">
-<span style="padding: 4px 10px; border-radius: 4px; background: #0a0a0a; color: #ffffff; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase">Fitness</span>
-<span style="font-size: 13px; font-weight: 600; color: #64748b">Freeport, Bahamas</span>
+@if(isset($collections) && $collections->isNotEmpty())
+  @foreach($collections as $col)
+  <div class="mockup-item" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden">
+    <div style="height: 240px; background: #14161f; display: flex; align-items: center; justify-content: center; overflow: hidden">
+      <img src="{{ \Illuminate\Support\Str::startsWith($col->image_path, 'http') ? $col->image_path : asset(ltrim($col->image_path, '/')) }}" 
+           alt="{{ $col->title }}" 
+           onerror="this.onerror=null; this.src='{{ asset('images/team store.png') }}';" 
+           style="width: 100%; height: 100%; object-fit: cover;" 
+           loading="lazy">
+    </div>
+    <div style="padding: 20px 22px 24px">
+      <div style="display: flex; justify-content: space-between; gap: 8px; align-items: center">
+        <span style="padding: 4px 10px; border-radius: 4px; background: #0a0a0a; color: #ffffff; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase">{{ $col->tab_name ?: 'Custom Apparel' }}</span>
+        <span style="font-size: 13px; font-weight: 600; color: #64748b">Verified Program</span>
+      </div>
+      <div style="margin-top: 12px; font-size: 20px; font-weight: 900; text-transform: uppercase">{{ $col->title }}</div>
+    </div>
+  </div>
+  @endforeach
+@else
+  <!-- Fallback Mockups with safe error handling -->
+  <div class="mockup-item" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden">
+    <div style="height: 240px; background: #14161f; display: flex; align-items: center; justify-content: center; overflow: hidden">
+      <img src="{{ asset('images/team store.png') }}" alt="Lane 4 Track Club" style="width: 100%; height: 100%; object-fit: cover;">
+    </div>
+    <div style="padding: 20px 22px 24px">
+      <div style="display: flex; justify-content: space-between; gap: 8px; align-items: center">
+        <span style="padding: 4px 10px; border-radius: 4px; background: #0a0a0a; color: #ffffff; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase">Track &amp; Field</span>
+        <span style="font-size: 13px; font-weight: 600; color: #64748b">Club Program</span>
+      </div>
+      <div style="margin-top: 12px; font-size: 20px; font-weight: 900; text-transform: uppercase">Lane 4 Track Club</div>
+    </div>
+  </div>
+@endif
 </div>
 <div style="margin-top: 12px; font-size: 20px; font-weight: 900; text-transform: uppercase">Nesbitt Fitness</div>
 </div>
