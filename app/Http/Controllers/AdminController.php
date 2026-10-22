@@ -1183,12 +1183,27 @@ class AdminController extends Controller
         foreach ($request->items as $itemId => $data) {
             $storeItem = $store->items()->find($itemId);
             if ($storeItem) {
-                $storeItem->update([
-                    'name' => $data['name'] ?? $storeItem->name,
-                    'wholesale_price' => $data['wholesale_price'] ?? null,
-                    'retail_price' => $data['retail_price'] ?? null,
-                    'sort_order' => $data['sort_order'] ?? $storeItem->sort_order,
-                ]);
+                $updateData = [];
+
+                if (array_key_exists('name', $data) && $data['name'] !== null && trim($data['name']) !== '') {
+                    $updateData['name'] = trim($data['name']);
+                }
+
+                if (array_key_exists('wholesale_price', $data) && $data['wholesale_price'] !== null && $data['wholesale_price'] !== '') {
+                    $updateData['wholesale_price'] = (float) $data['wholesale_price'];
+                }
+
+                if (array_key_exists('retail_price', $data) && $data['retail_price'] !== null && $data['retail_price'] !== '') {
+                    $updateData['retail_price'] = (float) $data['retail_price'];
+                }
+
+                if (array_key_exists('sort_order', $data) && $data['sort_order'] !== null && $data['sort_order'] !== '') {
+                    $updateData['sort_order'] = (int) $data['sort_order'];
+                }
+
+                if (!empty($updateData)) {
+                    $storeItem->update($updateData);
+                }
             }
         }
 
@@ -1198,6 +1213,25 @@ class AdminController extends Controller
 
         return redirect()->route('admin.store.edit', $store)
             ->with('success', 'Store item pricing updated.');
+    }
+
+    public function updateStoreItemsSort(Request $request, TeamStore $store)
+    {
+        $request->validate([
+            'items' => ['required', 'array'],
+            'items.*.sort_order' => ['required', 'integer'],
+        ]);
+
+        foreach ($request->items as $itemId => $data) {
+            $storeItem = $store->items()->find($itemId);
+            if ($storeItem && isset($data['sort_order'])) {
+                $storeItem->update([
+                    'sort_order' => (int) $data['sort_order'],
+                ]);
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Store items order saved.']);
     }
 
     public function attachPackageComponent(Request $request, TeamStore $store, StoreItem $package)

@@ -794,7 +794,7 @@ function initStoreItemsSortable() {
                 formData.append(`items[${itemId}][sort_order]`, newSort);
             });
 
-            fetch('{{ route('admin.store.pricing.update', $store) }}', {
+            fetch('{{ route('admin.store.items.sort', $store) }}', {
                 method: 'POST',
                 body: formData,
                 headers: {

@@ -51,4 +51,24 @@ class StoreItem extends Model
         }
         return false;
     }
+
+    public function getWholesalePriceAttribute($value)
+    {
+        if (($value === null || (float) $value <= 0) && $this->design_catalog_id) {
+            return $this->designCatalog?->wholesale_price ?? $value;
+        }
+        return $value;
+    }
+
+    public function getRetailPriceAttribute($value)
+    {
+        if ($value === null || (float) $value <= 0) {
+            $wholesale = $this->wholesale_price;
+            if ($wholesale !== null && (float) $wholesale > 0) {
+                return $wholesale;
+            }
+            return $this->designCatalog?->wholesale_price ?? $value;
+        }
+        return $value;
+    }
 }
