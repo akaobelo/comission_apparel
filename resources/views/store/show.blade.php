@@ -380,12 +380,12 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">First Name <span class="text-red-500">*</span></label>
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Athlete First Name<span class="text-red-500">*</span></label>
                             <input type="text" name="athlete_first_name" required placeholder="e.g. Jordan" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
                             @error('athlete_first_name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Last Name <span class="text-red-500">*</span></label>
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Athlete Last Name<span class="text-red-500">*</span></label>
                             <input type="text" name="athlete_last_name" required placeholder="e.g. Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
                             @error('athlete_last_name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                         </div>
