@@ -238,7 +238,7 @@
             Sales Partners
         </a>
         <span class="text-slate-300">/</span>
-        <span class="text-slate-700 font-bold text-xs uppercase tracking-wider" x-text="activeTab === 'overview' ? 'Partner Profile' : (activeTab === 'clients' ? 'Assigned Clients' : (activeTab === 'stores' ? 'Team Stores' : 'Commission Statements'))">Partner Profile</span>
+        <span class="text-slate-700 font-bold text-xs uppercase tracking-wider" x-text="activeTab === 'overview' ? 'Partner Settings & Profile' : (activeTab === 'clients' ? 'Assigned Coaches' : (activeTab === 'stores' ? 'Team Stores & Pipeline' : (viewMode === 'all_orders' ? 'Itemized Orders Ledger' : 'Batch Orders')))">Partner Profile</span>
         <template x-if="selectedBatchKey">
             <span class="flex items-center gap-2 text-slate-300">
                 <span>/</span>
@@ -433,20 +433,114 @@
         </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="border-b border-slate-200 mb-8 flex items-center gap-6 overflow-x-auto">
-        <button type="button" @click="setTab('overview')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'overview' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
-            Partner Settings & Profile
-        </button>
-        <button type="button" @click="setTab('clients')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'clients' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
-            Assigned Clients ({{ $clients->count() }})
-        </button>
-        <button type="button" @click="setTab('stores')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'stores' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
-            Team Stores & Pipeline ({{ $stores->count() }})
-        </button>
-        <button type="button" @click="setTab('orders')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
-            Commission Statements & Orders ({{ $orders->count() }})
-        </button>
+    <!-- Navigation Deck (4-Column Layout matching Super Admin Control Deck) -->
+    <div class="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 items-stretch">
+            {{-- Column 1: PROFILE & SETTINGS --}}
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/70">
+                        <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        </span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Profile & Settings</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        {{-- Edit Partner Agreement & Account --}}
+                        <button type="button" @click="setTab('overview')" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeTab === 'overview' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeTab === 'overview' ? 'text-emerald-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                <span class="truncate">Edit Partner Agreement & Account</span>
+                            </div>
+                            <span class="w-1.5 h-1.5 rounded-full" :class="activeTab === 'overview' ? 'bg-emerald-400' : 'bg-transparent'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Column 2: CLIENT DATA BASE --}}
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/70">
+                        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        </span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Client Data Base</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        {{-- Assigned Coaches --}}
+                        <button type="button" @click="setTab('clients')" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeTab === 'clients' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeTab === 'clients' ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                <span class="truncate">Assigned Coaches</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="activeTab === 'clients' ? 'bg-blue-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $clients->count() }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Column 3: STOREFRONT DATABASE --}}
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/70">
+                        <span class="w-6 h-6 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                        </span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Storefront Database</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        {{-- Team Stores & Pipeline --}}
+                        <button type="button" @click="setTab('stores')" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeTab === 'stores' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeTab === 'stores' ? 'text-purple-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                <span class="truncate">Team Stores & Pipeline</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="activeTab === 'stores' ? 'bg-purple-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $stores->count() }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Column 4: FINANCIALS --}}
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/70">
+                        <span class="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Financials</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        {{-- Batch Orders --}}
+                        <button type="button" @click="setTab('orders'); setViewMode('batches'); closeBatch();" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="(activeTab === 'orders' && viewMode === 'batches') ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="(activeTab === 'orders' && viewMode === 'batches') ? 'text-amber-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                <span class="truncate">Batch Orders</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="(activeTab === 'orders' && viewMode === 'batches') ? 'bg-amber-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $orderBatches->count() }}
+                            </span>
+                        </button>
+
+                        {{-- Itemized Orders Ledger --}}
+                        <button type="button" @click="setTab('orders'); setViewMode('all_orders'); closeBatch();" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="(activeTab === 'orders' && viewMode === 'all_orders') ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="(activeTab === 'orders' && viewMode === 'all_orders') ? 'text-amber-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                <span class="truncate">Itemized Orders Ledger</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="(activeTab === 'orders' && viewMode === 'all_orders') ? 'bg-amber-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $orders->count() }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- TAB 1: OVERVIEW & PROFILE SETTINGS -->
