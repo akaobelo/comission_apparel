@@ -1581,7 +1581,66 @@ class AdminController extends Controller
             'check'  => 'Pay by Check (Waived)',
             default  => 'Cash Collection (In-House)',
         };
+
+        if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return response()->json([
+                'success' => true,
+                'message' => "Store \"{$store->name}\" payment mode updated to: {$label}.",
+                'payment_mode' => $validated['payment_mode'],
+                'label' => $label,
+            ]);
+        }
+
         return back()->with('success', "Store \"{$store->name}\" payment mode updated to: {$label}.");
+    }
+
+    public function bulkUpdateStorePaymentMode(Request $request)
+    {
+        $validated = $request->validate([
+            'store_ids' => ['required', 'array'],
+            'store_ids.*' => ['required', 'exists:team_stores,id'],
+            'payment_mode' => ['required', 'in:in_house,online,check'],
+        ]);
+
+        $mode = $validated['payment_mode'];
+        $stores = TeamStore::whereIn('id', $validated['store_ids'])->get();
+
+        foreach ($stores as $store) {
+            $store->update(['payment_mode' => $mode]);
+
+            if ($mode === 'online') {
+                $store->parentOrders()->where(function($q) {
+                    $q->whereNull('payment_status')
+                      ->orWhere('payment_status', 'not_applicable');
+                })->update(['payment_status' => 'pending']);
+            } else {
+                $store->parentOrders()->where('payment_status', 'pending')
+                      ->update([
+                          'payment_status' => 'not_applicable',
+                          'status'         => 'Submitted',
+                      ]);
+            }
+        }
+
+        $label = match($mode) {
+            'online' => 'Online Credit Card Payment (Stripe)',
+            'check'  => 'Pay by Check (Waived)',
+            default  => 'Cash Collection (In-House)',
+        };
+
+        $count = $stores->count();
+
+        if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return response()->json([
+                'success' => true,
+                'count' => $count,
+                'payment_mode' => $mode,
+                'label' => $label,
+                'message' => "Successfully updated {$count} store(s) to {$label}.",
+            ]);
+        }
+
+        return back()->with('success', "Successfully updated {$count} store(s) to {$label}.");
     }
 
     public function updateStorePricing(Request $request, TeamStore $store)

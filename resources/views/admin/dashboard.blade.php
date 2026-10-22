@@ -559,14 +559,14 @@
 
                                                     <div class="flex items-center gap-1.5 flex-wrap justify-end">
                                                         {{-- Quick Payment Mode Switcher --}}
-                                                        <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="inline-block m-0">
-                                                            @csrf
-                                                            <select name="payment_mode" onchange="this.form.submit()" title="Change payment collection method" class="text-[11px] font-bold rounded-md px-2 py-1 border shadow-sm cursor-pointer outline-none transition-colors {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100' : (($store->payment_mode ?? 'in_house') === 'check' ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100') }}">
+                                                        <div class="relative inline-flex items-center gap-1">
+                                                            <select name="payment_mode" onchange="quickUpdateStorePaymentMode(this, {{ $store->id }})" title="Change payment collection method" class="store-payment-mode-select text-[11px] font-bold rounded-md px-2 py-1 border shadow-sm cursor-pointer outline-none transition-colors {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100' : (($store->payment_mode ?? 'in_house') === 'check' ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100') }}">
                                                                 <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash</option>
                                                                 <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Stripe</option>
                                                                 <option value="check" {{ ($store->payment_mode ?? 'in_house') === 'check' ? 'selected' : '' }}>📑 Check (Waived)</option>
                                                             </select>
-                                                        </form>
+                                                            <span class="save-status-badge text-[10px] font-bold"></span>
+                                                        </div>
 
                                                         <a href="{{ route('store.show', $store->slug) }}" target="_blank" class="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
                                                             <span>View Store</span>
@@ -683,15 +683,17 @@
                                                         </select>
                                                     </form>
 
-                                                    <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="flex items-center justify-between bg-white border border-slate-200 rounded-md p-1.5 gap-1.5 shadow-sm">
-                                                        @csrf
+                                                    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-md p-1.5 gap-1.5 shadow-sm">
                                                         <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Payment:</span>
-                                                        <select name="payment_mode" onchange="this.form.submit()" class="text-xs font-bold rounded px-1.5 py-0.5 outline-none border transition-colors w-full max-w-[125px] {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (($store->payment_mode ?? 'in_house') === 'check' ? 'bg-blue-50 text-blue-800 border-blue-300' : 'bg-amber-50 text-amber-800 border-amber-300') }}">
-                                                            <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash</option>
-                                                            <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Stripe</option>
-                                                            <option value="check" {{ ($store->payment_mode ?? 'in_house') === 'check' ? 'selected' : '' }}>📑 Check (Waived)</option>
-                                                        </select>
-                                                    </form>
+                                                        <div class="relative inline-flex items-center gap-1">
+                                                            <select name="payment_mode" onchange="quickUpdateStorePaymentMode(this, {{ $store->id }})" class="store-payment-mode-select text-xs font-bold rounded px-1.5 py-0.5 outline-none border transition-colors w-full max-w-[125px] {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (($store->payment_mode ?? 'in_house') === 'check' ? 'bg-blue-50 text-blue-800 border-blue-300' : 'bg-amber-50 text-amber-800 border-amber-300') }}">
+                                                                <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash</option>
+                                                                <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Stripe</option>
+                                                                <option value="check" {{ ($store->payment_mode ?? 'in_house') === 'check' ? 'selected' : '' }}>📑 Check (Waived)</option>
+                                                            </select>
+                                                            <span class="save-status-badge text-[9px] font-bold"></span>
+                                                        </div>
+                                                    </div>
                                                 @endif
                                             </div>
                                         </div>
@@ -1061,6 +1063,83 @@
         <div x-show="activeAdminTab === 'active_team_stores'" x-cloak class="space-y-6" x-data="{
             sortCol: null,
             sortAsc: true,
+            selectedStoreIds: [],
+            bulkPaymentMode: 'in_house',
+            isBulkUpdating: false,
+            bulkMessage: '',
+            bulkSuccess: true,
+            allStoreIds: [{{ $productionStores->pluck('id')->implode(',') }}],
+            toggleAllStores(e) {
+                if (e.target.checked) {
+                    this.selectedStoreIds = this.allStoreIds.map(String);
+                } else {
+                    this.selectedStoreIds = [];
+                }
+            },
+            toggleStore(id) {
+                id = String(id);
+                const idx = this.selectedStoreIds.indexOf(id);
+                if (idx > -1) {
+                    this.selectedStoreIds.splice(idx, 1);
+                } else {
+                    this.selectedStoreIds.push(id);
+                }
+            },
+            selectAll() {
+                this.selectedStoreIds = this.allStoreIds.map(String);
+            },
+            deselectAll() {
+                this.selectedStoreIds = [];
+            },
+            async applyBulkPaymentMode() {
+                if (!this.selectedStoreIds.length) return;
+                this.isBulkUpdating = true;
+                this.bulkMessage = '';
+                try {
+                    const token = document.querySelector('meta[name=\'csrf-token\']')?.getAttribute('content') || '{{ csrf_token() }}';
+                    const res = await fetch('{{ route('admin.stores.bulk-payment-mode') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            store_ids: this.selectedStoreIds,
+                            payment_mode: this.bulkPaymentMode
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.selectedStoreIds.forEach(id => {
+                            const row = document.querySelector(`tr[data-store-id='${id}']`);
+                            if (row) {
+                                row.dataset.payment = this.bulkPaymentMode;
+                                const select = row.querySelector('.store-payment-mode-select');
+                                if (select) {
+                                    select.value = this.bulkPaymentMode;
+                                    updateStoreSelectStyle(select, this.bulkPaymentMode);
+                                    flashSaved(select);
+                                }
+                            }
+                        });
+                        this.bulkMessage = data.message;
+                        this.bulkSuccess = true;
+                        this.selectedStoreIds = [];
+                        setTimeout(() => { this.bulkMessage = ''; }, 6000);
+                    } else {
+                        this.bulkMessage = data.message || 'Error updating payment method.';
+                        this.bulkSuccess = false;
+                    }
+                } catch (e) {
+                    console.error(e);
+                    this.bulkMessage = 'Error connecting to server.';
+                    this.bulkSuccess = false;
+                } finally {
+                    this.isBulkUpdating = false;
+                }
+            },
             sortTable(col) {
                 if (this.sortCol === col) {
                     this.sortAsc = !this.sortAsc;
@@ -1138,10 +1217,59 @@
                     @if($productionStores->isEmpty())
                         <div class="p-12 text-center text-slate-400 text-sm">No active stores found.</div>
                     @else
+                        {{-- Bulk Actions Bar (Appears when 1+ stores are selected) --}}
+                        <div x-show="selectedStoreIds.length > 0" x-cloak x-transition
+                             class="bg-slate-900 text-white p-3.5 sm:px-5 sm:py-3 rounded-xl shadow-lg mb-4 flex flex-col sm:flex-row items-center justify-between gap-3 border border-slate-700">
+                            <div class="flex items-center gap-2.5 flex-wrap">
+                                <span class="inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-full bg-red-600 text-white text-xs font-black" x-text="selectedStoreIds.length"></span>
+                                <span class="text-xs sm:text-sm font-bold text-white">
+                                    <span x-text="selectedStoreIds.length"></span> <span x-text="selectedStoreIds.length === 1 ? 'store' : 'stores'"></span> selected
+                                </span>
+                                <span class="text-slate-500">|</span>
+                                <button type="button" @click="selectAll()" class="text-xs text-slate-300 hover:text-white underline cursor-pointer">Select all ({{ $productionStores->count() }})</button>
+                                <span class="text-slate-500">·</span>
+                                <button type="button" @click="deselectAll()" class="text-xs text-slate-400 hover:text-white underline cursor-pointer">Clear selection</button>
+                            </div>
+
+                            <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-end">
+                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Change To:</span>
+                                <select x-model="bulkPaymentMode" class="bg-slate-800 text-white text-xs font-bold rounded-lg px-3 py-1.5 border border-slate-600 focus:outline-none focus:border-red-500 cursor-pointer">
+                                    <option value="in_house">💵 Cash (In-House)</option>
+                                    <option value="online">💳 Stripe (Credit Card)</option>
+                                    <option value="check">📑 Check (Waived)</option>
+                                </select>
+                                <button type="button" 
+                                        @click="applyBulkPaymentMode()" 
+                                        :disabled="isBulkUpdating"
+                                        class="px-4 py-1.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-sm transition-all disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer">
+                                    <svg x-show="isBulkUpdating" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                    <span x-text="isBulkUpdating ? 'Updating...' : 'Update Selected'"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Bulk Feedback Alert --}}
+                        <div x-show="bulkMessage" x-cloak x-transition
+                             :class="bulkSuccess ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-red-50 text-red-800 border-red-300'"
+                             class="p-3 rounded-lg border text-xs font-bold mb-4 flex items-center justify-between shadow-2xs">
+                            <div class="flex items-center gap-2">
+                                <span x-text="bulkSuccess ? '✓' : '✕'" class="font-black text-sm"></span>
+                                <span x-text="bulkMessage"></span>
+                            </div>
+                            <button type="button" @click="bulkMessage = ''" class="text-slate-400 hover:text-slate-600 font-black px-1">✕</button>
+                        </div>
+
                         <div class="overflow-x-auto">
                             <table class="w-full text-left whitespace-nowrap">
                                 <thead class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
                                     <tr>
+                                        <th class="px-3 py-3 text-center w-10">
+                                            <input type="checkbox"
+                                                   @change="toggleAllStores($event)"
+                                                   :checked="selectedStoreIds.length > 0 && selectedStoreIds.length === allStoreIds.length"
+                                                   title="Select All / Deselect All"
+                                                   class="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer">
+                                        </th>
                                         <th class="px-5 py-3 text-center w-20 cursor-pointer select-none group hover:bg-slate-100 hover:text-slate-900 transition-colors" @click="sortTable('sort')" title="Sort by numerical order">
                                             <div class="inline-flex items-center justify-center gap-1">
                                                 <span>Sort</span>
@@ -1211,6 +1339,7 @@
                                 <tbody id="update-active-stores-sortable-list-full" class="divide-y divide-slate-100 text-sm">
                                     @foreach($productionStores as $store)
                                     <tr class="visible-sortable-item hover:bg-slate-50/70 transition-colors"
+                                        data-store-id="{{ $store->id }}"
                                         data-sort="{{ $store->sort_order ?? 0 }}"
                                         data-name="{{ strtolower(addslashes($store->name)) }}"
                                         data-coach="{{ strtolower(addslashes(($store->user?->name ?? '') . ' ' . ($store->user?->organization ?? ''))) }}"
@@ -1218,7 +1347,15 @@
                                         data-orders="{{ $store->parentOrders->count() }}"
                                         data-deadline="{{ $store->order_deadline ? $store->order_deadline->timestamp : 0 }}"
                                         data-payment="{{ strtolower($store->payment_mode ?? 'in_house') }}"
+                                        :class="selectedStoreIds.includes('{{ $store->id }}') ? 'bg-red-50/30' : ''"
                                     >
+                                        <td class="px-3 py-4 text-center">
+                                            <input type="checkbox"
+                                                   :value="'{{ $store->id }}'"
+                                                   class="store-row-checkbox w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                                                   :checked="selectedStoreIds.includes('{{ $store->id }}')"
+                                                   @change="toggleStore('{{ $store->id }}')">
+                                        </td>
                                         <td class="px-5 py-4 text-center">
                                             <div class="flex items-center justify-center gap-1.5">
                                                 <div class="cursor-move text-slate-300 hover:text-slate-500 p-1 touch-none" title="Drag to reorder">
@@ -1273,14 +1410,16 @@
                                             </div>
                                         </td>
                                         <td class="px-5 py-4">
-                                            <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="inline-block m-0">
-                                                @csrf
-                                                <select name="payment_mode" onchange="this.form.submit()" class="text-xs font-bold rounded-md px-2.5 py-1.5 border shadow-sm cursor-pointer outline-none transition-colors {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100' : (($store->payment_mode ?? 'in_house') === 'check' ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100') }}">
+                                            <div class="relative inline-flex items-center gap-2">
+                                                <select name="payment_mode" 
+                                                        onchange="quickUpdateStorePaymentMode(this, {{ $store->id }})" 
+                                                        class="store-payment-mode-select text-xs font-bold rounded-md px-2.5 py-1.5 border shadow-sm cursor-pointer outline-none transition-colors {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100' : (($store->payment_mode ?? 'in_house') === 'check' ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100') }}">
                                                     <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash</option>
                                                     <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Stripe</option>
                                                     <option value="check" {{ ($store->payment_mode ?? 'in_house') === 'check' ? 'selected' : '' }}>📑 Check (Waived)</option>
                                                 </select>
-                                            </form>
+                                                <span class="save-status-badge text-[11px] font-bold"></span>
+                                            </div>
                                         </td>
                                         <td class="px-5 py-4 text-right">
                                             <div class="flex items-center justify-end gap-3">
@@ -1519,15 +1658,17 @@
 
                                             {{-- Payment Mode --}}
                                             @if($store)
-                                            <form action="{{ route('admin.store.payment-mode', $store) }}" method="POST" class="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2 gap-2 shadow-sm">
-                                                @csrf
+                                            <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2 gap-2 shadow-sm">
                                                 <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Payment:</span>
-                                                <select name="payment_mode" onchange="this.form.submit()" class="text-xs font-bold rounded px-2 py-1 outline-none border transition-colors {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (($store->payment_mode ?? 'in_house') === 'check' ? 'bg-blue-50 text-blue-800 border-blue-300' : 'bg-amber-50 text-amber-800 border-amber-300') }}">
-                                                    <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash</option>
-                                                    <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Stripe</option>
-                                                    <option value="check" {{ ($store->payment_mode ?? 'in_house') === 'check' ? 'selected' : '' }}>📑 Check (Waived)</option>
-                                                </select>
-                                            </form>
+                                                <div class="relative inline-flex items-center gap-1.5">
+                                                    <select name="payment_mode" onchange="quickUpdateStorePaymentMode(this, {{ $store->id }})" class="store-payment-mode-select text-xs font-bold rounded px-2 py-1 outline-none border transition-colors {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (($store->payment_mode ?? 'in_house') === 'check' ? 'bg-blue-50 text-blue-800 border-blue-300' : 'bg-amber-50 text-amber-800 border-amber-300') }}">
+                                                        <option value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'selected' : '' }}>💵 Cash</option>
+                                                        <option value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'selected' : '' }}>💳 Stripe</option>
+                                                        <option value="check" {{ ($store->payment_mode ?? 'in_house') === 'check' ? 'selected' : '' }}>📑 Check (Waived)</option>
+                                                    </select>
+                                                    <span class="save-status-badge text-[10px] font-bold"></span>
+                                                </div>
+                                            </div>
                                             @endif
                                         </div>
 
@@ -5100,6 +5241,81 @@
 
         window['quill_' + editorId] = quill;
         return quill;
+    };
+
+    window.updateStoreSelectStyle = function(selectEl, mode) {
+        if (!selectEl) return;
+        selectEl.classList.remove(
+            'bg-emerald-50', 'text-emerald-800', 'border-emerald-300', 'hover:bg-emerald-100',
+            'bg-blue-50', 'text-blue-800', 'border-blue-300', 'hover:bg-blue-100',
+            'bg-amber-50', 'text-amber-800', 'border-amber-300', 'hover:bg-amber-100'
+        );
+        if (mode === 'online') {
+            selectEl.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-300', 'hover:bg-emerald-100');
+        } else if (mode === 'check') {
+            selectEl.classList.add('bg-blue-50', 'text-blue-800', 'border-blue-300', 'hover:bg-blue-100');
+        } else {
+            selectEl.classList.add('bg-amber-50', 'text-amber-800', 'border-amber-300', 'hover:bg-amber-100');
+        }
+    };
+
+    window.flashSaved = function(selectEl) {
+        if (!selectEl) return;
+        const container = selectEl.closest('.relative') || selectEl.parentElement;
+        const badge = container ? container.querySelector('.save-status-badge') : null;
+        if (badge) {
+            badge.innerHTML = '<span class="text-emerald-600 font-black text-[10px] inline-flex items-center gap-0.5">✓ Saved</span>';
+            setTimeout(() => {
+                badge.innerHTML = '';
+            }, 2500);
+        }
+    };
+
+    window.quickUpdateStorePaymentMode = async function(selectEl, storeId) {
+        const newMode = selectEl.value;
+        const parentRow = selectEl.closest('tr');
+        if (parentRow) {
+            parentRow.dataset.payment = newMode;
+        }
+        window.updateStoreSelectStyle(selectEl, newMode);
+
+        const container = selectEl.closest('.relative') || selectEl.parentElement;
+        const badge = container ? container.querySelector('.save-status-badge') : null;
+        if (badge) {
+            badge.innerHTML = '<span class="text-slate-400 font-semibold text-[10px] animate-pulse">Saving...</span>';
+        }
+
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+            const res = await fetch(`/admin/stores/${storeId}/payment-mode`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ payment_mode: newMode })
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (badge) {
+                    badge.innerHTML = '<span class="text-emerald-600 font-black text-[10px] inline-flex items-center gap-0.5">✓ Saved</span>';
+                    setTimeout(() => {
+                        badge.innerHTML = '';
+                    }, 2500);
+                }
+            } else {
+                if (badge) {
+                    badge.innerHTML = '<span class="text-red-600 font-black text-[10px]">✕ Error</span>';
+                }
+            }
+        } catch (err) {
+            console.error('Failed to update store payment mode:', err);
+            if (badge) {
+                badge.innerHTML = '<span class="text-red-600 font-black text-[10px]">✕ Error</span>';
+            }
+        }
     };
 </script>
 @endsection
