@@ -897,7 +897,50 @@
         </div>
 
         {{-- ═══ ACTIVE TEAM STORES TAB (FULL PAGE VIEW) ═══ --}}
-        <div x-show="activeAdminTab === 'active_team_stores'" x-cloak class="space-y-6">
+        <div x-show="activeAdminTab === 'active_team_stores'" x-cloak class="space-y-6" x-data="{
+            sortCol: null,
+            sortAsc: true,
+            sortTable(col) {
+                if (this.sortCol === col) {
+                    this.sortAsc = !this.sortAsc;
+                } else {
+                    this.sortCol = col;
+                    this.sortAsc = (col === 'orders' || col === 'date') ? false : true;
+                }
+                const tbody = document.getElementById('update-active-stores-sortable-list-full');
+                if (!tbody) return;
+                const rows = Array.from(tbody.querySelectorAll('tr.visible-sortable-item'));
+                rows.sort((a, b) => {
+                    let valA = a.dataset[col] ?? '';
+                    let valB = b.dataset[col] ?? '';
+                    if (col === 'orders' || col === 'sort') {
+                        valA = parseFloat(valA) || 0;
+                        valB = parseFloat(valB) || 0;
+                        return this.sortAsc ? (valA - valB) : (valB - valA);
+                    } else if (col === 'date') {
+                        valA = parseInt(valA) || 0;
+                        valB = parseInt(valB) || 0;
+                        return this.sortAsc ? (valA - valB) : (valB - valA);
+                    } else if (col === 'deadline') {
+                        valA = parseInt(valA) || 0;
+                        valB = parseInt(valB) || 0;
+                        if (valA === 0 && valB !== 0) return 1;
+                        if (valB === 0 && valA !== 0) return -1;
+                        return this.sortAsc ? (valA - valB) : (valB - valA);
+                    } else {
+                        const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+                        return this.sortAsc ? cmp : -cmp;
+                    }
+                });
+                rows.forEach((r, idx) => {
+                    tbody.appendChild(r);
+                    const orderInput = r.querySelector('input[type=\'number\']');
+                    if (orderInput) {
+                        orderInput.value = idx + 1;
+                    }
+                });
+            }
+        }">
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-6 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
@@ -908,7 +951,7 @@
                             </h2>
                             <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-green-100 text-green-800 border border-green-200">{{ $productionStores->count() }} Stores</span>
                         </div>
-                        <p class="text-xs text-slate-500 mt-1">Currently open stores accepting orders in full-page management view.</p>
+                        <p class="text-xs text-slate-500 mt-1">Currently open stores accepting orders in full-page management view. Click any column title to sort.</p>
                     </div>
                     <div class="flex flex-col sm:flex-row items-center gap-3">
                         <form id="bulk-stores-sort-form-full" action="{{ route('admin.stores.bulk-sort') }}" method="POST">
@@ -938,18 +981,83 @@
                             <table class="w-full text-left whitespace-nowrap">
                                 <thead class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
                                     <tr>
-                                        <th class="px-5 py-3 text-center w-20">Sort</th>
-                                        <th class="px-5 py-3">Store Name</th>
-                                        <th class="px-5 py-3">Coach / Organization</th>
-                                        <th class="px-5 py-3 text-center">Orders</th>
-                                        <th class="px-5 py-3">Deadline & Tax</th>
-                                        <th class="px-5 py-3">Payment Method</th>
+                                        <th class="px-5 py-3 text-center w-20 cursor-pointer select-none group hover:bg-slate-100 hover:text-slate-900 transition-colors" @click="sortTable('sort')" title="Sort by numerical order">
+                                            <div class="inline-flex items-center justify-center gap-1">
+                                                <span>Sort</span>
+                                                <span class="text-[10px]" :class="sortCol === 'sort' ? 'text-secondary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                                    <span x-show="sortCol === 'sort'" x-text="sortAsc ? '▲' : '▼'"></span>
+                                                    <span x-show="sortCol !== 'sort'">⇅</span>
+                                                </span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-3 cursor-pointer select-none group hover:bg-slate-100 hover:text-slate-900 transition-colors" @click="sortTable('name')" title="Sort alphabetically by store name">
+                                            <div class="inline-flex items-center gap-1.5">
+                                                <span>Store Name</span>
+                                                <span class="text-[10px]" :class="sortCol === 'name' ? 'text-secondary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                                    <span x-show="sortCol === 'name'" x-text="sortAsc ? '▲' : '▼'"></span>
+                                                    <span x-show="sortCol !== 'name'">⇅</span>
+                                                </span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-3 cursor-pointer select-none group hover:bg-slate-100 hover:text-slate-900 transition-colors" @click="sortTable('coach')" title="Sort alphabetically by coach or organization">
+                                            <div class="inline-flex items-center gap-1.5">
+                                                <span>Coach / Organization</span>
+                                                <span class="text-[10px]" :class="sortCol === 'coach' ? 'text-secondary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                                    <span x-show="sortCol === 'coach'" x-text="sortAsc ? '▲' : '▼'"></span>
+                                                    <span x-show="sortCol !== 'coach'">⇅</span>
+                                                </span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-3 cursor-pointer select-none group hover:bg-slate-100 hover:text-slate-900 transition-colors" @click="sortTable('date')" title="Sort by date added (newest to oldest)">
+                                            <div class="inline-flex items-center gap-1.5">
+                                                <span>Date Added</span>
+                                                <span class="text-[10px]" :class="sortCol === 'date' ? 'text-secondary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                                    <span x-show="sortCol === 'date'" x-text="sortAsc ? '▲' : '▼'"></span>
+                                                    <span x-show="sortCol !== 'date'">⇅</span>
+                                                </span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-3 text-center cursor-pointer select-none group hover:bg-slate-100 hover:text-slate-900 transition-colors" @click="sortTable('orders')" title="Sort by order count (highest to lowest)">
+                                            <div class="inline-flex items-center justify-center gap-1.5">
+                                                <span>Orders</span>
+                                                <span class="text-[10px]" :class="sortCol === 'orders' ? 'text-secondary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                                    <span x-show="sortCol === 'orders'" x-text="sortAsc ? '▲' : '▼'"></span>
+                                                    <span x-show="sortCol !== 'orders'">⇅</span>
+                                                </span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-3 cursor-pointer select-none group hover:bg-slate-100 hover:text-slate-900 transition-colors" @click="sortTable('deadline')" title="Sort by order deadline">
+                                            <div class="inline-flex items-center gap-1.5">
+                                                <span>Deadline & Tax</span>
+                                                <span class="text-[10px]" :class="sortCol === 'deadline' ? 'text-secondary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                                    <span x-show="sortCol === 'deadline'" x-text="sortAsc ? '▲' : '▼'"></span>
+                                                    <span x-show="sortCol !== 'deadline'">⇅</span>
+                                                </span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-3 cursor-pointer select-none group hover:bg-slate-100 hover:text-slate-900 transition-colors" @click="sortTable('payment')" title="Sort by payment collection method">
+                                            <div class="inline-flex items-center gap-1.5">
+                                                <span>Payment Method</span>
+                                                <span class="text-[10px]" :class="sortCol === 'payment' ? 'text-secondary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                                    <span x-show="sortCol === 'payment'" x-text="sortAsc ? '▲' : '▼'"></span>
+                                                    <span x-show="sortCol !== 'payment'">⇅</span>
+                                                </span>
+                                            </div>
+                                        </th>
                                         <th class="px-5 py-3 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="update-active-stores-sortable-list-full" class="divide-y divide-slate-100 text-sm">
                                     @foreach($productionStores as $store)
-                                    <tr class="visible-sortable-item hover:bg-slate-50/70 transition-colors">
+                                    <tr class="visible-sortable-item hover:bg-slate-50/70 transition-colors"
+                                        data-sort="{{ $store->sort_order ?? 0 }}"
+                                        data-name="{{ strtolower(addslashes($store->name)) }}"
+                                        data-coach="{{ strtolower(addslashes(($store->user?->name ?? '') . ' ' . ($store->user?->organization ?? ''))) }}"
+                                        data-date="{{ $store->created_at ? $store->created_at->timestamp : 0 }}"
+                                        data-orders="{{ $store->parentOrders->count() }}"
+                                        data-deadline="{{ $store->order_deadline ? $store->order_deadline->timestamp : 0 }}"
+                                        data-payment="{{ strtolower($store->payment_mode ?? 'in_house') }}"
+                                    >
                                         <td class="px-5 py-4 text-center">
                                             <div class="flex items-center justify-center gap-1.5">
                                                 <div class="cursor-move text-slate-300 hover:text-slate-500 p-1 touch-none" title="Drag to reorder">
@@ -971,6 +1079,16 @@
                                         <td class="px-5 py-4">
                                             <div class="font-semibold text-slate-800 text-sm">{{ $store->user?->name ?? 'Unknown' }}</div>
                                             <div class="text-xs text-slate-500">{{ $store->user?->organization ?? 'No Organization' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div class="font-bold text-slate-800 text-xs font-sans">
+                                                {{ $store->created_at ? $store->created_at->format('M d, Y') : '—' }}
+                                            </div>
+                                            @if($store->created_at)
+                                                <div class="text-[10px] text-slate-400 font-sans">
+                                                    {{ $store->created_at->diffForHumans() }}
+                                                </div>
+                                            @endif
                                         </td>
                                         <td class="px-5 py-4 text-center">
                                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-700">
