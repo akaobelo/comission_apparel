@@ -3,6 +3,8 @@
 @section('content')
 <div class="max-w-[1500px] mx-auto px-6 pb-16 pt-28 lg:pt-36" x-data="{
     activeTab: 'clients',
+    viewMode: 'batches',
+    selectedBatchKey: null,
     storeSearch: '',
     addClientModal: false,
     copied: false,
@@ -165,25 +167,191 @@
         </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="flex items-center justify-between border-b border-slate-200 mb-8 overflow-x-auto gap-4">
-        <div class="flex items-center gap-8">
-            <button type="button" @click="activeTab = 'clients'" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeTab === 'clients' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-900'">
-                My Clients ({{ $clients->count() }})
-            </button>
-            <button type="button" @click="activeTab = 'stores'" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeTab === 'stores' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-900'">
-                Team Stores & Pipeline ({{ $stores->count() }})
-            </button>
-            <button type="button" @click="activeTab = 'ledger'" class="pb-4 text-sm font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 relative top-[1px]" :class="activeTab === 'ledger' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-900'">
-                Financial Ledger & Statements ({{ $orders->count() }})
-            </button>
-        </div>
+    <!-- Navigation Deck (4-Column Layout matching Super Admin Control Deck) -->
+    <div class="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 items-stretch">
+            {{-- Column 1: PROFILE & SETTINGS --}}
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/70">
+                        <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        </span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Profile & Settings</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        {{-- Partner Agreement & Account --}}
+                        <button type="button" @click="activeTab = 'profile'" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeTab === 'profile' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeTab === 'profile' ? 'text-emerald-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                <span class="truncate">Partner Agreement & Account</span>
+                            </div>
+                            <span class="w-1.5 h-1.5 rounded-full" :class="activeTab === 'profile' ? 'bg-emerald-400' : 'bg-transparent'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-        <div class="pb-3">
-            <button type="button" @click="addClientModal = true" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm whitespace-nowrap">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                + Register New Client
-            </button>
+            {{-- Column 2: CLIENT DATA BASE --}}
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/70">
+                        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        </span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Client Data Base</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        {{-- Assigned Coaches --}}
+                        <button type="button" @click="activeTab = 'clients'" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeTab === 'clients' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeTab === 'clients' ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                <span class="truncate">Assigned Coaches</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="activeTab === 'clients' ? 'bg-blue-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $clients->count() }}
+                            </span>
+                        </button>
+
+                        {{-- Register New Client Quick Action --}}
+                        <button type="button" @click="addClientModal = true" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left bg-white hover:bg-blue-50/50 text-blue-700 hover:text-blue-800 font-bold border border-blue-200/80 shadow-2xs">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0 text-blue-500 group-hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                <span class="truncate">+ Register New Client</span>
+                            </div>
+                            <span class="text-[10px] uppercase font-bold tracking-wider text-blue-500 font-sans">New</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Column 3: STOREFRONT DATABASE --}}
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/70">
+                        <span class="w-6 h-6 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                        </span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Storefront Database</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        {{-- Team Stores & Pipeline --}}
+                        <button type="button" @click="activeTab = 'stores'" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeTab === 'stores' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeTab === 'stores' ? 'text-purple-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                <span class="truncate">Team Stores & Pipeline</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="activeTab === 'stores' ? 'bg-purple-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $stores->count() }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Column 4: FINANCIALS --}}
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/70">
+                        <span class="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Financials</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        {{-- Batch Orders --}}
+                        <button type="button" @click="activeTab = 'ledger'; viewMode = 'batches'; selectedBatchKey = null;" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="(activeTab === 'ledger' && viewMode === 'batches') ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="(activeTab === 'ledger' && viewMode === 'batches') ? 'text-amber-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                <span class="truncate">Batch Orders</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="(activeTab === 'ledger' && viewMode === 'batches') ? 'bg-amber-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $orderBatches->count() }}
+                            </span>
+                        </button>
+
+                        {{-- Itemized Orders Ledger --}}
+                        <button type="button" @click="activeTab = 'ledger'; viewMode = 'all_orders'; selectedBatchKey = null;" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="(activeTab === 'ledger' && viewMode === 'all_orders') ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="(activeTab === 'ledger' && viewMode === 'all_orders') ? 'text-amber-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                <span class="truncate">Itemized Orders Ledger</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="(activeTab === 'ledger' && viewMode === 'all_orders') ? 'bg-amber-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $orders->count() }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 0: PROFILE & PARTNER AGREEMENT -->
+    <div x-show="activeTab === 'profile'" class="max-w-4xl space-y-6" style="display: none;">
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Partner Agreement & Account Details</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Your official partner tier, net margin commission split, and account credentials.</p>
+                </div>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Active Partner
+                </span>
+            </div>
+            <div class="p-6 space-y-6">
+                {{-- Account Overview Grid --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1">Full Legal Name</span>
+                        <span class="text-sm font-bold text-slate-900">{{ $user->name }}</span>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1">Email / Portal Username</span>
+                        <span class="text-sm font-bold text-slate-900">{{ $user->email }}</span>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1">Direct Phone</span>
+                        <span class="text-sm font-bold text-slate-900">{{ $user->phone ?: 'Not provided' }}</span>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1">Partner Tier Split</span>
+                        <span class="text-sm font-black text-primary">{{ number_format($user->getEffectiveCommissionRate(), 1) }}% Net Margin</span>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1">Partner Classification</span>
+                        <span class="text-sm font-bold text-slate-900">{{ $user->partner_category_label ?? 'Authorized Partner' }}</span>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1">Partner Since</span>
+                        <span class="text-sm font-bold text-slate-900">{{ $user->created_at->format('M d, Y') }}</span>
+                    </div>
+                </div>
+
+                {{-- Recruitment Link Box --}}
+                <div class="p-5 rounded-xl bg-primary/5 border border-primary/20">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h4 class="text-xs font-black uppercase tracking-wider text-primary mb-1">Your Personal Coach Recruitment Link</h4>
+                            <p class="text-xs text-slate-600">Share this link with coaches. Any organization onboarded via this link is automatically bound to your account.</p>
+                        </div>
+                        <button type="button" @click="copyLink()" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center gap-1.5 whitespace-nowrap shadow-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                            <span x-text="copied ? 'Copied to Clipboard!' : 'Copy Recruitment Link'"></span>
+                        </button>
+                    </div>
+                    <div class="mt-3">
+                        <input type="text" readonly value="{{ $referralUrl }}" class="w-full text-xs font-mono bg-white border border-slate-300 rounded px-3 py-2 text-slate-800 select-all font-semibold">
+                    </div>
+                </div>
+
+                {{-- Terms & Payout Information --}}
+                <div class="p-5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2">
+                    <h4 class="font-black uppercase tracking-wider text-slate-800 text-[11px]">Payout & Commission Policy</h4>
+                    <p>Commissions are calculated as a net margin split on qualifying delivered gear from team apparel stores and direct bulk coach orders. Payouts are finalized upon order completion and disbursed via direct deposit / QuickBooks.</p>
+                    <p class="text-[11px] text-slate-500">Need to update bank details, tax forms, or credentials? Please contact your Commission Apparel administrator.</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -356,8 +524,6 @@
 
     <!-- TAB 3: COMMISSION LEDGER & STATEMENTS -->
     <div x-show="activeTab === 'ledger'" class="space-y-6" style="display: none;" x-data="{
-        viewMode: 'batches',
-        selectedBatchKey: null,
         perPage: 15,
         orderPage: 1,
         batchPage: 1,
