@@ -136,7 +136,7 @@
                                 <li>
                                     <strong class="uppercase">STOREFRONT VIEW:</strong>
                                     <ul class="list-[circle] pl-12 mt-2 space-y-2">
-                                        <li><strong>STEP #1:</strong> Select your store from the “Team Stores” tab on the Commission Apparel website</li>
+                                        <li><strong>STEP #1:</strong> Access your store using the direct link provided in your Coach Dashboard</li>
                                         <li><strong>STEP #2:</strong> Scroll to the bottom of the page to the “Placed Orders” section and review the orders individually.</li>
                                     </ul>
                                 </li>

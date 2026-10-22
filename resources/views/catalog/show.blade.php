@@ -82,7 +82,7 @@
         if (!empty($selectedSport)) {
             $designCatalogQuery->where('sport', $selectedSport);
         }
-        $designCatalog = $designCatalogQuery->orderBy('sort_order', 'desc')->orderBy('created_at', 'desc')->get();
+        $designCatalog = $designCatalogQuery->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
     }
     if (!isset($availableSports)) {
         $availableSports = \App\Models\DesignCatalog::where('collection_name', $collection)

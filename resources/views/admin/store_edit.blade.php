@@ -331,7 +331,7 @@
                                                                 </div>
                                                             </template>
                                                             <template x-if="!added">
-                                                                <form action="{{ route('admin.store.item.add', $store) }}" method="POST" @submit.prevent="if(!submitting) { submitting = true; fetch($el.action, { method: 'POST', body: new FormData($el), headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'} }).then(res => { if(res.ok) { added = true; fetch(window.location.href).then(r => r.text()).then(html => { const doc = new DOMParser().parseFromString(html, 'text/html'); const list = document.querySelector('#admin-current-store-items-container'); if (list && doc.querySelector('#admin-current-store-items-container')) list.innerHTML = doc.querySelector('#admin-current-store-items-container').innerHTML; }); } else { alert('Error adding item'); } submitting = false; }) }">
+                                                                <form action="{{ route('admin.store.item.add', $store) }}" method="POST" @submit.prevent="if(!submitting) { submitting = true; fetch($el.action, { method: 'POST', body: new FormData($el), headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'} }).then(res => { if(res.ok) { added = true; fetch(window.location.href).then(r => r.text()).then(html => { const doc = new DOMParser().parseFromString(html, 'text/html'); const list = document.querySelector('#admin-current-store-items-container'); if (list && doc.querySelector('#admin-current-store-items-container')) { list.innerHTML = doc.querySelector('#admin-current-store-items-container').innerHTML; if(typeof initStoreItemsSortable === 'function') initStoreItemsSortable(); } }); } else { alert('Error adding item'); } submitting = false; }) }">
                                                                     @csrf
                                                                     <input type="hidden" name="design_catalog_id" value="{{ $design->id }}">
                                                                     <div class="flex items-center justify-center gap-2 mb-3">
@@ -359,10 +359,14 @@
                     <div class="space-y-4 border-t border-slate-200 pt-6">
                         <div class="flex items-center justify-between">
                             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Current Store Items</h4>
+                            <span id="store-items-sort-status" class="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                                Drag items to reorder
+                            </span>
                         </div>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            @foreach($store->items as $item)
-                                <div class="store-item-card bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col relative"
+                        <div id="store-items-sortable-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            @foreach($store->items->sortBy('sort_order') as $item)
+                                <div class="store-item-card bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col relative transition-all duration-200 hover:shadow-md cursor-grab active:cursor-grabbing select-none"
                                      id="item-card-{{ $item->id }}"
                                      data-id="{{ $item->id }}"
                                      data-name="{{ $item->name }}"
@@ -370,11 +374,14 @@
                                      data-retail="{{ number_format($item->retail_price, 2, '.', '') }}"
                                      data-sort="{{ $item->sort_order ?? 0 }}"
                                      data-image="{{ !empty($item->image_paths) ? $item->image_paths[0] : ($item->image_url ?? '') }}">
-                                    <div class="aspect-[4/5] bg-white rounded-lg mb-3 overflow-hidden">
+                                    <div class="aspect-[4/5] bg-white rounded-lg mb-3 overflow-hidden relative">
+                                        <div class="absolute top-1.5 left-1.5 bg-black/50 text-white rounded p-1 touch-none pointer-events-none" title="Drag to reorder">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                                        </div>
                                         @if(!empty($item->image_paths))
-                                            <img src="{{ $item->image_paths[0] }}" class="w-full h-full object-cover object-top">
+                                            <img src="{{ $item->image_paths[0] }}" class="w-full h-full object-cover object-top pointer-events-none">
                                         @elseif($item->image_url)
-                                            <img src="{{ $item->image_url }}" class="w-full h-full object-cover object-top">
+                                            <img src="{{ $item->image_url }}" class="w-full h-full object-cover object-top pointer-events-none">
                                         @endif
                                     </div>
                                     <div class="text-xs font-bold text-slate-900 truncate mb-1" title="{{ $item->name }}" id="label-name-{{ $item->id }}">{{ $item->name }}</div>
@@ -388,7 +395,7 @@
                                         <button type="button" onclick="openPricingModal({{ $item->id }})" title="Edit Pricing" class="flex-1 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center justify-center focus:outline-none">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                         </button>
-                                        <button type="button" onclick="event.preventDefault(); if(confirm('Remove this item from the store?')) { let btn = this; let row = btn.closest('.store-item-card'); if(row) row.style.opacity = '0.5'; let form = document.createElement('form'); form.action = '{{ route('admin.store.item.remove', ['item' => $item->id]) }}'; form.method = 'POST'; let token = document.createElement('input'); token.type = 'hidden'; token.name = '_token'; token.value = '{{ csrf_token() }}'; form.appendChild(token); document.body.appendChild(form); fetch(form.action, { method: 'POST', body: new FormData(form), headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'} }).then(res => { if(res.ok) { window.dispatchEvent(new CustomEvent('item-removed', { detail: { id: {{ $item->design_catalog_id }} } })); fetch(window.location.href).then(r => r.text()).then(html => { const doc = new DOMParser().parseFromString(html, 'text/html'); const list = document.querySelector('#admin-current-store-items-container'); if (list && doc.querySelector('#admin-current-store-items-container')) list.innerHTML = doc.querySelector('#admin-current-store-items-container').innerHTML; }); } else { if(row) row.style.opacity = '1'; } form.remove(); }) }" title="Remove Item" class="px-2.5 py-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors border border-transparent hover:border-red-200 focus:outline-none flex items-center justify-center">
+                                        <button type="button" onclick="event.preventDefault(); if(confirm('Remove this item from the store?')) { let btn = this; let row = btn.closest('.store-item-card'); if(row) row.style.opacity = '0.5'; let form = document.createElement('form'); form.action = '{{ route('admin.store.item.remove', ['item' => $item->id]) }}'; form.method = 'POST'; let token = document.createElement('input'); token.type = 'hidden'; token.name = '_token'; token.value = '{{ csrf_token() }}'; form.appendChild(token); document.body.appendChild(form); fetch(form.action, { method: 'POST', body: new FormData(form), headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'} }).then(res => { if(res.ok) { window.dispatchEvent(new CustomEvent('item-removed', { detail: { id: {{ $item->design_catalog_id }} } })); fetch(window.location.href).then(r => r.text()).then(html => { const doc = new DOMParser().parseFromString(html, 'text/html'); const list = document.querySelector('#admin-current-store-items-container'); if (list && doc.querySelector('#admin-current-store-items-container')) { list.innerHTML = doc.querySelector('#admin-current-store-items-container').innerHTML; if(typeof initStoreItemsSortable === 'function') initStoreItemsSortable(); } }); } else { if(row) row.style.opacity = '1'; } form.remove(); }) }" title="Remove Item" class="px-2.5 py-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors border border-transparent hover:border-red-200 focus:outline-none flex items-center justify-center">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         </button>
                                     </div>
@@ -774,5 +781,76 @@ function saveModalPricing() {
         alert('Error updating configuration.');
     });
 }
+
+function initStoreItemsSortable() {
+    const grid = document.getElementById('store-items-sortable-grid');
+    if (!grid || !window.Sortable) return;
+
+    if (grid._sortable) {
+        grid._sortable.destroy();
+    }
+
+    grid._sortable = new Sortable(grid, {
+        animation: 150,
+        ghostClass: 'opacity-40',
+        chosenClass: 'ring-2',
+        dragClass: 'shadow-2xl',
+        onEnd: function() {
+            const cards = Array.from(grid.querySelectorAll('.store-item-card'));
+            const statusEl = document.getElementById('store-items-sort-status');
+            if (statusEl) {
+                statusEl.innerHTML = '<span class="text-amber-600 font-bold animate-pulse">Saving new order...</span>';
+            }
+
+            const formData = new FormData();
+            formData.append('_token', '{{ csrf_token() }}');
+
+            cards.forEach((card, index) => {
+                const itemId = card.dataset.id;
+                const newSort = index + 1;
+                card.dataset.sort = newSort;
+                const sortLabel = document.getElementById(`label-sort-${itemId}`);
+                if (sortLabel) sortLabel.innerText = newSort;
+                formData.append(`items[${itemId}][sort_order]`, newSort);
+            });
+
+            fetch('{{ route('admin.store.items.sort', $store) }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => {
+                if (statusEl) {
+                    if (res.ok) {
+                        statusEl.innerHTML = '<span class="text-emerald-600 font-bold flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg> Order saved!</span>';
+                        setTimeout(() => {
+                            statusEl.innerHTML = '<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg> Drag items to reorder';
+                        }, 2000);
+                    } else {
+                        statusEl.innerHTML = '<span class="text-red-500 font-bold">Error saving order</span>';
+                    }
+                }
+            })
+            .catch(err => {
+                if (statusEl) {
+                    statusEl.innerHTML = '<span class="text-red-500 font-bold">Error saving order</span>';
+                }
+            });
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initStoreItemsSortable();
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+    if (window.Sortable) {
+        initStoreItemsSortable();
+    }
 </script>
 @endsection

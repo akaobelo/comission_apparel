@@ -70,7 +70,6 @@
             <!-- Desktop Navigation -->
             <nav class="hidden lg:flex items-center gap-8 font-medium text-sm tracking-wide">
                 <a href="{{ route('catalog.index') }}" class="text-white hover:text-secondary transition-colors">Design Collections</a>
-                <a href="{{ route('store.search') }}" class="text-white hover:text-secondary transition-colors">Team Stores</a>
                 <a href="{{ route('sizing-charts') }}" class="text-white hover:text-secondary transition-colors">Sizing Charts</a>
                 <a href="{{ route('how-it-works') }}" class="text-white hover:text-secondary transition-colors">How It Works</a>
                 <a href="{{ route('our-team') }}" class="text-white hover:text-secondary transition-colors">Our Team</a>
@@ -130,7 +129,6 @@
         <div x-show="mobileMenuOpen" x-transition.opacity.duration.200ms class="lg:hidden fixed inset-0 z-40 bg-white/95 backdrop-blur-3xl pt-28 px-6 pb-6 h-screen overflow-y-auto" style="display: none;" x-cloak>
             <nav class="flex flex-col gap-6 font-medium text-lg tracking-wide uppercase">
                 <a href="{{ route('catalog.index') }}" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Design Collections</a>
-                <a href="{{ route('store.search') }}" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Team Stores</a>
                 <a href="{{ route('sizing-charts') }}" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Sizing Charts</a>
                 <a href="{{ route('how-it-works') }}" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">How It Works</a>
                 <a href="{{ route('our-team') }}" class="text-slate-900 hover:text-secondary transition-colors border-b border-slate-200 pb-4" @click="mobileMenuOpen = false">Our Team</a>
@@ -199,7 +197,6 @@
                 <h4 class="text-white font-bold mb-4 uppercase tracking-wider">Platform</h4>
                 <ul class="space-y-2 text-slate-400">
                     <li><a href="{{ route('catalog.index') }}" class="hover:text-secondary transition-colors">Design Collections</a></li>
-                    <li><a href="{{ route('store.search') }}" class="hover:text-secondary transition-colors">Team Stores</a></li>
                     <li><a href="{{ route('sizing-charts') }}" class="hover:text-secondary transition-colors">Sizing Charts</a></li>
                     <li><a href="{{ route('how-it-works') }}" class="hover:text-secondary transition-colors">How it Works</a></li>
                     <li><a href="{{ route('our-team') }}" class="hover:text-secondary transition-colors">Our Team</a></li>

@@ -48,8 +48,8 @@ Route::get('/', function () {
         'banner_image'        => $landingSettings['hero_banner_image'] ?? $landingSettings['hero_media_path'] ?? asset('images/hero-banner.jpeg'),
         'cta_primary_text'    => $landingSettings['hero_cta_primary_text'] ?? 'Request Free 3D Mockup',
         'cta_primary_url'     => $landingSettings['hero_cta_primary_url'] ?? '/quote',
-        'cta_secondary_text'  => $landingSettings['hero_cta_secondary_text'] ?? 'Find Your Team Store',
-        'cta_secondary_url'   => $landingSettings['hero_cta_secondary_url'] ?? route('store.search'),
+        'cta_secondary_text'  => $landingSettings['hero_cta_secondary_text'] ?? 'Explore Collections',
+        'cta_secondary_url'   => $landingSettings['hero_cta_secondary_url'] ?? route('catalog.index'),
     ];
 
     $proofSettings = [
@@ -103,6 +103,10 @@ Route::get('/our-team', [AdminController::class, 'publicOurTeam'])->name('our-te
 Route::get('/quote', [QuoteRequestController::class, 'show'])->name('quote.show');
 Route::post('/quote', [QuoteRequestController::class, 'store'])->name('quote.store');
 Route::get('/quote/success', function () { return view('quote_success'); })->name('quote.success');
+
+// Unlisted Free Mockup Landing Page (Ad Campaign Traffic)
+Route::get('/free-mockup', [QuoteRequestController::class, 'showLandingPage'])->name('landing.free-mockup');
+Route::post('/free-mockup', [QuoteRequestController::class, 'storeLandingLead'])->name('landing.free-mockup.store');
 Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
 Route::get('/catalog', function () {
     $selectedSport = request()->query('sport');
@@ -173,7 +177,7 @@ Route::get('/catalog', function () {
         });
     }
 
-    $orphanedDesigns = $orphanedQuery->orderBy('sort_order', 'desc')
+    $orphanedDesigns = $orphanedQuery->orderBy('sort_order', 'asc')
         ->orderBy('created_at', 'desc')
         ->paginate(15, ['*'], 'orphaned_page')
         ->withQueryString();
@@ -228,7 +232,7 @@ Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request,
         });
     }
     
-    $designCatalog = $designCatalogQuery->orderBy('sort_order', 'desc')->orderBy('created_at', 'desc')->get();
+    $designCatalog = $designCatalogQuery->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
     
     $availableSports = \App\Models\DesignCatalog::where('design_collection_id', $collectionModel->id)
         ->whereNotNull('sport')
@@ -408,6 +412,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/stores/{store}/update', [AdminController::class, 'updateStore'])->name('admin.store.update');
     Route::post('/admin/stores/{store}/payment-mode', [AdminController::class, 'updateStorePaymentMode'])->name('admin.store.payment-mode');
     Route::post('/admin/stores/{store}/pricing', [AdminController::class, 'updateStorePricing'])->name('admin.store.pricing.update');
+    Route::post('/admin/stores/{store}/items/sort', [AdminController::class, 'updateStoreItemsSort'])->name('admin.store.items.sort');
     Route::post('/admin/stores/{store}/cover', [AdminController::class, 'updateCoverImage'])->name('admin.store.cover');
     Route::post('/admin/stores/{store}/logo', [AdminController::class, 'updateStoreLogo'])->name('admin.store.logo');
     Route::post('/admin/stores/{store}/item', [AdminController::class, 'addStoreItem'])->name('admin.store.item.add');

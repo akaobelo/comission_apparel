@@ -320,7 +320,7 @@
         
         <div class="space-y-4 md:space-y-5">
             <!-- Section Header (Matching Size & Placement) -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+            <div class="mb-5">
                 <div>
                     @php
                         $tsHeading = $teamStoreSettings['heading'] ?? 'LAUNCH YOUR TEAM STORE';
@@ -341,9 +341,6 @@
                         {{ $teamStoreSettings['subheading'] ?? 'Empower your program with a custom online store that eliminates coach hassle and generates revenue.' }}
                     </p>
                 </div>
-                <a href="{{ route('store.search') }}" class="btn btn-primary whitespace-nowrap px-4 py-2 rounded shadow-sm text-xs uppercase tracking-wider font-bold bg-[#cd202c] hover:bg-[#a11825] text-white transition-colors self-start md:self-auto">
-                    {{ $landingSettings['team_store_header_cta'] ?? 'FIND YOUR TEAM STORE' }}
-                </a>
             </div>
 
             <!-- Interactive Stepper Navigation Bar -->
@@ -540,9 +537,6 @@
                             <button type="button" @click="prev()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
                                 <span>&larr;</span> Step 01
                             </button>
-                            <a href="/store/search" class="px-5 py-2.5 bg-[#cd202c] hover:bg-[#a11825] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#cd202c]/30 hover:scale-105 transition-all inline-flex items-center gap-2">
-                                Search Active Stores <span>&rarr;</span>
-                            </a>
                             <button type="button" @click="next()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all inline-flex items-center gap-2 border border-slate-700">
                                 Next: Step 03 <span>&rarr;</span>
                             </button>
@@ -1182,9 +1176,6 @@
                 <a href="{{ $landingSettings['final_cta_primary_url'] ?? '/quote' }}" class="w-full sm:w-auto px-9 py-4 bg-white hover:bg-slate-100 text-slate-950 font-black text-xs md:text-sm uppercase tracking-widest rounded-full shadow-xl hover:scale-105 transition-all inline-flex items-center justify-center gap-2">
                     <span>{{ $landingSettings['final_cta_primary_text'] ?? 'Request Free Custom Mockup' }}</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                </a>
-                <a href="{{ $landingSettings['final_cta_secondary_url'] ?? route('store.search') }}" class="w-full sm:w-auto px-8 py-4 bg-transparent hover:bg-white hover:text-slate-950 text-white border-2 border-white font-black text-xs md:text-sm uppercase tracking-widest rounded-full transition-all inline-flex items-center justify-center">
-                    {{ $landingSettings['final_cta_secondary_text'] ?? 'Explore Team Stores' }}
                 </a>
             </div>
         </div>

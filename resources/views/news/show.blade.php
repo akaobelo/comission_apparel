@@ -208,8 +208,8 @@
                     <a href="/quote" class="w-full sm:w-auto px-8 py-3.5 bg-black hover:bg-slate-900 text-white font-black text-xs uppercase tracking-widest rounded-full shadow-md transition-all hover:scale-105">
                         Start Custom Design
                     </a>
-                    <a href="{{ route('store.search') }}" class="w-full sm:w-auto px-8 py-3.5 bg-white/20 hover:bg-white/30 text-white border border-white/40 font-black text-xs uppercase tracking-widest rounded-full transition-all backdrop-blur-sm">
-                        Find A Team Store
+                    <a href="{{ route('catalog.index') }}" class="w-full sm:w-auto px-8 py-3.5 bg-white/20 hover:bg-white/30 text-white border border-white/40 font-black text-xs uppercase tracking-widest rounded-full transition-all backdrop-blur-sm">
+                        View Collections
                     </a>
                 </div>
             </div>

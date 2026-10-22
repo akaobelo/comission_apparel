@@ -248,10 +248,14 @@ class ParentOrder extends Model
         if ($store) {
             $storeItem = $itemId ? $store->items->firstWhere('id', $itemId) : null;
             if ($storeItem) {
-                return [
-                    'retail_price'    => (float) $storeItem->retail_price,
-                    'wholesale_price' => (float) $storeItem->wholesale_price,
-                ];
+                $retail = (float) $storeItem->retail_price;
+                $wholesale = (float) $storeItem->wholesale_price;
+                if ($retail > 0 || $wholesale > 0) {
+                    return [
+                        'retail_price'    => $retail > 0 ? $retail : $wholesale,
+                        'wholesale_price' => $wholesale > 0 ? $wholesale : $retail,
+                    ];
+                }
             }
         }
 
