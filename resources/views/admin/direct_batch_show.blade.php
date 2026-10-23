@@ -244,24 +244,39 @@
                         @endif
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Total Manufacturing Cost ($)</label>
-                            <input type="number" step="0.01" min="0" name="manufacturing_cost" value="{{ old('manufacturing_cost', $hasCustomMfg ? $batchMfg : '') }}" placeholder="Enter factory production base cost" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <div class="relative rounded-lg shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 font-bold text-xs font-sans">$</span>
+                                </div>
+                                <input type="number" step="0.01" min="0" name="manufacturing_cost" value="{{ old('manufacturing_cost', $hasCustomMfg ? $batchMfg : '') }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
                             <span class="text-[10px] text-slate-400">Actual factory cost to produce items (deducted from gross to find net profit)</span>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Batch Tariff Amount ($)</label>
-                            <input type="number" step="0.01" min="0" name="tariff_amount" value="{{ old('tariff_amount', $batchTariff) }}" placeholder="e.g. 75.00" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <div class="relative rounded-lg shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 font-bold text-xs font-sans">$</span>
+                                </div>
+                                <input type="number" step="0.01" min="0" name="tariff_amount" value="{{ old('tariff_amount', $batchTariff) }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
                             <span class="text-[10px] text-slate-400">Import / freight tariff allocated to batch</span>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Extra Fee Deductions ($)</label>
-                            <input type="number" step="0.01" min="0" name="fee_deduction" value="{{ old('fee_deduction', $batchFees) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <div class="relative rounded-lg shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 font-bold text-xs font-sans">$</span>
+                                </div>
+                                <input type="number" step="0.01" min="0" name="fee_deduction" value="{{ old('fee_deduction', $batchFees) }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Sales Partner</label>
-                            <select name="sales_rep_id" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <select name="sales_rep_id" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                                 <option value="">-- No Partner Assigned --</option>
                                 @foreach($salesReps as $rep)
                                     <option value="{{ $rep->id }}" {{ ($assignedRepId == $rep->id) ? 'selected' : '' }}>
@@ -274,11 +289,16 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Split %</label>
-                                <input type="number" step="0.1" min="0" max="100" name="applied_rep_commission_rate" value="{{ old('applied_rep_commission_rate', $firstOrder->applied_rep_commission_rate ?? $currentRep?->getEffectiveCommissionRate() ?? 50.00) }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <div class="relative rounded-lg shadow-sm">
+                                    <input type="number" step="0.1" min="0" max="100" name="applied_rep_commission_rate" value="{{ old('applied_rep_commission_rate', $firstOrder->applied_rep_commission_rate ?? $currentRep?->getEffectiveCommissionRate() ?? 50.00) }}" class="w-full bg-white border border-slate-300 rounded-lg pr-7 pl-3 py-1.5 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
+                                        <span class="text-slate-400 font-bold text-xs font-sans">%</span>
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Status</label>
-                                <select name="commission_status" class="w-full bg-white border border-slate-300 rounded px-2 py-1.5 text-xs font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <select name="commission_status" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                                     <option value="pending" {{ $firstOrder->commission_status === 'pending' ? 'selected' : '' }}>Pending</option>
                                     <option value="cleared" {{ $firstOrder->commission_status === 'cleared' ? 'selected' : '' }}>Cleared</option>
                                     <option value="paid" {{ $firstOrder->commission_status === 'paid' ? 'selected' : '' }}>Paid</option>
@@ -288,17 +308,17 @@
 
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Notes</label>
-                            <input type="text" name="financial_notes" value="{{ old('financial_notes', $firstOrder->financial_notes) }}" placeholder="e.g. Schedule A tariff deduction applied" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <input type="text" name="financial_notes" value="{{ old('financial_notes', $firstOrder->financial_notes) }}" placeholder="e.g. Schedule A tariff deduction applied" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-sans text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                         </div>
 
-                        <div class="p-3 bg-slate-50 border border-slate-200 rounded space-y-1.5 text-xs font-mono">
-                            <div class="flex justify-between items-center text-slate-500">
+                        <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs font-sans">
+                            <div class="flex justify-between items-center text-slate-600 font-semibold">
                                 <span>Batch Net Margin:</span>
-                                <span class="font-bold text-slate-900">${{ number_format($batchNetMargin, 2) }}</span>
+                                <span class="font-bold text-slate-900 text-sm font-sans">${{ number_format($batchNetMargin, 2) }}</span>
                             </div>
-                            <div class="flex justify-between items-center text-slate-500 border-t border-slate-200 pt-1.5">
+                            <div class="flex justify-between items-center text-slate-600 font-semibold border-t border-slate-200/80 pt-2">
                                 <span>Rep Payout Total:</span>
-                                <span class="font-black text-emerald-600 text-sm">${{ number_format($batchRepEarned, 2) }}</span>
+                                <span class="font-black text-emerald-600 text-base font-sans">${{ number_format($batchRepEarned, 2) }}</span>
                             </div>
                         </div>
 
