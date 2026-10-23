@@ -110,14 +110,40 @@ class SalesRepController extends Controller
         $lifetimeCommissionEarned = $orders->sum(fn($o) => (float)$o->rep_commission_earned);
 
         $referralUrl = $user->referral_url;
-        $orderBatches = \App\Models\ParentOrder::groupOrdersIntoBatches($orders, $user);
+
+        // Active vs Archived split:
+        // An order is archived if it is explicitly archived, its team store is archived,
+        // or its coach/client is no longer assigned to this sales rep.
+        $isOrderArchived = function($o) use ($clientIds, $storeIds) {
+            if (!empty($o->is_archived)) {
+                return true;
+            }
+            if ($o->teamStore && !empty($o->teamStore->is_archived)) {
+                return true;
+            }
+            $hasAssignedCoach = $o->user_id && in_array($o->user_id, $clientIds);
+            $hasAssignedStore = $o->team_store_id && in_array($o->team_store_id, $storeIds);
+            if (!$hasAssignedCoach && !$hasAssignedStore) {
+                return true;
+            }
+            return false;
+        };
+
+        $activeOrders = $orders->filter(fn($o) => !$isOrderArchived($o))->values();
+        $archivedOrders = $orders->filter(fn($o) => $isOrderArchived($o))->values();
+
+        $orderBatches = \App\Models\ParentOrder::groupOrdersIntoBatches($activeOrders, $user);
+        $archivedOrderBatches = \App\Models\ParentOrder::groupOrdersIntoBatches($archivedOrders, $user);
+        $orders = $activeOrders;
 
         return view('rep.dashboard', compact(
             'user',
             'clients',
             'stores',
             'orders',
+            'archivedOrders',
             'orderBatches',
+            'archivedOrderBatches',
             'dateFilter',
             'totalQualifyingSales',
             'totalManufacturingCost',
