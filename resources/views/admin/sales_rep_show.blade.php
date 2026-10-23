@@ -5,6 +5,14 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 pt-32 lg:pt-40" x-data="{
     activeTab: '{{ request('tab', 'overview') }}',
     storeSearch: '',
+    coachSearch: '',
+    financialSearch: '',
+    coachSortCol: 'org',
+    coachSortAsc: true,
+    storeSortCol: 'name',
+    storeSortAsc: true,
+    batchSortCol: 'name',
+    batchSortAsc: true,
     viewMode: 'batches',
     selectedBatchKey: null,
     copied: false,
@@ -127,8 +135,8 @@
             return;
         }
 
-        // Step 2: If in all_orders view mode, step back to batches view
-        if (this.activeTab === 'orders' && this.viewMode === 'all_orders') {
+        // Step 2: If in all_orders or archived view mode, step back to batches view
+        if (this.activeTab === 'orders' && (this.viewMode === 'all_orders' || this.viewMode === 'archived')) {
             this.setViewMode('batches', true);
             return;
         }
@@ -148,7 +156,7 @@
         }
 
         // Step 4: If on overview, navigate back to Sales Partners list
-        window.location.href = '{{ route('admin.dashboard', ['tab' => 'sales_reps']) }}';
+        window.location.href = '{{ route('admin.dashboard', ['tab' => $user->status === 'archived' ? 'archived_sales_reps' : 'sales_reps']) }}';
     },
 
     copyLink() {
@@ -225,20 +233,92 @@
                 alert('An error occurred while uploading.');
             });
         }, 'image/jpeg', 0.92);
+    },
+    sortCoachTable(col) {
+        if (this.coachSortCol === col) {
+            this.coachSortAsc = !this.coachSortAsc;
+        } else {
+            this.coachSortCol = col;
+            this.coachSortAsc = (col === 'stores' || col === 'orders' || col === 'date') ? false : true;
+        }
+        const tbody = document.getElementById('admin-coach-table-body');
+        if (!tbody) return;
+        const rows = Array.from(tbody.querySelectorAll('tr.coach-row'));
+        rows.sort((a, b) => {
+            let valA = a.dataset[col] ?? '';
+            let valB = b.dataset[col] ?? '';
+            if (col === 'stores' || col === 'orders' || col === 'date') {
+                valA = parseFloat(valA) || 0;
+                valB = parseFloat(valB) || 0;
+                return this.coachSortAsc ? (valA - valB) : (valB - valA);
+            } else {
+                const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+                return this.coachSortAsc ? cmp : -cmp;
+            }
+        });
+        rows.forEach(r => tbody.appendChild(r));
+    },
+    sortStoreTable(col) {
+        if (this.storeSortCol === col) {
+            this.storeSortAsc = !this.storeSortAsc;
+        } else {
+            this.storeSortCol = col;
+            this.storeSortAsc = (col === 'orders') ? false : true;
+        }
+        const tbody = document.getElementById('admin-store-table-body');
+        if (!tbody) return;
+        const rows = Array.from(tbody.querySelectorAll('tr.store-row'));
+        rows.sort((a, b) => {
+            let valA = a.dataset[col] ?? '';
+            let valB = b.dataset[col] ?? '';
+            if (col === 'orders') {
+                valA = parseFloat(valA) || 0;
+                valB = parseFloat(valB) || 0;
+                return this.storeSortAsc ? (valA - valB) : (valB - valA);
+            } else {
+                const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+                return this.storeSortAsc ? cmp : -cmp;
+            }
+        });
+        rows.forEach(r => tbody.appendChild(r));
+    },
+    sortBatchTable(col) {
+        if (this.batchSortCol === col) {
+            this.batchSortAsc = !this.batchSortAsc;
+        } else {
+            this.batchSortCol = col;
+            this.batchSortAsc = (col === 'orders' || col === 'commission' || col === 'sort') ? false : true;
+        }
+        const tbody = document.getElementById('admin-batch-table-body');
+        if (!tbody) return;
+        const rows = Array.from(tbody.querySelectorAll('tr.batch-row'));
+        rows.sort((a, b) => {
+            let valA = a.dataset[col] ?? '';
+            let valB = b.dataset[col] ?? '';
+            if (col === 'orders' || col === 'commission' || col === 'sort') {
+                valA = parseFloat(valA) || 0;
+                valB = parseFloat(valB) || 0;
+                return this.batchSortAsc ? (valA - valB) : (valB - valA);
+            } else {
+                const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+                return this.batchSortAsc ? cmp : -cmp;
+            }
+        });
+        rows.forEach(r => tbody.appendChild(r));
     }
 }">
     <!-- Breadcrumb & Step-by-Step Back Navigation -->
     <div class="flex items-center gap-2 sm:gap-3 mb-6 flex-wrap">
         <button type="button" @click="goBackStep()" class="text-slate-600 hover:text-primary transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider cursor-pointer group">
             <svg class="w-4 h-4 text-slate-400 group-hover:text-primary transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            <span x-text="selectedBatchKey ? 'Back to Order Batches' : (activeTab !== 'overview' ? 'Back to Overview' : 'Back to Sales Partners')">Back to Sales Partners</span>
+            <span x-text="selectedBatchKey ? 'Back to Order Batches' : ((activeTab === 'orders' && (viewMode === 'all_orders' || viewMode === 'archived')) ? 'Back to Batch Orders' : (activeTab !== 'overview' ? 'Back to Overview' : 'Back to Sales Partners'))">Back to Sales Partners</span>
         </button>
         <span class="text-slate-300">/</span>
-        <a href="{{ route('admin.dashboard', ['tab' => 'sales_reps']) }}" class="text-slate-400 hover:text-slate-700 text-xs font-bold uppercase tracking-wider transition-colors" title="Return to Sales Partners List">
-            Sales Partners
+        <a href="{{ route('admin.dashboard', ['tab' => $user->status === 'archived' ? 'archived_sales_reps' : 'sales_reps']) }}" class="text-slate-400 hover:text-slate-700 text-xs font-bold uppercase tracking-wider transition-colors" title="Return to Sales Partners List">
+            {{ $user->status === 'archived' ? 'Archived Sales Partners' : 'Sales Partners' }}
         </a>
         <span class="text-slate-300">/</span>
-        <span class="text-slate-700 font-bold text-xs uppercase tracking-wider" x-text="activeTab === 'overview' ? 'Partner Profile' : (activeTab === 'clients' ? 'Assigned Clients' : (activeTab === 'stores' ? 'Team Stores' : 'Commission Statements'))">Partner Profile</span>
+        <span class="text-slate-700 font-bold text-xs uppercase tracking-wider" x-text="activeTab === 'overview' ? 'Partner Settings & Profile' : (activeTab === 'clients' ? 'Assigned Coaches' : (activeTab === 'stores' ? 'Team Stores & Pipeline' : (viewMode === 'all_orders' ? 'Itemized Orders Ledger' : (viewMode === 'archived' ? 'Archived Orders' : 'Batch Orders'))))">Partner Profile</span>
         <template x-if="selectedBatchKey">
             <span class="flex items-center gap-2 text-slate-300">
                 <span>/</span>
@@ -308,7 +388,7 @@
                     <span class="inline-flex px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
                         Tier: {{ number_format($user->getEffectiveCommissionRate(), 1) }}% Net Split
                     </span>
-                    <span class="inline-flex px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-lg border {{ $user->status === 'active' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200' }}">
+                    <span class="inline-flex px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-lg border {{ $user->status === 'active' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($user->status === 'archived' ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-red-50 text-red-800 border-red-200') }}">
                         {{ strtoupper($user->status) }}
                     </span>
                 </div>
@@ -433,20 +513,125 @@
         </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="border-b border-slate-200 mb-8 flex items-center gap-6 overflow-x-auto">
-        <button type="button" @click="setTab('overview')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'overview' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
-            Partner Settings & Profile
-        </button>
-        <button type="button" @click="setTab('clients')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'clients' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
-            Assigned Clients ({{ $clients->count() }})
-        </button>
-        <button type="button" @click="setTab('stores')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'stores' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
-            Team Stores & Pipeline ({{ $stores->count() }})
-        </button>
-        <button type="button" @click="setTab('orders')" class="pb-3 text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors border-b-2" :class="activeTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'">
-            Commission Statements & Orders ({{ $orders->count() }})
-        </button>
+    <!-- Navigation Deck (4-Column Layout matching Super Admin Control Deck) -->
+    <div class="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 items-stretch">
+            {{-- Column 1: PROFILE & SETTINGS --}}
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/70">
+                        <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        </span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Profile & Settings</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        {{-- Edit Partner Agreement & Account --}}
+                        <button type="button" @click="setTab('overview')" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeTab === 'overview' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeTab === 'overview' ? 'text-emerald-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                <span class="truncate">Edit Partner Agreement & Account</span>
+                            </div>
+                            <span class="w-1.5 h-1.5 rounded-full" :class="activeTab === 'overview' ? 'bg-emerald-400' : 'bg-transparent'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Column 2: CLIENT DATA BASE --}}
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/70">
+                        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        </span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Client Data Base</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        {{-- Assigned Coaches --}}
+                        <button type="button" @click="setTab('clients')" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeTab === 'clients' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeTab === 'clients' ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                <span class="truncate">Assigned Coaches</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="activeTab === 'clients' ? 'bg-blue-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $clients->count() }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Column 3: STOREFRONT DATABASE --}}
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/70">
+                        <span class="w-6 h-6 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                        </span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Storefront Database</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        {{-- Team Stores & Pipeline --}}
+                        <button type="button" @click="setTab('stores')" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeTab === 'stores' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeTab === 'stores' ? 'text-purple-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                <span class="truncate">Team Stores & Pipeline</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="activeTab === 'stores' ? 'bg-purple-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $stores->count() }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Column 4: FINANCIALS --}}
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/70">
+                        <span class="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Financials</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        {{-- Batch Orders --}}
+                        <button type="button" @click="setTab('orders'); setViewMode('batches'); closeBatch();" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="(activeTab === 'orders' && viewMode === 'batches') ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="(activeTab === 'orders' && viewMode === 'batches') ? 'text-amber-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                <span class="truncate">Batch Orders</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="(activeTab === 'orders' && viewMode === 'batches') ? 'bg-amber-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $orderBatches->count() }}
+                            </span>
+                        </button>
+
+                        {{-- Itemized Orders Ledger --}}
+                        <button type="button" @click="setTab('orders'); setViewMode('all_orders'); closeBatch();" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="(activeTab === 'orders' && viewMode === 'all_orders') ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="(activeTab === 'orders' && viewMode === 'all_orders') ? 'text-amber-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                <span class="truncate">Itemized Orders Ledger</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="(activeTab === 'orders' && viewMode === 'all_orders') ? 'bg-amber-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $orders->count() }}
+                            </span>
+                        </button>
+
+                        {{-- Archived Orders --}}
+                        <button type="button" @click="setTab('orders'); setViewMode('archived'); closeBatch();" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="(activeTab === 'orders' && viewMode === 'archived') ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="(activeTab === 'orders' && viewMode === 'archived') ? 'text-amber-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                <span class="truncate">Archived Orders</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="(activeTab === 'orders' && viewMode === 'archived') ? 'bg-amber-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $archivedOrders->count() }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- TAB 1: OVERVIEW & PROFILE SETTINGS -->
@@ -515,6 +700,7 @@
                         <select name="status" required class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                             <option value="active" {{ old('status', $user->status) === 'active' ? 'selected' : '' }}>Active</option>
                             <option value="declined" {{ old('status', $user->status) === 'declined' ? 'selected' : '' }}>Deactivated / Declined</option>
+                            <option value="archived" {{ old('status', $user->status) === 'archived' ? 'selected' : '' }}>Archived</option>
                         </select>
                     </div>
                 </div>
@@ -556,28 +742,102 @@
     <!-- TAB 2: ASSIGNED CLIENTS -->
     <div x-show="activeTab === 'clients'" class="space-y-6">
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            <div class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div class="p-6 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">Assigned Clients & Organizations ({{ $clients->count() }})</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">All clients linked directly to this representative's book of business.</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Click column titles to sort. Use search to filter by name, school, email, or sport.</p>
+                </div>
+                <div class="relative w-full sm:w-64">
+                    <input 
+                        type="text" 
+                        x-model="coachSearch" 
+                        placeholder="Search coaches..." 
+                        class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-7 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors shadow-2xs font-sans"
+                    >
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <button 
+                        type="button" 
+                        x-show="coachSearch" 
+                        @click="coachSearch = ''" 
+                        class="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 text-xs font-bold leading-none p-0.5"
+                        style="display: none;"
+                        title="Clear search"
+                    >&times;</button>
                 </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
                         <tr>
-                            <th class="px-6 py-3.5">Organization / School</th>
-                            <th class="px-6 py-3.5">Primary Contact</th>
-                            <th class="px-6 py-3.5">Category</th>
-                            <th class="px-6 py-3.5 text-center">Stores</th>
-                            <th class="px-6 py-3.5 text-center">Orders</th>
-                            <th class="px-6 py-3.5">Onboarded</th>
+                            <th class="px-6 py-3.5 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortCoachTable('org')" title="Sort by Organization">
+                                <div class="inline-flex items-center gap-1.5">
+                                    <span>Organization / School</span>
+                                    <span class="text-[10px]" :class="coachSortCol === 'org' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                        <span x-show="coachSortCol === 'org'" x-text="coachSortAsc ? '▲' : '▼'"></span>
+                                        <span x-show="coachSortCol !== 'org'">⇅</span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-3.5 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortCoachTable('contact')" title="Sort by Primary Contact">
+                                <div class="inline-flex items-center gap-1.5">
+                                    <span>Primary Contact</span>
+                                    <span class="text-[10px]" :class="coachSortCol === 'contact' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                        <span x-show="coachSortCol === 'contact'" x-text="coachSortAsc ? '▲' : '▼'"></span>
+                                        <span x-show="coachSortCol !== 'contact'">⇅</span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-3.5 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortCoachTable('sport')" title="Sort by Category">
+                                <div class="inline-flex items-center gap-1.5">
+                                    <span>Category</span>
+                                    <span class="text-[10px]" :class="coachSortCol === 'sport' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                        <span x-show="coachSortCol === 'sport'" x-text="coachSortAsc ? '▲' : '▼'"></span>
+                                        <span x-show="coachSortCol !== 'sport'">⇅</span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-3.5 text-center cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortCoachTable('stores')" title="Sort by Store count">
+                                <div class="inline-flex items-center justify-center gap-1.5">
+                                    <span>Stores</span>
+                                    <span class="text-[10px]" :class="coachSortCol === 'stores' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                        <span x-show="coachSortCol === 'stores'" x-text="coachSortAsc ? '▲' : '▼'"></span>
+                                        <span x-show="coachSortCol !== 'stores'">⇅</span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-3.5 text-center cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortCoachTable('orders')" title="Sort by Orders count">
+                                <div class="inline-flex items-center justify-center gap-1.5">
+                                    <span>Orders</span>
+                                    <span class="text-[10px]" :class="coachSortCol === 'orders' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                        <span x-show="coachSortCol === 'orders'" x-text="coachSortAsc ? '▲' : '▼'"></span>
+                                        <span x-show="coachSortCol !== 'orders'">⇅</span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-3.5 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortCoachTable('date')" title="Sort by Onboarded date">
+                                <div class="inline-flex items-center gap-1.5">
+                                    <span>Onboarded</span>
+                                    <span class="text-[10px]" :class="coachSortCol === 'date' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                        <span x-show="coachSortCol === 'date'" x-text="coachSortAsc ? '▲' : '▼'"></span>
+                                        <span x-show="coachSortCol !== 'date'">⇅</span>
+                                    </span>
+                                </div>
+                            </th>
                             <th class="px-6 py-3.5 text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody id="admin-coach-table-body" class="divide-y divide-slate-100">
                         @forelse($clients as $client)
-                            <tr class="hover:bg-slate-50 transition-colors">
+                            <tr 
+                                class="coach-row hover:bg-slate-50 transition-colors"
+                                data-org="{{ strtolower($client->organization) }}"
+                                data-contact="{{ strtolower($client->name) }}"
+                                data-sport="{{ strtolower($client->sport) }}"
+                                data-stores="{{ $client->teamStores->count() }}"
+                                data-orders="{{ $client->parentOrders->count() }}"
+                                data-date="{{ $client->created_at->timestamp }}"
+                                x-show="!coachSearch || '{{ strtolower(addslashes($client->organization . ' ' . $client->name . ' ' . $client->email . ' ' . $client->phone . ' ' . $client->sport)) }}'.includes(coachSearch.toLowerCase().trim())"
+                            >
                                 <td class="px-6 py-4">
                                     @php
                                         $primaryStore = $client->teamStores->first();
@@ -666,19 +926,64 @@
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
                         <tr>
-                            <th class="px-6 py-3.5">Store / Event</th>
-                            <th class="px-6 py-3.5">Organization / Admin</th>
-                            <th class="px-6 py-3.5">Category</th>
-                            <th class="px-6 py-3.5 text-center">Status</th>
-                            <th class="px-6 py-3.5 text-center">Orders</th>
+                            <th class="px-6 py-3.5 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortStoreTable('name')" title="Sort by Store Name">
+                                <div class="inline-flex items-center gap-1.5">
+                                    <span>Store / Event</span>
+                                    <span class="text-[10px]" :class="storeSortCol === 'name' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                        <span x-show="storeSortCol === 'name'" x-text="storeSortAsc ? '▲' : '▼'"></span>
+                                        <span x-show="storeSortCol !== 'name'">⇅</span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-3.5 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortStoreTable('org')" title="Sort by Organization / Admin">
+                                <div class="inline-flex items-center gap-1.5">
+                                    <span>Organization / Admin</span>
+                                    <span class="text-[10px]" :class="storeSortCol === 'org' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                        <span x-show="storeSortCol === 'org'" x-text="storeSortAsc ? '▲' : '▼'"></span>
+                                        <span x-show="storeSortCol !== 'org'">⇅</span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-3.5 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortStoreTable('category')" title="Sort by Category">
+                                <div class="inline-flex items-center gap-1.5">
+                                    <span>Category</span>
+                                    <span class="text-[10px]" :class="storeSortCol === 'category' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                        <span x-show="storeSortCol === 'category'" x-text="storeSortAsc ? '▲' : '▼'"></span>
+                                        <span x-show="storeSortCol !== 'category'">⇅</span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-3.5 text-center cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortStoreTable('status')" title="Sort by Status">
+                                <div class="inline-flex items-center justify-center gap-1.5">
+                                    <span>Status</span>
+                                    <span class="text-[10px]" :class="storeSortCol === 'status' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                        <span x-show="storeSortCol === 'status'" x-text="storeSortAsc ? '▲' : '▼'"></span>
+                                        <span x-show="storeSortCol !== 'status'">⇅</span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-3.5 text-center cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortStoreTable('orders')" title="Sort by Orders placed">
+                                <div class="inline-flex items-center justify-center gap-1.5">
+                                    <span>Orders</span>
+                                    <span class="text-[10px]" :class="storeSortCol === 'orders' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                        <span x-show="storeSortCol === 'orders'" x-text="storeSortAsc ? '▲' : '▼'"></span>
+                                        <span x-show="storeSortCol !== 'orders'">⇅</span>
+                                    </span>
+                                </div>
+                            </th>
                             <th class="px-6 py-3.5 text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody id="admin-store-table-body" class="divide-y divide-slate-100">
                         @forelse($stores as $st)
                             <tr 
-                                x-show="!storeSearch || '{{ strtolower(addslashes($st->name . ' ' . ($st->user?->organization ?? '') . ' ' . ($st->user?->name ?? '') . ' ' . ($st->sport ?: ($st->user?->sport ?: 'Athletics')) . ' ' . $st->status)) }}'.includes(storeSearch.toLowerCase().trim())" 
-                                class="hover:bg-slate-50 transition-colors"
+                                class="store-row hover:bg-slate-50 transition-colors"
+                                data-name="{{ strtolower($st->name) }}"
+                                data-org="{{ strtolower(($st->user?->organization ?? '') . ' ' . ($st->user?->name ?? '')) }}"
+                                data-category="{{ strtolower($st->sport ?: ($st->user?->sport ?: 'Athletics')) }}"
+                                data-status="{{ strtolower($st->status) }}"
+                                data-orders="{{ $st->parent_orders_count }}"
+                                x-show="!storeSearch || '{{ strtolower(addslashes($st->name . ' ' . ($st->user?->organization ?? '') . ' ' . ($st->user?->name ?? '') . ' ' . ($st->sport ?: ($st->user?->sport ?: 'Athletics')) . ' ' . $st->status)) }}'.includes(storeSearch.toLowerCase().trim())"
                             >
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
@@ -757,15 +1062,37 @@
                             Orders grouped by Master Store and Direct Order batches. Click any batch to view its itemized breakdown.
                         </p>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-400">View:</span>
-                        <div class="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm text-xs font-bold">
-                            <button type="button" @click="setViewMode('batches')" class="px-3 py-1 rounded-md transition-colors bg-slate-900 text-white font-black uppercase tracking-wider">
-                                Grouped Batches ({{ $orderBatches->count() }})
-                            </button>
-                            <button type="button" @click="setViewMode('all_orders')" class="px-3 py-1 rounded-md transition-colors text-slate-600 hover:text-slate-900 uppercase tracking-wider">
-                                All Orders ({{ $orders->count() }})
-                            </button>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <div class="relative w-full sm:w-64">
+                            <input 
+                                type="text" 
+                                x-model="financialSearch" 
+                                placeholder="Search batches & orders..." 
+                                class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-7 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors shadow-2xs font-sans"
+                            >
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            <button 
+                                type="button" 
+                                x-show="financialSearch" 
+                                @click="financialSearch = ''" 
+                                class="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 text-xs font-bold leading-none p-0.5"
+                                style="display: none;"
+                                title="Clear search"
+                            >&times;</button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-slate-400">View:</span>
+                            <div class="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm text-xs font-bold">
+                                <button type="button" @click="setViewMode('batches')" class="px-3 py-1 rounded-md transition-colors uppercase tracking-wider" :class="viewMode === 'batches' ? 'bg-slate-900 text-white font-black' : 'text-slate-600 hover:text-slate-900'">
+                                    Batch Orders ({{ $orderBatches->count() }})
+                                </button>
+                                <button type="button" @click="setViewMode('all_orders')" class="px-3 py-1 rounded-md transition-colors uppercase tracking-wider" :class="viewMode === 'all_orders' ? 'bg-slate-900 text-white font-black' : 'text-slate-600 hover:text-slate-900'">
+                                    Itemized Ledger ({{ $orders->count() }})
+                                </button>
+                                <button type="button" @click="setViewMode('archived')" class="px-3 py-1 rounded-md transition-colors uppercase tracking-wider" :class="viewMode === 'archived' ? 'bg-slate-900 text-white font-black' : 'text-slate-600 hover:text-slate-900'">
+                                    Archived Orders ({{ $archivedOrders->count() }})
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -774,18 +1101,85 @@
                     <table class="w-full text-left text-sm text-slate-600">
                         <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
                             <tr>
-                                <th class="px-4 py-3.5 text-center w-16">Sort</th>
-                                <th class="px-6 py-3.5">Store Name</th>
-                                <th class="px-6 py-3.5">Coach / Organization</th>
-                                <th class="px-6 py-3.5 text-center">Orders</th>
-                                <th class="px-6 py-3.5 text-secondary font-black">Order Type</th>
-                                <th class="px-6 py-3.5">Payment Method</th>
-                                <th class="px-6 py-3.5 text-right">Commission</th>
+                                <th class="px-4 py-3.5 text-center w-16 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortBatchTable('sort')" title="Sort by index">
+                                    <div class="inline-flex items-center justify-center gap-1">
+                                        <span>Sort</span>
+                                        <span class="text-[10px]" :class="batchSortCol === 'sort' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                            <span x-show="batchSortCol === 'sort'" x-text="batchSortAsc ? '▲' : '▼'"></span>
+                                            <span x-show="batchSortCol !== 'sort'">⇅</span>
+                                        </span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3.5 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortBatchTable('name')" title="Sort by Store Name">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <span>Store Name</span>
+                                        <span class="text-[10px]" :class="batchSortCol === 'name' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                            <span x-show="batchSortCol === 'name'" x-text="batchSortAsc ? '▲' : '▼'"></span>
+                                            <span x-show="batchSortCol !== 'name'">⇅</span>
+                                        </span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3.5 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortBatchTable('coach')" title="Sort by Coach / Organization">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <span>Coach / Organization</span>
+                                        <span class="text-[10px]" :class="batchSortCol === 'coach' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                            <span x-show="batchSortCol === 'coach'" x-text="batchSortAsc ? '▲' : '▼'"></span>
+                                            <span x-show="batchSortCol !== 'coach'">⇅</span>
+                                        </span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3.5 text-center cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortBatchTable('orders')" title="Sort by Orders count">
+                                    <div class="inline-flex items-center justify-center gap-1.5">
+                                        <span>Orders</span>
+                                        <span class="text-[10px]" :class="batchSortCol === 'orders' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                            <span x-show="batchSortCol === 'orders'" x-text="batchSortAsc ? '▲' : '▼'"></span>
+                                            <span x-show="batchSortCol !== 'orders'">⇅</span>
+                                        </span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3.5 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortBatchTable('type')" title="Sort by Order Type">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <span class="text-secondary font-black">Order Type</span>
+                                        <span class="text-[10px]" :class="batchSortCol === 'type' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                            <span x-show="batchSortCol === 'type'" x-text="batchSortAsc ? '▲' : '▼'"></span>
+                                            <span x-show="batchSortCol !== 'type'">⇅</span>
+                                        </span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3.5 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortBatchTable('payment')" title="Sort by Payment Method">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <span>Payment Method</span>
+                                        <span class="text-[10px]" :class="batchSortCol === 'payment' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                            <span x-show="batchSortCol === 'payment'" x-text="batchSortAsc ? '▲' : '▼'"></span>
+                                            <span x-show="batchSortCol !== 'payment'">⇅</span>
+                                        </span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3.5 text-right cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortBatchTable('commission')" title="Sort by Commission">
+                                    <div class="inline-flex items-center justify-end gap-1.5">
+                                        <span>Commission</span>
+                                        <span class="text-[10px]" :class="batchSortCol === 'commission' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                            <span x-show="batchSortCol === 'commission'" x-text="batchSortAsc ? '▲' : '▼'"></span>
+                                            <span x-show="batchSortCol !== 'commission'">⇅</span>
+                                        </span>
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100">
+                        <tbody id="admin-batch-table-body" class="divide-y divide-slate-100">
                             @forelse($orderBatches as $batch)
-                                <tr @click="openBatch('{{ $batch->key }}')" class="hover:bg-slate-50 transition-colors cursor-pointer group">
+                                <tr 
+                                    @click="openBatch('{{ $batch->key }}')" 
+                                    class="batch-row hover:bg-slate-50 transition-colors cursor-pointer group"
+                                    data-sort="{{ $loop->iteration }}"
+                                    data-name="{{ strtolower($batch->store_name) }}"
+                                    data-coach="{{ strtolower($batch->coach_name . ' ' . $batch->organization) }}"
+                                    data-orders="{{ $batch->order_count }}"
+                                    data-type="{{ strtolower($batch->is_direct ? 'finalized direct orders' : 'finalized master orders') }}"
+                                    data-payment="{{ strtolower($batch->payment_method) }}"
+                                    data-commission="{{ (float)$batch->commission }}"
+                                    x-show="!financialSearch || '{{ strtolower(addslashes($batch->store_name . ' ' . $batch->coach_name . ' ' . $batch->organization . ' ' . $batch->payment_method . ' ' . ($batch->is_direct ? 'direct' : 'master') . ' ' . $batch->slug . ' ' . $batch->batch_id)) }}'.includes(financialSearch.toLowerCase().trim())"
+                                >
                                     {{-- Sort # --}}
                                     <td class="px-4 py-4 text-center">
                                         <div class="inline-flex items-center gap-1.5 font-sans text-xs text-slate-400">
@@ -875,8 +1269,8 @@
         </div>
 
         {{-- STEP 2: ITEMIZED BREAKDOWN FOR SELECTED BATCH --}}
-        @foreach($orderBatches as $batch)
-            <div x-show="viewMode === 'batches' && (selectedBatchKey === '{{ $batch->key }}' || selectedBatchKey === '{{ $batch->batch_id }}' || selectedBatchKey === 'batch_{{ $batch->batch_id }}')" class="space-y-6" style="display: none;">
+        @foreach($orderBatches->concat($archivedOrderBatches)->unique('key') as $batch)
+            <div x-show="(viewMode === 'batches' || viewMode === 'archived') && (selectedBatchKey === '{{ $batch->key }}' || selectedBatchKey === '{{ $batch->batch_id }}' || selectedBatchKey === 'batch_{{ $batch->batch_id }}')" class="space-y-6" style="display: none;">
                 {{-- Back Navigation & Header Bar --}}
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <button type="button" @click="closeBatch()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-md hover:shadow-lg cursor-pointer w-fit">
@@ -1049,15 +1443,37 @@
                             Flat view of every individual parent order across all stores and batches.
                         </p>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-400">View:</span>
-                        <div class="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm text-xs font-bold">
-                            <button type="button" @click="setViewMode('batches')" class="px-3 py-1 rounded-md transition-colors text-slate-600 hover:text-slate-900 uppercase tracking-wider">
-                                Grouped Batches ({{ $orderBatches->count() }})
-                            </button>
-                            <button type="button" @click="setViewMode('all_orders')" class="px-3 py-1 rounded-md transition-colors bg-slate-900 text-white font-black uppercase tracking-wider">
-                                All Orders ({{ $orders->count() }})
-                            </button>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <div class="relative w-full sm:w-64">
+                            <input 
+                                type="text" 
+                                x-model="financialSearch" 
+                                placeholder="Search all orders..." 
+                                class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-7 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors shadow-2xs font-sans"
+                            >
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            <button 
+                                type="button" 
+                                x-show="financialSearch" 
+                                @click="financialSearch = ''" 
+                                class="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 text-xs font-bold leading-none p-0.5"
+                                style="display: none;"
+                                title="Clear search"
+                            >&times;</button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-slate-400">View:</span>
+                            <div class="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm text-xs font-bold">
+                                <button type="button" @click="setViewMode('batches')" class="px-3 py-1 rounded-md transition-colors uppercase tracking-wider" :class="viewMode === 'batches' ? 'bg-slate-900 text-white font-black' : 'text-slate-600 hover:text-slate-900'">
+                                    Batch Orders ({{ $orderBatches->count() }})
+                                </button>
+                                <button type="button" @click="setViewMode('all_orders')" class="px-3 py-1 rounded-md transition-colors uppercase tracking-wider" :class="viewMode === 'all_orders' ? 'bg-slate-900 text-white font-black' : 'text-slate-600 hover:text-slate-900'">
+                                    Itemized Ledger ({{ $orders->count() }})
+                                </button>
+                                <button type="button" @click="setViewMode('archived')" class="px-3 py-1 rounded-md transition-colors uppercase tracking-wider" :class="viewMode === 'archived' ? 'bg-slate-900 text-white font-black' : 'text-slate-600 hover:text-slate-900'">
+                                    Archived Orders ({{ $archivedOrders->count() }})
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1088,7 +1504,10 @@
                                     $rate = (float)($ord->applied_rep_commission_rate ?? $user->getEffectiveCommissionRate());
                                     $earned = (float)$ord->rep_commission_earned;
                                 @endphp
-                                <tr class="hover:bg-slate-50 transition-colors text-xs font-sans">
+                                <tr 
+                                    class="hover:bg-slate-50 transition-colors text-xs font-sans"
+                                    x-show="!financialSearch || '{{ strtolower(addslashes($ord->id . ' ' . ($ord->teamStore?->name ?? '') . ' ' . ($ord->user?->organization ?? '') . ' ' . ($ord->user?->name ?? '') . ' ' . ($ord->batch_id ?? '') . ' ' . ($ord->commission_status ?? ''))) }}'.includes(financialSearch.toLowerCase().trim())"
+                                >
                                     <td class="px-5 py-3.5 whitespace-nowrap">
                                         <div class="font-bold text-slate-900">#{{ $ord->id }}</div>
                                         <div class="text-[10px] text-slate-400 font-sans">{{ $ord->created_at?->format('M d, Y') ?? '—' }}</div>
@@ -1128,6 +1547,256 @@
                                 <tr>
                                     <td colspan="10" class="px-5 py-12 text-center text-slate-500 font-sans">
                                         No qualifying orders recorded for this sales partner yet.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {{-- VIEW MODE 3: ARCHIVED ORDERS & BATCHES --}}
+        <div x-show="viewMode === 'archived'" class="space-y-6" style="display: none;" x-data="{ archivedSubMode: 'batches' }">
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="text-sm font-black uppercase tracking-tight text-slate-900 flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                Archived Orders & Past Batches
+                            </h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-200 text-slate-700">
+                                {{ $archivedOrderBatches->count() }} {{ \Illuminate\Support\Str::plural('Batch', $archivedOrderBatches->count()) }}
+                            </span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-200 text-slate-700">
+                                {{ $archivedOrders->count() }} {{ \Illuminate\Support\Str::plural('Order', $archivedOrders->count()) }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">
+                            Historical orders and batches from unassigned coaches, past seasons, or archived stores preserved for accounting and audit history.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <div class="relative w-full sm:w-64">
+                            <input 
+                                type="text" 
+                                x-model="financialSearch" 
+                                placeholder="Search archived orders..." 
+                                class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-7 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors shadow-2xs font-sans"
+                            >
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            <button 
+                                type="button" 
+                                x-show="financialSearch" 
+                                @click="financialSearch = ''" 
+                                class="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 text-xs font-bold leading-none p-0.5"
+                                style="display: none;"
+                                title="Clear search"
+                            >&times;</button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-slate-400">View:</span>
+                            <div class="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm text-xs font-bold">
+                                <button type="button" @click="setViewMode('batches')" class="px-3 py-1 rounded-md transition-colors uppercase tracking-wider text-slate-600 hover:text-slate-900">
+                                    Batch Orders ({{ $orderBatches->count() }})
+                                </button>
+                                <button type="button" @click="setViewMode('all_orders')" class="px-3 py-1 rounded-md transition-colors uppercase tracking-wider text-slate-600 hover:text-slate-900">
+                                    Itemized Ledger ({{ $orders->count() }})
+                                </button>
+                                <button type="button" @click="setViewMode('archived')" class="px-3 py-1 rounded-md transition-colors uppercase tracking-wider bg-slate-900 text-white font-black">
+                                    Archived Orders ({{ $archivedOrders->count() }})
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sub-toggle within Archived: Batches vs Itemized --}}
+                <div class="px-6 py-2.5 bg-slate-100/60 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-500 uppercase tracking-wider text-[11px]">Display Mode:</span>
+                        <div class="inline-flex rounded border border-slate-300 bg-white p-0.5 shadow-2xs font-bold">
+                            <button type="button" @click="archivedSubMode = 'batches'" class="px-2.5 py-0.5 rounded transition-colors text-[11px]" :class="archivedSubMode === 'batches' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:text-slate-900'">
+                                Grouped Batches ({{ $archivedOrderBatches->count() }})
+                            </button>
+                            <button type="button" @click="archivedSubMode = 'itemized'" class="px-2.5 py-0.5 rounded transition-colors text-[11px]" :class="archivedSubMode === 'itemized' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:text-slate-900'">
+                                Itemized Ledger ({{ $archivedOrders->count() }})
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-[11px] text-slate-500">
+                        Total Archived Commission: <span class="font-bold text-emerald-600">${{ number_format($archivedOrders->sum(fn($o) => (float)$o->rep_commission_earned), 2) }}</span>
+                    </div>
+                </div>
+
+                {{-- ARCHIVED BATCHES TABLE --}}
+                <div class="overflow-x-auto" x-show="archivedSubMode === 'batches'">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
+                            <tr>
+                                <th class="px-4 py-3.5 text-center w-16">#</th>
+                                <th class="px-6 py-3.5">Store / Event</th>
+                                <th class="px-6 py-3.5">Coach / Organization</th>
+                                <th class="px-6 py-3.5 text-center">Orders</th>
+                                <th class="px-6 py-3.5">Order Type</th>
+                                <th class="px-6 py-3.5">Payment</th>
+                                <th class="px-6 py-3.5 text-right">Commission</th>
+                                <th class="px-6 py-3.5 text-center">Status</th>
+                                <th class="px-6 py-3.5 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($archivedOrderBatches as $batch)
+                                <tr 
+                                    @click="openBatch('{{ $batch->key }}')" 
+                                    class="hover:bg-slate-50 transition-colors cursor-pointer group bg-slate-50/30"
+                                    x-show="!financialSearch || '{{ strtolower(addslashes($batch->store_name . ' ' . $batch->coach_name . ' ' . $batch->organization . ' ' . $batch->payment_method . ' ' . ($batch->is_direct ? 'direct' : 'master') . ' ' . $batch->slug . ' ' . $batch->batch_id)) }}'.includes(financialSearch.toLowerCase().trim())"
+                                >
+                                    <td class="px-4 py-4 text-center">
+                                        <span class="w-8 h-7 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-600 font-bold text-xs mx-auto shadow-2xs">
+                                            {{ $loop->iteration }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="font-bold text-slate-900 group-hover:text-primary transition-colors text-sm">
+                                            {{ $batch->store_name }}
+                                        </div>
+                                        @if($batch->slug)
+                                            <div class="text-[11px] text-slate-400 font-sans">Slug: {{ $batch->slug }}</div>
+                                        @elseif($batch->batch_id)
+                                            <div class="text-[10px] text-slate-400 font-sans">Batch: {{ substr($batch->batch_id, 0, 12) }}...</div>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="font-bold text-slate-900 text-sm">{{ $batch->coach_name }}</div>
+                                        <div class="text-xs text-slate-500">{{ $batch->organization }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center px-3 py-1 text-xs font-bold font-sans rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                                            {{ $batch->order_count }} {{ \Illuminate\Support\Str::plural('order', $batch->order_count) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        @if($batch->is_direct)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded border bg-purple-50 text-purple-700 border-purple-200">
+                                                DIRECT
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded border bg-blue-50 text-blue-700 border-blue-200">
+                                                MASTER
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                            {{ $batch->payment_method }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="font-bold text-emerald-600 text-sm">
+                                            ${{ number_format($batch->commission, 2) }}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400">
+                                            Gross: ${{ number_format($batch->gross, 2) }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full border bg-slate-100 text-slate-600 border-slate-300">
+                                            Archived
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right" @click.stop>
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <button type="button" @click="openBatch('{{ $batch->key }}')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-[11px] font-bold uppercase tracking-wider transition-colors shadow-2xs whitespace-nowrap">
+                                                View Batch →
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="px-6 py-12 text-center text-slate-400 font-sans">
+                                        <div class="w-10 h-10 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-2">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                        </div>
+                                        No archived order batches recorded for this sales partner.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- ARCHIVED ITEMIZED LEDGER TABLE --}}
+                <div class="overflow-x-auto" x-show="archivedSubMode === 'itemized'" style="display: none;">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
+                            <tr>
+                                <th class="px-5 py-3.5 whitespace-nowrap">Order / Batch</th>
+                                <th class="px-5 py-3.5 min-w-[160px]">Client / Store</th>
+                                <th class="px-5 py-3.5 text-right whitespace-nowrap">Gross Sales</th>
+                                <th class="px-5 py-3.5 text-right whitespace-nowrap">Base Mfg</th>
+                                <th class="px-5 py-3.5 text-right whitespace-nowrap">Taxes & Fees</th>
+                                <th class="px-5 py-3.5 text-right whitespace-nowrap">Net Margin</th>
+                                <th class="px-5 py-3.5 text-center whitespace-nowrap">Rep Split</th>
+                                <th class="px-5 py-3.5 text-right whitespace-nowrap">Commission</th>
+                                <th class="px-5 py-3.5 text-center whitespace-nowrap">Status</th>
+                                <th class="px-5 pr-6 py-3.5 text-right whitespace-nowrap">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($archivedOrders as $ord)
+                                @php
+                                    $gross = (float)$ord->getEffectiveQualifyingSales();
+                                    $base = (float)$ord->getEffectiveManufacturingCost();
+                                    $tariffsFees = (float)$ord->tariff_amount + (float)$ord->fee_deduction;
+                                    $margin = (float)$ord->net_margin;
+                                    $rate = (float)($ord->applied_rep_commission_rate ?? $user->getEffectiveCommissionRate());
+                                    $earned = (float)$ord->rep_commission_earned;
+                                @endphp
+                                <tr 
+                                    class="hover:bg-slate-50 transition-colors font-sans text-xs bg-slate-50/20"
+                                    x-show="!financialSearch || '{{ strtolower(addslashes($ord->id . ' ' . ($ord->teamStore?->name ?? '') . ' ' . ($ord->user?->organization ?? '') . ' ' . ($ord->user?->name ?? '') . ' ' . ($ord->batch_id ?? '') . ' ' . ($ord->commission_status ?? ''))) }}'.includes(financialSearch.toLowerCase().trim())"
+                                >
+                                    <td class="px-5 py-3.5 whitespace-nowrap font-medium text-slate-900">
+                                        <div class="font-bold text-slate-900">#{{ $ord->id }}</div>
+                                        @if($ord->batch_id)
+                                            <div class="text-[10px] text-slate-400 font-mono">B: {{ substr($ord->batch_id, 0, 10) }}...</div>
+                                        @endif
+                                        <div class="text-[10px] text-slate-400">{{ $ord->created_at?->format('M d, Y') ?? '—' }}</div>
+                                    </td>
+                                    <td class="px-5 py-3.5 min-w-[160px]">
+                                        <div class="font-bold text-slate-800 text-xs">{{ $ord->teamStore?->name ?? ($ord->user?->organization ?? 'Direct Order') }}</div>
+                                        <div class="text-[10px] text-slate-500">{{ $ord->user?->name ?? 'Coach' }}</div>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-bold text-slate-900 whitespace-nowrap">${{ number_format($gross, 2) }}</td>
+                                    <td class="px-5 py-3.5 text-right text-slate-600 whitespace-nowrap">${{ number_format($base, 2) }}</td>
+                                    <td class="px-5 py-3.5 text-right text-slate-600 whitespace-nowrap">${{ number_format($tariffsFees, 2) }}</td>
+                                    <td class="px-5 py-3.5 text-right font-bold text-slate-900 whitespace-nowrap">${{ number_format($margin, 2) }}</td>
+                                    <td class="px-5 py-3.5 text-center font-bold text-slate-700 whitespace-nowrap">{{ number_format($rate, 1) }}%</td>
+                                    <td class="px-5 py-3.5 text-right font-black text-emerald-600 text-sm whitespace-nowrap">${{ number_format($earned, 2) }}</td>
+                                    <td class="px-5 py-3.5 text-center font-sans whitespace-nowrap align-middle">
+                                        <span class="inline-flex px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full border bg-slate-100 text-slate-600 border-slate-300">
+                                            Archived
+                                        </span>
+                                    </td>
+                                    <td class="px-5 pr-6 py-3.5 text-right font-sans whitespace-nowrap align-middle">
+                                        @if($ord->isDirectOrder() && $ord->batch_id)
+                                            <a href="{{ route('admin.direct-batch.show', ['batch_id' => $ord->batch_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'view' => 'archived'])]) }}" class="px-2.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-full text-[9px] font-black uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
+                                                View Batch →
+                                            </a>
+                                        @else
+                                            <a href="{{ route('admin.order.edit', ['order' => $ord, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'view' => 'archived'])]) }}" class="px-2.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-full text-[9px] font-black uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
+                                                View Order →
+                                            </a>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="10" class="px-5 py-12 text-center text-slate-400 font-sans">
+                                        No archived itemized orders recorded for this sales partner yet.
                                     </td>
                                 </tr>
                             @endforelse

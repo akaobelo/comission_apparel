@@ -479,9 +479,15 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::get('/admin/sales-reps/{user}', [AdminController::class, 'showSalesRepUser'])->name('admin.sales-rep.show');
     Route::post('/admin/sales-reps', [AdminController::class, 'createSalesRepUser'])->name('admin.sales-rep.create');
     Route::post('/admin/sales-reps/{user}/update', [AdminController::class, 'updateSalesRepUser'])->name('admin.sales-rep.update');
+    Route::post('/admin/sales-reps/{user}/archive', [AdminController::class, 'archiveSalesRepUser'])->name('admin.sales-rep.archive');
+    Route::post('/admin/sales-reps/{user}/unarchive', [AdminController::class, 'unarchiveSalesRepUser'])->name('admin.sales-rep.unarchive');
     Route::post('/admin/sales-reps/{user}/avatar', [AdminController::class, 'updateSalesRepAvatar'])->name('admin.sales-rep.avatar');
     Route::post('/admin/sales-reps/{user}/unassign-coach/{coach}', [AdminController::class, 'unassignCoachFromSalesRep'])->name('admin.sales-rep.unassign-coach');
     Route::post('/admin/order/{order}/financials', [AdminController::class, 'updateOrderFinancials'])->name('admin.order.financials.update');
+    Route::post('/admin/orders/{order}/archive', [AdminController::class, 'archiveOrder'])->name('admin.orders.archive');
+    Route::post('/admin/orders/{order}/unarchive', [AdminController::class, 'unarchiveOrder'])->name('admin.orders.unarchive');
+    Route::post('/admin/order-batches/{batchId}/archive', [AdminController::class, 'archiveOrderBatch'])->name('admin.order-batches.archive');
+    Route::post('/admin/order-batches/{batchId}/unarchive', [AdminController::class, 'unarchiveOrderBatch'])->name('admin.order-batches.unarchive');
     Route::post('/admin/direct-batch/{batch_id}/financials', [AdminController::class, 'updateBatchFinancials'])->name('admin.direct-batch.financials.update');
 });
 Route::post('/coach/store/{store}/blast', [App\Http\Controllers\CoachController::class, 'sendReminderBlast'])->name('coach.store.blast')->middleware(['auth', \App\Http\Middleware\CoachMiddleware::class]);
