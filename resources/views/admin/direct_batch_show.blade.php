@@ -11,7 +11,7 @@
             }
         }
         if (!$returnUrl) {
-            $batchRep = $firstOrder?->salesRep ?: $firstOrder?->user?->assignedSalesRep;
+            $batchRep = $firstOrder?->user?->assignedSalesRep ?: $firstOrder?->salesRep;
             if ($batchRep) {
                 $returnUrl = route('admin.sales-rep.show', ['user' => $batchRep, 'tab' => 'orders', 'batch' => 'batch_' . $batchId]);
             }
@@ -231,7 +231,7 @@
                         $hasCustomMfg = $orders->contains(fn($o) => (float)$o->manufacturing_cost > 0);
                         $batchTariff = $orders->sum(fn($o) => (float)$o->tariff_amount);
                         $batchFees = $orders->sum(fn($o) => (float)$o->fee_deduction);
-                        $assignedRepId = $firstOrder->sales_rep_id ?: ($firstOrder->user?->sales_rep_id ?? null);
+                        $assignedRepId = ($firstOrder->user?->sales_rep_id) ?: ($firstOrder->sales_rep_id ?? null);
                         $currentRep = $assignedRepId ? $salesReps->firstWhere('id', $assignedRepId) : null;
                         $batchRepEarned = $orders->sum(fn($o) => (float)$o->rep_commission_earned);
                         $batchNetMargin = $orders->sum(fn($o) => (float)$o->net_margin);

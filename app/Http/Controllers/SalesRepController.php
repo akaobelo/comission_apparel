@@ -64,7 +64,11 @@ class SalesRepController extends Controller
         $repRate = $user->getEffectiveCommissionRate();
         foreach ($orders as $ord) {
             $dirty = false;
-            if (!$ord->sales_rep_id) {
+            if (in_array($ord->user_id, $clientIds) && $ord->sales_rep_id != $user->id) {
+                $ord->sales_rep_id = $user->id;
+                $ord->calculateAndApplyCommission($repRate);
+                $dirty = true;
+            } elseif (!$ord->sales_rep_id) {
                 $ord->sales_rep_id = $user->id;
                 $dirty = true;
             }

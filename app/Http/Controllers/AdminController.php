@@ -498,7 +498,8 @@ class AdminController extends Controller
         // When a coach is unassigned or transferred to another rep, permanently preserve
         // all historical orders under the original sales rep so earned commissions are preserved.
         $newRepId = $validated['sales_rep_id'] ?? null;
-        if ($oldRepId && $oldRepId != $newRepId) {
+        if ($oldRepId && !$newRepId) {
+            // Coach is being completely unassigned: preserve past orders under old rep so historical earnings stay locked
             $oldRep = User::find($oldRepId);
             if ($oldRep) {
                 $coachStoreIds = TeamStore::where('user_id', $user->id)->pluck('id')->toArray();
@@ -521,6 +522,23 @@ class AdminController extends Controller
                 TeamStore::where('user_id', $user->id)
                     ->where('sales_rep_id', $oldRep->id)
                     ->update(['sales_rep_id' => null]);
+            }
+        } elseif ($newRepId && $newRepId != $oldRepId) {
+            // Coach is being assigned or transferred to a new sales rep: transfer stores and active orders
+            $newRep = User::find($newRepId);
+            if ($newRep) {
+                $coachStoreIds = TeamStore::where('user_id', $user->id)->pluck('id')->toArray();
+                TeamStore::where('user_id', $user->id)->update(['sales_rep_id' => $newRep->id]);
+
+                ParentOrder::where(function($q) use ($user, $coachStoreIds) {
+                        $q->where('user_id', $user->id)
+                          ->orWhereIn('team_store_id', $coachStoreIds);
+                    })
+                    ->each(function($ord) use ($newRep) {
+                        $ord->sales_rep_id = $newRep->id;
+                        $ord->calculateAndApplyCommission($newRep->getEffectiveCommissionRate());
+                        $ord->save();
+                    });
             }
         }
 
@@ -679,7 +697,11 @@ class AdminController extends Controller
         $repRate = $user->getEffectiveCommissionRate();
         foreach ($orders as $ord) {
             $dirty = false;
-            if (!$ord->sales_rep_id) {
+            if (in_array($ord->user_id, $clientIds) && $ord->sales_rep_id != $user->id) {
+                $ord->sales_rep_id = $user->id;
+                $ord->calculateAndApplyCommission($repRate);
+                $dirty = true;
+            } elseif (!$ord->sales_rep_id) {
                 $ord->sales_rep_id = $user->id;
                 $dirty = true;
             }
