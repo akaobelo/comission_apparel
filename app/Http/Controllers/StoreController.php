@@ -237,6 +237,7 @@ class StoreController extends Controller
 
         $parentOrder = ParentOrder::create([
             'team_store_id'       => $store->id,
+            'sales_rep_id'        => $store->sales_rep_id ?? $store->user?->sales_rep_id,
             'athlete_first_name'  => trim($request->athlete_first_name),
             'athlete_last_name'   => trim($request->athlete_last_name),
             'parent_email'        => trim($request->parent_email),

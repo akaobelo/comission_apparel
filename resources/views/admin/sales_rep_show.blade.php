@@ -307,6 +307,14 @@
         rows.forEach(r => tbody.appendChild(r));
     }
 }">
+    <!-- Direct Admin Control Center Quick-Return Button -->
+    <div class="mb-4">
+        <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span>Admin Control Center</span>
+        </a>
+    </div>
+
     <!-- Breadcrumb & Step-by-Step Back Navigation -->
     <div class="flex items-center gap-2 sm:gap-3 mb-6 flex-wrap">
         <button type="button" @click="goBackStep()" class="text-slate-600 hover:text-primary transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider cursor-pointer group">

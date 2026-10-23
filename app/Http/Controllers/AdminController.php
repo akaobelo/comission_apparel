@@ -557,6 +557,13 @@ class AdminController extends Controller
             TeamStore::where('user_id', $user->id)->update(['sales_rep_id' => $newRepId]);
         }
 
+        if ($newRepId) {
+            // Also link any direct orders created by this coach that currently have no sales rep
+            ParentOrder::where('user_id', $user->id)
+                ->whereNull('sales_rep_id')
+                ->update(['sales_rep_id' => $newRepId]);
+        }
+
         $user->update($validated);
 
         if ($request->filled('return_to')) {
@@ -708,8 +715,16 @@ class AdminController extends Controller
             ->latest()
             ->get();
 
-        // Orders strictly attributed to this sales rep
-        $orders = ParentOrder::where('sales_rep_id', $user->id)
+        // Orders strictly attributed to this sales rep or assigned coaches/stores
+        $orders = ParentOrder::where(function($q) use ($user, $clientIds, $storeIds) {
+                $q->where('sales_rep_id', $user->id);
+                if (!empty($clientIds)) {
+                    $q->orWhereIn('user_id', $clientIds);
+                }
+                if (!empty($storeIds)) {
+                    $q->orWhereIn('team_store_id', $storeIds);
+                }
+            })
             ->where('status', '!=', 'Draft')
             ->with(['teamStore', 'user', 'teamStore.items'])
             ->latest()
@@ -719,6 +734,10 @@ class AdminController extends Controller
         $repRate = $user->getEffectiveCommissionRate();
         foreach ($orders as $ord) {
             $dirty = false;
+            if (empty($ord->sales_rep_id)) {
+                $ord->sales_rep_id = $user->id;
+                $dirty = true;
+            }
             if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0 || (float)$ord->subtotal == 0 || (float)$ord->manufacturing_cost == 0) {
                 $ord->calculateAndApplyCommission($repRate);
                 $dirty = true;
@@ -971,9 +990,7 @@ class AdminController extends Controller
         $order->commission_status = $validated['commission_status'];
         $order->financial_notes = $validated['financial_notes'] ?? null;
 
-        if ($request->filled('sales_rep_id')) {
-            $order->sales_rep_id = $request->sales_rep_id;
-        }
+        $order->sales_rep_id = $request->input('sales_rep_id') ?: null;
 
         if ($order->commission_status === 'paid' && !$order->paid_to_rep_at) {
             $order->paid_to_rep_at = now();
@@ -1014,9 +1031,7 @@ class AdminController extends Controller
             $order->fee_deduction = round($feePerOrder, 2);
             $order->commission_status = $validated['commission_status'];
             $order->financial_notes = $validated['financial_notes'] ?? null;
-            if ($request->filled('sales_rep_id')) {
-                $order->sales_rep_id = $request->sales_rep_id;
-            }
+            $order->sales_rep_id = $request->input('sales_rep_id') ?: null;
             if ($order->commission_status === 'paid' && !$order->paid_to_rep_at) {
                 $order->paid_to_rep_at = now();
             }

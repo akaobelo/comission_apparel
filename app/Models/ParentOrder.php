@@ -56,6 +56,28 @@ class ParentOrder extends Model
         'financial_notes',
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($order) {
+            if (empty($order->sales_rep_id)) {
+                if (!empty($order->user_id)) {
+                    $coach = \App\Models\User::find($order->user_id);
+                    if ($coach?->sales_rep_id) {
+                        $order->sales_rep_id = $coach->sales_rep_id;
+                    }
+                }
+                if (empty($order->sales_rep_id) && !empty($order->team_store_id)) {
+                    $store = \App\Models\TeamStore::find($order->team_store_id);
+                    if ($store?->sales_rep_id) {
+                        $order->sales_rep_id = $store->sales_rep_id;
+                    } elseif ($store?->user?->sales_rep_id) {
+                        $order->sales_rep_id = $store->user->sales_rep_id;
+                    }
+                }
+            }
+        });
+    }
+
     public function isDirectOrder(): bool
     {
         return ($this->order_type ?? '') === 'direct' || is_null($this->team_store_id);

@@ -59,8 +59,16 @@ class SalesRepController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Orders attributed strictly to this sales rep
-        $orders = ParentOrder::where('sales_rep_id', $user->id)
+        // Orders attributed strictly to this sales rep or assigned coaches/stores
+        $orders = ParentOrder::where(function($q) use ($user, $clientIds, $storeIds) {
+                $q->where('sales_rep_id', $user->id);
+                if (!empty($clientIds)) {
+                    $q->orWhereIn('user_id', $clientIds);
+                }
+                if (!empty($storeIds)) {
+                    $q->orWhereIn('team_store_id', $storeIds);
+                }
+            })
             ->where('status', '!=', 'Draft')
             ->with(['teamStore', 'user'])
             ->orderBy('created_at', 'desc')
@@ -70,6 +78,10 @@ class SalesRepController extends Controller
         $repRate = $user->getEffectiveCommissionRate();
         foreach ($orders as $ord) {
             $dirty = false;
+            if (empty($ord->sales_rep_id)) {
+                $ord->sales_rep_id = $user->id;
+                $dirty = true;
+            }
             if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0 || (float)$ord->subtotal == 0 || (float)$ord->manufacturing_cost == 0) {
                 $ord->calculateAndApplyCommission($repRate);
                 $dirty = true;

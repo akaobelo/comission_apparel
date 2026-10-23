@@ -947,6 +947,7 @@ class CoachController extends Controller
             'items_json'          => $itemsJson,
             'status'              => 'Draft',
             'payment_status'      => 'pending_payment',
+            'sales_rep_id'        => $user->sales_rep_id ?? $activeStore?->sales_rep_id,
             'subtotal'            => $lineSubtotal,
             'total_retail_price'  => $lineSubtotal,
         ]);
@@ -1020,6 +1021,7 @@ class CoachController extends Controller
                     'batch_id'       => $batchId,
                     'team_store_id'  => $order->team_store_id ?: $activeStore?->id,
                     'order_type'     => 'direct',
+                    'sales_rep_id'   => $order->sales_rep_id ?: ($user->sales_rep_id ?? $activeStore?->sales_rep_id),
                     'status'         => 'Submitted to Admin',
                     'payment_status' => 'not_applicable',
                     'subtotal'       => $orderSubtotal,
@@ -1200,6 +1202,7 @@ class CoachController extends Controller
                 $order->update([
                     'team_store_id'  => $order->team_store_id ?: $activeStore?->id,
                     'order_type'     => 'direct',
+                    'sales_rep_id'   => $order->sales_rep_id ?: ($user->sales_rep_id ?? $activeStore?->sales_rep_id),
                     'status'         => 'Submitted to Admin',
                     'payment_status' => 'paid',
                     'paid_at'        => now(),
@@ -1255,6 +1258,7 @@ class CoachController extends Controller
                             'status'                   => 'Submitted to Admin',
                             'payment_status'           => 'paid',
                             'order_type'               => 'direct',
+                            'sales_rep_id'             => $order->sales_rep_id ?: ($user->sales_rep_id ?? $order->teamStore?->sales_rep_id),
                             'stripe_payment_intent_id' => $session->payment_intent,
                             'paid_at'                  => now(),
                         ]);

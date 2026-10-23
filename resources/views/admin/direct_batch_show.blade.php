@@ -13,6 +13,13 @@
         $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'orders']);
         $backLabel = ($returnUrl && (str_contains($returnUrl, 'sales-rep') || str_contains($returnUrl, 'sales_rep'))) ? 'Back to Sales Partner' : 'Back to Dashboard';
     @endphp
+    <div class="mb-4">
+        <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span>Admin Control Center</span>
+        </a>
+    </div>
+
     <div class="flex items-center gap-4 mb-8">
         <a href="{{ $backUrl }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-bold uppercase tracking-wide">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -225,7 +232,7 @@
                         $hasCustomMfg = $orders->contains(fn($o) => (float)$o->manufacturing_cost > 0);
                         $batchTariff = $orders->sum(fn($o) => (float)$o->tariff_amount);
                         $batchFees = $orders->sum(fn($o) => (float)$o->fee_deduction);
-                        $assignedRepId = ($firstOrder->user?->sales_rep_id) ?: ($firstOrder->sales_rep_id ?? null);
+                        $assignedRepId = $firstOrder->sales_rep_id ?: ($firstOrder->user?->sales_rep_id ?? null);
                         $currentRep = $assignedRepId ? $salesReps->firstWhere('id', $assignedRepId) : null;
                         $batchRepEarned = $orders->sum(fn($o) => (float)$o->rep_commission_earned);
                         $batchNetMargin = $orders->sum(fn($o) => (float)$o->net_margin);
