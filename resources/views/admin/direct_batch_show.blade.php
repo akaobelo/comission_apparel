@@ -6,18 +6,12 @@
         $returnUrl = request('return_to');
         if (!$returnUrl) {
             $referer = request()->headers->get('referer');
-            if ($referer && str_contains($referer, 'sales-rep')) {
+            if ($referer && (str_contains($referer, 'sales-rep') || str_contains($referer, 'sales_rep'))) {
                 $returnUrl = $referer;
             }
         }
-        if (!$returnUrl) {
-            $batchRep = $firstOrder?->user?->assignedSalesRep ?: $firstOrder?->salesRep;
-            if ($batchRep) {
-                $returnUrl = route('admin.sales-rep.show', ['user' => $batchRep, 'tab' => 'orders', 'batch' => 'batch_' . $batchId]);
-            }
-        }
         $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'orders']);
-        $backLabel = ($returnUrl && str_contains($returnUrl, 'sales-rep')) ? 'Back to Sales Partner' : 'Back to Dashboard';
+        $backLabel = ($returnUrl && (str_contains($returnUrl, 'sales-rep') || str_contains($returnUrl, 'sales_rep'))) ? 'Back to Sales Partner' : 'Back to Dashboard';
     @endphp
     <div class="flex items-center gap-4 mb-8">
         <a href="{{ $backUrl }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-bold uppercase tracking-wide">
