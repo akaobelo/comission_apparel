@@ -456,8 +456,14 @@
                                 <div>
                                     <div class="font-bold text-slate-900 uppercase text-sm">{{ $store->name }}</div>
                                     <div class="text-xs text-slate-500 mt-0.5">
-                                        Coach: <span class="font-semibold text-slate-700">{{ $store->user?->name ?? 'Unknown' }}</span> —
-                                        {{ $store->user?->organization ?? 'No Organization' }} — Package: <span class="font-bold text-primary uppercase text-xs">{{ str_replace('_', ' ', $store->package_type ?? 'N/A') }}</span>
+                                        Coach: <span class="font-semibold text-slate-700">{{ $store->user?->name ?? 'Unknown' }}</span>
+                                        @if($store->user?->phone)
+                                            <span class="inline-flex items-center gap-1 font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded text-xs ml-1 border border-slate-200 shadow-2xs">
+                                                <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                                <a href="tel:{{ $store->user->phone }}" class="text-slate-900 hover:text-primary transition-colors" title="Click to call {{ $store->user->name }}">{{ $store->user->phone }}</a>
+                                            </span>
+                                        @endif
+                                        — {{ $store->user?->organization ?? 'No Organization' }} — Package: <span class="font-bold text-primary uppercase text-xs">{{ str_replace('_', ' ', $store->package_type ?? 'N/A') }}</span>
                                     </div>
                                     <div class="text-[11px] text-slate-400 mt-1">Requested {{ $store->created_at->diffForHumans() }}</div>
                                 </div>

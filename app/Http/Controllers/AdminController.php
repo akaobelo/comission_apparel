@@ -95,7 +95,9 @@ class AdminController extends Controller
                   ->orWhereHas('user', function($q2) use ($search) {
                       $q2->where('first_name', 'like', "%{$search}%")
                          ->orWhere('last_name', 'like', "%{$search}%")
-                         ->orWhere('organization', 'like', "%{$search}%");
+                         ->orWhere('organization', 'like', "%{$search}%")
+                         ->orWhere('phone', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
                   });
             });
         }
@@ -173,7 +175,9 @@ class AdminController extends Controller
                   ->orWhereHas('user', function($q2) use ($search) {
                       $q2->where('first_name', 'like', "%{$search}%")
                          ->orWhere('last_name', 'like', "%{$search}%")
-                         ->orWhere('organization', 'like', "%{$search}%");
+                         ->orWhere('organization', 'like', "%{$search}%")
+                         ->orWhere('phone', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
                   });
             });
         }
@@ -226,7 +230,9 @@ class AdminController extends Controller
                   ->orWhereHas('user', function($q2) use ($search) {
                       $q2->where('first_name', 'like', "%{$search}%")
                          ->orWhere('last_name', 'like', "%{$search}%")
-                         ->orWhere('organization', 'like', "%{$search}%");
+                         ->orWhere('organization', 'like', "%{$search}%")
+                         ->orWhere('phone', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
                   });
             });
         }

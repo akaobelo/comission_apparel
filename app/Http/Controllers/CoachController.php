@@ -178,6 +178,7 @@ class CoachController extends Controller
     {
         $request->validate([
             'name'         => 'required|string|max:255',
+            'phone'        => 'nullable|string|max:30',
             'sport'        => 'nullable|string|max:100',
             'description'  => 'nullable|string|max:1000',
             'package_type' => 'nullable|in:package_a,package_b,package_c,individual',
@@ -185,6 +186,9 @@ class CoachController extends Controller
         ]);
 
         $user = $request->user();
+        if ($request->filled('phone')) {
+            $user->update(['phone' => trim($request->phone)]);
+        }
         $sport = $request->filled('sport') ? trim($request->sport) : ($user->sport ?: null);
 
         $store = TeamStore::create([

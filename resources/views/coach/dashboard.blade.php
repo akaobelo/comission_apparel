@@ -256,6 +256,12 @@
                     </div>
 
                     <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Coach Contact Number</label>
+                        <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="e.g. (813) 220-4409" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:bg-white focus:outline-none shadow-sm">
+                        <p class="text-[11px] text-slate-500 mt-1">Direct phone number our production team can reach you at regarding mockups and store approval.</p>
+                    </div>
+
+                    <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Description & Parent Instructions (Optional)</label>
                         <textarea name="description" rows="3" placeholder="e.g. Payment details, production turnaround time, delivery or pickup instructions..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:bg-white focus:outline-none shadow-sm"></textarea>
                     </div>
@@ -676,6 +682,11 @@
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Official Store Name</label>
                     <input type="text" name="name" required placeholder="e.g. {{ $user->organization }} — Fall 2025 Uniforms" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                     @error('name')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Coach Contact Number</label>
+                    <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="e.g. (813) 220-4409" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                    <p class="text-[11px] text-slate-500 mt-1">Direct phone number our production team can reach you at regarding your store approval.</p>
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Payment Collection Method</label>

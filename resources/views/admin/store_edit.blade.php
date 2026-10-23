@@ -38,7 +38,16 @@
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-6 border-b border-slate-200 bg-slate-50">
                     <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Store Settings</h2>
-                    <p class="text-sm text-slate-500 mt-1">Coach: {{ $store->user->name }} — {{ $store->user->organization }}</p>
+                    <p class="text-sm text-slate-500 mt-1 flex flex-wrap items-center gap-1.5">
+                        <span>Coach: <strong class="text-slate-800">{{ $store->user->name }}</strong></span>
+                        @if($store->user->phone)
+                            <a href="tel:{{ $store->user->phone }}" class="inline-flex items-center gap-1 font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded text-xs border border-slate-200 shadow-2xs" title="Call Coach">
+                                <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                {{ $store->user->phone }}
+                            </a>
+                        @endif
+                        <span>— {{ $store->user->organization }}</span>
+                    </p>
                 </div>
                 <div class="p-6">
                     <form action="{{ route('admin.store.update', array_filter(['store' => $store, 'return_to' => $returnUrl])) }}" method="POST" class="space-y-5">
