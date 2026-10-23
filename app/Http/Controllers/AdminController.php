@@ -1288,7 +1288,7 @@ class AdminController extends Controller
     public function manageCollection(\App\Models\DesignCollection $collection)
     {
         $collection->load(['designs' => function($q) {
-            $q->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc');
+            $q->orderBy('sort_order', 'asc')->orderBy('id', 'asc');
         }]);
 
         // Auto-heal sort orders if they are not sequential starting from 1
@@ -1361,6 +1361,10 @@ class AdminController extends Controller
             if ($design && $design->design_collection_id == $collection->id) {
                 $design->update(['sort_order' => $designData['sort_order']]);
             }
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Collection sort order updated.']);
         }
 
         return redirect()->route('admin.design-collection.manage', $collection)

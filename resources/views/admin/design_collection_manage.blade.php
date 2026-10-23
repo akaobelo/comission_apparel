@@ -59,13 +59,21 @@
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden" x-data="{ search: '' }">
                 <div class="p-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Manage Sort Order</h2>
-                        <p class="text-xs text-slate-500">Lower numbers appear first.</p>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Manage Sort Order</h2>
+                            <span id="sort-status-indicator" class="text-xs font-bold text-slate-400">Drag items to reorder</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">Lower numbers appear first.</p>
                     </div>
                     <div class="relative w-full sm:w-64">
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         <input type="text" x-model="search" placeholder="Search collection..." class="pl-9 pr-4 py-2 w-full bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm" autocomplete="off">
                     </div>
+                </div>
+                
+                <div x-show="search.trim() !== ''" x-cloak class="px-5 py-2.5 bg-amber-50 border-b border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-2">
+                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <span>Search filter is active. Clear search before dragging to reorder items to avoid order conflicts.</span>
                 </div>
                 
                 @if($collection->designs->isEmpty())
@@ -119,8 +127,8 @@
                                     <div class="flex items-center gap-3 shrink-0">
                                         <div class="flex flex-col">
                                             <label class="text-[10px] font-bold uppercase text-slate-500 mb-1">Sort Order</label>
-                                            <input type="hidden" name="designs[{{ $index }}][id]" value="{{ $design->id }}">
-                                            <input type="number" name="designs[{{ $index }}][sort_order]" value="{{ $design->sort_order }}" required class="sort-order-input w-20 bg-white border border-slate-300 rounded px-2 py-1.5 text-sm text-center text-slate-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-sm">
+                                            <input type="hidden" name="designs[{{ $design->id }}][id]" value="{{ $design->id }}">
+                                            <input type="number" name="designs[{{ $design->id }}][sort_order]" value="{{ $design->sort_order }}" required class="sort-order-input w-20 bg-white border border-slate-300 rounded px-2 py-1.5 text-sm text-center text-slate-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-sm">
                                         </div>
                                         <div class="h-10 w-px bg-slate-200 mx-1"></div>
                                         <button type="button" onclick="if(confirm('Remove this design from the collection? (It will not be deleted from the system)')) { document.getElementById('remove-design-{{ $design->id }}').submit(); }" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors mt-4" title="Remove from Collection">
@@ -242,6 +250,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const el = document.getElementById('sortable-list');
+        const statusEl = document.getElementById('sort-status-indicator');
         if (el) {
             new Sortable(el, {
                 animation: 150,
@@ -250,19 +259,25 @@
                 onEnd: function () {
                     const items = Array.from(el.querySelectorAll('.sortable-item'));
                     const formData = new FormData();
-                    formData.append('_token', document.querySelector('input[name="_token"]').value);
+                    const token = document.querySelector('input[name="_token"]')?.value;
+                    if (token) formData.append('_token', token);
+
+                    if (statusEl) {
+                        statusEl.innerHTML = '<span class="text-amber-600 font-bold animate-pulse">Saving new order...</span>';
+                    }
                     
                     items.forEach((item, index) => {
+                        const newSort = index + 1;
                         const input = item.querySelector('.sort-order-input');
-                        if (input) input.value = index + 1;
+                        if (input) input.value = newSort;
                         
                         const display = item.querySelector('.sort-number-display');
-                        if (display) display.textContent = index + 1;
+                        if (display) display.textContent = newSort;
                         
-                        const idInput = item.querySelector('input[name^="designs"][name$="[id]"]');
+                        const idInput = item.querySelector('input[name$="[id]"]');
                         if (idInput && input) {
                             formData.append(`designs[${index}][id]`, idInput.value);
-                            formData.append(`designs[${index}][sort_order]`, index + 1);
+                            formData.append(`designs[${index}][sort_order]`, newSort);
                         }
                     });
 
@@ -271,13 +286,23 @@
                         method: 'POST',
                         body: formData,
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
                         }
                     }).then(response => {
-                        if(response.ok) {
-                            console.log('Sort order auto-saved');
+                        if (response.ok) {
+                            if (statusEl) {
+                                statusEl.innerHTML = '<span class="text-emerald-600 font-bold flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg> Order saved!</span>';
+                                setTimeout(() => {
+                                    statusEl.innerText = 'Drag items to reorder';
+                                }, 2000);
+                            }
+                        } else {
+                            if (statusEl) statusEl.innerHTML = '<span class="text-red-500 font-bold">Error saving order</span>';
                         }
-                    }).catch(err => console.error('Error auto-saving sort order:', err));
+                    }).catch(err => {
+                        if (statusEl) statusEl.innerHTML = '<span class="text-red-500 font-bold">Error saving order</span>';
+                    });
                 }
             });
         }

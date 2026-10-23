@@ -19,7 +19,7 @@ return new class extends Migration
 
         foreach ($collections as $collection) {
             $items = DesignCatalog::where('design_collection_id', $collection->id)
-                ->orderBy('sort_order', 'desc')
+                ->orderBy('sort_order', 'asc')
                 ->orderBy('created_at', 'desc')
                 ->get();
 
@@ -31,7 +31,7 @@ return new class extends Migration
         }
 
         $unassigned = DesignCatalog::whereNull('design_collection_id')
-            ->orderBy('sort_order', 'desc')
+            ->orderBy('sort_order', 'asc')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -51,7 +51,7 @@ return new class extends Migration
 
         foreach ($collections as $collection) {
             $items = DesignCatalog::where('design_collection_id', $collection->id)
-                ->orderBy('sort_order', 'desc')
+                ->orderBy('sort_order', 'asc')
                 ->orderBy('created_at', 'desc')
                 ->get();
 

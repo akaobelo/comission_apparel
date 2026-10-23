@@ -4875,10 +4875,18 @@
                         bubbleScroll: true,
                         onEnd: function (evt) {
                             const inputs = Array.from(listEl.querySelectorAll('.sort-order-input-catalog-col'));
-                            const values = inputs.map(input => parseInt(input.value) || 0).sort((a, b) => a - b);
-                            inputs.forEach((input, index) => {
-                                input.value = values[index];
-                            });
+                            let values = inputs.map(input => parseInt(input.value) || 0);
+                            const hasDuplicatesOrZeros = new Set(values).size !== values.length || values.some(v => v <= 0);
+                            if (hasDuplicatesOrZeros) {
+                                inputs.forEach((input, index) => {
+                                    input.value = index + 1;
+                                });
+                            } else {
+                                values.sort((a, b) => a - b);
+                                inputs.forEach((input, index) => {
+                                    input.value = values[index];
+                                });
+                            }
                         }
                     });
                 }
