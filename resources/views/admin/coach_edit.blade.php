@@ -4,11 +4,9 @@
 <div class="max-w-5xl mx-auto px-6 pb-8 pt-32 lg:pt-40">
     @php
         $returnUrl = request('return_to');
-        if (!$returnUrl && $user->assignedSalesRep) {
-            $returnUrl = route('admin.sales-rep.show', ['user' => $user->assignedSalesRep, 'tab' => 'clients']);
-        }
+        $isPartnerReturn = $returnUrl && (str_contains($returnUrl, 'sales-reps') || str_contains($returnUrl, 'sales_rep'));
         $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'coaches']);
-        $backLabel = $returnUrl ? 'Back to Partner Profile' : 'Back to Dashboard';
+        $backLabel = $isPartnerReturn ? 'Back to Partner Profile' : 'Back to Coach Database';
     @endphp
     <div class="flex items-center gap-4 mb-8">
         <a href="{{ $backUrl }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide">
