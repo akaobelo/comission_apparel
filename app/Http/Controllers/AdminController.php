@@ -415,6 +415,15 @@ class AdminController extends Controller
         $landingSettings = SiteSetting::all()->pluck('value', 'key');
         
         $salesReps = User::whereIn('role', ['sales_rep', 'partner', 'agent'])
+            ->where(function ($q) {
+                $q->whereNull('status')->orWhere('status', '!=', 'archived');
+            })
+            ->withCount(['assignedClients', 'salesRepTeamStores', 'salesRepOrders'])
+            ->with(['salesRepOrders'])
+            ->get();
+
+        $archivedSalesReps = User::whereIn('role', ['sales_rep', 'partner', 'agent'])
+            ->where('status', 'archived')
             ->withCount(['assignedClients', 'salesRepTeamStores', 'salesRepOrders'])
             ->with(['salesRepOrders'])
             ->get();
@@ -423,7 +432,7 @@ class AdminController extends Controller
             'coaches', 'pendingStores', 'finalizedStoreBatches', 'finalizedStoreBatchesPaginator',
             'unassignedDesigns', 'allCollections', 'productionStores', 'quoteRequests', 'quoteRequestsTotal', 'newQuoteRequestsCount', 'landingCollections', 'allStores', 'allCoaches',
             'availableSports', 'designCollections', 'passwordResetLogs', 'testimonials', 'sizingCharts', 'heroSettings', 'campaignStores', 'archivedStores', 'finalizedDirectOrderBatches', 'finalizedDirectBatchesPaginator', 'archivedOrderBatches', 'globalSalesSummary', 'archivedBatchesPaginator',
-            'salesAgents', 'newsArticles', 'landingSettings', 'salesReps'
+            'salesAgents', 'newsArticles', 'landingSettings', 'salesReps', 'archivedSalesReps'
         ));
     }
 
@@ -715,14 +724,42 @@ class AdminController extends Controller
         $lifetimeCommissionEarned = $orders->sum(fn($o) => (float)$o->rep_commission_earned);
 
         $referralUrl = $user->referral_url;
-        $orderBatches = \App\Models\ParentOrder::groupOrdersIntoBatches($orders, $user);
+
+        // Separate active vs archived orders
+        // An order is archived if:
+        // 1. $o->is_archived is true
+        // 2. OR its team store is archived
+        // 3. OR the coach/store has been unassigned from this sales rep
+        $isOrderArchived = function ($o) use ($clientIds, $storeIds) {
+            if ($o->is_archived) {
+                return true;
+            }
+            if ($o->teamStore && $o->teamStore->is_archived) {
+                return true;
+            }
+            $hasAssignedCoach = $o->user_id && in_array($o->user_id, $clientIds);
+            $hasAssignedStore = $o->team_store_id && in_array($o->team_store_id, $storeIds);
+            if (!$hasAssignedCoach && !$hasAssignedStore) {
+                return true;
+            }
+            return false;
+        };
+
+        $archivedOrders = $orders->filter($isOrderArchived)->values();
+        $activeOrders = $orders->reject($isOrderArchived)->values();
+
+        $orderBatches = \App\Models\ParentOrder::groupOrdersIntoBatches($activeOrders, $user);
+        $archivedOrderBatches = \App\Models\ParentOrder::groupOrdersIntoBatches($archivedOrders, $user);
+        $orders = $activeOrders;
 
         return view('admin.sales_rep_show', compact(
             'user',
             'clients',
             'stores',
             'orders',
+            'archivedOrders',
             'orderBatches',
+            'archivedOrderBatches',
             'dateFilter',
             'totalQualifyingSales',
             'totalManufacturingCost',
@@ -737,6 +774,30 @@ class AdminController extends Controller
         ));
     }
 
+    public function archiveOrder(ParentOrder $order)
+    {
+        $order->update(['is_archived' => true]);
+        return back()->with('success', "Order #{$order->id} archived successfully.");
+    }
+
+    public function unarchiveOrder(ParentOrder $order)
+    {
+        $order->update(['is_archived' => false]);
+        return back()->with('success', "Order #{$order->id} restored successfully.");
+    }
+
+    public function archiveOrderBatch($batchId)
+    {
+        ParentOrder::where('batch_id', $batchId)->update(['is_archived' => true]);
+        return back()->with('success', 'Order batch archived successfully.');
+    }
+
+    public function unarchiveOrderBatch($batchId)
+    {
+        ParentOrder::where('batch_id', $batchId)->update(['is_archived' => false]);
+        return back()->with('success', 'Order batch restored successfully.');
+    }
+
     public function updateSalesRepUser(Request $request, User $user)
     {
         if (!$user->isSalesRep()) abort(404);
@@ -749,7 +810,7 @@ class AdminController extends Controller
             'partner_category' => ['required', 'string', 'in:independent_sales,authorized_business,established_business'],
             'commission_rate'  => ['required', 'numeric', 'min:0', 'max:100'],
             'referral_slug'    => ['nullable', 'string', 'alpha_dash', 'max:50', 'unique:users,referral_slug,' . $user->id],
-            'status'           => ['required', 'in:active,declined'],
+            'status'           => ['required', 'in:active,declined,archived'],
             'password'         => ['nullable', 'string', 'min:8', 'confirmed'],
             'profile_image'    => ['nullable', 'image', 'max:10240'],
         ]);
@@ -768,6 +829,20 @@ class AdminController extends Controller
         $user->update($validated);
 
         return redirect()->back()->with('success', "Sales Partner {$user->name} updated successfully.");
+    }
+
+    public function archiveSalesRepUser(User $user)
+    {
+        if (!$user->isSalesRep()) abort(404);
+        $user->update(['status' => 'archived']);
+        return redirect()->back()->with('success', "Sales Partner {$user->name} has been archived.");
+    }
+
+    public function unarchiveSalesRepUser(User $user)
+    {
+        if (!$user->isSalesRep()) abort(404);
+        $user->update(['status' => 'active']);
+        return redirect()->back()->with('success', "Sales Partner {$user->name} has been restored to active status.");
     }
 
     public function updateSalesRepAvatar(Request $request, User $user)

@@ -91,8 +91,9 @@
                 finalized_direct_orders: 'Finalized Direct Orders',
                 archived_stores_orders: 'Achieved Stores & Orders',
                 coaches: 'Coaches Database',
+                sales_agents: 'Agents Homepage Tab',
                 sales_reps: 'Agents & Business Partners',
-                sales_agents: 'My Team Tab',
+                archived_sales_reps: 'Archived Agents & Business Partners',
                 catalog: 'Design Catalog',
                 sizing_charts: 'Sizing Charts',
                 testimonials: 'Testimonials',
@@ -159,7 +160,7 @@
             <div class="flex items-center gap-2.5">
                 <span class="w-2.5 h-2.5 rounded-full bg-red-600"></span>
                 <h3 class="text-xs font-black uppercase tracking-wider text-red-600">Admin Control Deck</h3>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">17 Modules</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">18 Modules</span>
             </div>
             <div class="flex items-center gap-2">
                 <span class="text-xs text-slate-400 font-medium">Active Module:</span>
@@ -257,6 +258,15 @@
                             <span class="w-1.5 h-1.5 rounded-full" :class="activeAdminTab === 'coaches' ? 'bg-blue-400' : 'bg-transparent'"></span>
                         </button>
 
+                        {{-- Agents Homepage Tab --}}
+                        <button type="button" @click="setTab('sales_agents')" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeAdminTab === 'sales_agents' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-red-50/40 text-red-600 hover:text-red-700 font-bold border border-slate-200/80 hover:border-red-200 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeAdminTab === 'sales_agents' ? 'text-blue-400' : 'text-slate-400 group-hover:text-red-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+                                <span class="truncate">Agents Homepage Tab</span>
+                            </div>
+                            <span class="w-1.5 h-1.5 rounded-full" :class="activeAdminTab === 'sales_agents' ? 'bg-blue-400' : 'bg-transparent'"></span>
+                        </button>
+
                         {{-- Agents & Business Partners --}}
                         <button type="button" @click="setTab('sales_reps')" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeAdminTab === 'sales_reps' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-red-50/40 text-red-600 hover:text-red-700 font-bold border border-slate-200/80 hover:border-red-200 shadow-2xs'">
                             <div class="flex items-center gap-2 min-w-0">
@@ -268,13 +278,15 @@
                             </span>
                         </button>
 
-                        {{-- My Team Tab --}}
-                        <button type="button" @click="setTab('sales_agents')" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeAdminTab === 'sales_agents' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-red-50/40 text-red-600 hover:text-red-700 font-bold border border-slate-200/80 hover:border-red-200 shadow-2xs'">
+                        {{-- Archived Agents & Business Partners --}}
+                        <button type="button" @click="setTab('archived_sales_reps')" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeAdminTab === 'archived_sales_reps' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-red-50/40 text-red-600 hover:text-red-700 font-bold border border-slate-200/80 hover:border-red-200 shadow-2xs'">
                             <div class="flex items-center gap-2 min-w-0">
-                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeAdminTab === 'sales_agents' ? 'text-blue-400' : 'text-slate-400 group-hover:text-red-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
-                                <span class="truncate">My Team Tab</span>
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeAdminTab === 'archived_sales_reps' ? 'text-blue-400' : 'text-slate-400 group-hover:text-red-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                <span class="truncate">Archived Agents & Business Partners</span>
                             </div>
-                            <span class="w-1.5 h-1.5 rounded-full" :class="activeAdminTab === 'sales_agents' ? 'bg-blue-400' : 'bg-transparent'"></span>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="activeAdminTab === 'archived_sales_reps' ? 'bg-red-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $archivedSalesReps->count() }}
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -3147,6 +3159,12 @@
                                             })" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider transition-colors border border-slate-300 whitespace-nowrap">
                                                 Edit Rate
                                             </button>
+                                            <form action="{{ route('admin.sales-rep.archive', $rep) }}" method="POST" onsubmit="return confirm('Archive partner {{ addslashes($rep->name) }}? They will be moved to Archived Agents & Business Partners.')" class="inline-block m-0">
+                                                @csrf
+                                                <button type="submit" class="px-2.5 py-1.5 bg-white hover:bg-amber-50 text-slate-500 hover:text-amber-700 rounded text-xs font-bold uppercase tracking-wider transition-colors border border-slate-300 hover:border-amber-300 whitespace-nowrap">
+                                                    Archive
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
@@ -3277,6 +3295,7 @@
                                 <select name="status" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                                     <option value="active" :selected="activeEditRep?.status === 'active'">Active</option>
                                     <option value="declined" :selected="activeEditRep?.status === 'declined'">Deactivated / Declined</option>
+                                    <option value="archived" :selected="activeEditRep?.status === 'archived'">Archived</option>
                                 </select>
                             </div>
                         </div>
@@ -3323,6 +3342,117 @@
                             <button type="submit" class="px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider shadow-sm">Update Partner</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- ═══ ARCHIVED SALES PARTNERS / AGENTS TAB ═══ --}}
+        <div x-show="activeAdminTab === 'archived_sales_reps'" x-cloak class="space-y-8">
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                Archived Agents & Business Partners
+                            </h2>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-slate-200 text-slate-800 border border-slate-300">
+                                {{ $archivedSalesReps->count() }} Archived
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Archived agents and business partners preserved for historical record, client assignment continuity, and commission logs.</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-3.5">Partner Name / Email</th>
+                                <th class="px-6 py-3.5">Category Tier</th>
+                                <th class="px-6 py-3.5 text-center">Commission Split</th>
+                                <th class="px-6 py-3.5 text-center">Clients</th>
+                                <th class="px-6 py-3.5 text-center">Stores</th>
+                                <th class="px-6 py-3.5 text-right">Commission Earned</th>
+                                <th class="px-6 py-3.5 text-center">Status</th>
+                                <th class="px-6 py-3.5 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($archivedSalesReps as $rep)
+                                @php
+                                    $repOrders = $rep->salesRepOrders ?? collect();
+                                    $totalEarned = $repOrders->sum(fn($o) => (float)$o->rep_commission_earned);
+                                    $pendingEarned = $repOrders->where('commission_status', 'pending')->sum(fn($o) => (float)$o->rep_commission_earned);
+                                @endphp
+                                <tr class="hover:bg-slate-50 transition-colors bg-slate-50/40">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            @if($rep->profile_image_url)
+                                                <img src="{{ $rep->profile_image_url }}" alt="{{ $rep->name }}" class="w-9 h-9 rounded-lg object-cover border border-slate-200 shadow-xs flex-shrink-0 grayscale">
+                                            @else
+                                                <div class="w-9 h-9 rounded-lg bg-slate-400 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                                    {{ strtoupper(substr($rep->first_name ?: 'S', 0, 1) . substr($rep->last_name ?: 'P', 0, 1)) }}
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <a href="{{ route('admin.sales-rep.show', $rep) }}" class="font-bold text-slate-900 hover:text-primary transition-colors flex items-center gap-1.5 group">
+                                                    <span>{{ $rep->name }}</span>
+                                                    <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                                </a>
+                                                <div class="text-xs text-slate-500">{{ $rep->email }} @if($rep->phone) · {{ $rep->phone }} @endif</div>
+                                                <div class="text-[10px] text-slate-400 mt-0.5">Slug: <code class="text-slate-600 font-bold">{{ $rep->referral_slug ?: $rep->id }}</code></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border bg-slate-100 text-slate-700 border-slate-200">
+                                            {{ $rep->partner_category_label }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="font-sans font-bold text-slate-900 text-sm bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
+                                            {{ number_format($rep->getEffectiveCommissionRate(), 1) }}%
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $rep->assigned_clients_count }}</td>
+                                    <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $rep->sales_rep_team_stores_count }}</td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="font-sans font-bold text-slate-700 text-sm">${{ number_format($totalEarned, 2) }}</div>
+                                        <div class="text-[10px] text-slate-400">${{ number_format($pendingEarned, 2) }} pending</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full border bg-slate-100 text-slate-600 border-slate-300">
+                                            Archived
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="flex items-center justify-end gap-2">
+                                            <a href="{{ route('admin.sales-rep.show', $rep) }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-bold uppercase tracking-wider transition-colors border border-slate-300 whitespace-nowrap">
+                                                View Profile
+                                            </a>
+                                            <form action="{{ route('admin.sales-rep.unarchive', $rep) }}" method="POST" onsubmit="return confirm('Restore partner {{ addslashes($rep->name) }} to active status?')" class="inline-block m-0">
+                                                @csrf
+                                                <button type="submit" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-colors shadow-sm whitespace-nowrap">
+                                                    Restore
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="px-6 py-12 text-center text-slate-500">
+                                        <div class="w-12 h-12 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                        </div>
+                                        <p class="font-bold text-base text-slate-700 mb-1">No archived agents or business partners</p>
+                                        <p class="text-xs text-slate-400">Partners archived from the Agents & Business Partners tab will be safely kept here.</p>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
