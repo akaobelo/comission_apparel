@@ -180,22 +180,42 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Manufacturing Base ($)</label>
-                            <input type="number" step="0.01" min="0" name="manufacturing_cost" value="{{ old('manufacturing_cost', $order->manufacturing_cost) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <div class="relative rounded-lg shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 font-bold text-xs font-sans">$</span>
+                                </div>
+                                <input type="number" step="0.01" min="0" name="manufacturing_cost" value="{{ old('manufacturing_cost', $order->manufacturing_cost) }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
                             <span class="text-[10px] text-slate-400">Wholesale cost</span>
                         </div>
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Tariff Amount ($)</label>
-                            <input type="number" step="0.01" min="0" name="tariff_amount" value="{{ old('tariff_amount', $order->tariff_amount) }}" placeholder="e.g. 75.00" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <div class="relative rounded-lg shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 font-bold text-xs font-sans">$</span>
+                                </div>
+                                <input type="number" step="0.01" min="0" name="tariff_amount" value="{{ old('tariff_amount', $order->tariff_amount) }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
                             <span class="text-[10px] text-slate-400">Import / freight tariff</span>
                         </div>
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Processing / Fees ($)</label>
-                            <input type="number" step="0.01" min="0" name="fee_deduction" value="{{ old('fee_deduction', $order->fee_deduction) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <div class="relative rounded-lg shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 font-bold text-xs font-sans">$</span>
+                                </div>
+                                <input type="number" step="0.01" min="0" name="fee_deduction" value="{{ old('fee_deduction', $order->fee_deduction) }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
                             <span class="text-[10px] text-slate-400">Merchant / extra fees</span>
                         </div>
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Fundraising ($)</label>
-                            <input type="number" step="0.01" min="0" name="fundraising_amount" value="{{ old('fundraising_amount', $order->fundraising_amount) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <div class="relative rounded-lg shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 font-bold text-xs font-sans">$</span>
+                                </div>
+                                <input type="number" step="0.01" min="0" name="fundraising_amount" value="{{ old('fundraising_amount', $order->fundraising_amount) }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
                             <span class="text-[10px] text-slate-400">Coach kickback</span>
                         </div>
                     </div>
@@ -214,7 +234,12 @@
                         </div>
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Commission Split (%)</label>
-                            <input type="number" step="0.1" min="0" max="100" name="applied_rep_commission_rate" value="{{ old('applied_rep_commission_rate', $order->applied_rep_commission_rate ?? $order->salesRep?->getEffectiveCommissionRate() ?? 50.00) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <div class="relative rounded-lg shadow-sm">
+                                <input type="number" step="0.1" min="0" max="100" name="applied_rep_commission_rate" value="{{ old('applied_rep_commission_rate', $order->applied_rep_commission_rate ?? $order->salesRep?->getEffectiveCommissionRate() ?? 50.00) }}" class="w-full bg-white border border-slate-300 rounded-lg pr-7 pl-3 py-2 text-sm font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
+                                    <span class="text-slate-400 font-bold text-xs font-sans">%</span>
+                                </div>
+                            </div>
                             <span class="text-[10px] text-slate-400">Defaults to partner tier %</span>
                         </div>
                         <div>
@@ -229,24 +254,24 @@
 
                     <div>
                         <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Financial Notes / Tariff Details</label>
-                        <input type="text" name="financial_notes" value="{{ old('financial_notes', $order->financial_notes) }}" placeholder="e.g. Freight surcharge on overseas shipment batch #104" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                        <input type="text" name="financial_notes" value="{{ old('financial_notes', $order->financial_notes) }}" placeholder="e.g. Freight surcharge on overseas shipment batch #104" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-sans text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                     </div>
 
                     <!-- Calculated Summary Banner -->
-                    <div class="p-3 bg-white border border-slate-200 rounded-lg flex items-center justify-between flex-wrap gap-4 text-xs font-mono">
+                    <div class="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between flex-wrap gap-4 text-xs font-sans">
                         <div>
-                            <span class="text-slate-500">Retail Total:</span>
-                            <strong class="text-slate-900 font-bold">${{ number_format((float)($order->subtotal > 0 ? $order->subtotal : $order->total_retail_price), 2) }}</strong>
+                            <span class="text-slate-500 font-semibold">Retail Total:</span>
+                            <strong class="text-slate-900 font-bold text-sm font-sans">${{ number_format((float)($order->subtotal > 0 ? $order->subtotal : $order->total_retail_price), 2) }}</strong>
                         </div>
                         <div>
-                            <span class="text-slate-500">Current Net Margin:</span>
-                            <strong class="text-slate-900 font-bold">${{ number_format((float)$order->net_margin, 2) }}</strong>
+                            <span class="text-slate-500 font-semibold">Current Net Margin:</span>
+                            <strong class="text-slate-900 font-bold text-sm font-sans">${{ number_format((float)$order->net_margin, 2) }}</strong>
                         </div>
                         <div>
-                            <span class="text-slate-500">Rep Payout:</span>
-                            <strong class="text-emerald-600 font-black text-sm">${{ number_format((float)$order->rep_commission_earned, 2) }}</strong>
+                            <span class="text-slate-500 font-semibold">Rep Payout:</span>
+                            <strong class="text-emerald-600 font-black text-base font-sans">${{ number_format((float)$order->rep_commission_earned, 2) }}</strong>
                         </div>
-                        <button type="submit" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-black uppercase tracking-wider transition-colors shadow-sm ml-auto">
+                        <button type="submit" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-colors shadow-sm ml-auto">
                             Update Financials & Tariffs
                         </button>
                     </div>
