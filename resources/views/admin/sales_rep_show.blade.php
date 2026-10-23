@@ -834,7 +834,7 @@
                                 data-contact="{{ strtolower($client->name) }}"
                                 data-sport="{{ strtolower($client->sport) }}"
                                 data-stores="{{ $client->teamStores->count() }}"
-                                data-orders="{{ $client->parentOrders->count() }}"
+                                data-orders="{{ $client->rep_orders_count ?? 0 }}"
                                 data-date="{{ $client->created_at->timestamp }}"
                                 x-show="!coachSearch || '{{ strtolower(addslashes($client->organization . ' ' . $client->name . ' ' . $client->email . ' ' . $client->phone . ' ' . $client->sport)) }}'.includes(coachSearch.toLowerCase().trim())"
                             >
@@ -862,7 +862,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $client->team_stores_count }}</td>
-                                <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $client->parent_orders_count }}</td>
+                                <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $client->rep_orders_count ?? 0 }}</td>
                                 <td class="px-6 py-4 text-xs text-slate-500">{{ $client->created_at?->format('M d, Y') ?? '—' }}</td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-2">

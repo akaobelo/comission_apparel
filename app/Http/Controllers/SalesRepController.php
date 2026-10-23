@@ -34,10 +34,20 @@ class SalesRepController extends Controller
         $user = $request->user();
         [$clientIds, $storeIds] = $this->getRepScope($user);
 
+        // Self-heal: If any historical orders were mistakenly stamped with this sales rep but were created
+        // before this sales rep account even existed, restore them to their original sales rep.
+        \App\Models\ParentOrder::restoreMistakenOrdersForSalesRep($user);
+
         // Assigned Clients (Coaches / Schools)
         $clients = User::where('sales_rep_id', $user->id)
             ->with(['teamStores'])
-            ->withCount(['teamStores', 'parentOrders'])
+            ->withCount([
+                'teamStores',
+                'parentOrders as rep_orders_count' => function($q) use ($user) {
+                    $q->where('sales_rep_id', $user->id)
+                      ->where('status', '!=', 'Draft');
+                }
+            ])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -49,29 +59,17 @@ class SalesRepController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Orders attributed to this sales rep
-        $orders = ParentOrder::where(function($q) use ($user, $clientIds, $storeIds) {
-                $q->where('sales_rep_id', $user->id)
-                  ->orWhereIn('user_id', $clientIds)
-                  ->orWhereIn('team_store_id', $storeIds);
-            })
+        // Orders attributed strictly to this sales rep
+        $orders = ParentOrder::where('sales_rep_id', $user->id)
             ->where('status', '!=', 'Draft')
             ->with(['teamStore', 'user'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Automatically stamp rep attribution and compute commission for any unstamped order in scope
+        // Automatically compute commission for any unstamped order or missing calculations
         $repRate = $user->getEffectiveCommissionRate();
         foreach ($orders as $ord) {
             $dirty = false;
-            if (in_array($ord->user_id, $clientIds) && $ord->sales_rep_id != $user->id) {
-                $ord->sales_rep_id = $user->id;
-                $ord->calculateAndApplyCommission($repRate);
-                $dirty = true;
-            } elseif (!$ord->sales_rep_id) {
-                $ord->sales_rep_id = $user->id;
-                $dirty = true;
-            }
             if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0 || (float)$ord->subtotal == 0 || (float)$ord->manufacturing_cost == 0) {
                 $ord->calculateAndApplyCommission($repRate);
                 $dirty = true;

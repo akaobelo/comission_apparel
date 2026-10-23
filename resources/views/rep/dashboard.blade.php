@@ -530,7 +530,7 @@
                                 data-contact="{{ strtolower($c->name) }}"
                                 data-sport="{{ strtolower($c->sport) }}"
                                 data-stores="{{ $c->team_stores_count }}"
-                                data-orders="{{ $c->parent_orders_count }}"
+                                data-orders="{{ $c->rep_orders_count ?? 0 }}"
                                 data-date="{{ $c->created_at->timestamp }}"
                                 x-show="!coachSearch || '{{ strtolower(addslashes($c->organization . ' ' . $c->name . ' ' . $c->email . ' ' . $c->phone . ' ' . $c->sport)) }}'.includes(coachSearch.toLowerCase().trim())"
                             >
@@ -557,7 +557,7 @@
                                 </td>
                                 <td class="px-6 py-4 font-bold text-slate-700">{{ $c->sport }}</td>
                                 <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $c->team_stores_count }}</td>
-                                <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $c->parent_orders_count }}</td>
+                                <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $c->rep_orders_count ?? 0 }}</td>
                                 <td class="px-6 py-4 text-xs text-slate-500">{{ $c->created_at->format('M d, Y') }}</td>
                             </tr>
                         @empty

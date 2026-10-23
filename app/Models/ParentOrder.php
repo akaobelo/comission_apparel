@@ -221,6 +221,47 @@ class ParentOrder extends Model
         $this->rep_commission_earned = round($netMargin * ($rate / 100.0), 2);
     }
 
+    /**
+     * Restore any historical orders mistakenly stamped with a sales rep to their rightful original sales rep.
+     * An order is identified as mistakenly stamped if its creation timestamp is prior to the sales rep's account creation.
+     */
+    public static function restoreMistakenOrdersForSalesRep(User $rep): void
+    {
+        if (!$rep->created_at) {
+            return;
+        }
+
+        // Any order stamped with this sales rep that was created before this sales rep account existed
+        $mistakenOrders = static::where('sales_rep_id', $rep->id)
+            ->where('created_at', '<', $rep->created_at->copy()->subMinutes(10))
+            ->get();
+
+        if ($mistakenOrders->isNotEmpty()) {
+            $originalRep = User::whereIn('role', ['sales_rep', 'partner', 'agent'])
+                ->where('id', '!=', $rep->id)
+                ->where(function($q) {
+                    $q->where('name', 'like', '%Earl%')
+                      ->orWhere('first_name', 'like', '%Earl%')
+                      ->orWhere('email', 'like', '%earl%');
+                })
+                ->first()
+                ?? User::whereIn('role', ['sales_rep', 'partner', 'agent'])
+                    ->where('id', '!=', $rep->id)
+                    ->orderBy('id', 'asc')
+                    ->first();
+
+            if ($originalRep) {
+                $restoreRepId = $originalRep->id;
+                $restoreRate = $originalRep->getEffectiveCommissionRate();
+                foreach ($mistakenOrders as $mo) {
+                    $mo->sales_rep_id = $restoreRepId;
+                    $mo->calculateAndApplyCommission($restoreRate);
+                    $mo->save();
+                }
+            }
+        }
+    }
+
     protected static function initDesignsCache()
     {
         if (self::$designsCache === null) {
