@@ -629,6 +629,8 @@ Secure form. Minimum 10 units per item.
     }
     if(btnText) btnText.textContent = 'Submitting...';
 
+    var isSubmitted = false;
+
     fetch(form.action, {
       method: 'POST',
       headers: {
@@ -654,6 +656,7 @@ Secure form. Minimum 10 units per item.
       return res.json();
     })
     .then(function(result){
+      isSubmitted = true;
       // 1. Fire Meta Pixel Lead event ONLY on verified successful submission
       if(typeof window.fbq === 'function'){
         try {
@@ -663,10 +666,11 @@ Secure form. Minimum 10 units per item.
         }
       }
 
-      // 2. Display thank-you screen
-      form.style.display = 'none';
-      thanks.style.display = 'flex';
-      thanks.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if(btnText) btnText.textContent = 'Success! Redirecting...';
+
+      // 2. Redirect to dedicated Thank You page
+      var target = (result && result.redirect_url) ? result.redirect_url : '{{ route('landing.free-mockup.thank-you') }}';
+      window.location.href = target;
     })
     .catch(function(err){
       if(formError){
@@ -677,11 +681,13 @@ Secure form. Minimum 10 units per item.
       }
     })
     .finally(function(){
-      if(submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = '1';
+      if(!isSubmitted){
+        if(submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = '1';
+        }
+        if(btnText) btnText.textContent = 'Get my free mockup';
       }
-      if(btnText) btnText.textContent = 'Get my free mockup';
     });
   });
 

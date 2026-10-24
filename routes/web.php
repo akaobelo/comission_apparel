@@ -107,6 +107,10 @@ Route::get('/quote/success', function () { return view('quote_success'); })->nam
 // Unlisted Free Mockup Landing Page (Ad Campaign Traffic)
 Route::get('/free-mockup', [QuoteRequestController::class, 'showLandingPage'])->name('landing.free-mockup');
 Route::post('/free-mockup', [QuoteRequestController::class, 'storeLandingLead'])->name('landing.free-mockup.store');
+Route::get('/free-mockup/thank-you', [QuoteRequestController::class, 'showThankYouPage'])->name('landing.free-mockup.thank-you');
+Route::get('/thank-you', function () {
+    return redirect()->route('landing.free-mockup.thank-you');
+});
 Route::get('/agent/dashboard', function () { return view('agent.dashboard'); });
 Route::get('/catalog', function () {
     $selectedSport = request()->query('sport');

@@ -30,6 +30,11 @@ class QuoteRequestController extends Controller
         return view('landing.free-mockup', compact('collections'));
     }
 
+    public function showThankYouPage()
+    {
+        return view('landing.thank-you');
+    }
+
     public function store(Request $request)
     {
         $sports = $this->sportOptions();
@@ -129,10 +134,11 @@ class QuoteRequestController extends Controller
                 'success' => true,
                 'message' => "You're in, Coach. Our design team is on it.",
                 'lead_id' => $lead->id,
+                'redirect_url' => route('landing.free-mockup.thank-you'),
             ]);
         }
 
-        return back()->with('success', "You're in, Coach. Expect your free 3D mockup within 24–48 hours!");
+        return redirect()->route('landing.free-mockup.thank-you');
     }
 
     private function sportOptions(): array

@@ -44,4 +44,8 @@ return [
         'fee_fixed' => (float) env('STRIPE_FEE_FIXED', 0.30),
     ],
 
+    'meta' => [
+        'pixel_id' => env('META_PIXEL_ID'),
+    ],
+
 ];
