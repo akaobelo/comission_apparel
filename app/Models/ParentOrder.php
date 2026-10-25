@@ -287,7 +287,7 @@ class ParentOrder extends Model
     protected static function initDesignsCache()
     {
         if (self::$designsCache === null) {
-            self::$designsCache = \App\Models\DesignCatalog::all();
+            self::$designsCache = \App\Models\DesignCatalog::select('id', 'name', 'wholesale_price')->get();
             self::$designsById = [];
             self::$designsByName = [];
             self::$designsByNormalized = [];

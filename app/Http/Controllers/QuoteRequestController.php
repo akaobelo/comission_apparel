@@ -54,16 +54,16 @@ class QuoteRequestController extends Controller
             'sales_rep'            => ['nullable', 'string', 'max:255'],
         ]);
 
-        if (! Schema::hasTable('quote_requests')) {
+        try {
+            $quote = QuoteRequest::create($validated + [
+                'status' => 'new',
+                'lead_source' => 'quote_form',
+            ]);
+        } catch (\Throwable $e) {
             return back()
                 ->withInput()
-                ->withErrors(['form' => 'Quote requests are not ready yet. Please run the latest migrations first.']);
+                ->withErrors(['form' => 'Quote requests are not ready yet. Please try again later.']);
         }
-
-        $quote = QuoteRequest::create($validated + [
-            'status' => 'new',
-            'lead_source' => 'quote_form',
-        ]);
 
         try {
             Mail::to('Info@TheCommissionApparel.com')->send(new NewLeadNotification($quote));

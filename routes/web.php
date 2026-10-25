@@ -14,32 +14,42 @@ use App\Http\Middleware\SalesRepMiddleware;
 
 // ─── Public UI ──────────────────────────────────────────────────────────────
 Route::get('/', function () { 
-    $landingCollections = \App\Models\LandingCollection::where('is_active', true)
-        ->orderBy('sort_order', 'asc')
-        ->orderBy('created_at', 'desc')
-        ->get();
-    $testimonials = \App\Models\Testimonial::where('is_active', true)
-        ->orderBy('sort_order', 'asc')
-        ->limit(6)
-        ->get();
+    $landingCollections = \Illuminate\Support\Facades\Cache::remember('site_landing_collections', 300, function () {
+        return \App\Models\LandingCollection::where('is_active', true)
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+    });
+
+    $testimonials = \Illuminate\Support\Facades\Cache::remember('site_landing_testimonials', 300, function () {
+        return \App\Models\Testimonial::where('is_active', true)
+            ->orderBy('sort_order', 'asc')
+            ->limit(6)
+            ->get();
+    });
     
     // Ensure default articles exist so visitors always see live interactive stories
-    if (\Illuminate\Support\Facades\Schema::hasTable('news_articles') && \App\Models\NewsArticle::count() === 0) {
-        try {
+    try {
+        if (\App\Models\NewsArticle::count() === 0) {
             (new \Database\Seeders\LandingPageSeeder())->run();
-        } catch (\Throwable $e) {
-            // Silently fallback
+            \Illuminate\Support\Facades\Cache::forget('site_landing_news_articles');
         }
+    } catch (\Throwable $e) {
+        // Silently fallback if table doesn't exist during initial install
     }
 
-    $newsArticles = \App\Models\NewsArticle::where('is_active', true)
-        ->orderBy('is_featured', 'desc')
-        ->orderBy('sort_order', 'asc')
-        ->orderBy('published_at', 'desc')
-        ->limit(6)
-        ->get();
+    $newsArticles = \Illuminate\Support\Facades\Cache::remember('site_landing_news_articles', 300, function () {
+        return \App\Models\NewsArticle::where('is_active', true)
+            ->orderBy('is_featured', 'desc')
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('published_at', 'desc')
+            ->limit(6)
+            ->get();
+    });
 
-    $landingSettings = \App\Models\SiteSetting::all()->pluck('value', 'key')->toArray();
+    $landingSettings = \Illuminate\Support\Facades\Cache::remember('site_landing_settings_array', 300, function () {
+        return \App\Models\SiteSetting::all()->pluck('value', 'key')->toArray();
+    });
 
     $heroSettings = [
         'badge'               => $landingSettings['hero_badge'] ?? 'Official Team Uniforms & Fan Gear',
@@ -148,13 +158,21 @@ Route::get('/catalog', function () {
         ->paginate(15, ['id', 'name', 'image_path', 'sports'], 'collection_page')
         ->withQueryString();
 
-    // Map the paginated collection items to get sports from relationship without loading full design objects
-    $collections = collect($collectionsPaginator->items())->map(function ($col) {
-        $designSports = \App\Models\DesignCatalog::where('design_collection_id', $col->id)
-            ->whereNotNull('sport')
-            ->distinct()
-            ->pluck('sport')
-            ->toArray();
+    // Single batch query to get sports for all paginated collections without loading full design objects
+    $collectionIds = collect($collectionsPaginator->items())->pluck('id')->all();
+    $sportsByCollection = \App\Models\DesignCatalog::whereIn('design_collection_id', $collectionIds)
+        ->whereNotNull('sport')
+        ->where('sport', '!=', '')
+        ->select('design_collection_id', 'sport')
+        ->distinct()
+        ->get()
+        ->groupBy('design_collection_id')
+        ->map(function ($group) {
+            return $group->pluck('sport')->toArray();
+        });
+
+    $collections = collect($collectionsPaginator->items())->map(function ($col) use ($sportsByCollection) {
+        $designSports = $sportsByCollection->get($col->id, []);
 
         return (object)[
             'id' => $col->id,
@@ -203,11 +221,14 @@ Route::get('/catalog/{collection}', function (\Illuminate\Http\Request $request,
             ->first();
     }
 
-    // Fallback to slug-based match (e.g. legacy-elite-runners-tc)
+    // Fallback to slug-based match (e.g. legacy-elite-runners-tc) using lightweight select
     if (!$collectionModel) {
-        $collectionModel = \App\Models\DesignCollection::all()->first(function ($item) use ($collection) {
+        $matching = \App\Models\DesignCollection::select('id', 'name')->get()->first(function ($item) use ($collection) {
             return \Illuminate\Support\Str::slug($item->name) === \Illuminate\Support\Str::slug($collection);
         });
+        if ($matching) {
+            $collectionModel = \App\Models\DesignCollection::find($matching->id);
+        }
     }
 
     if (!$collectionModel) {

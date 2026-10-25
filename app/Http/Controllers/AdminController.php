@@ -297,12 +297,15 @@ class AdminController extends Controller
             });
         }
 
-        $quoteRequests = Schema::hasTable('quote_requests')
-            ? $quoteRequestsQuery->latest()->paginate(10, ['*'], 'quote_page')->withQueryString()
-            : collect();
-
-        $quoteRequestsTotal = Schema::hasTable('quote_requests') ? \App\Models\QuoteRequest::count() : 0;
-        $newQuoteRequestsCount = Schema::hasTable('quote_requests') ? \App\Models\QuoteRequest::where('status', 'new')->count() : 0;
+        try {
+            $quoteRequests = $quoteRequestsQuery->latest()->paginate(10, ['*'], 'quote_page')->withQueryString();
+            $quoteRequestsTotal = \App\Models\QuoteRequest::count();
+            $newQuoteRequestsCount = \App\Models\QuoteRequest::where('status', 'new')->count();
+        } catch (\Throwable $e) {
+            $quoteRequests = collect();
+            $quoteRequestsTotal = 0;
+            $newQuoteRequestsCount = 0;
+        }
 
         $landingCollections = LandingCollection::orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
 
@@ -427,13 +430,17 @@ class AdminController extends Controller
                 $q->whereNull('status')->orWhere('status', '!=', 'archived');
             })
             ->withCount(['assignedClients', 'salesRepTeamStores', 'salesRepOrders'])
-            ->with(['salesRepOrders'])
+            ->with(['salesRepOrders' => function($q) {
+                $q->select('id', 'sales_rep_id', 'rep_commission_earned', 'commission_status');
+            }])
             ->get();
 
         $archivedSalesReps = User::whereIn('role', ['sales_rep', 'partner', 'agent'])
             ->where('status', 'archived')
             ->withCount(['assignedClients', 'salesRepTeamStores', 'salesRepOrders'])
-            ->with(['salesRepOrders'])
+            ->with(['salesRepOrders' => function($q) {
+                $q->select('id', 'sales_rep_id', 'rep_commission_earned', 'commission_status');
+            }])
             ->get();
 
         return view('admin.dashboard', compact(

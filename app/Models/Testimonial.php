@@ -28,5 +28,13 @@ class Testimonial extends Model
             \DB::table('testimonials')->increment('sort_order');
             $testimonial->sort_order = 1;
         });
+
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('site_landing_testimonials');
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('site_landing_testimonials');
+        });
     }
 }

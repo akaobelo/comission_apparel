@@ -21,5 +21,13 @@ class LandingCollection extends Model
             \DB::table('landing_collections')->increment('sort_order');
             $collection->sort_order = 1;
         });
+
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('site_landing_collections');
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('site_landing_collections');
+        });
     }
 }

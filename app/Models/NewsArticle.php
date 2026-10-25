@@ -46,6 +46,16 @@ class NewsArticle extends Model
                 $article->published_at = now();
             }
         });
+
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('site_landing_news_articles');
+            \Illuminate\Support\Facades\Cache::forget('news_active_categories');
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('site_landing_news_articles');
+            \Illuminate\Support\Facades\Cache::forget('news_active_categories');
+        });
     }
 
     /**

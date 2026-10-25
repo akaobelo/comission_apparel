@@ -8,6 +8,19 @@ class SiteSetting extends Model
 {
     protected $fillable = ['key', 'value'];
 
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('site_landing_settings_array');
+            \Illuminate\Support\Facades\Cache::forget('site_landing_settings_keyed');
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('site_landing_settings_array');
+            \Illuminate\Support\Facades\Cache::forget('site_landing_settings_keyed');
+        });
+    }
+
     public static function get(string $key, $default = null)
     {
         $setting = static::where('key', $key)->first();

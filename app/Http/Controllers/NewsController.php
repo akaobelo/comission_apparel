@@ -9,12 +9,12 @@ class NewsController extends Controller
 {
     protected function ensureArticlesExist(): void
     {
-        if (\Illuminate\Support\Facades\Schema::hasTable('news_articles') && NewsArticle::count() === 0) {
-            try {
+        try {
+            if (NewsArticle::count() === 0) {
                 (new \Database\Seeders\LandingPageSeeder())->run();
-            } catch (\Throwable $e) {
-                // Silently fallback
             }
+        } catch (\Throwable $e) {
+            // Silently fallback if table doesn't exist yet
         }
     }
 
@@ -35,7 +35,9 @@ class NewsController extends Controller
         }
 
         $articles = $query->paginate(9)->withQueryString();
-        $categories = NewsArticle::where('is_active', true)->distinct()->pluck('category');
+        $categories = \Illuminate\Support\Facades\Cache::remember('news_active_categories', 300, function() {
+            return NewsArticle::where('is_active', true)->distinct()->pluck('category');
+        });
 
         return view('news.index', compact('articles', 'categories'));
     }

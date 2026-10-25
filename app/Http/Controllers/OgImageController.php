@@ -47,9 +47,12 @@ class OgImageController extends Controller
                 ->first();
         }
         if (!$collectionModel) {
-            $collectionModel = DesignCollection::all()->first(function ($item) use ($collection) {
+            $matching = DesignCollection::select('id', 'name')->get()->first(function ($item) use ($collection) {
                 return \Illuminate\Support\Str::slug($item->name) === \Illuminate\Support\Str::slug($collection);
             });
+            if ($matching) {
+                $collectionModel = DesignCollection::find($matching->id);
+            }
         }
         
         $sourcePath = null;
