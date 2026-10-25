@@ -204,7 +204,7 @@
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Average order</span><span class="font-bold text-slate-900">${{ number_format($financials['average_order_value'] ?? 0, 2) }}</span></div>
                         @if($isOnlinePayment)
                             <div class="flex justify-between text-sm">
-                                <span class="text-slate-500">Sales Tax {{ $isTaxExempt ? '(501(c)(3) Waived)' : '(7.5%)' }}</span>
+                                <span class="text-slate-500">Customer Sales Tax {{ $isTaxExempt ? '(501(c)(3) Waived)' : '(7.5%)' }}</span>
                                 <span class="font-bold {{ $isTaxExempt ? 'text-blue-700' : 'text-slate-700' }}">${{ number_format($financials['total_tax'] ?? 0, 2) }}</span>
                             </div>
                             <div class="flex justify-between text-sm"><span class="text-slate-500">Processing Fee (Stripe)</span><span class="font-bold text-slate-600">${{ number_format($financials['total_fees'] ?? 0, 2) }}</span></div>
@@ -234,8 +234,10 @@
                         $batchFees = $orders->sum(fn($o) => (float)$o->fee_deduction);
                         $assignedRepId = $firstOrder->sales_rep_id ?: ($firstOrder->user?->sales_rep_id ?? null);
                         $currentRep = $assignedRepId ? $salesReps->firstWhere('id', $assignedRepId) : null;
-                        $batchRepEarned = $orders->sum(fn($o) => (float)$o->rep_commission_earned);
-                        $batchNetMargin = $orders->sum(fn($o) => (float)$o->net_margin);
+                        $batchSales = (float)($financials['total_sales'] ?? $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales()));
+                        $batchNetMargin = max(0.0, $batchSales - ($batchMfg + $batchTariff + $batchFees));
+                        $appliedRate = (float)($firstOrder->applied_rep_commission_rate ?? $currentRep?->getEffectiveCommissionRate() ?? 50.00);
+                        $batchRepEarned = round($batchNetMargin * ($appliedRate / 100.0), 2);
                     @endphp
 
                     <form action="{{ route('admin.direct-batch.financials.update', $batchId) }}" method="POST" class="p-5 space-y-3.5">

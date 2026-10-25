@@ -1029,14 +1029,42 @@ class AdminController extends Controller
         }
 
         $count = $orders->count();
-        $mfgPerOrder = (float) ($validated['manufacturing_cost'] ?? 0) / $count;
-        $tariffPerOrder = (float) ($validated['tariff_amount'] ?? 0) / $count;
-        $feePerOrder = (float) ($validated['fee_deduction'] ?? 0) / $count;
+        $totalGross = (float) $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales());
+        $totalMfg = (float) ($validated['manufacturing_cost'] ?? 0);
+        $totalTariff = (float) ($validated['tariff_amount'] ?? 0);
+        $totalFee = (float) ($validated['fee_deduction'] ?? 0);
+
+        $allocatedMfg = 0.0;
+        $allocatedTariff = 0.0;
+        $allocatedFee = 0.0;
+        $idx = 0;
 
         foreach ($orders as $order) {
-            $order->manufacturing_cost = round($mfgPerOrder, 2);
-            $order->tariff_amount = round($tariffPerOrder, 2);
-            $order->fee_deduction = round($feePerOrder, 2);
+            $idx++;
+            $isLast = ($idx === $count);
+
+            if ($totalGross > 0) {
+                $grossRatio = (float) $order->getEffectiveQualifyingSales() / $totalGross;
+            } else {
+                $grossRatio = 1.0 / $count;
+            }
+
+            if ($isLast) {
+                $mfgForOrder = round($totalMfg - $allocatedMfg, 2);
+                $tariffForOrder = round($totalTariff - $allocatedTariff, 2);
+                $feeForOrder = round($totalFee - $allocatedFee, 2);
+            } else {
+                $mfgForOrder = round($totalMfg * $grossRatio, 2);
+                $tariffForOrder = round($totalTariff * $grossRatio, 2);
+                $feeForOrder = round($totalFee * $grossRatio, 2);
+                $allocatedMfg += $mfgForOrder;
+                $allocatedTariff += $tariffForOrder;
+                $allocatedFee += $feeForOrder;
+            }
+
+            $order->manufacturing_cost = max(0.0, $mfgForOrder);
+            $order->tariff_amount = max(0.0, $tariffForOrder);
+            $order->fee_deduction = max(0.0, $feeForOrder);
             $order->commission_status = $validated['commission_status'];
             $order->financial_notes = $validated['financial_notes'] ?? null;
             $order->sales_rep_id = $request->input('sales_rep_id') ?: null;

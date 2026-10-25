@@ -517,8 +517,11 @@ class ParentOrder extends Model
             $gross = (float) $batchOrders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales($store));
             $baseCost = (float) $batchOrders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost($store));
             $tariffsFees = (float) $batchOrders->sum(fn($o) => (float)($o->tariff_amount + $o->fee_deduction));
-            $netMargin = (float) $batchOrders->sum(fn($o) => (float)$o->net_margin);
-            $commission = (float) $batchOrders->sum(fn($o) => (float)$o->rep_commission_earned);
+            $splitRate = (float)($first->applied_rep_commission_rate ?? ($rep ? $rep->getEffectiveCommissionRate() : 50.0));
+            
+            // Calculate net margin and commission directly at the batch level to avoid individual order clamping distortion
+            $batchNetMargin = max(0.0, $gross - ($baseCost + $tariffsFees));
+            $batchCommission = round($batchNetMargin * ($splitRate / 100.0), 2);
 
             if ($store) {
                 $storeName = $store->name;
