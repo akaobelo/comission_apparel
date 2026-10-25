@@ -588,6 +588,12 @@
                                                             @csrf
                                                             <button type="submit" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded-md hover:bg-slate-100 transition-colors">Archive</button>
                                                         </form>
+                                                        @if($store->parentOrders->count() > 0)
+                                                        <form action="{{ route('admin.stores.finalize-batch', $store) }}" method="POST" onsubmit="return confirm('Finalize {{ $store->parentOrders->count() }} open order(s) for {{ addslashes($store->name) }} into a master production batch?')" class="inline-block m-0">
+                                                            @csrf
+                                                            <button type="submit" class="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold rounded-md shadow-sm transition-colors whitespace-nowrap" title="Finalize Master Order">Finalize</button>
+                                                        </form>
+                                                        @endif
                                                         <a href="{{ route('admin.store.edit', $store) }}" class="px-2.5 py-1 bg-white border border-secondary text-secondary text-[11px] font-bold rounded-md hover:bg-secondary hover:text-white transition-colors">Edit</a>
                                                     </div>
                                                 </div>
@@ -1439,6 +1445,12 @@
                                                     <span>View Store</span>
                                                     <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                 </a>
+                                                @if($store->parentOrders->count() > 0)
+                                                <form action="{{ route('admin.stores.finalize-batch', $store) }}" method="POST" onsubmit="return confirm('Finalize {{ $store->parentOrders->count() }} open order(s) for {{ addslashes($store->name) }} into a master production batch?')" class="inline-block m-0">
+                                                    @csrf
+                                                    <button type="submit" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap" title="Finalize Master Order">Finalize</button>
+                                                </form>
+                                                @endif
                                                 <a href="{{ route('admin.store.edit', $store) }}" class="px-3.5 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
                                                 <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this active store?')" class="inline-block m-0">
                                                     @csrf

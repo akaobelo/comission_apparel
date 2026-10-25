@@ -523,6 +523,16 @@
                         @endif
                     </div>
                     <div class="flex flex-wrap gap-2">
+                        @php $unbatchedCount = $store->parentOrders->whereNull('batch_id')->count(); @endphp
+                        @if($unbatchedCount > 0)
+                        <form action="{{ route('admin.stores.finalize-batch', $store) }}" method="POST" onsubmit="return confirm('Finalize {{ $unbatchedCount }} open order(s) for {{ addslashes($store->name) }} into a master production batch?')" class="inline-block m-0">
+                            @csrf
+                            <button type="submit" class="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold uppercase tracking-wide rounded-lg hover:shadow transition-all flex items-center gap-1.5 shadow-sm">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Finalize Master Order ({{ $unbatchedCount }})
+                            </button>
+                        </form>
+                        @endif
                         <a href="{{ route('admin.stores.export', $store->id) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
                             Roster CSV

@@ -2250,6 +2250,38 @@ class AdminController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    public function finalizeStoreBatch(Request $request, TeamStore $store)
+    {
+        $unbatchedOrders = $store->parentOrders()
+            ->whereNull('batch_id')
+            ->where('is_archived', false);
+
+        $count = $unbatchedOrders->count();
+
+        if ($count === 0) {
+            return back()->with('error', "No open or unbatched orders to finalize for store \"{$store->name}\".");
+        }
+
+        $batchId = (string) \Illuminate\Support\Str::uuid();
+
+        $updateData = [
+            'status'   => 'Submitted to Admin',
+            'batch_id' => $batchId,
+        ];
+
+        if ($store->isCheckPayment() || ($store->payment_mode ?? 'in_house') === 'in_house') {
+            $updateData['payment_status'] = 'not_applicable';
+        }
+
+        $unbatchedOrders->update($updateData);
+
+        if ($store->status === 'approved') {
+            $store->update(['status' => 'submitted_to_admin']);
+        }
+
+        return back()->with('success', "Master order of {$count} athlete order(s) successfully finalized and submitted to production for \"{$store->name}\".");
+    }
+
     public function exportBatchCSV(Request $request, $batchId)
     {
         $orders = ParentOrder::with(['teamStore.items'])->where('batch_id', $batchId)->get();

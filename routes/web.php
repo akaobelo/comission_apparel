@@ -425,6 +425,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/stores/{store}/package/{package}/attach', [AdminController::class, 'attachPackageComponent'])->name('admin.store.package.attach');
     Route::delete('/admin/stores/{store}/package/{package}/detach/{component}', [AdminController::class, 'detachPackageComponent'])->name('admin.store.package.detach');
     Route::get('/admin/stores/{store}/export', [AdminController::class, 'exportOrderCSV'])->name('admin.stores.export');
+    Route::post('/admin/stores/{store}/finalize-batch', [AdminController::class, 'finalizeStoreBatch'])->name('admin.stores.finalize-batch');
 
     // Order editing
     Route::get('/admin/order/{order}/edit', [AdminController::class, 'editOrder'])->name('admin.order.edit');
