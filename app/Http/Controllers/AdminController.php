@@ -165,7 +165,9 @@ class AdminController extends Controller
         $activeStoresQuery = TeamStore::whereIn('status', ['approved', 'submitted_to_admin'])
             ->where('is_archived', false)
             ->with(['user', 'parentOrders' => function($q) {
-                $q->where('is_archived', false)->where('status', '!=', 'Pending Payment');
+                $q->whereNull('batch_id')
+                  ->where('is_archived', false)
+                  ->where('status', '!=', 'Pending Payment');
             }]);
 
         if ($request->filled('active_store_search')) {
@@ -682,8 +684,14 @@ class AdminController extends Controller
 
     public function showSalesRepUser(Request $request, User $user)
     {
+        if ($user->role === 'coach') {
+            return redirect()->route('admin.dashboard', ['tab' => 'coaches'])
+                ->with('info', "User {$user->name} is a coach.");
+        }
+
         if (!$user->isSalesRep()) {
-            abort(404);
+            return redirect()->route('admin.dashboard', ['tab' => 'coaches'])
+                ->with('error', "User {$user->name} is not registered as a sales partner.");
         }
 
         $clientIds = User::where('sales_rep_id', $user->id)->pluck('id')->toArray();
@@ -1880,7 +1888,12 @@ class AdminController extends Controller
             $store->update(['cover_image_path' => $path]);
         }
 
-        return redirect()->route('admin.store.edit', $store)
+        $redirectParams = ['store' => $store];
+        if ($request->filled('return_to')) {
+            $redirectParams['return_to'] = $request->input('return_to');
+        }
+
+        return redirect()->route('admin.store.edit', $redirectParams)
             ->with('success', 'Store cover image updated successfully.');
     }
 
@@ -1905,7 +1918,12 @@ class AdminController extends Controller
             $store->update(['logo_path' => $path]);
         }
 
-        return redirect()->route('admin.store.edit', $store)
+        $redirectParams = ['store' => $store];
+        if ($request->filled('return_to')) {
+            $redirectParams['return_to'] = $request->input('return_to');
+        }
+
+        return redirect()->route('admin.store.edit', $redirectParams)
             ->with('success', 'Store logo updated successfully.');
     }
 

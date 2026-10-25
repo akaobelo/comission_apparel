@@ -69,7 +69,8 @@ class User extends Authenticatable
 
     public function isSalesRep(): bool
     {
-        return in_array($this->role, ['sales_rep', 'partner', 'agent']);
+        return in_array($this->role, ['sales_rep', 'partner', 'agent', 'sales_partner', 'rep'])
+            || (!empty($this->partner_category) && $this->role !== 'coach');
     }
 
     public function getEffectiveCommissionRate(): float

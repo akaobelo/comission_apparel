@@ -2143,7 +2143,7 @@
                             </td>
                             <td class="px-5 py-4 text-slate-700">
                                 @if($coach->teamStore)
-                                    <a href="{{ route('admin.store.edit', $coach->teamStore) }}" class="text-primary hover:underline text-xs font-bold uppercase">{{ $coach->teamStore->name }}</a>
+                                    <a href="{{ route('admin.store.edit', ['store' => $coach->teamStore, 'return_to' => route('admin.dashboard', ['tab' => 'coaches'])]) }}" class="text-primary hover:underline text-xs font-bold uppercase">{{ $coach->teamStore->name }}</a>
                                 @else
                                     <span class="text-slate-400 text-xs">No Store</span>
                                 @endif
