@@ -1206,13 +1206,13 @@
                                         <div class="font-bold text-slate-900">{{ $batch->store_name }}</div>
                                         <div class="text-[10px] text-slate-500">{{ $batch->coach_name }}</div>
                                     </td>
-                                    <td class="px-5 py-4 text-right font-bold text-rose-600 whitespace-nowrap">${{ number_format($batch->gross, 2) }}</td>
-                                    <td class="px-5 py-4 text-right font-bold text-rose-600 whitespace-nowrap">${{ number_format($batch->manu_cost, 2) }}</td>
-                                    <td class="px-5 py-4 text-right font-bold text-rose-600 whitespace-nowrap">${{ number_format($batch->taxes, 2) }}</td>
-                                    <td class="px-5 py-4 text-right font-bold text-rose-600 whitespace-nowrap">${{ number_format($batch->fees, 2) }}</td>
-                                    <td class="px-5 py-4 text-right font-bold text-rose-600 whitespace-nowrap">${{ number_format($batch->net_margin, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-slate-900 whitespace-nowrap">${{ number_format($batch->gross, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-slate-700 whitespace-nowrap">${{ number_format($batch->manu_cost, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-slate-700 whitespace-nowrap">${{ number_format($batch->taxes, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-slate-700 whitespace-nowrap">${{ number_format($batch->fees, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-slate-900 whitespace-nowrap">${{ number_format($batch->net_margin, 2) }}</td>
                                     <td class="px-5 py-4 text-center font-bold text-slate-700 whitespace-nowrap">{{ number_format($batch->split_rate, 1) }}%</td>
-                                    <td class="px-5 py-4 text-right font-black text-rose-600 text-sm whitespace-nowrap">${{ number_format($batch->commission, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-black text-emerald-600 text-sm whitespace-nowrap">${{ number_format($batch->commission, 2) }}</td>
                                     <td class="px-5 py-4 text-center font-sans whitespace-nowrap align-middle">
                                         <span class="inline-flex px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full border
                                             {{ $batch->status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($batch->status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">
