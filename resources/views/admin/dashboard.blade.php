@@ -73,10 +73,6 @@
         </div>
         <div class="flex items-center gap-3">
             <a href="{{ route('admin.profile.edit') }}" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-2 px-4 text-xs uppercase tracking-wider font-bold shadow-sm rounded-lg transition-all">Edit Credentials</a>
-            <form action="{{ route('logout') }}" method="POST">
-                @csrf
-                <button type="submit" class="btn btn-outline py-2 px-4 text-xs uppercase tracking-wider bg-secondary text-white">Log Out</button>
-            </form>
         </div>
     </div>
 
