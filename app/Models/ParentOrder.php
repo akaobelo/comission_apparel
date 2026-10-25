@@ -520,8 +520,8 @@ class ParentOrder extends Model
             $splitRate = (float)($first->applied_rep_commission_rate ?? ($rep ? $rep->getEffectiveCommissionRate() : 50.0));
             
             // Calculate net margin and commission directly at the batch level to avoid individual order clamping distortion
-            $batchNetMargin = max(0.0, $gross - ($baseCost + $tariffsFees));
-            $batchCommission = round($batchNetMargin * ($splitRate / 100.0), 2);
+            $netMargin = max(0.0, $gross - ($baseCost + $tariffsFees));
+            $commission = round($netMargin * ($splitRate / 100.0), 2);
 
             if ($store) {
                 $storeName = $store->name;
