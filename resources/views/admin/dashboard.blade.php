@@ -2137,14 +2137,14 @@
                             </td>
                             <td class="px-5 py-4 text-slate-700">
                                 @if($coach->teamStore)
-                                    <a href="{{ route('admin.store.edit', $coach->teamStore) }}" class="text-primary hover:underline text-xs font-bold uppercase">{{ $coach->teamStore->name }}</a>
+                                    <a href="{{ route('admin.store.edit', ['store' => $coach->teamStore, 'return_to' => route('admin.dashboard', ['tab' => 'coaches'])]) }}" class="text-primary hover:underline text-xs font-bold uppercase">{{ $coach->teamStore->name }}</a>
                                 @else
                                     <span class="text-slate-400 text-xs">No Store</span>
                                 @endif
                             </td>
                             <td class="px-5 py-4">
                                 <div class="flex gap-2">
-                                    <a href="{{ route('admin.coach.edit', $coach) }}" class="px-3 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
+                                    <a href="{{ route('admin.coach.edit', ['user' => $coach, 'return_to' => route('admin.dashboard', ['tab' => 'coaches'])]) }}" class="px-3 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
                                     <form action="{{ route('admin.coach.delete', $coach) }}" method="POST" onsubmit="return confirm('Remove coach {{ addslashes($coach->name) }} from the system? This cannot be undone.')">
                                         @csrf @method('DELETE')
                                         <button class="px-3 py-1.5 bg-white border border-red-300 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 transition-colors">Delete</button>

@@ -6,18 +6,33 @@
         $returnUrl = request('return_to');
         if (!$returnUrl) {
             $referer = request()->headers->get('referer');
-            if ($referer && str_contains($referer, 'sales-rep')) {
+            if ($referer && (str_contains($referer, 'sales-rep') || str_contains($referer, 'tab=coaches') || str_contains($referer, 'coach'))) {
                 $returnUrl = $referer;
             }
         }
-        if (!$returnUrl) {
-            $rep = $store->salesRep ?: $store->user?->assignedSalesRep;
-            if ($rep) {
-                $returnUrl = route('admin.sales-rep.show', ['user' => $rep, 'tab' => 'stores']);
+        
+        // If returnUrl points to a sales-rep route, verify it is actually a valid sales partner
+        if ($returnUrl && str_contains($returnUrl, 'sales-rep')) {
+            if (preg_match('/sales-reps\/(\d+)/', $returnUrl, $matches)) {
+                $checkUser = \App\Models\User::find($matches[1]);
+                if (!$checkUser || !$checkUser->isSalesRep()) {
+                    // Invalid sales rep or user is a coach -> return to coaches list
+                    $returnUrl = route('admin.dashboard', ['tab' => 'coaches']);
+                }
             }
         }
-        $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'stores']);
-        $backLabel = ($returnUrl && str_contains($returnUrl, 'sales-rep')) ? 'Back to Sales Partner' : 'Back to Dashboard';
+
+        // By default, stores are managed under coaches, so default back is the Coaches Database
+        $defaultBack = route('admin.dashboard', ['tab' => 'coaches']);
+        $backUrl = $returnUrl ?: $defaultBack;
+        
+        if ($backUrl && str_contains($backUrl, 'sales-rep')) {
+            $backLabel = 'Back to Sales Partner';
+        } elseif ($backUrl && (str_contains($backUrl, 'tab=coaches') || str_contains($backUrl, '/admin/coach/'))) {
+            $backLabel = 'Back to Coaches';
+        } else {
+            $backLabel = 'Back to Coaches';
+        }
     @endphp
     <div class="flex items-center gap-4 mb-8">
         <a href="{{ $backUrl }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide">
@@ -172,8 +187,11 @@
                                 @endif
                             </div>
                             <div class="flex-1">
-                                <form action="{{ route('admin.store.logo', $store) }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
+                                <form action="{{ route('admin.store.logo', array_filter(['store' => $store, 'return_to' => $returnUrl])) }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
                                     @csrf
+                                    @if($returnUrl)
+                                        <input type="hidden" name="return_to" value="{{ $returnUrl }}">
+                                    @endif
                                     <input type="file" name="logo" accept="image/jpeg,image/png,image/jpg,image/webp" required class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-colors">
                                     <button type="submit" class="px-5 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm whitespace-nowrap">Upload Store Logo</button>
                                 </form>
@@ -197,9 +215,12 @@
                                     </div>
                                 </div>
                             @endif
-                            <div x-data="imageCropper('{{ route('admin.store.cover', $store) }}', 4 / 1)">
-                                <form x-ref="form" action="{{ route('admin.store.cover', $store) }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
+                            <div x-data="imageCropper('{{ route('admin.store.cover', array_filter(['store' => $store, 'return_to' => $returnUrl])) }}', 4 / 1)">
+                                <form x-ref="form" action="{{ route('admin.store.cover', array_filter(['store' => $store, 'return_to' => $returnUrl])) }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
                                     @csrf
+                                    @if($returnUrl)
+                                        <input type="hidden" name="return_to" value="{{ $returnUrl }}">
+                                    @endif
                                     <input type="file" name="cover_image" x-ref="fileInput" @change="fileSelected" accept="image/jpeg,image/png,image/jpg,image/webp" required class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-colors">
                                     <button type="submit" x-show="!isCropping" class="px-5 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm whitespace-nowrap">Upload Cover</button>
                                 </form>

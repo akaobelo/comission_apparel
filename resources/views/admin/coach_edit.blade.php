@@ -4,11 +4,16 @@
 <div class="max-w-5xl mx-auto px-6 pb-8 pt-32 lg:pt-40">
     @php
         $returnUrl = request('return_to');
-        if (!$returnUrl && $user->assignedSalesRep) {
-            $returnUrl = route('admin.sales-rep.show', ['user' => $user->assignedSalesRep, 'tab' => 'clients']);
+        if ($returnUrl && str_contains($returnUrl, 'sales-rep')) {
+            if (preg_match('/sales-reps\/(\d+)/', $returnUrl, $matches)) {
+                $checkUser = \App\Models\User::find($matches[1]);
+                if (!$checkUser || !$checkUser->isSalesRep()) {
+                    $returnUrl = route('admin.dashboard', ['tab' => 'coaches']);
+                }
+            }
         }
         $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'coaches']);
-        $backLabel = $returnUrl ? 'Back to Partner Profile' : 'Back to Dashboard';
+        $backLabel = ($returnUrl && str_contains($returnUrl, 'sales-rep')) ? 'Back to Sales Partner' : 'Back to Coaches';
     @endphp
     <div class="flex items-center gap-4 mb-8">
         <a href="{{ $backUrl }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide">
@@ -215,7 +220,7 @@
                         <div class="font-bold text-slate-900 text-sm">{{ $coachStore->name }}</div>
                         <div class="text-xs text-slate-500 mt-1">Status: <span class="font-bold uppercase {{ $coachStore->status === 'approved' ? 'text-green-600' : ($coachStore->status === 'pending' ? 'text-amber-600' : 'text-slate-600') }}">{{ $coachStore->status }}</span> · {{ $coachStore->items->count() }} items · {{ $coachStore->parentOrders->count() }} orders</div>
                         <div class="mt-3 flex gap-2">
-                            <a href="{{ route('admin.store.edit', $coachStore) }}" class="btn btn-outline py-1.5 px-3 text-xs uppercase tracking-wide">Manage Store →</a>
+                            <a href="{{ route('admin.store.edit', ['store' => $coachStore, 'return_to' => route('admin.dashboard', ['tab' => 'coaches'])]) }}" class="btn btn-outline py-1.5 px-3 text-xs uppercase tracking-wide">Manage Store →</a>
                             <a href="{{ route('store.show', $coachStore->slug) }}" target="_blank" class="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded text-xs font-bold uppercase tracking-wide">View Public ↗</a>
                         </div>
                     </div>
