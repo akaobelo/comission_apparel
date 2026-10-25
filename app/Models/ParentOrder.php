@@ -514,13 +514,32 @@ class ParentOrder extends Model
             $coach = $first->user ?: $store?->user;
             $isDirect = $first->isDirectOrder();
 
-            $gross = (float) $batchOrders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales($store));
-            $baseCost = (float) $batchOrders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost($store));
-            $tariffsFees = (float) $batchOrders->sum(fn($o) => (float)($o->tariff_amount + $o->fee_deduction));
+            $batchFinancials = self::calculateBatchFinancials($batchOrders, $store);
+
+            // Gross sales: include the entire amount collected (Online Payment Stripe total in green if paid online, or total sales)
+            $onlinePaid = (float)($batchFinancials['total_online_paid'] ?? 0);
+            $totalSales = (float)($batchFinancials['total_sales'] ?? $batchOrders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales($store)));
+            $gross = $onlinePaid > 0 ? $onlinePaid : $totalSales;
+
+            // Manu. Cost: Total Manufacturing Cost from batch summary (or effective manufacturing cost)
+            $manuCost = (float) $batchOrders->sum(fn($o) => (float)$o->manufacturing_cost);
+            if ($manuCost <= 0) {
+                $manuCost = (float) $batchOrders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost($store));
+            }
+
+            // Taxes: 7.5% customer sales tax directly from batch summary
+            $taxes = (float)($batchFinancials['total_tax'] ?? 0);
+
+            // Fees: Combine "Batch Tariff Amount" and "Extra Fee Deduction" from batch summary
+            $tariffs = (float) $batchOrders->sum(fn($o) => (float)$o->tariff_amount);
+            $feeDeduction = (float) $batchOrders->sum(fn($o) => (float)$o->fee_deduction);
+            $fees = $tariffs + $feeDeduction;
+
+            // Net Margin: Combine Manu. Cost + Taxes + Fees to get total expense, then subtract from Gross Sales
+            $totalExpense = $manuCost + $taxes + $fees;
+            $netMargin = max(0.0, $gross - $totalExpense);
+
             $splitRate = (float)($first->applied_rep_commission_rate ?? ($rep ? $rep->getEffectiveCommissionRate() : 50.0));
-            
-            // Calculate net margin and commission directly at the batch level to avoid individual order clamping distortion
-            $netMargin = max(0.0, $gross - ($baseCost + $tariffsFees));
             $commission = round($netMargin * ($splitRate / 100.0), 2);
 
             if ($store) {
@@ -567,13 +586,16 @@ class ParentOrder extends Model
                 'payment_method'   => $paymentMode,
                 'order_count'      => $batchOrders->count(),
                 'gross'            => $gross,
-                'base_cost'        => $baseCost,
-                'taxes_fees'       => $tariffsFees,
+                'manu_cost'        => $manuCost,
+                'base_cost'        => $manuCost,
+                'taxes'            => $taxes,
+                'fees'             => $fees,
+                'taxes_fees'       => $fees,
                 'net_margin'       => $netMargin,
                 'margin'           => $netMargin,
                 'commission'       => $commission,
                 'rep_cut'          => $commission,
-                'split_rate'       => (float)($first->applied_rep_commission_rate ?? ($rep ? $rep->getEffectiveCommissionRate() : 50.0)),
+                'split_rate'       => $splitRate,
                 'status'           => $status,
                 'latest_date'      => $batchOrders->max('created_at'),
                 'orders'           => $batchOrders,

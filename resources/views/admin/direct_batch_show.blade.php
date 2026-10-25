@@ -234,8 +234,12 @@
                         $batchFees = $orders->sum(fn($o) => (float)$o->fee_deduction);
                         $assignedRepId = $firstOrder->sales_rep_id ?: ($firstOrder->user?->sales_rep_id ?? null);
                         $currentRep = $assignedRepId ? $salesReps->firstWhere('id', $assignedRepId) : null;
-                        $batchSales = (float)($financials['total_sales'] ?? $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales()));
-                        $batchNetMargin = max(0.0, $batchSales - ($batchMfg + $batchTariff + $batchFees));
+                        $onlinePaid = (float)($financials['total_online_paid'] ?? 0);
+                        $totalSales = (float)($financials['total_sales'] ?? $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales()));
+                        $batchGross = $onlinePaid > 0 ? $onlinePaid : $totalSales;
+                        $batchTax = (float)($financials['total_tax'] ?? 0);
+                        $batchTotalExpense = $batchMfg + $batchTax + $batchTariff + $batchFees;
+                        $batchNetMargin = max(0.0, $batchGross - $batchTotalExpense);
                         $appliedRate = (float)($firstOrder->applied_rep_commission_rate ?? $currentRep?->getEffectiveCommissionRate() ?? 50.00);
                         $batchRepEarned = round($batchNetMargin * ($appliedRate / 100.0), 2);
                     @endphp

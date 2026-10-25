@@ -1163,31 +1163,12 @@
                     @endif
                 </div>
 
-                {{-- Batch Summary Table Card (Replaces Metric Strip & Itemized Table per requested design) --}}
+                {{-- Order Breakdown Table Card --}}
                 <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div>
-                            <div class="flex items-center gap-2.5 flex-wrap">
-                                <h3 class="text-base font-black text-slate-900">{{ $batch->store_name }}</h3>
-                                @if($batch->is_direct)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded border bg-purple-50 text-purple-700 border-purple-200">
-                                        FINALIZED DIRECT ORDERS
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded border bg-blue-50 text-blue-700 border-blue-200">
-                                        FINALIZED MASTER ORDERS
-                                    </span>
-                                @endif
-                                <span class="inline-flex px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full border
-                                    {{ $batch->status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($batch->status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">
-                                    {{ $batch->status }}
-                                </span>
-                            </div>
-                            <div class="text-xs text-slate-500 mt-1 flex items-center gap-3 flex-wrap">
-                                <span>Client: <strong class="text-slate-700">{{ $batch->coach_name }}</strong> ({{ $batch->organization }})</span>
-                                <span>· Payment: <strong class="text-slate-700">{{ $batch->payment_method }}</strong></span>
-                            </div>
-                        </div>
+                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                        <h4 class="text-sm font-black uppercase tracking-tight text-slate-900">
+                            ORDER BREAKDOWN ({{ $batch->order_count }})
+                        </h4>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -1196,9 +1177,10 @@
                                 <tr>
                                     <th class="px-5 py-3.5 whitespace-nowrap">Order / Batch</th>
                                     <th class="px-5 py-3.5 min-w-[160px]">Client / Store</th>
-                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Retail Gross</th>
-                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Mfg Wholesale</th>
-                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Tariffs & Fees</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Gross Sales</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Manu. Cost</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Taxes</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Fees</th>
                                     <th class="px-5 py-3.5 text-right whitespace-nowrap">Net Margin</th>
                                     <th class="px-5 py-3.5 text-center whitespace-nowrap">Split %</th>
                                     <th class="px-5 py-3.5 text-right whitespace-nowrap">Your Payout</th>
@@ -1209,31 +1191,30 @@
                                 <tr class="hover:bg-slate-50 transition-colors text-xs font-sans">
                                     <td class="px-5 py-4 whitespace-nowrap">
                                         <div class="font-bold text-slate-900">
-                                            @if($batch->batch_id)
-                                                Batch: {{ substr($batch->batch_id, 0, 8) }}...
-                                            @else
-                                                {{ $batch->key }}
-                                            @endif
+                                            #{{ $batch->orders->first()?->id ?? ($batch->batch_id ? substr($batch->batch_id, 0, 8) : $batch->key) }}
                                         </div>
                                         <div class="text-[10px] text-slate-400 font-sans">
                                             {{ $batch->latest_date ? \Carbon\Carbon::parse($batch->latest_date)->format('M d, Y') : '—' }}
                                         </div>
-                                        <div class="text-[10px] font-bold text-slate-600 font-sans mt-0.5">
-                                            {{ $batch->order_count }} {{ \Illuminate\Support\Str::plural('Order', $batch->order_count) }}
-                                        </div>
+                                        @if($batch->batch_id)
+                                            <div class="text-[9px] text-slate-400 font-sans truncate max-w-[120px]">
+                                                Batch: {{ substr($batch->batch_id, 0, 8) }}...
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="px-5 py-4 font-sans min-w-[160px]">
                                         <div class="font-bold text-slate-900">{{ $batch->store_name }}</div>
                                         <div class="text-[10px] text-slate-500">{{ $batch->coach_name }}</div>
                                     </td>
-                                    <td class="px-5 py-4 text-right font-bold text-slate-900 whitespace-nowrap">${{ number_format($batch->gross, 2) }}</td>
-                                    <td class="px-5 py-4 text-right text-slate-600 whitespace-nowrap">${{ number_format($batch->base_cost, 2) }}</td>
-                                    <td class="px-5 py-4 text-right text-slate-600 whitespace-nowrap">${{ number_format($batch->taxes_fees, 2) }}</td>
-                                    <td class="px-5 py-4 text-right font-bold text-slate-900 whitespace-nowrap">${{ number_format($batch->net_margin, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-rose-600 whitespace-nowrap">${{ number_format($batch->gross, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-rose-600 whitespace-nowrap">${{ number_format($batch->manu_cost, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-rose-600 whitespace-nowrap">${{ number_format($batch->taxes, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-rose-600 whitespace-nowrap">${{ number_format($batch->fees, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-rose-600 whitespace-nowrap">${{ number_format($batch->net_margin, 2) }}</td>
                                     <td class="px-5 py-4 text-center font-bold text-slate-700 whitespace-nowrap">{{ number_format($batch->split_rate, 1) }}%</td>
-                                    <td class="px-5 py-4 text-right font-black text-emerald-600 text-sm whitespace-nowrap">${{ number_format($batch->commission, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-black text-rose-600 text-sm whitespace-nowrap">${{ number_format($batch->commission, 2) }}</td>
                                     <td class="px-5 py-4 text-center font-sans whitespace-nowrap align-middle">
-                                        <span class="inline-flex px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full border
+                                        <span class="inline-flex px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full border
                                             {{ $batch->status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($batch->status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">
                                             {{ $batch->status }}
                                         </span>
