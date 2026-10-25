@@ -78,11 +78,9 @@
                 @auth
                     <div class="flex items-center gap-2.5">
                         @if(auth()->user()->isAdmin())
-                            <a href="{{ route('admin.dashboard') }}" class="relative group py-2 px-4 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
-                                <span class="relative z-10 flex items-center gap-2">
-                                    <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain" loading="lazy">
-                                    Admin Portal
-                                </span>
+                            <a href="{{ route('admin.dashboard') }}" class="relative group py-2 px-3.5 text-xs font-black tracking-wider uppercase overflow-hidden bg-red-600 hover:bg-red-700 active:bg-red-800 text-white transition-all rounded-md shadow-md flex items-center gap-2" title="Admin Control Center">
+                                <img src="/images/LR.png" alt="LR Logo" class="h-4 w-auto object-contain brightness-0 invert" loading="lazy">
+                                <span>Admin Control Center</span>
                             </a>
                         @elseif(auth()->user()->isSalesRep())
                             <a href="{{ route('rep.dashboard') }}" class="relative group py-2 px-4 text-xs font-bold tracking-wider uppercase overflow-hidden border border-slate-700 text-white bg-secondary/5 hover:bg-secondary/10 transition-all rounded-md shadow-sm">
@@ -136,9 +134,9 @@
                 <div class="flex flex-col gap-3 mt-4">
                     @auth
                         @if(auth()->user()->isAdmin())
-                            <a href="{{ route('admin.dashboard') }}" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-3.5 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">
-                                <img src="/images/LR.png" alt="LR Logo" class="h-5 w-auto object-contain" loading="lazy">
-                                Admin Portal
+                            <a href="{{ route('admin.dashboard') }}" class="btn border border-red-600 text-white bg-red-600 hover:bg-red-700 py-3.5 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">
+                                <img src="/images/LR.png" alt="LR Logo" class="h-5 w-auto object-contain brightness-0 invert" loading="lazy">
+                                Admin Control Center
                             </a>
                         @elseif(auth()->user()->isSalesRep())
                             <a href="{{ route('rep.dashboard') }}" class="btn border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 py-3.5 px-4 flex items-center justify-center gap-2 text-center font-bold text-sm tracking-wider uppercase shadow-sm" @click="mobileMenuOpen = false">
@@ -320,5 +318,15 @@
             }));
         });
     </script>
+    @auth
+        @if(auth()->user()->isAdmin() && !request()->routeIs('admin.dashboard'))
+            <a href="{{ route('admin.dashboard') }}" 
+               class="fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-full text-xs font-black uppercase tracking-wider shadow-2xl transition-all hover:scale-105 group border-2 border-white/30"
+               title="Return to Admin Control Center">
+                <svg class="w-4 h-4 text-white group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>Admin Control Center</span>
+            </a>
+        @endif
+    @endauth
 </body>
 </html>

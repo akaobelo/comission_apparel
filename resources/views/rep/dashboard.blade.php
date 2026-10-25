@@ -220,7 +220,7 @@
             <p class="text-[11px] text-slate-400 mt-1 font-sans">Gross order revenue</p>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-sans">Taxes & Fees</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-sans">Tariffs & Fees</p>
             <div class="text-2xl font-bold tracking-tight text-slate-700 font-sans">${{ number_format($totalTariffs + $totalFees, 2) }}</div>
             <p class="text-[11px] text-slate-400 mt-1 font-sans">Deducted fees (Base Mfg: ${{ number_format($totalManufacturingCost, 2) }})</p>
         </div>
@@ -530,7 +530,7 @@
                                 data-contact="{{ strtolower($c->name) }}"
                                 data-sport="{{ strtolower($c->sport) }}"
                                 data-stores="{{ $c->team_stores_count }}"
-                                data-orders="{{ $c->parent_orders_count }}"
+                                data-orders="{{ $c->rep_orders_count ?? 0 }}"
                                 data-date="{{ $c->created_at->timestamp }}"
                                 x-show="!coachSearch || '{{ strtolower(addslashes($c->organization . ' ' . $c->name . ' ' . $c->email . ' ' . $c->phone . ' ' . $c->sport)) }}'.includes(coachSearch.toLowerCase().trim())"
                             >
@@ -557,7 +557,7 @@
                                 </td>
                                 <td class="px-6 py-4 font-bold text-slate-700">{{ $c->sport }}</td>
                                 <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $c->team_stores_count }}</td>
-                                <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $c->parent_orders_count }}</td>
+                                <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $c->rep_orders_count ?? 0 }}</td>
                                 <td class="px-6 py-4 text-xs text-slate-500">{{ $c->created_at->format('M d, Y') }}</td>
                             </tr>
                         @empty
@@ -1163,161 +1163,66 @@
                     @endif
                 </div>
 
-                {{-- Batch Summary Card --}}
-                <div class="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-sm">
-                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
-                        <div>
-                            <div class="flex items-center gap-2.5 flex-wrap">
-                                <h3 class="text-lg font-black text-slate-900">{{ $batch->store_name }}</h3>
-                                @if($batch->is_direct)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded border bg-purple-50 text-purple-700 border-purple-200">
-                                        FINALIZED DIRECT ORDERS
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded border bg-blue-50 text-blue-700 border-blue-200">
-                                        FINALIZED MASTER ORDERS
-                                    </span>
-                                @endif
-                                <span class="inline-flex px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full border
-                                    {{ $batch->status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($batch->status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">
-                                    {{ $batch->status }}
-                                </span>
-                            </div>
-                            <div class="text-xs text-slate-500 mt-1 flex items-center gap-3 flex-wrap">
-                                <span>Client: <strong class="text-slate-700">{{ $batch->coach_name }}</strong> ({{ $batch->organization }})</span>
-                                <span>· Payment: <strong class="text-slate-700">{{ $batch->payment_method }}</strong></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-5 font-sans text-center">
-                        <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 font-sans">Orders</span>
-                            <span class="text-base font-bold text-slate-900">{{ $batch->order_count }}</span>
-                        </div>
-                        <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 font-sans">Retail Gross</span>
-                            <span class="text-base font-bold text-slate-900">${{ number_format($batch->gross, 2) }}</span>
-                        </div>
-                        <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 font-sans">Mfg Wholesale</span>
-                            <span class="text-base font-bold text-slate-700">${{ number_format($batch->base_cost, 2) }}</span>
-                        </div>
-                        <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 font-sans">Taxes & Fees</span>
-                            <span class="text-base font-bold text-slate-700">${{ number_format($batch->taxes_fees, 2) }}</span>
-                        </div>
-                        <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 font-sans">Net Margin</span>
-                            <span class="text-base font-black text-slate-900">${{ number_format($batch->net_margin, 2) }}</span>
-                        </div>
-                        <div class="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
-                            <span class="block text-[10px] font-black uppercase tracking-wider text-emerald-800 font-sans">Your Payout</span>
-                            <span class="text-base font-black text-emerald-700">${{ number_format($batch->commission, 2) }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Itemized Table for this Batch --}}
+                {{-- Order Breakdown Table Card --}}
                 <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
-                        <h4 class="text-sm font-black uppercase tracking-wider text-slate-900">
-                            Itemized Orders in Batch ({{ $batch->order_count }})
+                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                        <h4 class="text-sm font-black uppercase tracking-tight text-slate-900">
+                            ORDER BREAKDOWN ({{ $batch->order_count }})
                         </h4>
                     </div>
+
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm text-slate-600">
                             <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
                                 <tr>
-                                    <th class="px-4 py-3.5">Order</th>
-                                    <th class="px-4 py-3.5">Client / Store</th>
-                                    <th class="px-4 py-3.5 text-right">Retail Gross</th>
-                                    <th class="px-4 py-3.5 text-right">Mfg Wholesale</th>
-                                    <th class="px-4 py-3.5 text-right">Taxes & Fees</th>
-                                    <th class="px-4 py-3.5 text-right">Net Margin</th>
-                                    <th class="px-4 py-3.5 text-center">Split %</th>
-                                    <th class="px-4 py-3.5 text-right">Your Payout</th>
-                                    <th class="px-4 py-3.5 text-center">Status</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Order / Batch</th>
+                                    <th class="px-5 py-3.5 min-w-[160px]">Client / Store</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Gross Sales</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Manu. Cost</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Taxes</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Fees</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Net Margin</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">Split %</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Your Payout</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">Status</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
-                                @foreach($batch->orders as $ord)
-                                    @php
-                                        $gross = (float)($ord->subtotal > 0 ? $ord->subtotal : $ord->total_retail_price);
-                                        $deductions = (float)($ord->tariff_amount + $ord->fee_deduction + $ord->fundraising_amount);
-                                        $appliedRate = (float)($ord->applied_rep_commission_rate ?? $user->getEffectiveCommissionRate());
-                                    @endphp
-                                    <tr x-show="isBatchItemVisible('{{ $batch->key }}', {{ $loop->index }})" class="hover:bg-slate-50 transition-colors">
-                                        <td class="px-4 py-4 font-sans font-bold text-xs text-slate-900">
-                                            #{{ $ord->id }}
-                                            <div class="text-[10px] text-slate-400 font-sans">{{ $ord->created_at->format('M d, Y') }}</div>
-                                            @if($ord->batch_id)
-                                                <div class="text-[9px] text-slate-400 font-sans truncate max-w-[120px]">Batch: {{ substr($ord->batch_id, 0, 8) }}...</div>
-                                            @endif
-                                        </td>
-                                        <td class="px-4 py-4">
-                                            <div class="font-bold text-slate-800 text-xs">{{ $ord->user?->organization ?? $ord->user?->name ?? '—' }}</div>
-                                            <div class="text-[11px] text-slate-500">{{ $ord->teamStore?->name ?? 'Direct Order' }}</div>
-                                        </td>
-                                        <td class="px-4 py-4 text-right font-semibold text-slate-900">${{ number_format($gross, 2) }}</td>
-                                        <td class="px-4 py-4 text-right text-slate-600">-${{ number_format((float)$ord->manufacturing_cost, 2) }}</td>
-                                        <td class="px-4 py-4 text-right text-slate-500">-${{ number_format($deductions, 2) }}</td>
-                                        <td class="px-4 py-4 text-right font-semibold text-slate-900">${{ number_format((float)$ord->net_margin, 2) }}</td>
-                                        <td class="px-4 py-4 text-center font-bold text-primary text-xs">{{ number_format($appliedRate, 1) }}%</td>
-                                        <td class="px-4 py-4 text-right font-bold text-emerald-600 text-base">${{ number_format((float)$ord->rep_commission_earned, 2) }}</td>
-                                        <td class="px-4 py-4 text-center">
-                                            <span class="inline-flex px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full border
-                                                {{ $ord->commission_status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($ord->commission_status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">
-                                                {{ $ord->commission_status ?? 'pending' }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                @endforeach
+                                <tr class="hover:bg-slate-50 transition-colors text-xs font-sans">
+                                    <td class="px-5 py-4 whitespace-nowrap">
+                                        <div class="font-bold text-slate-900">
+                                            #{{ $batch->orders->first()?->id ?? ($batch->batch_id ? substr($batch->batch_id, 0, 8) : $batch->key) }}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 font-sans">
+                                            {{ $batch->latest_date ? \Carbon\Carbon::parse($batch->latest_date)->format('M d, Y') : '—' }}
+                                        </div>
+                                        @if($batch->batch_id)
+                                            <div class="text-[9px] text-slate-400 font-sans truncate max-w-[120px]">
+                                                Batch: {{ substr($batch->batch_id, 0, 8) }}...
+                                            </div>
+                                        @endif
+                                    </td>
+                                    <td class="px-5 py-4 font-sans min-w-[160px]">
+                                        <div class="font-bold text-slate-900">{{ $batch->store_name }}</div>
+                                        <div class="text-[10px] text-slate-500">{{ $batch->coach_name }}</div>
+                                    </td>
+                                    <td class="px-5 py-4 text-right font-bold text-slate-900 whitespace-nowrap">${{ number_format($batch->gross, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-slate-700 whitespace-nowrap">${{ number_format($batch->manu_cost, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-slate-700 whitespace-nowrap">${{ number_format($batch->taxes, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-slate-700 whitespace-nowrap">${{ number_format($batch->fees, 2) }}</td>
+                                    <td class="px-5 py-4 text-right font-bold text-slate-900 whitespace-nowrap">${{ number_format($batch->net_margin, 2) }}</td>
+                                    <td class="px-5 py-4 text-center font-bold text-slate-700 whitespace-nowrap">{{ number_format($batch->split_rate, 1) }}%</td>
+                                    <td class="px-5 py-4 text-right font-black text-emerald-600 text-sm whitespace-nowrap">${{ number_format($batch->commission, 2) }}</td>
+                                    <td class="px-5 py-4 text-center font-sans whitespace-nowrap align-middle">
+                                        <span class="inline-flex px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full border
+                                            {{ $batch->status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($batch->status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">
+                                            {{ $batch->status }}
+                                        </span>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
-
-                    {{-- Pagination for Orders inside this Batch --}}
-                    @if($batch->order_count > 15)
-                        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div class="text-xs text-slate-500 font-sans">
-                                Showing <span class="font-bold text-slate-900" x-text="(getBatchItemPage('{{ $batch->key }}') - 1) * perPage + 1"></span>
-                                to <span class="font-bold text-slate-900" x-text="Math.min(getBatchItemPage('{{ $batch->key }}') * perPage, {{ $batch->order_count }})"></span>
-                                of <span class="font-bold text-slate-900">{{ $batch->order_count }}</span> orders in batch
-                            </div>
-                            <div class="flex items-center gap-1 font-sans">
-                                <button type="button" 
-                                        @click="if(getBatchItemPage('{{ $batch->key }}') > 1) { setBatchItemPage('{{ $batch->key }}', getBatchItemPage('{{ $batch->key }}') - 1); $el.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' }); }"
-                                        :disabled="getBatchItemPage('{{ $batch->key }}') === 1"
-                                        class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-colors"
-                                        :class="getBatchItemPage('{{ $batch->key }}') === 1 ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-white' : 'border-slate-300 text-slate-700 hover:bg-slate-100 bg-white cursor-pointer shadow-2xs'">
-                                    &larr; Prev
-                                </button>
-                                <template x-for="(p, i) in getBatchItemPageNumbers('{{ $batch->key }}', {{ $batch->order_count }})" :key="i">
-                                    <span>
-                                        <template x-if="p === '...'">
-                                            <span class="px-2 py-1 text-xs text-slate-400 select-none">...</span>
-                                        </template>
-                                        <template x-if="p !== '...'">
-                                            <button type="button" 
-                                                    @click="setBatchItemPage('{{ $batch->key }}', p); $el.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' });"
-                                                    class="min-w-[32px] h-8 px-2 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
-                                                    :class="getBatchItemPage('{{ $batch->key }}') === p ? 'bg-slate-900 text-white font-black' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'"
-                                                    x-text="p">
-                                            </button>
-                                        </template>
-                                    </span>
-                                </template>
-                                <button type="button" 
-                                        @click="if(getBatchItemPage('{{ $batch->key }}') < Math.ceil({{ $batch->order_count }} / perPage)) { setBatchItemPage('{{ $batch->key }}', getBatchItemPage('{{ $batch->key }}') + 1); $el.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' }); }"
-                                        :disabled="getBatchItemPage('{{ $batch->key }}') >= Math.ceil({{ $batch->order_count }} / perPage)"
-                                        class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-colors"
-                                        :class="getBatchItemPage('{{ $batch->key }}') >= Math.ceil({{ $batch->order_count }} / perPage) ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-white' : 'border-slate-300 text-slate-700 hover:bg-slate-100 bg-white cursor-pointer shadow-2xs'">
-                                    Next &rarr;
-                                </button>
-                            </div>
-                        </div>
-                    @endif
                 </div>
             </div>
         @endforeach
@@ -1373,7 +1278,7 @@
                                 <th class="px-4 py-3.5">Client / Store</th>
                                 <th class="px-4 py-3.5 text-right">Retail Gross</th>
                                 <th class="px-4 py-3.5 text-right">Mfg Wholesale</th>
-                                <th class="px-4 py-3.5 text-right">Taxes & Fees</th>
+                                <th class="px-4 py-3.5 text-right">Tariffs & Fees</th>
                                 <th class="px-4 py-3.5 text-right">Net Margin</th>
                                 <th class="px-4 py-3.5 text-center">Split %</th>
                                 <th class="px-4 py-3.5 text-right">Your Payout</th>
@@ -1680,7 +1585,7 @@
                                 <th class="px-4 py-3.5">Client / Store</th>
                                 <th class="px-4 py-3.5 text-right">Retail Gross</th>
                                 <th class="px-4 py-3.5 text-right">Mfg Wholesale</th>
-                                <th class="px-4 py-3.5 text-right">Taxes & Fees</th>
+                                <th class="px-4 py-3.5 text-right">Tariffs & Fees</th>
                                 <th class="px-4 py-3.5 text-right">Net Margin</th>
                                 <th class="px-4 py-3.5 text-center">Split %</th>
                                 <th class="px-4 py-3.5 text-right">Your Payout</th>

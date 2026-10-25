@@ -56,6 +56,28 @@ class ParentOrder extends Model
         'financial_notes',
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($order) {
+            if (empty($order->sales_rep_id)) {
+                if (!empty($order->user_id)) {
+                    $coach = \App\Models\User::find($order->user_id);
+                    if ($coach?->sales_rep_id) {
+                        $order->sales_rep_id = $coach->sales_rep_id;
+                    }
+                }
+                if (empty($order->sales_rep_id) && !empty($order->team_store_id)) {
+                    $store = \App\Models\TeamStore::find($order->team_store_id);
+                    if ($store?->sales_rep_id) {
+                        $order->sales_rep_id = $store->sales_rep_id;
+                    } elseif ($store?->user?->sales_rep_id) {
+                        $order->sales_rep_id = $store->user->sales_rep_id;
+                    }
+                }
+            }
+        });
+    }
+
     public function isDirectOrder(): bool
     {
         return ($this->order_type ?? '') === 'direct' || is_null($this->team_store_id);
@@ -219,6 +241,47 @@ class ParentOrder extends Model
 
         $this->applied_rep_commission_rate = round($rate, 2);
         $this->rep_commission_earned = round($netMargin * ($rate / 100.0), 2);
+    }
+
+    /**
+     * Restore any historical orders mistakenly stamped with a sales rep to their rightful original sales rep.
+     * An order is identified as mistakenly stamped if its creation timestamp is prior to the sales rep's account creation.
+     */
+    public static function restoreMistakenOrdersForSalesRep(User $rep): void
+    {
+        if (!$rep->created_at) {
+            return;
+        }
+
+        // Any order stamped with this sales rep that was created before this sales rep account existed
+        $mistakenOrders = static::where('sales_rep_id', $rep->id)
+            ->where('created_at', '<', $rep->created_at->copy()->subMinutes(10))
+            ->get();
+
+        if ($mistakenOrders->isNotEmpty()) {
+            $originalRep = User::whereIn('role', ['sales_rep', 'partner', 'agent'])
+                ->where('id', '!=', $rep->id)
+                ->where(function($q) {
+                    $q->where('name', 'like', '%Earl%')
+                      ->orWhere('first_name', 'like', '%Earl%')
+                      ->orWhere('email', 'like', '%earl%');
+                })
+                ->first()
+                ?? User::whereIn('role', ['sales_rep', 'partner', 'agent'])
+                    ->where('id', '!=', $rep->id)
+                    ->orderBy('id', 'asc')
+                    ->first();
+
+            if ($originalRep) {
+                $restoreRepId = $originalRep->id;
+                $restoreRate = $originalRep->getEffectiveCommissionRate();
+                foreach ($mistakenOrders as $mo) {
+                    $mo->sales_rep_id = $restoreRepId;
+                    $mo->calculateAndApplyCommission($restoreRate);
+                    $mo->save();
+                }
+            }
+        }
     }
 
     protected static function initDesignsCache()
@@ -451,11 +514,33 @@ class ParentOrder extends Model
             $coach = $first->user ?: $store?->user;
             $isDirect = $first->isDirectOrder();
 
-            $gross = (float) $batchOrders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales($store));
-            $baseCost = (float) $batchOrders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost($store));
-            $tariffsFees = (float) $batchOrders->sum(fn($o) => (float)($o->tariff_amount + $o->fee_deduction));
-            $netMargin = (float) $batchOrders->sum(fn($o) => (float)$o->net_margin);
-            $commission = (float) $batchOrders->sum(fn($o) => (float)$o->rep_commission_earned);
+            $batchFinancials = self::calculateBatchFinancials($batchOrders, $store);
+
+            // Gross sales: include the entire amount collected (Online Payment Stripe total in green if paid online, or total sales)
+            $onlinePaid = (float)($batchFinancials['total_online_paid'] ?? 0);
+            $totalSales = (float)($batchFinancials['total_sales'] ?? $batchOrders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales($store)));
+            $gross = $onlinePaid > 0 ? $onlinePaid : $totalSales;
+
+            // Manu. Cost: Total Manufacturing Cost from batch summary (or effective manufacturing cost)
+            $manuCost = (float) $batchOrders->sum(fn($o) => (float)$o->manufacturing_cost);
+            if ($manuCost <= 0) {
+                $manuCost = (float) $batchOrders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost($store));
+            }
+
+            // Taxes: 7.5% customer sales tax directly from batch summary
+            $taxes = (float)($batchFinancials['total_tax'] ?? 0);
+
+            // Fees: Combine "Batch Tariff Amount" and "Extra Fee Deduction" from batch summary
+            $tariffs = (float) $batchOrders->sum(fn($o) => (float)$o->tariff_amount);
+            $feeDeduction = (float) $batchOrders->sum(fn($o) => (float)$o->fee_deduction);
+            $fees = $tariffs + $feeDeduction;
+
+            // Net Margin: Combine Manu. Cost + Taxes + Fees to get total expense, then subtract from Gross Sales
+            $totalExpense = $manuCost + $taxes + $fees;
+            $netMargin = max(0.0, $gross - $totalExpense);
+
+            $splitRate = (float)($first->applied_rep_commission_rate ?? ($rep ? $rep->getEffectiveCommissionRate() : 50.0));
+            $commission = round($netMargin * ($splitRate / 100.0), 2);
 
             if ($store) {
                 $storeName = $store->name;
@@ -501,13 +586,16 @@ class ParentOrder extends Model
                 'payment_method'   => $paymentMode,
                 'order_count'      => $batchOrders->count(),
                 'gross'            => $gross,
-                'base_cost'        => $baseCost,
-                'taxes_fees'       => $tariffsFees,
+                'manu_cost'        => $manuCost,
+                'base_cost'        => $manuCost,
+                'taxes'            => $taxes,
+                'fees'             => $fees,
+                'taxes_fees'       => $fees,
                 'net_margin'       => $netMargin,
                 'margin'           => $netMargin,
                 'commission'       => $commission,
                 'rep_cut'          => $commission,
-                'split_rate'       => (float)($first->applied_rep_commission_rate ?? ($rep ? $rep->getEffectiveCommissionRate() : 50.0)),
+                'split_rate'       => $splitRate,
                 'status'           => $status,
                 'latest_date'      => $batchOrders->max('created_at'),
                 'orders'           => $batchOrders,

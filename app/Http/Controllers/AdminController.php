@@ -95,7 +95,9 @@ class AdminController extends Controller
                   ->orWhereHas('user', function($q2) use ($search) {
                       $q2->where('first_name', 'like', "%{$search}%")
                          ->orWhere('last_name', 'like', "%{$search}%")
-                         ->orWhere('organization', 'like', "%{$search}%");
+                         ->orWhere('organization', 'like', "%{$search}%")
+                         ->orWhere('phone', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
                   });
             });
         }
@@ -175,7 +177,9 @@ class AdminController extends Controller
                   ->orWhereHas('user', function($q2) use ($search) {
                       $q2->where('first_name', 'like', "%{$search}%")
                          ->orWhere('last_name', 'like', "%{$search}%")
-                         ->orWhere('organization', 'like', "%{$search}%");
+                         ->orWhere('organization', 'like', "%{$search}%")
+                         ->orWhere('phone', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
                   });
             });
         }
@@ -228,7 +232,9 @@ class AdminController extends Controller
                   ->orWhereHas('user', function($q2) use ($search) {
                       $q2->where('first_name', 'like', "%{$search}%")
                          ->orWhere('last_name', 'like', "%{$search}%")
-                         ->orWhere('organization', 'like', "%{$search}%");
+                         ->orWhere('organization', 'like', "%{$search}%")
+                         ->orWhere('phone', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
                   });
             });
         }
@@ -500,7 +506,8 @@ class AdminController extends Controller
         // When a coach is unassigned or transferred to another rep, permanently preserve
         // all historical orders under the original sales rep so earned commissions are preserved.
         $newRepId = $validated['sales_rep_id'] ?? null;
-        if ($oldRepId && $oldRepId != $newRepId) {
+        if ($oldRepId && !$newRepId) {
+            // Coach is being completely unassigned: preserve past orders under old rep so historical earnings stay locked
             $oldRep = User::find($oldRepId);
             if ($oldRep) {
                 $coachStoreIds = TeamStore::where('user_id', $user->id)->pluck('id')->toArray();
@@ -524,6 +531,39 @@ class AdminController extends Controller
                     ->where('sales_rep_id', $oldRep->id)
                     ->update(['sales_rep_id' => null]);
             }
+        } elseif ($newRepId && $newRepId != $oldRepId) {
+            // Coach is being assigned or transferred to a new sales rep:
+            // Ensure old rep's historical orders remain locked to old rep
+            if ($oldRepId) {
+                $oldRep = User::find($oldRepId);
+                if ($oldRep) {
+                    $coachStoreIds = TeamStore::where('user_id', $user->id)->pluck('id')->toArray();
+                    ParentOrder::where(function($q) use ($user, $coachStoreIds) {
+                            $q->where('user_id', $user->id)
+                              ->orWhereIn('team_store_id', $coachStoreIds);
+                        })
+                        ->where(function($q) use ($oldRep) {
+                            $q->whereNull('sales_rep_id')
+                              ->orWhere('sales_rep_id', $oldRep->id);
+                        })
+                        ->each(function($ord) use ($oldRep) {
+                            $ord->sales_rep_id = $oldRep->id;
+                            if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0) {
+                                $ord->calculateAndApplyCommission($oldRep->getEffectiveCommissionRate());
+                            }
+                            $ord->save();
+                        });
+                }
+            }
+            // Update team stores to new rep so future orders flow to new rep
+            TeamStore::where('user_id', $user->id)->update(['sales_rep_id' => $newRepId]);
+        }
+
+        if ($newRepId) {
+            // Also link any direct orders created by this coach that currently have no sales rep
+            ParentOrder::where('user_id', $user->id)
+                ->whereNull('sales_rep_id')
+                ->update(['sales_rep_id' => $newRepId]);
         }
 
         $user->update($validated);
@@ -660,9 +700,19 @@ class AdminController extends Controller
             ->pluck('id')
             ->toArray();
 
+        // Self-heal: If any historical orders were mistakenly stamped with this sales rep but were created
+        // before this sales rep account even existed, restore them to their original sales rep.
+        ParentOrder::restoreMistakenOrdersForSalesRep($user);
+
         $clients = User::where('sales_rep_id', $user->id)
             ->with(['teamStores'])
-            ->withCount(['teamStores', 'parentOrders'])
+            ->withCount([
+                'teamStores',
+                'parentOrders as rep_orders_count' => function($q) use ($user) {
+                    $q->where('sales_rep_id', $user->id)
+                      ->where('status', '!=', 'Draft');
+                }
+            ])
             ->latest()
             ->get();
 
@@ -673,10 +723,15 @@ class AdminController extends Controller
             ->latest()
             ->get();
 
+        // Orders strictly attributed to this sales rep or assigned coaches/stores
         $orders = ParentOrder::where(function($q) use ($user, $clientIds, $storeIds) {
-                $q->where('sales_rep_id', $user->id)
-                  ->orWhereIn('user_id', $clientIds)
-                  ->orWhereIn('team_store_id', $storeIds);
+                $q->where('sales_rep_id', $user->id);
+                if (!empty($clientIds)) {
+                    $q->orWhereIn('user_id', $clientIds);
+                }
+                if (!empty($storeIds)) {
+                    $q->orWhereIn('team_store_id', $storeIds);
+                }
             })
             ->where('status', '!=', 'Draft')
             ->with(['teamStore', 'user', 'teamStore.items'])
@@ -687,7 +742,7 @@ class AdminController extends Controller
         $repRate = $user->getEffectiveCommissionRate();
         foreach ($orders as $ord) {
             $dirty = false;
-            if (!$ord->sales_rep_id) {
+            if (empty($ord->sales_rep_id)) {
                 $ord->sales_rep_id = $user->id;
                 $dirty = true;
             }
@@ -884,7 +939,10 @@ class AdminController extends Controller
             abort(404);
         }
 
-        // 1. Ensure all historical orders belonging to this coach or their team stores are permanently stamped with this sales rep and commission calculations
+        // 1. Self-heal any orders mistakenly stamped that predate this sales rep
+        ParentOrder::restoreMistakenOrdersForSalesRep($user);
+
+        // 2. Ensure all legitimate orders placed under this sales rep are permanently preserved
         $repRate = $user->getEffectiveCommissionRate();
         $coachStoreIds = TeamStore::where('user_id', $coach->id)->pluck('id')->toArray();
 
@@ -892,18 +950,11 @@ class AdminController extends Controller
                 $q->where('user_id', $coach->id)
                   ->orWhereIn('team_store_id', $coachStoreIds);
             })
-            ->where(function($q) use ($user) {
-                $q->whereNull('sales_rep_id')
-                  ->orWhere('sales_rep_id', $user->id);
-            })
+            ->where('sales_rep_id', $user->id)
             ->get();
 
         foreach ($ordersToPreserve as $ord) {
             $dirty = false;
-            if ($ord->sales_rep_id != $user->id) {
-                $ord->sales_rep_id = $user->id;
-                $dirty = true;
-            }
             if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0 || (float)$ord->subtotal == 0 || (float)$ord->manufacturing_cost == 0) {
                 $ord->calculateAndApplyCommission($repRate);
                 $dirty = true;
@@ -947,9 +998,7 @@ class AdminController extends Controller
         $order->commission_status = $validated['commission_status'];
         $order->financial_notes = $validated['financial_notes'] ?? null;
 
-        if ($request->filled('sales_rep_id')) {
-            $order->sales_rep_id = $request->sales_rep_id;
-        }
+        $order->sales_rep_id = $request->input('sales_rep_id') ?: null;
 
         if ($order->commission_status === 'paid' && !$order->paid_to_rep_at) {
             $order->paid_to_rep_at = now();
@@ -980,19 +1029,45 @@ class AdminController extends Controller
         }
 
         $count = $orders->count();
-        $mfgPerOrder = (float) ($validated['manufacturing_cost'] ?? 0) / $count;
-        $tariffPerOrder = (float) ($validated['tariff_amount'] ?? 0) / $count;
-        $feePerOrder = (float) ($validated['fee_deduction'] ?? 0) / $count;
+        $totalGross = (float) $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales());
+        $totalMfg = (float) ($validated['manufacturing_cost'] ?? 0);
+        $totalTariff = (float) ($validated['tariff_amount'] ?? 0);
+        $totalFee = (float) ($validated['fee_deduction'] ?? 0);
+
+        $allocatedMfg = 0.0;
+        $allocatedTariff = 0.0;
+        $allocatedFee = 0.0;
+        $idx = 0;
 
         foreach ($orders as $order) {
-            $order->manufacturing_cost = round($mfgPerOrder, 2);
-            $order->tariff_amount = round($tariffPerOrder, 2);
-            $order->fee_deduction = round($feePerOrder, 2);
+            $idx++;
+            $isLast = ($idx === $count);
+
+            if ($totalGross > 0) {
+                $grossRatio = (float) $order->getEffectiveQualifyingSales() / $totalGross;
+            } else {
+                $grossRatio = 1.0 / $count;
+            }
+
+            if ($isLast) {
+                $mfgForOrder = round($totalMfg - $allocatedMfg, 2);
+                $tariffForOrder = round($totalTariff - $allocatedTariff, 2);
+                $feeForOrder = round($totalFee - $allocatedFee, 2);
+            } else {
+                $mfgForOrder = round($totalMfg * $grossRatio, 2);
+                $tariffForOrder = round($totalTariff * $grossRatio, 2);
+                $feeForOrder = round($totalFee * $grossRatio, 2);
+                $allocatedMfg += $mfgForOrder;
+                $allocatedTariff += $tariffForOrder;
+                $allocatedFee += $feeForOrder;
+            }
+
+            $order->manufacturing_cost = max(0.0, $mfgForOrder);
+            $order->tariff_amount = max(0.0, $tariffForOrder);
+            $order->fee_deduction = max(0.0, $feeForOrder);
             $order->commission_status = $validated['commission_status'];
             $order->financial_notes = $validated['financial_notes'] ?? null;
-            if ($request->filled('sales_rep_id')) {
-                $order->sales_rep_id = $request->sales_rep_id;
-            }
+            $order->sales_rep_id = $request->input('sales_rep_id') ?: null;
             if ($order->commission_status === 'paid' && !$order->paid_to_rep_at) {
                 $order->paid_to_rep_at = now();
             }

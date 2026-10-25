@@ -6,19 +6,20 @@
         $returnUrl = request('return_to');
         if (!$returnUrl) {
             $referer = request()->headers->get('referer');
-            if ($referer && str_contains($referer, 'sales-rep')) {
+            if ($referer && (str_contains($referer, 'sales-rep') || str_contains($referer, 'sales_rep'))) {
                 $returnUrl = $referer;
             }
         }
-        if (!$returnUrl) {
-            $batchRep = $firstOrder?->salesRep ?: $firstOrder?->user?->assignedSalesRep;
-            if ($batchRep) {
-                $returnUrl = route('admin.sales-rep.show', ['user' => $batchRep, 'tab' => 'orders', 'batch' => 'batch_' . $batchId]);
-            }
-        }
         $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'orders']);
-        $backLabel = ($returnUrl && str_contains($returnUrl, 'sales-rep')) ? 'Back to Sales Partner' : 'Back to Dashboard';
+        $backLabel = ($returnUrl && (str_contains($returnUrl, 'sales-rep') || str_contains($returnUrl, 'sales_rep'))) ? 'Back to Sales Partner' : 'Back to Dashboard';
     @endphp
+    <div class="mb-4">
+        <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span>Admin Control Center</span>
+        </a>
+    </div>
+
     <div class="flex items-center gap-4 mb-8">
         <a href="{{ $backUrl }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-bold uppercase tracking-wide">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -203,7 +204,7 @@
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Average order</span><span class="font-bold text-slate-900">${{ number_format($financials['average_order_value'] ?? 0, 2) }}</span></div>
                         @if($isOnlinePayment)
                             <div class="flex justify-between text-sm">
-                                <span class="text-slate-500">Sales Tax {{ $isTaxExempt ? '(501(c)(3) Waived)' : '(7.5%)' }}</span>
+                                <span class="text-slate-500">Customer Sales Tax {{ $isTaxExempt ? '(501(c)(3) Waived)' : '(7.5%)' }}</span>
                                 <span class="font-bold {{ $isTaxExempt ? 'text-blue-700' : 'text-slate-700' }}">${{ number_format($financials['total_tax'] ?? 0, 2) }}</span>
                             </div>
                             <div class="flex justify-between text-sm"><span class="text-slate-500">Processing Fee (Stripe)</span><span class="font-bold text-slate-600">${{ number_format($financials['total_fees'] ?? 0, 2) }}</span></div>
@@ -233,8 +234,14 @@
                         $batchFees = $orders->sum(fn($o) => (float)$o->fee_deduction);
                         $assignedRepId = $firstOrder->sales_rep_id ?: ($firstOrder->user?->sales_rep_id ?? null);
                         $currentRep = $assignedRepId ? $salesReps->firstWhere('id', $assignedRepId) : null;
-                        $batchRepEarned = $orders->sum(fn($o) => (float)$o->rep_commission_earned);
-                        $batchNetMargin = $orders->sum(fn($o) => (float)$o->net_margin);
+                        $onlinePaid = (float)($financials['total_online_paid'] ?? 0);
+                        $totalSales = (float)($financials['total_sales'] ?? $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales()));
+                        $batchGross = $onlinePaid > 0 ? $onlinePaid : $totalSales;
+                        $batchTax = (float)($financials['total_tax'] ?? 0);
+                        $batchTotalExpense = $batchMfg + $batchTax + $batchTariff + $batchFees;
+                        $batchNetMargin = max(0.0, $batchGross - $batchTotalExpense);
+                        $appliedRate = (float)($firstOrder->applied_rep_commission_rate ?? $currentRep?->getEffectiveCommissionRate() ?? 50.00);
+                        $batchRepEarned = round($batchNetMargin * ($appliedRate / 100.0), 2);
                     @endphp
 
                     <form action="{{ route('admin.direct-batch.financials.update', $batchId) }}" method="POST" class="p-5 space-y-3.5">
@@ -244,24 +251,39 @@
                         @endif
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Total Manufacturing Cost ($)</label>
-                            <input type="number" step="0.01" min="0" name="manufacturing_cost" value="{{ old('manufacturing_cost', $hasCustomMfg ? $batchMfg : '') }}" placeholder="Enter factory production base cost" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <div class="relative rounded-lg shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 font-bold text-xs font-sans">$</span>
+                                </div>
+                                <input type="number" step="0.01" min="0" name="manufacturing_cost" value="{{ old('manufacturing_cost', $hasCustomMfg ? $batchMfg : '') }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
                             <span class="text-[10px] text-slate-400">Actual factory cost to produce items (deducted from gross to find net profit)</span>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Batch Tariff Amount ($)</label>
-                            <input type="number" step="0.01" min="0" name="tariff_amount" value="{{ old('tariff_amount', $batchTariff) }}" placeholder="e.g. 75.00" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <div class="relative rounded-lg shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 font-bold text-xs font-sans">$</span>
+                                </div>
+                                <input type="number" step="0.01" min="0" name="tariff_amount" value="{{ old('tariff_amount', $batchTariff) }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
                             <span class="text-[10px] text-slate-400">Import / freight tariff allocated to batch</span>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Extra Fee Deductions ($)</label>
-                            <input type="number" step="0.01" min="0" name="fee_deduction" value="{{ old('fee_deduction', $batchFees) }}" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <div class="relative rounded-lg shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 font-bold text-xs font-sans">$</span>
+                                </div>
+                                <input type="number" step="0.01" min="0" name="fee_deduction" value="{{ old('fee_deduction', $batchFees) }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                            </div>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Sales Partner</label>
-                            <select name="sales_rep_id" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <select name="sales_rep_id" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                                 <option value="">-- No Partner Assigned --</option>
                                 @foreach($salesReps as $rep)
                                     <option value="{{ $rep->id }}" {{ ($assignedRepId == $rep->id) ? 'selected' : '' }}>
@@ -274,11 +296,16 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Split %</label>
-                                <input type="number" step="0.1" min="0" max="100" name="applied_rep_commission_rate" value="{{ old('applied_rep_commission_rate', $firstOrder->applied_rep_commission_rate ?? $currentRep?->getEffectiveCommissionRate() ?? 50.00) }}" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs font-mono font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <div class="relative rounded-lg shadow-sm">
+                                    <input type="number" step="0.1" min="0" max="100" name="applied_rep_commission_rate" value="{{ old('applied_rep_commission_rate', $firstOrder->applied_rep_commission_rate ?? $currentRep?->getEffectiveCommissionRate() ?? 50.00) }}" class="w-full bg-white border border-slate-300 rounded-lg pr-7 pl-3 py-1.5 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
+                                        <span class="text-slate-400 font-bold text-xs font-sans">%</span>
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Status</label>
-                                <select name="commission_status" class="w-full bg-white border border-slate-300 rounded px-2 py-1.5 text-xs font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <select name="commission_status" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                                     <option value="pending" {{ $firstOrder->commission_status === 'pending' ? 'selected' : '' }}>Pending</option>
                                     <option value="cleared" {{ $firstOrder->commission_status === 'cleared' ? 'selected' : '' }}>Cleared</option>
                                     <option value="paid" {{ $firstOrder->commission_status === 'paid' ? 'selected' : '' }}>Paid</option>
@@ -288,17 +315,17 @@
 
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Notes</label>
-                            <input type="text" name="financial_notes" value="{{ old('financial_notes', $firstOrder->financial_notes) }}" placeholder="e.g. Schedule A tariff deduction applied" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                            <input type="text" name="financial_notes" value="{{ old('financial_notes', $firstOrder->financial_notes) }}" placeholder="e.g. Schedule A tariff deduction applied" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-sans text-slate-900 focus:border-primary focus:outline-none shadow-sm">
                         </div>
 
-                        <div class="p-3 bg-slate-50 border border-slate-200 rounded space-y-1.5 text-xs font-mono">
-                            <div class="flex justify-between items-center text-slate-500">
+                        <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs font-sans">
+                            <div class="flex justify-between items-center text-slate-600 font-semibold">
                                 <span>Batch Net Margin:</span>
-                                <span class="font-bold text-slate-900">${{ number_format($batchNetMargin, 2) }}</span>
+                                <span class="font-bold text-slate-900 text-sm font-sans">${{ number_format($batchNetMargin, 2) }}</span>
                             </div>
-                            <div class="flex justify-between items-center text-slate-500 border-t border-slate-200 pt-1.5">
+                            <div class="flex justify-between items-center text-slate-600 font-semibold border-t border-slate-200/80 pt-2">
                                 <span>Rep Payout Total:</span>
-                                <span class="font-black text-emerald-600 text-sm">${{ number_format($batchRepEarned, 2) }}</span>
+                                <span class="font-black text-emerald-600 text-base font-sans">${{ number_format($batchRepEarned, 2) }}</span>
                             </div>
                         </div>
 
