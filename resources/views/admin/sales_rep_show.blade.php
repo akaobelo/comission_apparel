@@ -206,7 +206,7 @@
             imageSmoothingQuality: 'high',
         }).toBlob((blob) => {
             const formData = new FormData();
-            formData.append('profile_image', blob, 'partner-avatar.jpg');
+            formData.append('profile_image', blob, 'partner-avatar.webp');
             formData.append('_token', '{{ csrf_token() }}');
 
             fetch('{{ route('admin.sales-rep.avatar', $user) }}', {
@@ -232,7 +232,7 @@
                 this.cropSaving = false;
                 alert('An error occurred while uploading.');
             });
-        }, 'image/jpeg', 0.92);
+        }, 'image/webp', 0.85);
     },
     sortCoachTable(col) {
         if (this.coachSortCol === col) {
@@ -442,7 +442,7 @@
                     <button type="button" @click="closeCropper" class="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors uppercase">Cancel</button>
                     <button type="button" @click="saveCroppedAvatar" :disabled="cropSaving" class="px-5 py-2 bg-slate-900 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-2">
                         <svg x-show="cropSaving" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        <span x-text="cropSaving ? 'Saving...' : 'Apply Crop & Save'"></span>
+                        <span x-text="cropSaving ? 'Optimizing...' : 'Apply Crop & Save (WebP)'"></span>
                     </button>
                 </div>
             </div>
@@ -663,7 +663,7 @@
                         @endif
                         <div class="flex-1">
                             <input type="file" name="profile_image" x-ref="formAvatarFileInput" @change="openCropper" accept="image/jpeg,image/png,image/jpg,image/webp" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer">
-                            <span class="text-[11px] text-slate-400 block mt-1">Upload JPEG, PNG, or WebP. Interactive crop tool allows framing to square.</span>
+                            <span class="text-[11px] text-slate-400 block mt-1">Upload JPEG, PNG, or WebP. Interactive crop tool automatically optimizes and converts to WebP.</span>
                         </div>
                     </div>
                 </div>

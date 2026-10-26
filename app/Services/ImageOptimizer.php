@@ -55,6 +55,10 @@ class ImageOptimizer
                 break;
             case 'image/webp':
                 $src = @imagecreatefromwebp($file->getRealPath());
+                if ($src) {
+                    imagealphablending($src, false);
+                    imagesavealpha($src, true);
+                }
                 break;
             default:
                 // Unsupported type, fall back to default upload

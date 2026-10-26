@@ -3064,8 +3064,33 @@
             createRepModal: false,
             editRepModal: false,
             activeEditRep: null,
+
+            // Password visibility toggles
+            showCreatePassword: false,
+            showCreateConfirmPassword: false,
+            showEditPassword: false,
+            showEditConfirmPassword: false,
+
+            // Photo cropper state
+            cropperModal: false,
+            cropperInstance: null,
+            cropperContext: null, // 'create' or 'edit'
+            cropSaving: false,
+            createRepAvatarPreview: null,
+            editRepAvatarPreview: null,
+
+            openCreateRep() {
+                this.showCreatePassword = false;
+                this.showCreateConfirmPassword = false;
+                this.clearCreatePhoto();
+                this.createRepModal = true;
+            },
+
             openEditRep(rep) {
                 this.activeEditRep = rep;
+                this.showEditPassword = false;
+                this.showEditConfirmPassword = false;
+                this.clearEditPhoto();
                 this.editRepModal = true;
                 this.$nextTick(() => {
                     const p = document.getElementById('modal_edit_partner_password');
@@ -3073,6 +3098,119 @@
                     if (p) p.value = '';
                     if (c) { c.value = ''; c.setCustomValidity(''); }
                 });
+            },
+
+            openCropper(event, context = 'create') {
+                const file = event.target.files ? event.target.files[0] : null;
+                if (!file) return;
+                this.cropperContext = context;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    if (this.$refs.cropImage) {
+                        this.$refs.cropImage.src = e.target.result;
+                    }
+                    this.cropperModal = true;
+                    this.$nextTick(() => {
+                        if (this.cropperInstance) {
+                            this.cropperInstance.destroy();
+                        }
+                        if (this.$refs.cropImage) {
+                            this.cropperInstance = new Cropper(this.$refs.cropImage, {
+                                aspectRatio: 1,
+                                viewMode: 1,
+                                autoCropArea: 1,
+                                responsive: true,
+                                dragMode: 'move',
+                                background: false,
+                            });
+                        }
+                    });
+                };
+                reader.readAsDataURL(file);
+            },
+
+            closeCropper() {
+                this.cropperModal = false;
+                if (this.cropperInstance) {
+                    this.cropperInstance.destroy();
+                    this.cropperInstance = null;
+                }
+                if (this.cropperContext === 'create' && !this.createRepAvatarPreview && this.$refs.createRepFileInput) {
+                    this.$refs.createRepFileInput.value = '';
+                } else if (this.cropperContext === 'edit' && !this.editRepAvatarPreview && this.$refs.editRepFileInput) {
+                    this.$refs.editRepFileInput.value = '';
+                }
+            },
+
+            applyCroppedImage() {
+                if (!this.cropperInstance) return;
+                this.cropSaving = true;
+
+                const canvas = this.cropperInstance.getCroppedCanvas({
+                    width: 800,
+                    height: 800,
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high',
+                });
+
+                if (!canvas) {
+                    this.cropSaving = false;
+                    alert('Could not crop the selected image.');
+                    return;
+                }
+
+                canvas.toBlob((blob) => {
+                    this.cropSaving = false;
+                    if (!blob) {
+                        alert('Failed to process image as WebP.');
+                        return;
+                    }
+
+                    const fileName = (this.cropperContext === 'create' ? 'partner_avatar.webp' : 'updated_avatar.webp');
+                    const file = new File([blob], fileName, { type: blob.type || 'image/webp' });
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+
+                    if (this.cropperContext === 'create') {
+                        if (this.$refs.createRepFileInput) {
+                            this.$refs.createRepFileInput.files = dt.files;
+                        }
+                        if (this.createRepAvatarPreview) {
+                            URL.revokeObjectURL(this.createRepAvatarPreview);
+                        }
+                        this.createRepAvatarPreview = URL.createObjectURL(blob);
+                    } else if (this.cropperContext === 'edit') {
+                        if (this.$refs.editRepFileInput) {
+                            this.$refs.editRepFileInput.files = dt.files;
+                        }
+                        if (this.editRepAvatarPreview) {
+                            URL.revokeObjectURL(this.editRepAvatarPreview);
+                        }
+                        this.editRepAvatarPreview = URL.createObjectURL(blob);
+                    }
+
+                    this.closeCropper();
+                }, 'image/webp', 0.85);
+            },
+
+            clearCreatePhoto() {
+                if (this.createRepAvatarPreview) {
+                    URL.revokeObjectURL(this.createRepAvatarPreview);
+                    this.createRepAvatarPreview = null;
+                }
+                if (this.$refs.createRepFileInput) {
+                    this.$refs.createRepFileInput.value = '';
+                }
+            },
+
+            clearEditPhoto() {
+                if (this.editRepAvatarPreview) {
+                    URL.revokeObjectURL(this.editRepAvatarPreview);
+                    this.editRepAvatarPreview = null;
+                }
+                if (this.$refs.editRepFileInput) {
+                    this.$refs.editRepFileInput.value = '';
+                }
             }
         }">
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -3084,7 +3222,7 @@
                         </h2>
                         <p class="text-xs text-slate-500 mt-1">Configure representative commission rates (30%–50%), manage dealer categories, and track multi-client sales performance.</p>
                     </div>
-                    <button type="button" @click="createRepModal = true" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm whitespace-nowrap">
+                    <button type="button" @click="openCreateRep()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm whitespace-nowrap">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                         + Add Sales Partner
                     </button>
@@ -3169,6 +3307,7 @@
                                                 commission_rate: {{ $rep->commission_rate ?? 50.00 }},
                                                 referral_slug: '{{ addslashes($rep->referral_slug ?? '') }}',
                                                 status: '{{ $rep->status ?? 'active' }}',
+                                                avatar_url: '{{ addslashes($rep->profile_image_url ?? '') }}',
                                                 updateUrl: '{{ route('admin.sales-rep.update', $rep) }}'
                                             })" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-bold uppercase tracking-wider transition-colors border border-slate-300 whitespace-nowrap">
                                                 Edit Rate
@@ -3217,7 +3356,28 @@
 
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Profile Photo / Avatar (Optional)</label>
-                            <input type="file" name="profile_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 cursor-pointer">
+                            
+                            <!-- When a photo has been cropped & converted to WebP -->
+                            <div x-show="createRepAvatarPreview" class="flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200 rounded-xl" style="display: none;">
+                                <img :src="createRepAvatarPreview" alt="Cropped avatar preview" class="w-14 h-14 rounded-xl object-cover border border-slate-300 shadow-xs flex-shrink-0">
+                                <div class="flex-1 min-w-0">
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded">
+                                        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        Cropped &amp; Converted to WebP
+                                    </span>
+                                    <div class="mt-1 flex items-center gap-3">
+                                        <button type="button" @click="$refs.createRepFileInput.click()" class="text-xs font-bold text-slate-700 hover:text-slate-900 underline">Change Photo</button>
+                                        <span class="text-slate-300">•</span>
+                                        <button type="button" @click="clearCreatePhoto()" class="text-xs font-bold text-red-600 hover:text-red-700">Remove</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- File input -->
+                            <div :class="{ 'hidden': createRepAvatarPreview }">
+                                <input type="file" name="profile_image" x-ref="createRepFileInput" @change="openCropper($event, 'create')" accept="image/jpeg,image/png,image/jpg,image/webp" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 cursor-pointer">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Includes interactive photo cropper; automatically converts to lightweight WebP.</span>
+                            </div>
                         </div>
 
                         <div>
@@ -3233,11 +3393,23 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Initial Password *</label>
-                                <input type="password" name="password" id="partner_password" required minlength="8" placeholder="Min 8 characters" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <div class="relative">
+                                    <input :type="showCreatePassword ? 'text' : 'password'" type="password" name="password" id="partner_password" required minlength="8" placeholder="Min 8 characters" class="w-full bg-white border border-slate-300 rounded px-3 py-2 pr-10 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                    <button type="button" @click="showCreatePassword = !showCreatePassword" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1" tabindex="-1" title="Toggle password visibility">
+                                        <svg x-show="!showCreatePassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        <svg x-show="showCreatePassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                    </button>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Confirm Password *</label>
-                                <input type="password" name="password_confirmation" id="partner_password_confirmation" required minlength="8" placeholder="Re-enter password" oninput="this.setCustomValidity(this.value !== document.getElementById('partner_password').value ? 'Passwords do not match.' : '')" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <div class="relative">
+                                    <input :type="showCreateConfirmPassword ? 'text' : 'password'" type="password" name="password_confirmation" id="partner_password_confirmation" required minlength="8" placeholder="Re-enter password" oninput="this.setCustomValidity(this.value !== document.getElementById('partner_password').value ? 'Passwords do not match.' : '')" class="w-full bg-white border border-slate-300 rounded px-3 py-2 pr-10 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                    <button type="button" @click="showCreateConfirmPassword = !showCreateConfirmPassword" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1" tabindex="-1" title="Toggle confirm password visibility">
+                                        <svg x-show="!showCreateConfirmPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        <svg x-show="showCreateConfirmPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -3281,8 +3453,40 @@
                         @csrf
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Update Profile Photo / Avatar (Optional)</label>
-                            <input type="file" name="profile_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 cursor-pointer">
+                            
+                            <!-- Current avatar or newly cropped preview -->
+                            <div class="flex items-center gap-3 mb-2">
+                                <template x-if="editRepAvatarPreview">
+                                    <img :src="editRepAvatarPreview" alt="Cropped avatar preview" class="w-12 h-12 rounded-xl object-cover border border-slate-300 shadow-xs flex-shrink-0">
+                                </template>
+                                <template x-if="!editRepAvatarPreview && activeEditRep?.avatar_url">
+                                    <img :src="activeEditRep.avatar_url" alt="Current avatar" class="w-12 h-12 rounded-xl object-cover border border-slate-300 shadow-xs flex-shrink-0">
+                                </template>
+                                <template x-if="!editRepAvatarPreview && !activeEditRep?.avatar_url">
+                                    <div class="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                        No Photo
+                                    </div>
+                                </template>
+
+                                <div class="flex-1 min-w-0" x-show="editRepAvatarPreview">
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded">
+                                        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        Cropped &amp; Converted to WebP
+                                    </span>
+                                    <div class="mt-0.5 flex items-center gap-2">
+                                        <button type="button" @click="$refs.editRepFileInput.click()" class="text-xs font-bold text-slate-700 hover:text-slate-900 underline">Change</button>
+                                        <span class="text-slate-300">•</span>
+                                        <button type="button" @click="clearEditPhoto()" class="text-xs font-bold text-red-600 hover:text-red-700">Cancel Change</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div :class="{ 'hidden': editRepAvatarPreview }">
+                                <input type="file" name="profile_image" x-ref="editRepFileInput" @change="openCropper($event, 'edit')" accept="image/jpeg,image/png,image/jpg,image/webp" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 cursor-pointer">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Includes interactive photo cropper; converted to lightweight WebP before upload.</span>
+                            </div>
                         </div>
+
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold uppercase text-slate-600 mb-1">First Name *</label>
@@ -3337,14 +3541,26 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Change Password (Leave blank to keep)</label>
-                                <input type="password" id="modal_edit_partner_password" name="password" minlength="8" placeholder="Minimum 8 characters" oninput="const c = document.getElementById('modal_edit_partner_password_confirmation'); if (c && c.value) { c.setCustomValidity(c.value !== this.value ? 'Passwords do not match.' : ''); }" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <div class="relative">
+                                    <input :type="showEditPassword ? 'text' : 'password'" type="password" id="modal_edit_partner_password" name="password" minlength="8" placeholder="Minimum 8 characters" oninput="const c = document.getElementById('modal_edit_partner_password_confirmation'); if (c && c.value) { c.setCustomValidity(c.value !== this.value ? 'Passwords do not match.' : ''); }" class="w-full bg-white border border-slate-300 rounded px-3 py-2 pr-10 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                    <button type="button" @click="showEditPassword = !showEditPassword" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1" tabindex="-1" title="Toggle password visibility">
+                                        <svg x-show="!showEditPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        <svg x-show="showEditPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                    </button>
+                                </div>
                                 @error('password')
                                     <p class="text-xs text-red-500 font-bold mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Confirm Password</label>
-                                <input type="password" id="modal_edit_partner_password_confirmation" name="password_confirmation" minlength="8" placeholder="Re-enter new password" oninput="const p = document.getElementById('modal_edit_partner_password'); this.setCustomValidity(p && p.value && this.value !== p.value ? 'Passwords do not match.' : '');" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <div class="relative">
+                                    <input :type="showEditConfirmPassword ? 'text' : 'password'" type="password" id="modal_edit_partner_password_confirmation" name="password_confirmation" minlength="8" placeholder="Re-enter new password" oninput="const p = document.getElementById('modal_edit_partner_password'); this.setCustomValidity(p && p.value && this.value !== p.value ? 'Passwords do not match.' : '');" class="w-full bg-white border border-slate-300 rounded px-3 py-2 pr-10 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                    <button type="button" @click="showEditConfirmPassword = !showEditConfirmPassword" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1" tabindex="-1" title="Toggle confirm password visibility">
+                                        <svg x-show="!showEditConfirmPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        <svg x-show="showEditConfirmPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                    </button>
+                                </div>
                                 @error('password_confirmation')
                                     <p class="text-xs text-red-500 font-bold mt-1">{{ $message }}</p>
                                 @enderror
@@ -3356,6 +3572,37 @@
                             <button type="submit" class="px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider shadow-sm">Update Partner</button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- CROPPER MODAL (Shared between Add Rep and Edit Rep) -->
+            <div x-show="cropperModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" @click="closeCropper"></div>
+                <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                        <div>
+                            <h3 class="font-black uppercase tracking-tight text-slate-900 text-base">Crop Partner Profile Photo</h3>
+                            <p class="text-xs text-slate-500">Position, zoom and frame the square profile photo.</p>
+                        </div>
+                        <button type="button" @click="closeCropper" class="text-slate-400 hover:text-slate-900 transition-colors focus:outline-none text-2xl font-black">&times;</button>
+                    </div>
+                    <div class="bg-slate-950 flex-1 w-full h-[50vh] min-h-[300px] relative overflow-hidden flex items-center justify-center p-4">
+                        <img x-ref="cropImage" class="block max-w-full max-h-full">
+                    </div>
+                    <div class="p-4 border-t border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <button type="button" @click="cropperInstance && cropperInstance.zoom(0.1)" class="px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-white text-slate-700 text-xs font-bold shadow-xs" title="Zoom In">Zoom +</button>
+                            <button type="button" @click="cropperInstance && cropperInstance.zoom(-0.1)" class="px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-white text-slate-700 text-xs font-bold shadow-xs" title="Zoom Out">Zoom -</button>
+                            <button type="button" @click="cropperInstance && cropperInstance.rotate(90)" class="px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-white text-slate-700 text-xs font-bold shadow-xs" title="Rotate">Rotate 90°</button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" @click="closeCropper" class="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors uppercase">Cancel</button>
+                            <button type="button" @click="applyCroppedImage" :disabled="cropSaving" class="px-5 py-2 bg-slate-900 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-2">
+                                <svg x-show="cropSaving" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <span x-text="cropSaving ? 'Optimizing...' : 'Crop & Convert to WebP'"></span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
