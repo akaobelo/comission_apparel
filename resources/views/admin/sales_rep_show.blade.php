@@ -1387,13 +1387,20 @@
                         <span>← Back to Order Batches</span>
                     </button>
                     <div class="flex items-center gap-2">
-                        @if($batch->is_direct && $batch->batch_id)
-                            <a href="{{ route('admin.direct-batch.show', ['batch_id' => $batch->batch_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'batch' => $batch->key])]) }}" class="px-3.5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-colors shadow-sm inline-flex items-center gap-1.5">
-                                Edit Batch Taxes & Fees →
+                        @if($batch->batch_id)
+                            <a href="{{ route('admin.direct-batch.show', ['batch_id' => $batch->batch_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'batch' => $batch->key])]) }}" class="px-3.5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-colors shadow-sm inline-flex items-center gap-1.5" title="Edit Manufacturing Cost, Tariffs & Partner Split">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                <span>Edit Batch Figures & Taxes →</span>
                             </a>
-                        @elseif($batch->store_id)
+                        @elseif($batch->orders->count() === 1)
+                            <a href="{{ route('admin.order.edit', ['order' => $batch->orders->first(), 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'batch' => $batch->key])]) }}" class="px-3.5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-colors shadow-sm inline-flex items-center gap-1.5" title="Edit Order Financials">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                <span>Edit Order Tariffs & Fees →</span>
+                            </a>
+                        @endif
+                        @if($batch->store_id)
                             <a href="{{ route('admin.store.edit', ['store' => $batch->store_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'batch' => $batch->key])]) }}" class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-colors shadow-sm inline-flex items-center gap-1.5">
-                                Manage Store →
+                                <span>Manage Store →</span>
                             </a>
                         @endif
                     </div>
@@ -1564,7 +1571,7 @@
                                         </span>
                                     </td>
                                     <td class="px-5 pr-6 py-3.5 text-right font-sans whitespace-nowrap align-middle">
-                                        @if($ord->isDirectOrder() && $ord->batch_id)
+                                        @if($ord->batch_id)
                                             <a href="{{ route('admin.direct-batch.show', ['batch_id' => $ord->batch_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'view' => 'all_orders'])]) }}" class="px-2.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-full text-[9px] font-black uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
                                                 Edit Batch →
                                             </a>
@@ -1814,7 +1821,7 @@
                                         </span>
                                     </td>
                                     <td class="px-5 pr-6 py-3.5 text-right font-sans whitespace-nowrap align-middle">
-                                        @if($ord->isDirectOrder() && $ord->batch_id)
+                                        @if($ord->batch_id)
                                             <a href="{{ route('admin.direct-batch.show', ['batch_id' => $ord->batch_id, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'orders', 'view' => 'archived'])]) }}" class="px-2.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-full text-[9px] font-black uppercase tracking-wider border border-slate-300 transition-colors whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
                                                 View Batch →
                                             </a>
