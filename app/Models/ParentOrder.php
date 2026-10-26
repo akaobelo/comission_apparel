@@ -307,8 +307,24 @@ class ParentOrder extends Model
                 return false;
             }
 
-            // Not an assigned client: must be directly assigned to this sales rep
-            return ($ord->sales_rep_id == $rep->id);
+            // Client is not in this rep's assigned roster:
+            // If the order has a coach or store assigned to another rep, it NEVER belongs to this rep
+            $orderCoach = $ord->user ?? ($ord->teamStore ? $ord->teamStore->user : null);
+            if ($orderCoach && $orderCoach->sales_rep_id && $orderCoach->sales_rep_id != $rep->id) {
+                return false;
+            }
+
+            if ($ord->teamStore && $ord->teamStore->sales_rep_id && $ord->teamStore->sales_rep_id != $rep->id) {
+                return false;
+            }
+
+            // Historical activity for unassigned coaches belongs to Super Admin archive, not to this sales rep
+            if ($orderCoach && !$orderCoach->sales_rep_id) {
+                return false;
+            }
+
+            // For non-assigned clients, must be a batch explicitly assigned to this sales rep
+            return (!empty($ord->batch_id) && $ord->sales_rep_id == $rep->id && $ord->status !== 'Cancelled');
         })->values();
     }
 

@@ -366,5 +366,59 @@ class SalesRepPlatformTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('722.50');
     }
+
+    /**
+     * Test rep never receives archived or historical orders from coaches assigned to a different rep.
+     */
+    public function test_rep_never_receives_orders_from_coaches_assigned_to_another_rep()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $earl = User::factory()->create([
+            'first_name'      => 'Earl',
+            'last_name'       => 'Smith',
+            'role'            => 'sales_rep',
+            'commission_rate' => 85.0,
+            'created_at'      => now(),
+        ]);
+
+        $yohanda = User::factory()->create([
+            'first_name'      => 'Yohanda',
+            'last_name'       => 'Robinson',
+            'role'            => 'sales_rep',
+            'commission_rate' => 85.0,
+            'created_at'      => now(),
+        ]);
+
+        $william = User::factory()->create([
+            'role'                  => 'coach',
+            'first_name'            => 'William',
+            'last_name'             => 'Bazemore',
+            'organization'          => 'Capella University',
+            'sales_rep_id'          => $yohanda->id,
+            'sales_rep_assigned_at' => now(),
+        ]);
+
+        // Mistakenly stamped historical order with Earl's ID
+        $leakedOrder = ParentOrder::create([
+            'user_id'            => $william->id,
+            'athlete_first_name' => 'Track',
+            'athlete_last_name'  => 'Star',
+            'subtotal'           => 238.34,
+            'total_paid'         => 238.34,
+            'status'             => 'Processing',
+            'order_type'         => 'direct',
+            'is_archived'        => true,
+            'items_json'         => [],
+            'sales_rep_id'       => $earl->id,
+        ]);
+
+        $earlScopedOrders = ParentOrder::getOrdersForSalesRep($earl);
+        $this->assertFalse($earlScopedOrders->contains('id', $leakedOrder->id), 'Earl must never receive orders from William Bazemore / Yohanda');
+
+        $response = $this->actingAs($admin)->get("/admin/sales-reps/{$earl->id}");
+        $response->assertStatus(200);
+        $response->assertDontSee('Capella University');
+        $response->assertDontSee('William Bazemore');
+    }
 }
 

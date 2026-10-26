@@ -41,6 +41,12 @@ class SyncSalesRepAssignmentsCommand extends Command
         }
 
         // 2. Identify sales reps
+        $earl = User::where('role', 'sales_rep')
+            ->where(function($q) {
+                $q->where('first_name', 'like', '%Earl%')
+                  ->orWhere('name', 'like', '%Earl%');
+            })->first();
+
         $ernie = User::where('role', 'sales_rep')
             ->where(function($q) {
                 $q->where('first_name', 'like', '%Ernie%')
@@ -176,6 +182,41 @@ class SyncSalesRepAssignmentsCommand extends Command
                 $pOrd->sales_rep_id = null;
                 $pOrd->save();
                 $this->info("Cleared mistakenly stamped sales_rep_id on historical Order #{$pOrd->id} for coach {$coach->name}");
+            }
+        }
+
+        // 8. Unlink mistakenly stamped orders from Earl Smith:
+        // Any order stamped with Earl's ID where the coach is NOT assigned to Earl,
+        // or where the coach is assigned to another sales partner (e.g. Yohanda or Ernie):
+        if ($earl) {
+            $earlCoachIds = User::where('sales_rep_id', $earl->id)->pluck('id')->toArray();
+
+            $leakedOrders = ParentOrder::where('sales_rep_id', $earl->id)
+                ->where(function($q) use ($earlCoachIds) {
+                    $q->whereNotIn('user_id', $earlCoachIds)
+                      ->orWhereNull('user_id');
+                })
+                ->get();
+
+            foreach ($leakedOrders as $lOrd) {
+                $actualCoach = $lOrd->user ?? ($lOrd->teamStore ? $lOrd->teamStore->user : null);
+
+                // If coach belongs to another sales rep (e.g. Yohanda or Ernie) and this is an active batch, align it
+                if ($actualCoach && $actualCoach->sales_rep_id && $actualCoach->sales_rep_id != $earl->id && !empty($lOrd->batch_id) && $lOrd->commission_status !== 'paid') {
+                    $actualRep = User::find($actualCoach->sales_rep_id);
+                    if ($actualRep) {
+                        $lOrd->sales_rep_id = $actualRep->id;
+                        $lOrd->calculateAndApplyCommission($actualRep->getEffectiveCommissionRate());
+                        $lOrd->save();
+                        $this->info("Realigned Order #{$lOrd->id} from Earl to {$actualRep->name}");
+                        continue;
+                    }
+                }
+
+                // Otherwise, this is historical past activity that belongs exclusively to Super Admin lifetime archive
+                $lOrd->sales_rep_id = null;
+                $lOrd->save();
+                $this->info("Cleared mistakenly stamped Earl sales_rep_id on Order #{$lOrd->id}");
             }
         }
 
