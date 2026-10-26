@@ -317,5 +317,54 @@ class SalesRepPlatformTest extends TestCase
         $this->assertEquals(30.0, (float)$order->applied_rep_commission_rate);
         $this->assertEquals(150.00, (float)$order->rep_commission_earned);
     }
+
+    /**
+     * Test direct batch explicitly assigned to rep reflects on profile even if created before assignment date.
+     */
+    public function test_batch_explicitly_assigned_to_rep_reflects_on_rep_profile()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $rep = User::factory()->create([
+            'role'            => 'sales_rep',
+            'commission_rate' => 85.0,
+            'created_at'      => now(),
+        ]);
+
+        $coach = User::factory()->create([
+            'role'                  => 'coach',
+            'sales_rep_id'          => $rep->id,
+            'sales_rep_assigned_at' => now(),
+        ]);
+
+        // A direct batch order created 3 days ago, but explicitly assigned to rep
+        $batchId = 'batch-' . uniqid();
+        $batchOrder = ParentOrder::create([
+            'batch_id'                    => $batchId,
+            'user_id'                     => $coach->id,
+            'athlete_first_name'          => 'Speed',
+            'athlete_last_name'           => 'Racer',
+            'subtotal'                    => 1000.00,
+            'total_paid'                  => 1000.00,
+            'manufacturing_cost'          => 150.00,
+            'net_margin'                  => 850.00,
+            'applied_rep_commission_rate' => 85.0,
+            'rep_commission_earned'       => 722.50,
+            'sales_rep_id'                => $rep->id,
+            'commission_status'           => 'cleared',
+            'status'                      => 'Processing',
+            'order_type'                  => 'direct',
+            'is_archived'                 => true,
+            'items_json'                  => [],
+        ]);
+        $batchOrder->created_at = now()->subDays(3);
+        $batchOrder->save(['timestamps' => false]);
+
+        $scopedOrders = ParentOrder::getOrdersForSalesRep($rep);
+        $this->assertTrue($scopedOrders->contains('id', $batchOrder->id), 'Explicitly assigned batch should be included for rep');
+
+        $response = $this->actingAs($admin)->get("/admin/sales-reps/{$rep->id}");
+        $response->assertStatus(200);
+        $response->assertSee('722.50');
+    }
 }
 

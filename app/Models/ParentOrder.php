@@ -298,13 +298,8 @@ class ParentOrder extends Model
                     return true;
                 }
 
-                // 3. Active in-progress direct batch explicitly assigned to this sales rep
-                $isActiveBatchAssignedToRep = ($ord->sales_rep_id == $rep->id)
-                    && empty($ord->is_archived)
-                    && ($ord->commission_status !== 'paid')
-                    && ($ord->status !== 'Cancelled');
-
-                if ($isActiveBatchAssignedToRep) {
+                // 3. Batch explicitly assigned to this sales rep
+                if (!empty($ord->batch_id) && $ord->sales_rep_id == $rep->id && $ord->status !== 'Cancelled') {
                     return true;
                 }
 
