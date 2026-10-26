@@ -35,6 +35,7 @@ class User extends Authenticatable
         'commission_rate',
         'referral_slug',
         'is_tax_exempt',
+        'sales_rep_assigned_at',
     ];
 
     /**
@@ -59,6 +60,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_tax_exempt' => 'boolean',
             'commission_rate' => 'decimal:2',
+            'sales_rep_assigned_at' => 'datetime',
         ];
     }
 

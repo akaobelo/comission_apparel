@@ -230,10 +230,10 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-200">
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Attributed Sales Partner</label>
-                            <select name="sales_rep_id" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                                <option value="">-- No Partner Assigned --</option>
+                            <select name="sales_rep_id" onchange="onOrderRepChange(this)" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <option value="" data-rate="0">-- No Partner Assigned --</option>
                                 @foreach($salesReps as $rep)
-                                    <option value="{{ $rep->id }}" {{ (old('sales_rep_id', $order->sales_rep_id) == $rep->id) ? 'selected' : '' }}>
+                                    <option value="{{ $rep->id }}" data-rate="{{ number_format($rep->getEffectiveCommissionRate(), 1, '.', '') }}" {{ (old('sales_rep_id', $order->sales_rep_id) == $rep->id) ? 'selected' : '' }}>
                                         {{ $rep->name }} ({{ number_format($rep->getEffectiveCommissionRate(), 1) }}%)
                                     </option>
                                 @endforeach
@@ -242,7 +242,7 @@
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Commission Split (%)</label>
                             <div class="relative rounded-lg shadow-sm">
-                                <input type="number" step="0.1" min="0" max="100" name="applied_rep_commission_rate" value="{{ old('applied_rep_commission_rate', $order->applied_rep_commission_rate ?? $order->salesRep?->getEffectiveCommissionRate() ?? 50.00) }}" class="w-full bg-white border border-slate-300 rounded-lg pr-7 pl-3 py-2 text-sm font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                <input type="number" step="0.1" min="0" max="100" id="order_commission_rate" name="applied_rep_commission_rate" value="{{ old('applied_rep_commission_rate', $order->applied_rep_commission_rate ?? $order->salesRep?->getEffectiveCommissionRate() ?? 50.00) }}" class="w-full bg-white border border-slate-300 rounded-lg pr-7 pl-3 py-2 text-sm font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
                                     <span class="text-slate-400 font-bold text-xs font-sans">%</span>
                                 </div>
@@ -298,4 +298,15 @@
         </div>
     </div>
 </div>
+
+<script>
+function onOrderRepChange(selectEl) {
+    const selected = selectEl.options[selectEl.selectedIndex];
+    const rate = selected ? selected.getAttribute('data-rate') : null;
+    const rateInput = document.getElementById('order_commission_rate');
+    if (rate !== null && rate !== '' && rateInput) {
+        rateInput.value = rate;
+    }
+}
+</script>
 @endsection

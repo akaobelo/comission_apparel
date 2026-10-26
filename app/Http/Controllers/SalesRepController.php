@@ -34,20 +34,9 @@ class SalesRepController extends Controller
         $user = $request->user();
         [$clientIds, $storeIds] = $this->getRepScope($user);
 
-        // Self-heal: If any historical orders were mistakenly stamped with this sales rep but were created
-        // before this sales rep account even existed, restore them to their original sales rep.
-        \App\Models\ParentOrder::restoreMistakenOrdersForSalesRep($user);
-
         // Assigned Clients (Coaches / Schools)
         $clients = User::where('sales_rep_id', $user->id)
             ->with(['teamStores'])
-            ->withCount([
-                'teamStores',
-                'parentOrders as rep_orders_count' => function($q) use ($user) {
-                    $q->where('sales_rep_id', $user->id)
-                      ->where('status', '!=', 'Draft');
-                }
-            ])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -59,20 +48,14 @@ class SalesRepController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Orders attributed strictly to this sales rep or assigned coaches/stores
-        $orders = ParentOrder::where(function($q) use ($user, $clientIds, $storeIds) {
-                $q->where('sales_rep_id', $user->id);
-                if (!empty($clientIds)) {
-                    $q->orWhereIn('user_id', $clientIds);
-                }
-                if (!empty($storeIds)) {
-                    $q->orWhereIn('team_store_id', $storeIds);
-                }
-            })
-            ->where('status', '!=', 'Draft')
-            ->with(['teamStore', 'user'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Orders strictly attributed to this sales rep's book of business
+        // (Enforces: only client orders created on or after sales_rep_assigned_at belong to this rep)
+        $orders = ParentOrder::getOrdersForSalesRep($user, $clients);
+
+        // Assign accurate rep orders count per client
+        foreach ($clients as $client) {
+            $client->rep_orders_count = $orders->where('user_id', $client->id)->count();
+        }
 
         // Automatically compute commission for any unstamped order or missing calculations
         $repRate = $user->getEffectiveCommissionRate();
@@ -208,6 +191,7 @@ class SalesRepController extends Controller
             'status'       => 'active',
             'sales_rep'    => $rep->name,
             'sales_rep_id' => $rep->id,
+            'sales_rep_assigned_at' => now(),
         ]);
 
         return redirect()->route('rep.dashboard')
@@ -279,17 +263,7 @@ class SalesRepController extends Controller
     public function exportLedgerCSV(Request $request)
     {
         $rep = $request->user();
-        [$clientIds, $storeIds] = $this->getRepScope($rep);
-
-        $orders = ParentOrder::where(function($q) use ($rep, $clientIds, $storeIds) {
-                $q->where('sales_rep_id', $rep->id)
-                  ->orWhereIn('user_id', $clientIds)
-                  ->orWhereIn('team_store_id', $storeIds);
-            })
-            ->where('status', '!=', 'Draft')
-            ->with(['teamStore', 'user'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $orders = ParentOrder::getOrdersForSalesRep($rep);
 
         $filename = 'Commission_Statement_' . Str::slug($rep->name) . '_' . date('Y-m-d') . '.csv';
 

@@ -510,67 +510,46 @@ class AdminController extends Controller
             $validated['sales_rep'] = null;
         }
 
-        // When a coach is unassigned or transferred to another rep, permanently preserve
-        // all historical orders under the original sales rep so earned commissions are preserved.
         $newRepId = $validated['sales_rep_id'] ?? null;
-        if ($oldRepId && !$newRepId) {
-            // Coach is being completely unassigned: preserve past orders under old rep so historical earnings stay locked
-            $oldRep = User::find($oldRepId);
-            if ($oldRep) {
-                $coachStoreIds = TeamStore::where('user_id', $user->id)->pluck('id')->toArray();
+        if ($newRepId != $oldRepId) {
+            $validated['sales_rep_assigned_at'] = $newRepId ? now() : null;
+
+            $coachStoreIds = TeamStore::where('user_id', $user->id)->pluck('id')->toArray();
+
+            // Update team stores to new rep so future orders flow to the new rep
+            TeamStore::where('user_id', $user->id)->update(['sales_rep_id' => $newRepId]);
+
+            if ($newRepId) {
+                $newRep = User::find($newRepId);
+                $newRate = $newRep ? $newRep->getEffectiveCommissionRate() : 50.0;
+
+                // Reassign active / in-progress orders and batches for this coach to the new rep.
+                // Orders already paid out (commission_status == 'paid') remain locked to their historical payout record.
+                $activeOrders = ParentOrder::where(function($q) use ($user, $coachStoreIds) {
+                        $q->where('user_id', $user->id)
+                          ->orWhereIn('team_store_id', $coachStoreIds);
+                    })
+                    ->where('commission_status', '!=', 'paid')
+                    ->get();
+
+                foreach ($activeOrders as $ord) {
+                    $ord->sales_rep_id = $newRepId;
+                    $ord->calculateAndApplyCommission($newRate);
+                    $ord->save();
+                }
+            } else {
+                // Coach is unassigned: clear sales_rep_id on pending/unpaid orders
                 ParentOrder::where(function($q) use ($user, $coachStoreIds) {
                         $q->where('user_id', $user->id)
                           ->orWhereIn('team_store_id', $coachStoreIds);
                     })
-                    ->where(function($q) use ($oldRep) {
-                        $q->whereNull('sales_rep_id')
-                          ->orWhere('sales_rep_id', $oldRep->id);
-                    })
-                    ->each(function($ord) use ($oldRep) {
-                        $ord->sales_rep_id = $oldRep->id;
-                        if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0) {
-                            $ord->calculateAndApplyCommission($oldRep->getEffectiveCommissionRate());
-                        }
-                        $ord->save();
-                    });
-
-                TeamStore::where('user_id', $user->id)
-                    ->where('sales_rep_id', $oldRep->id)
-                    ->update(['sales_rep_id' => null]);
+                    ->where('commission_status', '!=', 'paid')
+                    ->update([
+                        'sales_rep_id' => null,
+                        'applied_rep_commission_rate' => null,
+                        'rep_commission_earned' => 0.00,
+                    ]);
             }
-        } elseif ($newRepId && $newRepId != $oldRepId) {
-            // Coach is being assigned or transferred to a new sales rep:
-            // Ensure old rep's historical orders remain locked to old rep
-            if ($oldRepId) {
-                $oldRep = User::find($oldRepId);
-                if ($oldRep) {
-                    $coachStoreIds = TeamStore::where('user_id', $user->id)->pluck('id')->toArray();
-                    ParentOrder::where(function($q) use ($user, $coachStoreIds) {
-                            $q->where('user_id', $user->id)
-                              ->orWhereIn('team_store_id', $coachStoreIds);
-                        })
-                        ->where(function($q) use ($oldRep) {
-                            $q->whereNull('sales_rep_id')
-                              ->orWhere('sales_rep_id', $oldRep->id);
-                        })
-                        ->each(function($ord) use ($oldRep) {
-                            $ord->sales_rep_id = $oldRep->id;
-                            if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0) {
-                                $ord->calculateAndApplyCommission($oldRep->getEffectiveCommissionRate());
-                            }
-                            $ord->save();
-                        });
-                }
-            }
-            // Update team stores to new rep so future orders flow to new rep
-            TeamStore::where('user_id', $user->id)->update(['sales_rep_id' => $newRepId]);
-        }
-
-        if ($newRepId) {
-            // Also link any direct orders created by this coach that currently have no sales rep
-            ParentOrder::where('user_id', $user->id)
-                ->whereNull('sales_rep_id')
-                ->update(['sales_rep_id' => $newRepId]);
         }
 
         $user->update($validated);
@@ -701,27 +680,16 @@ class AdminController extends Controller
                 ->with('error', "User {$user->name} is not registered as a sales partner.");
         }
 
-        $clientIds = User::where('sales_rep_id', $user->id)->pluck('id')->toArray();
+        $clients = User::where('sales_rep_id', $user->id)
+            ->with(['teamStores'])
+            ->latest()
+            ->get();
+
+        $clientIds = $clients->pluck('id')->toArray();
         $storeIds = TeamStore::where('sales_rep_id', $user->id)
             ->orWhereIn('user_id', $clientIds)
             ->pluck('id')
             ->toArray();
-
-        // Self-heal: If any historical orders were mistakenly stamped with this sales rep but were created
-        // before this sales rep account even existed, restore them to their original sales rep.
-        ParentOrder::restoreMistakenOrdersForSalesRep($user);
-
-        $clients = User::where('sales_rep_id', $user->id)
-            ->with(['teamStores'])
-            ->withCount([
-                'teamStores',
-                'parentOrders as rep_orders_count' => function($q) use ($user) {
-                    $q->where('sales_rep_id', $user->id)
-                      ->where('status', '!=', 'Draft');
-                }
-            ])
-            ->latest()
-            ->get();
 
         $stores = TeamStore::where('sales_rep_id', $user->id)
             ->orWhereIn('user_id', $clientIds)
@@ -730,22 +698,16 @@ class AdminController extends Controller
             ->latest()
             ->get();
 
-        // Orders strictly attributed to this sales rep or assigned coaches/stores
-        $orders = ParentOrder::where(function($q) use ($user, $clientIds, $storeIds) {
-                $q->where('sales_rep_id', $user->id);
-                if (!empty($clientIds)) {
-                    $q->orWhereIn('user_id', $clientIds);
-                }
-                if (!empty($storeIds)) {
-                    $q->orWhereIn('team_store_id', $storeIds);
-                }
-            })
-            ->where('status', '!=', 'Draft')
-            ->with(['teamStore', 'user', 'teamStore.items'])
-            ->latest()
-            ->get();
+        // Orders strictly attributed to this sales rep's book of business
+        // (Enforces: only client orders created on or after sales_rep_assigned_at belong to this rep)
+        $orders = ParentOrder::getOrdersForSalesRep($user, $clients);
 
-        // Automatically stamp rep attribution and sync financials
+        // Assign accurate rep orders count per client (only counting orders belonging to this rep)
+        foreach ($clients as $client) {
+            $client->rep_orders_count = $orders->where('user_id', $client->id)->count();
+        }
+
+        // Automatically stamp rep attribution and sync financials for qualifying orders
         $repRate = $user->getEffectiveCommissionRate();
         foreach ($orders as $ord) {
             $dirty = false;
@@ -946,10 +908,7 @@ class AdminController extends Controller
             abort(404);
         }
 
-        // 1. Self-heal any orders mistakenly stamped that predate this sales rep
-        ParentOrder::restoreMistakenOrdersForSalesRep($user);
-
-        // 2. Ensure all legitimate orders placed under this sales rep are permanently preserved
+        // 1. Ensure all legitimate orders placed under this sales rep are permanently preserved
         $repRate = $user->getEffectiveCommissionRate();
         $coachStoreIds = TeamStore::where('user_id', $coach->id)->pluck('id')->toArray();
 
@@ -974,6 +933,7 @@ class AdminController extends Controller
         // 2. Unassign the coach from this sales rep
         $coach->sales_rep_id = null;
         $coach->sales_rep = null;
+        $coach->sales_rep_assigned_at = null;
         $coach->save();
 
         // 3. Clear sales_rep_id on the coach's team stores so future orders do not auto-attribute
@@ -1005,13 +965,24 @@ class AdminController extends Controller
         $order->commission_status = $validated['commission_status'];
         $order->financial_notes = $validated['financial_notes'] ?? null;
 
-        $order->sales_rep_id = $request->input('sales_rep_id') ?: null;
+        $newRepId = $request->input('sales_rep_id') ?: null;
+        $oldRepId = $order->sales_rep_id;
+        $order->sales_rep_id = $newRepId;
 
         if ($order->commission_status === 'paid' && !$order->paid_to_rep_at) {
             $order->paid_to_rep_at = now();
         }
 
-        $rateOverride = $validated['applied_rep_commission_rate'] !== null ? (float)$validated['applied_rep_commission_rate'] : null;
+        $newRep = $newRepId ? User::find($newRepId) : null;
+        $rateInput = $validated['applied_rep_commission_rate'] ?? null;
+        if ($newRep && ($rateInput === null || ($oldRepId && $oldRepId != $newRepId))) {
+            $rateOverride = $newRep->getEffectiveCommissionRate();
+        } elseif ($rateInput !== null) {
+            $rateOverride = (float)$rateInput;
+        } else {
+            $rateOverride = $newRep ? $newRep->getEffectiveCommissionRate() : null;
+        }
+
         $order->calculateAndApplyCommission($rateOverride);
         $order->save();
 
@@ -1040,6 +1011,21 @@ class AdminController extends Controller
         $totalMfg = (float) ($validated['manufacturing_cost'] ?? 0);
         $totalTariff = (float) ($validated['tariff_amount'] ?? 0);
         $totalFee = (float) ($validated['fee_deduction'] ?? 0);
+
+        $newRepId = $request->input('sales_rep_id') ?: null;
+        $newRep = $newRepId ? User::find($newRepId) : null;
+        $currentBatchRepId = $orders->first()?->sales_rep_id;
+
+        // If sales rep was changed, or if applied_rep_commission_rate was left blank,
+        // use the selected rep's effective commission rate.
+        $rateInput = $validated['applied_rep_commission_rate'] ?? null;
+        if ($newRep && ($rateInput === null || ($currentBatchRepId && $currentBatchRepId != $newRepId))) {
+            $rateOverride = $newRep->getEffectiveCommissionRate();
+        } elseif ($rateInput !== null) {
+            $rateOverride = (float)$rateInput;
+        } else {
+            $rateOverride = $newRep ? $newRep->getEffectiveCommissionRate() : null;
+        }
 
         $allocatedMfg = 0.0;
         $allocatedTariff = 0.0;
@@ -1074,11 +1060,10 @@ class AdminController extends Controller
             $order->fee_deduction = max(0.0, $feeForOrder);
             $order->commission_status = $validated['commission_status'];
             $order->financial_notes = $validated['financial_notes'] ?? null;
-            $order->sales_rep_id = $request->input('sales_rep_id') ?: null;
+            $order->sales_rep_id = $newRepId;
             if ($order->commission_status === 'paid' && !$order->paid_to_rep_at) {
                 $order->paid_to_rep_at = now();
             }
-            $rateOverride = $validated['applied_rep_commission_rate'] !== null ? (float)$validated['applied_rep_commission_rate'] : null;
             $order->calculateAndApplyCommission($rateOverride);
             $order->save();
         }
@@ -2034,6 +2019,30 @@ class AdminController extends Controller
         $coach = $firstOrder?->user;
         $coachStores = $coach ? $coach->teamStores : collect();
         $salesReps = User::whereIn('role', ['sales_rep', 'partner', 'agent'])->get();
+
+        // If batch orders are active/unpaid and coach has an assigned sales rep,
+        // ensure active batch orders match the coach's currently assigned sales rep
+        if ($coach && $coach->sales_rep_id) {
+            $coachRep = User::find($coach->sales_rep_id);
+            if ($coachRep) {
+                $needsSync = $orders->contains(function($ord) use ($coach) {
+                    return $ord->commission_status !== 'paid' && $ord->sales_rep_id !== $coach->sales_rep_id;
+                });
+                if ($needsSync) {
+                    $rate = $coachRep->getEffectiveCommissionRate();
+                    foreach ($orders as $ord) {
+                        if ($ord->commission_status !== 'paid') {
+                            $ord->sales_rep_id = $coachRep->id;
+                            $ord->calculateAndApplyCommission($rate);
+                            $ord->save();
+                        }
+                    }
+                    $orders = ParentOrder::where('batch_id', $batchId)->with(['user', 'teamStore'])->get();
+                    $firstOrder = $orders->first();
+                    $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, $store);
+                }
+            }
+        }
 
         return view('admin.direct_batch_show', compact('batchId', 'orders', 'financials', 'firstOrder', 'coachStores', 'store', 'salesReps'));
     }

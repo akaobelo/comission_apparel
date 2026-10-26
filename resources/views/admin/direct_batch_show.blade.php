@@ -283,10 +283,10 @@
 
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Sales Partner</label>
-                            <select name="sales_rep_id" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                                <option value="">-- No Partner Assigned --</option>
+                            <select name="sales_rep_id" id="batch_sales_rep_id" onchange="onBatchRepChange(this)" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <option value="" data-rate="0">-- No Partner Assigned --</option>
                                 @foreach($salesReps as $rep)
-                                    <option value="{{ $rep->id }}" {{ ($assignedRepId == $rep->id) ? 'selected' : '' }}>
+                                    <option value="{{ $rep->id }}" data-rate="{{ number_format($rep->getEffectiveCommissionRate(), 1, '.', '') }}" {{ ($assignedRepId == $rep->id) ? 'selected' : '' }}>
                                         {{ $rep->name }} ({{ number_format($rep->getEffectiveCommissionRate(), 1) }}%)
                                     </option>
                                 @endforeach
@@ -297,7 +297,7 @@
                             <div>
                                 <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Split %</label>
                                 <div class="relative rounded-lg shadow-sm">
-                                    <input type="number" step="0.1" min="0" max="100" name="applied_rep_commission_rate" value="{{ old('applied_rep_commission_rate', $firstOrder->applied_rep_commission_rate ?? $currentRep?->getEffectiveCommissionRate() ?? 50.00) }}" class="w-full bg-white border border-slate-300 rounded-lg pr-7 pl-3 py-1.5 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                    <input type="number" step="0.1" min="0" max="100" id="batch_commission_rate" name="applied_rep_commission_rate" value="{{ old('applied_rep_commission_rate', $firstOrder->applied_rep_commission_rate ?? $currentRep?->getEffectiveCommissionRate() ?? 50.00) }}" oninput="recalcBatchRepEarned()" class="w-full bg-white border border-slate-300 rounded-lg pr-7 pl-3 py-1.5 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
                                         <span class="text-slate-400 font-bold text-xs font-sans">%</span>
                                     </div>
@@ -321,11 +321,11 @@
                         <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs font-sans">
                             <div class="flex justify-between items-center text-slate-600 font-semibold">
                                 <span>Batch Net Margin:</span>
-                                <span class="font-bold text-slate-900 text-sm font-sans">${{ number_format($batchNetMargin, 2) }}</span>
+                                <span id="batch_net_margin_val" data-value="{{ $batchNetMargin }}" class="font-bold text-slate-900 text-sm font-sans">${{ number_format($batchNetMargin, 2) }}</span>
                             </div>
                             <div class="flex justify-between items-center text-slate-600 font-semibold border-t border-slate-200/80 pt-2">
                                 <span>Rep Payout Total:</span>
-                                <span class="font-black text-emerald-600 text-base font-sans">${{ number_format($batchRepEarned, 2) }}</span>
+                                <span id="batch_rep_payout_val" class="font-black text-emerald-600 text-base font-sans">${{ number_format($batchRepEarned, 2) }}</span>
                             </div>
                         </div>
 
@@ -338,4 +338,28 @@
         </div>
     </div>
 </div>
+
+<script>
+function onBatchRepChange(selectEl) {
+    const selected = selectEl.options[selectEl.selectedIndex];
+    const rate = selected ? selected.getAttribute('data-rate') : null;
+    const rateInput = document.getElementById('batch_commission_rate');
+    if (rate !== null && rate !== '' && rateInput) {
+        rateInput.value = rate;
+    }
+    recalcBatchRepEarned();
+}
+
+function recalcBatchRepEarned() {
+    const netMarginEl = document.getElementById('batch_net_margin_val');
+    const payoutEl = document.getElementById('batch_rep_payout_val');
+    const rateInput = document.getElementById('batch_commission_rate');
+    if (!netMarginEl || !payoutEl || !rateInput) return;
+
+    const netMargin = parseFloat(netMarginEl.dataset.value || 0);
+    const rate = parseFloat(rateInput.value || 0);
+    const earned = Math.max(0, netMargin * (rate / 100.0));
+    payoutEl.textContent = '$' + earned.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+</script>
 @endsection

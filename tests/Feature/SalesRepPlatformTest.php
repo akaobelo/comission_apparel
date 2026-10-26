@@ -26,7 +26,8 @@ class SalesRepPlatformTest extends TestCase
             'first_name'       => 'Marcus',
             'last_name'        => 'Robinson',
             'email'            => 'marcus@partner.com',
-            'password'         => 'Password123!',
+            'password'              => 'Password123!',
+            'password_confirmation' => 'Password123!',
             'partner_category' => 'authorized_business',
             'commission_rate'  => 40.0,
             'referral_slug'    => 'marcus-apparel',
@@ -201,6 +202,120 @@ class SalesRepPlatformTest extends TestCase
         $response->assertSee('Marcus Robinson');
         $response->assertSee('Westlake High');
         $response->assertSee('Partner Profile');
+    }
+
+    /**
+     * Test rep only receives orders placed on or after client assignment date.
+     */
+    public function test_rep_only_receives_orders_placed_on_or_after_assignment_date()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $rep = User::factory()->create([
+            'role'            => 'sales_rep',
+            'commission_rate' => 30.0,
+            'created_at'      => now(),
+        ]);
+
+        $coach = User::factory()->create([
+            'role'                  => 'coach',
+            'sales_rep_id'          => $rep->id,
+            'sales_rep_assigned_at' => now(),
+        ]);
+
+        // Historical order placed BEFORE coach was assigned to this rep
+        $oldOrder = ParentOrder::create([
+            'user_id'            => $coach->id,
+            'athlete_first_name' => 'John',
+            'athlete_last_name'  => 'Doe',
+            'subtotal'           => 1000.00,
+            'total_paid'         => 1000.00,
+            'status'             => 'Processing',
+            'order_type'         => 'direct',
+            'is_archived'        => true,
+            'items_json'         => [],
+            'sales_rep_id'       => null,
+        ]);
+        $oldOrder->created_at = now()->subDays(10);
+        $oldOrder->save(['timestamps' => false]);
+
+        // New order placed AFTER coach was assigned to this rep
+        $newOrder = ParentOrder::create([
+            'user_id'            => $coach->id,
+            'athlete_first_name' => 'Jane',
+            'athlete_last_name'  => 'Doe',
+            'subtotal'           => 500.00,
+            'total_paid'         => 500.00,
+            'status'             => 'Processing',
+            'order_type'         => 'direct',
+            'is_archived'        => false,
+            'items_json'         => [],
+            'sales_rep_id'       => $rep->id,
+        ]);
+        $newOrder->created_at = now()->addHour();
+        $newOrder->save(['timestamps' => false]);
+
+        $scopedOrders = ParentOrder::getOrdersForSalesRep($rep);
+
+        $this->assertFalse($scopedOrders->contains('id', $oldOrder->id), 'Old historical order should not be scoped to rep');
+        $this->assertTrue($scopedOrders->contains('id', $newOrder->id), 'New order after assignment should be scoped to rep');
+    }
+
+    /**
+     * Test reassigning coach to new rep transfers active orders and recalculates commission rate.
+     */
+    public function test_reassigning_coach_transfers_active_orders_and_recalculates_rate()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $oldRep = User::factory()->create(['role' => 'sales_rep', 'commission_rate' => 85.0]);
+        $newRep = User::factory()->create(['role' => 'sales_rep', 'commission_rate' => 30.0]);
+
+        $coach = User::factory()->create([
+            'role'                  => 'coach',
+            'organization'          => 'Track Stars',
+            'phone'                 => '1234567890',
+            'sport'                 => 'Track',
+            'status'                => 'active',
+            'sales_rep_id'          => $oldRep->id,
+            'sales_rep_assigned_at' => now()->subDay(),
+        ]);
+
+        $order = ParentOrder::create([
+            'user_id'                     => $coach->id,
+            'athlete_first_name'          => 'Tim',
+            'athlete_last_name'           => 'Duncan',
+            'subtotal'                    => 1000.00,
+            'total_paid'                  => 1000.00,
+            'manufacturing_cost'          => 500.00,
+            'net_margin'                  => 500.00,
+            'applied_rep_commission_rate' => 85.0,
+            'rep_commission_earned'       => 425.00,
+            'sales_rep_id'                => $oldRep->id,
+            'commission_status'           => 'pending',
+            'status'                      => 'Processing',
+            'order_type'                  => 'direct',
+            'items_json'                  => [],
+        ]);
+
+        $response = $this->actingAs($admin)->post("/admin/coach/{$coach->id}/update", [
+            'first_name'   => $coach->first_name,
+            'last_name'    => $coach->last_name,
+            'email'        => $coach->email,
+            'organization' => $coach->organization,
+            'phone'        => $coach->phone,
+            'sport'        => $coach->sport,
+            'status'       => $coach->status,
+            'sales_rep_id' => $newRep->id,
+        ]);
+
+        $response->assertRedirect();
+
+        $coach->refresh();
+        $this->assertEquals($newRep->id, $coach->sales_rep_id);
+
+        $order->refresh();
+        $this->assertEquals($newRep->id, $order->sales_rep_id);
+        $this->assertEquals(30.0, (float)$order->applied_rep_commission_rate);
+        $this->assertEquals(150.00, (float)$order->rep_commission_earned);
     }
 }
 

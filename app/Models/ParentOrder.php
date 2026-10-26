@@ -230,10 +230,10 @@ class ParentOrder extends Model
 
         $rate = $rateOverride;
         if ($rate === null) {
-            if ($this->applied_rep_commission_rate !== null) {
-                $rate = (float) $this->applied_rep_commission_rate;
-            } elseif ($this->salesRep) {
+            if ($this->salesRep) {
                 $rate = $this->salesRep->getEffectiveCommissionRate();
+            } elseif ($this->applied_rep_commission_rate !== null) {
+                $rate = (float) $this->applied_rep_commission_rate;
             } else {
                 $rate = 50.00;
             }
@@ -244,44 +244,86 @@ class ParentOrder extends Model
     }
 
     /**
-     * Restore any historical orders mistakenly stamped with a sales rep to their rightful original sales rep.
-     * An order is identified as mistakenly stamped if its creation timestamp is prior to the sales rep's account creation.
+     * Get all qualifying orders belonging strictly to a sales rep's book of business.
+     * Enforces the rule that reps only receive orders placed on or after the client assignment date,
+     * while preserving active batches explicitly assigned to the rep.
+     */
+    public static function getOrdersForSalesRep(User $rep, ?\Illuminate\Support\Collection $clients = null)
+    {
+        if ($clients === null) {
+            $clients = User::where('sales_rep_id', $rep->id)->with(['teamStores'])->get();
+        }
+        $clientIds = $clients->pluck('id')->toArray();
+        $clientsById = $clients->keyBy('id');
+
+        $storeIds = TeamStore::where('sales_rep_id', $rep->id)
+            ->orWhereIn('user_id', $clientIds)
+            ->pluck('id')
+            ->toArray();
+
+        $candidates = static::where(function($q) use ($rep, $clientIds, $storeIds) {
+                $q->where('sales_rep_id', $rep->id);
+                if (!empty($clientIds)) {
+                    $q->orWhereIn('user_id', $clientIds);
+                }
+                if (!empty($storeIds)) {
+                    $q->orWhereIn('team_store_id', $storeIds);
+                }
+            })
+            ->where('status', '!=', 'Draft')
+            ->with(['teamStore', 'user', 'teamStore.items'])
+            ->latest()
+            ->get();
+
+        return $candidates->filter(function($ord) use ($rep, $clientsById) {
+            $orderDate = $ord->created_at ?: $ord->paid_at;
+
+            $client = null;
+            if ($ord->user_id && isset($clientsById[$ord->user_id])) {
+                $client = $clientsById[$ord->user_id];
+            } elseif ($ord->teamStore && isset($clientsById[$ord->teamStore->user_id])) {
+                $client = $clientsById[$ord->teamStore->user_id];
+            }
+
+            if ($client) {
+                $assignedAt = $client->sales_rep_assigned_at;
+
+                // 1. Order placed on or after client was assigned to this rep
+                if ($assignedAt && $orderDate && $orderDate->gte($assignedAt)) {
+                    return true;
+                }
+
+                // 2. Fallback if assigned_at was not set: only include if on or after rep creation
+                if (!$assignedAt && $orderDate && $orderDate->gte($rep->created_at->startOfDay())) {
+                    return true;
+                }
+
+                // 3. Active in-progress direct batch explicitly assigned to this sales rep
+                $isActiveBatchAssignedToRep = ($ord->sales_rep_id == $rep->id)
+                    && empty($ord->is_archived)
+                    && ($ord->commission_status !== 'paid')
+                    && ($ord->status !== 'Cancelled');
+
+                if ($isActiveBatchAssignedToRep) {
+                    return true;
+                }
+
+                // Historical activity prior to assignment belongs exclusively to Super Admin lifetime archive
+                return false;
+            }
+
+            // Not an assigned client: must be directly assigned to this sales rep
+            return ($ord->sales_rep_id == $rep->id);
+        })->values();
+    }
+
+    /**
+     * Deprecated no-op: Order attribution is strictly governed by coach assignment date
+     * and explicit admin batch assignments.
      */
     public static function restoreMistakenOrdersForSalesRep(User $rep): void
     {
-        if (!$rep->created_at) {
-            return;
-        }
-
-        // Any order stamped with this sales rep that was created before this sales rep account existed
-        $mistakenOrders = static::where('sales_rep_id', $rep->id)
-            ->where('created_at', '<', $rep->created_at->copy()->subMinutes(10))
-            ->get();
-
-        if ($mistakenOrders->isNotEmpty()) {
-            $originalRep = User::whereIn('role', ['sales_rep', 'partner', 'agent'])
-                ->where('id', '!=', $rep->id)
-                ->where(function($q) {
-                    $q->where('name', 'like', '%Earl%')
-                      ->orWhere('first_name', 'like', '%Earl%')
-                      ->orWhere('email', 'like', '%earl%');
-                })
-                ->first()
-                ?? User::whereIn('role', ['sales_rep', 'partner', 'agent'])
-                    ->where('id', '!=', $rep->id)
-                    ->orderBy('id', 'asc')
-                    ->first();
-
-            if ($originalRep) {
-                $restoreRepId = $originalRep->id;
-                $restoreRate = $originalRep->getEffectiveCommissionRate();
-                foreach ($mistakenOrders as $mo) {
-                    $mo->sales_rep_id = $restoreRepId;
-                    $mo->calculateAndApplyCommission($restoreRate);
-                    $mo->save();
-                }
-            }
-        }
+        // No-op
     }
 
     protected static function initDesignsCache()
