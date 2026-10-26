@@ -1341,11 +1341,11 @@ class CoachController extends Controller
                         }
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : 'N/A';
 
-                        $design = \App\Models\DesignCatalog::find($item['id'] ?? null);
-                        $itemPrice = $design ? (float) $design->wholesale_price : 0;
+                        $prices = \App\Models\ParentOrder::getItemPrices($item, $order->teamStore);
+                        $itemPrice = $prices['retail_price'];
+                        $mfgPrice = $prices['wholesale_price'];
                         $qty = $item['qty'] ?? 1;
                         $totalPrice = $itemPrice * $qty;
-                        $mfgPrice = $design ? (float) $design->wholesale_price : 0;
                         $totalMfgPrice = $mfgPrice * $qty;
 
                         fputcsv($file, [

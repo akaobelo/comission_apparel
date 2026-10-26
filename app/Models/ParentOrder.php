@@ -362,7 +362,44 @@ class ParentOrder extends Model
         $itemName = $item['name'] ?? null;
 
         if ($store) {
-            $storeItem = $itemId ? $store->items->firstWhere('id', $itemId) : null;
+            $storeItem = null;
+
+            // 1. If itemId matches a store item whose name also matches
+            if ($itemId) {
+                $cand = $store->items->firstWhere('id', $itemId);
+                if ($cand && ($itemName === null || strcasecmp(trim($cand->name), trim($itemName)) === 0)) {
+                    $storeItem = $cand;
+                }
+            }
+
+            // 2. If itemId is a design_catalog_id (as used in direct orders), match by design_catalog_id and name
+            if (!$storeItem && $itemId) {
+                $cand = $store->items->firstWhere('design_catalog_id', $itemId);
+                if ($cand && ($itemName === null || strcasecmp(trim($cand->name), trim($itemName)) === 0)) {
+                    $storeItem = $cand;
+                }
+            }
+
+            // 3. Match by exact item name (case-insensitive) in the store's items
+            if (!$storeItem && $itemName) {
+                $storeItem = $store->items->first(function ($si) use ($itemName) {
+                    return strcasecmp(trim($si->name), trim($itemName)) === 0;
+                });
+            }
+
+            // 4. Match by normalized name (ignoring whitespace and case)
+            if (!$storeItem && $itemName) {
+                $normItemName = str_replace(' ', '', strtolower($itemName));
+                $storeItem = $store->items->first(function ($si) use ($normItemName) {
+                    return str_replace(' ', '', strtolower($si->name)) === $normItemName;
+                });
+            }
+
+            // 5. Fallback by design_catalog_id alone if name was not provided
+            if (!$storeItem && $itemId) {
+                $storeItem = $store->items->firstWhere('design_catalog_id', $itemId);
+            }
+
             if ($storeItem) {
                 $retail = (float) $storeItem->retail_price;
                 $wholesale = (float) $storeItem->wholesale_price;
@@ -380,8 +417,13 @@ class ParentOrder extends Model
 
         $design = null;
         if ($itemId && isset(self::$designsById[$itemId])) {
-            $design = self::$designsById[$itemId];
-        } elseif ($itemName) {
+            $cand = self::$designsById[$itemId];
+            if ($itemName === null || strcasecmp(trim($cand->name), trim($itemName)) === 0) {
+                $design = $cand;
+            }
+        }
+
+        if (!$design && $itemName) {
             if (isset(self::$designsByName[$itemName])) {
                 $design = self::$designsByName[$itemName];
             } else {
