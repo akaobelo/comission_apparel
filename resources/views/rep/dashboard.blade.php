@@ -553,20 +553,20 @@
                         @forelse($clients as $c)
                             <tr 
                                 class="coach-row hover:bg-slate-50 transition-colors"
+                                data-id="{{ $c->id }}"
                                 data-sort="{{ $loop->iteration }}"
                                 data-org="{{ strtolower($c->organization) }}"
                                 data-contact="{{ strtolower($c->name) }}"
                                 data-sport="{{ strtolower($c->sport) }}"
-                                data-stores="{{ $c->team_stores_count }}"
                                 data-orders="{{ $c->rep_orders_count ?? 0 }}"
                                 data-date="{{ $c->created_at->timestamp }}"
                                 x-show="!coachSearch || '{{ strtolower(addslashes($c->organization . ' ' . $c->name . ' ' . $c->email . ' ' . $c->phone . ' ' . $c->sport)) }}'.includes(coachSearch.toLowerCase().trim())"
                             >
                                 {{-- Sort # --}}
-                                <td class="px-4 py-4 text-center">
-                                    <div class="inline-flex items-center gap-1.5 font-sans text-xs text-slate-400">
-                                        <span class="text-slate-300 font-bold text-sm leading-none select-none">≡</span>
-                                        <span class="w-8 h-7 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-800 font-bold text-xs shadow-2xs">
+                                <td class="px-4 py-4 text-center drag-handle cursor-grab active:cursor-grabbing select-none group" title="Drag to reorder">
+                                    <div class="inline-flex items-center gap-1.5 font-sans text-xs text-slate-400 group-hover:text-slate-600">
+                                        <span class="text-slate-400 group-hover:text-slate-700 font-bold text-sm leading-none select-none">≡</span>
+                                        <span class="row-sort-badge w-8 h-7 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-800 font-bold text-xs shadow-2xs group-hover:border-slate-400 group-hover:shadow-xs transition-all">
                                             {{ $loop->iteration }}
                                         </span>
                                     </div>
@@ -725,6 +725,7 @@
                         @forelse($stores as $s)
                             <tr 
                                 class="store-row hover:bg-slate-50 transition-colors"
+                                data-id="{{ $s->id }}"
                                 data-sort="{{ $loop->iteration }}"
                                 data-name="{{ strtolower($s->name) }}"
                                 data-org="{{ strtolower($s->user?->organization ?? '') }}"
@@ -734,10 +735,10 @@
                                 x-show="!storeSearch || '{{ strtolower(addslashes($s->name . ' ' . ($s->user?->organization ?? '') . ' ' . ($s->user?->name ?? '') . ' ' . ($s->sport ?: ($s->user?->sport ?: 'Athletics')) . ' ' . $s->status)) }}'.includes(storeSearch.toLowerCase().trim())"
                             >
                                 {{-- Sort # --}}
-                                <td class="px-4 py-4 text-center">
-                                    <div class="inline-flex items-center gap-1.5 font-sans text-xs text-slate-400">
-                                        <span class="text-slate-300 font-bold text-sm leading-none select-none">≡</span>
-                                        <span class="w-8 h-7 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-800 font-bold text-xs shadow-2xs">
+                                <td class="px-4 py-4 text-center drag-handle cursor-grab active:cursor-grabbing select-none group" title="Drag to reorder">
+                                    <div class="inline-flex items-center gap-1.5 font-sans text-xs text-slate-400 group-hover:text-slate-600">
+                                        <span class="text-slate-400 group-hover:text-slate-700 font-bold text-sm leading-none select-none">≡</span>
+                                        <span class="row-sort-badge w-8 h-7 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-800 font-bold text-xs shadow-2xs group-hover:border-slate-400 group-hover:shadow-xs transition-all">
                                             {{ $loop->iteration }}
                                         </span>
                                     </div>
@@ -1753,4 +1754,107 @@
     </div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        initRepDashboardDragSort();
+    });
+
+    function initRepDashboardDragSort() {
+        const repId = '{{ auth()->id() }}';
+
+        // 1. Assigned Coaches Table Drag & Drop
+        const coachTbody = document.getElementById('rep-coach-table-body');
+        if (coachTbody) {
+            const savedCoachOrder = localStorage.getItem('tca_rep_' + repId + '_coach_sort');
+            if (savedCoachOrder) {
+                try {
+                    const ids = JSON.parse(savedCoachOrder);
+                    const rows = Array.from(coachTbody.querySelectorAll('tr.coach-row'));
+                    const rowMap = new Map(rows.map(r => [String(r.dataset.id), r]));
+                    ids.forEach(id => {
+                        const r = rowMap.get(String(id));
+                        if (r) coachTbody.appendChild(r);
+                    });
+                    Array.from(coachTbody.querySelectorAll('tr.coach-row')).forEach((r, idx) => {
+                        r.dataset.sort = idx + 1;
+                        const badge = r.querySelector('.row-sort-badge');
+                        if (badge) badge.textContent = idx + 1;
+                    });
+                } catch (e) {
+                    console.error('Error applying coach sort:', e);
+                }
+            }
+
+            if (window.Sortable) {
+                new Sortable(coachTbody, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    draggable: 'tr.coach-row',
+                    ghostClass: 'bg-slate-100',
+                    chosenClass: 'bg-slate-50',
+                    onEnd: function() {
+                        const rows = Array.from(coachTbody.querySelectorAll('tr.coach-row'));
+                        const ids = [];
+                        rows.forEach((r, idx) => {
+                            const newSort = idx + 1;
+                            r.dataset.sort = newSort;
+                            const badge = r.querySelector('.row-sort-badge');
+                            if (badge) badge.textContent = newSort;
+                            if (r.dataset.id) ids.push(r.dataset.id);
+                        });
+                        localStorage.setItem('tca_rep_' + repId + '_coach_sort', JSON.stringify(ids));
+                    }
+                });
+            }
+        }
+
+        // 2. Team Stores Table Drag & Drop
+        const storeTbody = document.getElementById('rep-store-table-body');
+        if (storeTbody) {
+            const savedStoreOrder = localStorage.getItem('tca_rep_' + repId + '_store_sort');
+            if (savedStoreOrder) {
+                try {
+                    const ids = JSON.parse(savedStoreOrder);
+                    const rows = Array.from(storeTbody.querySelectorAll('tr.store-row'));
+                    const rowMap = new Map(rows.map(r => [String(r.dataset.id), r]));
+                    ids.forEach(id => {
+                        const r = rowMap.get(String(id));
+                        if (r) storeTbody.appendChild(r);
+                    });
+                    Array.from(storeTbody.querySelectorAll('tr.store-row')).forEach((r, idx) => {
+                        r.dataset.sort = idx + 1;
+                        const badge = r.querySelector('.row-sort-badge');
+                        if (badge) badge.textContent = idx + 1;
+                    });
+                } catch (e) {
+                    console.error('Error applying store sort:', e);
+                }
+            }
+
+            if (window.Sortable) {
+                new Sortable(storeTbody, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    draggable: 'tr.store-row',
+                    ghostClass: 'bg-slate-100',
+                    chosenClass: 'bg-slate-50',
+                    onEnd: function() {
+                        const rows = Array.from(storeTbody.querySelectorAll('tr.store-row'));
+                        const ids = [];
+                        rows.forEach((r, idx) => {
+                            const newSort = idx + 1;
+                            r.dataset.sort = newSort;
+                            const badge = r.querySelector('.row-sort-badge');
+                            if (badge) badge.textContent = newSort;
+                            if (r.dataset.id) ids.push(r.dataset.id);
+                        });
+                        localStorage.setItem('tca_rep_' + repId + '_store_sort', JSON.stringify(ids));
+                    }
+                });
+            }
+        }
+    }
+</script>
 @endsection

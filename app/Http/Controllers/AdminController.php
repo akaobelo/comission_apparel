@@ -1613,6 +1613,10 @@ class AdminController extends Controller
             TeamStore::where('id', $item['id'])->update(['sort_order' => $order]);
         }
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
         return redirect()->route('admin.dashboard')->with('success', 'Stores sort order updated successfully.');
     }
 

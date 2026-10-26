@@ -877,6 +877,7 @@
                         @forelse($clients as $client)
                             <tr 
                                 class="coach-row hover:bg-slate-50 transition-colors"
+                                data-id="{{ $client->id }}"
                                 data-sort="{{ $loop->iteration }}"
                                 data-org="{{ strtolower($client->organization) }}"
                                 data-contact="{{ strtolower($client->name) }}"
@@ -887,10 +888,10 @@
                                 x-show="!coachSearch || '{{ strtolower(addslashes($client->organization . ' ' . $client->name . ' ' . $client->email . ' ' . $client->phone . ' ' . $client->sport)) }}'.includes(coachSearch.toLowerCase().trim())"
                             >
                                 {{-- Sort # --}}
-                                <td class="px-4 py-4 text-center">
-                                    <div class="inline-flex items-center gap-1.5 font-sans text-xs text-slate-400">
-                                        <span class="text-slate-300 font-bold text-sm leading-none select-none">≡</span>
-                                        <span class="w-8 h-7 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-800 font-bold text-xs shadow-2xs">
+                                <td class="px-4 py-4 text-center drag-handle cursor-grab active:cursor-grabbing select-none group" title="Drag to reorder">
+                                    <div class="inline-flex items-center gap-1.5 font-sans text-xs text-slate-400 group-hover:text-slate-600">
+                                        <span class="text-slate-400 group-hover:text-slate-700 font-bold text-sm leading-none select-none">≡</span>
+                                        <span class="row-sort-badge w-8 h-7 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-800 font-bold text-xs shadow-2xs group-hover:border-slate-400 group-hover:shadow-xs transition-all">
                                             {{ $loop->iteration }}
                                         </span>
                                     </div>
@@ -1065,6 +1066,7 @@
                         @forelse($stores as $st)
                             <tr 
                                 class="store-row hover:bg-slate-50 transition-colors"
+                                data-id="{{ $st->id }}"
                                 data-sort="{{ $loop->iteration }}"
                                 data-name="{{ strtolower($st->name) }}"
                                 data-org="{{ strtolower(($st->user?->organization ?? '') . ' ' . ($st->user?->name ?? '')) }}"
@@ -1075,10 +1077,10 @@
                                 x-show="!storeSearch || '{{ strtolower(addslashes($st->name . ' ' . ($st->user?->organization ?? '') . ' ' . ($st->user?->name ?? '') . ' ' . ($st->sport ?: ($st->user?->sport ?: 'Athletics')) . ' ' . $st->status)) }}'.includes(storeSearch.toLowerCase().trim())"
                             >
                                 {{-- Sort # --}}
-                                <td class="px-4 py-4 text-center">
-                                    <div class="inline-flex items-center gap-1.5 font-sans text-xs text-slate-400">
-                                        <span class="text-slate-300 font-bold text-sm leading-none select-none">≡</span>
-                                        <span class="w-8 h-7 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-800 font-bold text-xs shadow-2xs">
+                                <td class="px-4 py-4 text-center drag-handle cursor-grab active:cursor-grabbing select-none group" title="Drag to reorder">
+                                    <div class="inline-flex items-center gap-1.5 font-sans text-xs text-slate-400 group-hover:text-slate-600">
+                                        <span class="text-slate-400 group-hover:text-slate-700 font-bold text-sm leading-none select-none">≡</span>
+                                        <span class="row-sort-badge w-8 h-7 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-800 font-bold text-xs shadow-2xs group-hover:border-slate-400 group-hover:shadow-xs transition-all">
                                             {{ $loop->iteration }}
                                         </span>
                                     </div>
@@ -1835,4 +1837,126 @@
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        initSalesRepDragSort();
+    });
+
+    function initSalesRepDragSort() {
+        const partnerId = '{{ $user->id }}';
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+        // 1. Assigned Coaches Table Drag & Drop
+        const coachTbody = document.getElementById('admin-coach-table-body');
+        if (coachTbody) {
+            const savedCoachOrder = localStorage.getItem('tca_rep_' + partnerId + '_coach_sort');
+            if (savedCoachOrder) {
+                try {
+                    const ids = JSON.parse(savedCoachOrder);
+                    const rows = Array.from(coachTbody.querySelectorAll('tr.coach-row'));
+                    const rowMap = new Map(rows.map(r => [String(r.dataset.id), r]));
+                    ids.forEach(id => {
+                        const r = rowMap.get(String(id));
+                        if (r) coachTbody.appendChild(r);
+                    });
+                    Array.from(coachTbody.querySelectorAll('tr.coach-row')).forEach((r, idx) => {
+                        r.dataset.sort = idx + 1;
+                        const badge = r.querySelector('.row-sort-badge');
+                        if (badge) badge.textContent = idx + 1;
+                    });
+                } catch (e) {
+                    console.error('Error applying coach sort:', e);
+                }
+            }
+
+            if (window.Sortable) {
+                new Sortable(coachTbody, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    draggable: 'tr.coach-row',
+                    ghostClass: 'bg-slate-100',
+                    chosenClass: 'bg-slate-50',
+                    onEnd: function() {
+                        const rows = Array.from(coachTbody.querySelectorAll('tr.coach-row'));
+                        const ids = [];
+                        rows.forEach((r, idx) => {
+                            const newSort = idx + 1;
+                            r.dataset.sort = newSort;
+                            const badge = r.querySelector('.row-sort-badge');
+                            if (badge) badge.textContent = newSort;
+                            if (r.dataset.id) ids.push(r.dataset.id);
+                        });
+                        localStorage.setItem('tca_rep_' + partnerId + '_coach_sort', JSON.stringify(ids));
+                    }
+                });
+            }
+        }
+
+        // 2. Team Stores Table Drag & Drop
+        const storeTbody = document.getElementById('admin-store-table-body');
+        if (storeTbody) {
+            const savedStoreOrder = localStorage.getItem('tca_rep_' + partnerId + '_store_sort');
+            if (savedStoreOrder) {
+                try {
+                    const ids = JSON.parse(savedStoreOrder);
+                    const rows = Array.from(storeTbody.querySelectorAll('tr.store-row'));
+                    const rowMap = new Map(rows.map(r => [String(r.dataset.id), r]));
+                    ids.forEach(id => {
+                        const r = rowMap.get(String(id));
+                        if (r) storeTbody.appendChild(r);
+                    });
+                    Array.from(storeTbody.querySelectorAll('tr.store-row')).forEach((r, idx) => {
+                        r.dataset.sort = idx + 1;
+                        const badge = r.querySelector('.row-sort-badge');
+                        if (badge) badge.textContent = idx + 1;
+                    });
+                } catch (e) {
+                    console.error('Error applying store sort:', e);
+                }
+            }
+
+            if (window.Sortable) {
+                new Sortable(storeTbody, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    draggable: 'tr.store-row',
+                    ghostClass: 'bg-slate-100',
+                    chosenClass: 'bg-slate-50',
+                    onEnd: function() {
+                        const rows = Array.from(storeTbody.querySelectorAll('tr.store-row'));
+                        const ids = [];
+                        const itemsForBackend = [];
+                        rows.forEach((r, idx) => {
+                            const newSort = idx + 1;
+                            r.dataset.sort = newSort;
+                            const badge = r.querySelector('.row-sort-badge');
+                            if (badge) badge.textContent = newSort;
+                            if (r.dataset.id) {
+                                ids.push(r.dataset.id);
+                                itemsForBackend.push({ id: parseInt(r.dataset.id), order: newSort });
+                            }
+                        });
+                        localStorage.setItem('tca_rep_' + partnerId + '_store_sort', JSON.stringify(ids));
+
+                        // Persist to backend database via bulk-sort
+                        if (itemsForBackend.length > 0) {
+                            fetch('{{ route("admin.stores.bulk-sort") }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: JSON.stringify({ items: itemsForBackend })
+                            }).catch(err => console.error('Bulk store sort error:', err));
+                        }
+                    }
+                });
+            }
+        }
+    }
+</script>
 @endsection
