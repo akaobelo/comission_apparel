@@ -582,24 +582,24 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
+                                    <div class="font-bold text-slate-900">{{ $c->organization }}</div>
                                     @php
                                         $primaryStore = $c->teamStores->first();
                                     @endphp
-                                    @if($primaryStore)
-                                        <a href="{{ route('admin.store.edit', ['store' => $primaryStore, 'return_to' => url()->full()]) }}" class="font-bold text-slate-900 hover:text-primary hover:underline transition-colors inline-block" title="Edit Store: {{ $primaryStore->name }}">
-                                            {{ $c->organization }}
+                                    @if($primaryStore && $primaryStore->slug)
+                                        <a href="{{ route('store.show', $primaryStore->slug) }}" target="_blank" class="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 mt-0.5" title="View Store: {{ $primaryStore->name }}">
+                                            <span>{{ $primaryStore->name }}</span>
+                                            <svg class="w-3 h-3 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                         </a>
                                     @else
-                                        <div class="font-bold text-slate-900">{{ $c->organization }}</div>
+                                        <span class="text-[11px] text-slate-400">No store yet</span>
                                     @endif
                                     @if($c->is_tax_exempt)
-                                        <span class="inline-block mt-0.5 text-[10px] font-black uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">501(c)(3) Exempt</span>
+                                        <span class="inline-block mt-0.5 ml-1.5 text-[10px] font-black uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">501(c)(3) Exempt</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4">
-                                    <a href="{{ route('admin.coach.edit', ['user' => $c, 'return_to' => url()->full()]) }}" class="font-medium text-slate-900 hover:text-primary hover:underline transition-colors inline-block" title="Edit Coach">
-                                        {{ $c->name }}
-                                    </a>
+                                    <div class="font-medium text-slate-900">{{ $c->name }}</div>
                                     <div class="text-xs text-slate-500">{{ $c->email }} · {{ $c->phone }}</div>
                                 </td>
                                 <td class="px-6 py-4 font-bold text-slate-700">{{ $c->sport }}</td>

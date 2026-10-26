@@ -906,15 +906,17 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
+                                    <div class="font-bold text-slate-900">{{ $client->organization }}</div>
                                     @php
                                         $primaryStore = $client->teamStores->first();
                                     @endphp
                                     @if($primaryStore)
-                                        <a href="{{ route('admin.store.edit', ['store' => $primaryStore, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'clients'])]) }}" class="font-bold text-slate-900 hover:text-primary hover:underline transition-colors block" title="Edit Store: {{ $primaryStore->name }}">
-                                            {{ $client->organization }}
+                                        <a href="{{ route('admin.store.edit', ['store' => $primaryStore, 'return_to' => route('admin.sales-rep.show', ['user' => $user, 'tab' => 'clients'])]) }}" class="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 mt-0.5" title="Edit Store: {{ $primaryStore->name }}">
+                                            <span>Store: {{ $primaryStore->name }}</span>
+                                            <svg class="w-3 h-3 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                         </a>
                                     @else
-                                        <div class="font-bold text-slate-900">{{ $client->organization }}</div>
+                                        <span class="text-[11px] text-slate-400">No store yet</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4">
