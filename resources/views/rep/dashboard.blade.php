@@ -464,7 +464,6 @@
                             <option value="org:desc">Organization (Z - A)</option>
                             <option value="contact:asc">Primary Contact (A - Z)</option>
                             <option value="sport:asc">Category (A - Z)</option>
-                            <option value="stores:desc">Most Stores</option>
                             <option value="orders:desc">Most Orders</option>
                             <option value="date:desc">Newest Onboarded</option>
                             <option value="date:asc">Oldest Onboarded</option>
@@ -527,15 +526,6 @@
                                     <span class="text-[10px]" :class="coachSortCol === 'sport' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
                                         <span x-show="coachSortCol === 'sport'" x-text="coachSortAsc ? '▲' : '▼'"></span>
                                         <span x-show="coachSortCol !== 'sport'">⇅</span>
-                                    </span>
-                                </div>
-                            </th>
-                            <th class="px-6 py-3.5 text-center cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortCoachTable('stores')" title="Sort by Store count">
-                                <div class="inline-flex items-center justify-center gap-1.5">
-                                    <span>Stores</span>
-                                    <span class="text-[10px]" :class="coachSortCol === 'stores' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
-                                        <span x-show="coachSortCol === 'stores'" x-text="coachSortAsc ? '▲' : '▼'"></span>
-                                        <span x-show="coachSortCol !== 'stores'">⇅</span>
                                     </span>
                                 </div>
                             </th>
@@ -603,13 +593,12 @@
                                     <div class="text-xs text-slate-500">{{ $c->email }} · {{ $c->phone }}</div>
                                 </td>
                                 <td class="px-6 py-4 font-bold text-slate-700">{{ $c->sport }}</td>
-                                <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $c->team_stores_count }}</td>
                                 <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $c->rep_orders_count ?? 0 }}</td>
                                 <td class="px-6 py-4 text-xs text-slate-500">{{ $c->created_at->format('M d, Y') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                                <td colspan="6" class="px-6 py-12 text-center text-slate-500">
                                     <p class="font-bold text-base text-slate-700 mb-1">No clients assigned yet</p>
                                     <p class="text-xs text-slate-400">Share your recruitment link with coaches to onboard your first client organization.</p>
                                 </td>

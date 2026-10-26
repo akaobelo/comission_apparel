@@ -787,7 +787,6 @@
                             <option value="org:desc">Organization (Z - A)</option>
                             <option value="contact:asc">Primary Contact (A - Z)</option>
                             <option value="sport:asc">Category (A - Z)</option>
-                            <option value="stores:desc">Most Stores</option>
                             <option value="orders:desc">Most Orders</option>
                             <option value="date:desc">Newest Onboarded</option>
                             <option value="date:asc">Oldest Onboarded</option>
@@ -850,15 +849,6 @@
                                     <span class="text-[10px]" :class="coachSortCol === 'sport' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
                                         <span x-show="coachSortCol === 'sport'" x-text="coachSortAsc ? '▲' : '▼'"></span>
                                         <span x-show="coachSortCol !== 'sport'">⇅</span>
-                                    </span>
-                                </div>
-                            </th>
-                            <th class="px-6 py-3.5 text-center cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortCoachTable('stores')" title="Sort by Store count">
-                                <div class="inline-flex items-center justify-center gap-1.5">
-                                    <span>Stores</span>
-                                    <span class="text-[10px]" :class="coachSortCol === 'stores' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
-                                        <span x-show="coachSortCol === 'stores'" x-text="coachSortAsc ? '▲' : '▼'"></span>
-                                        <span x-show="coachSortCol !== 'stores'">⇅</span>
                                     </span>
                                 </div>
                             </th>
@@ -930,7 +920,6 @@
                                         {{ $client->sport ?: 'Athletics' }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $client->team_stores_count }}</td>
                                 <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $client->rep_orders_count ?? 0 }}</td>
                                 <td class="px-6 py-4 text-xs text-slate-500">{{ $client->created_at?->format('M d, Y') ?? '—' }}</td>
                                 <td class="px-6 py-4 text-right">
@@ -950,7 +939,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-6 py-12 text-center text-slate-500">
+                                <td colspan="7" class="px-6 py-12 text-center text-slate-500">
                                     No clients or organizations linked to this partner yet.
                                 </td>
                             </tr>
