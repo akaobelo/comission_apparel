@@ -472,9 +472,12 @@ class ParentOrder extends Model
             $orderItemsCount = 0;
             $items = is_array($order->items_json) ? $order->items_json : [];
 
-            if ($order->isPaid()) {
-                // For PAID orders: use the locked historical financial snapshot
+            if ($order->isPaid() || (float)($order->subtotal ?? 0) > 0 || $order->isDirectOrder()) {
+                // For locked/placed orders: use the actual recorded subtotal
                 $orderTotal = (float) ($order->subtotal ?? 0);
+                if ($orderTotal <= 0) {
+                    $orderTotal = (float) ($order->total_retail_price ?? 0);
+                }
                 foreach ($items as $orderedItem) {
                     $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
                     $orderItemsCount += $qty;
@@ -613,8 +616,8 @@ class ParentOrder extends Model
 
             // Gross sales: include the entire amount collected (Online Payment Stripe total in green if paid online, or total sales)
             $onlinePaid = (float)($batchFinancials['total_online_paid'] ?? 0);
-            $totalSales = (float)($batchFinancials['total_sales'] ?? $batchOrders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales($store)));
-            $gross = $onlinePaid > 0 ? $onlinePaid : $totalSales;
+            $totalSales = (float) $batchOrders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales($store));
+            $gross = $onlinePaid > 0 ? $onlinePaid : ($totalSales > 0 ? $totalSales : (float)($batchFinancials['total_sales'] ?? 0));
 
             // Manu. Cost: Total Manufacturing Cost from batch summary (or effective manufacturing cost)
             $manuCost = (float) $batchOrders->sum(fn($o) => (float)$o->manufacturing_cost);
@@ -632,10 +635,12 @@ class ParentOrder extends Model
 
             // Net Margin: Combine Manu. Cost + Taxes + Fees to get total expense, then subtract from Gross Sales
             $totalExpense = $manuCost + $taxes + $fees;
-            $netMargin = max(0.0, $gross - $totalExpense);
+            $savedNetMargin = (float) $batchOrders->sum(fn($o) => (float)$o->net_margin);
+            $netMargin = $savedNetMargin > 0 ? $savedNetMargin : max(0.0, $gross - $totalExpense);
 
             $splitRate = (float)($first->applied_rep_commission_rate ?? ($rep ? $rep->getEffectiveCommissionRate() : 50.0));
-            $commission = round($netMargin * ($splitRate / 100.0), 2);
+            $actualCommission = (float) $batchOrders->sum(fn($o) => (float)$o->rep_commission_earned);
+            $commission = $actualCommission > 0 ? $actualCommission : round($netMargin * ($splitRate / 100.0), 2);
 
             if ($store) {
                 $storeName = $store->name;
