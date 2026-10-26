@@ -20,8 +20,11 @@
         this.copied = true;
         setTimeout(() => this.copied = false, 2500);
     },
-    sortCoachTable(col) {
-        if (this.coachSortCol === col) {
+    sortCoachTable(col, forceAsc = null) {
+        if (forceAsc !== null) {
+            this.coachSortCol = col;
+            this.coachSortAsc = forceAsc;
+        } else if (this.coachSortCol === col) {
             this.coachSortAsc = !this.coachSortAsc;
         } else {
             this.coachSortCol = col;
@@ -33,7 +36,7 @@
         rows.sort((a, b) => {
             let valA = a.dataset[col] ?? '';
             let valB = b.dataset[col] ?? '';
-            if (col === 'stores' || col === 'orders' || col === 'date') {
+            if (col === 'stores' || col === 'orders' || col === 'date' || col === 'sort') {
                 valA = parseFloat(valA) || 0;
                 valB = parseFloat(valB) || 0;
                 return this.coachSortAsc ? (valA - valB) : (valB - valA);
@@ -44,8 +47,11 @@
         });
         rows.forEach(r => tbody.appendChild(r));
     },
-    sortStoreTable(col) {
-        if (this.storeSortCol === col) {
+    sortStoreTable(col, forceAsc = null) {
+        if (forceAsc !== null) {
+            this.storeSortCol = col;
+            this.storeSortAsc = forceAsc;
+        } else if (this.storeSortCol === col) {
             this.storeSortAsc = !this.storeSortAsc;
         } else {
             this.storeSortCol = col;
@@ -57,7 +63,7 @@
         rows.sort((a, b) => {
             let valA = a.dataset[col] ?? '';
             let valB = b.dataset[col] ?? '';
-            if (col === 'orders' || col === 'deadline') {
+            if (col === 'orders' || col === 'deadline' || col === 'sort') {
                 valA = parseFloat(valA) || 0;
                 valB = parseFloat(valB) || 0;
                 return this.storeSortAsc ? (valA - valB) : (valB - valA);
@@ -444,28 +450,59 @@
                     <h3 class="text-sm font-black uppercase tracking-wider text-slate-900">Assigned Clients & Organizations ({{ $clients->count() }})</h3>
                     <p class="text-xs text-slate-500 mt-0.5">Click column titles to sort. Use search to filter by name, school, email, or sport.</p>
                 </div>
-                <div class="relative w-full sm:w-64">
-                    <input 
-                        type="text" 
-                        x-model="coachSearch" 
-                        placeholder="Search coaches..." 
-                        class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-7 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors shadow-2xs font-sans"
-                    >
-                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <button 
-                        type="button" 
-                        x-show="coachSearch" 
-                        @click="coachSearch = ''" 
-                        class="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 text-xs font-bold leading-none p-0.5"
-                        style="display: none;"
-                        title="Clear search"
-                    >&times;</button>
+                <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                    {{-- Quick Sort Dropdown --}}
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-xs font-bold text-slate-400 whitespace-nowrap">Sort:</span>
+                        <select 
+                            :value="coachSortCol + ':' + (coachSortAsc ? 'asc' : 'desc')"
+                            @change="const parts = $event.target.value.split(':'); sortCoachTable(parts[0], parts[1] === 'asc')"
+                            class="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 shadow-2xs cursor-pointer"
+                        >
+                            <option value="sort:asc">Sort # (1 - N)</option>
+                            <option value="org:asc">Organization (A - Z)</option>
+                            <option value="org:desc">Organization (Z - A)</option>
+                            <option value="contact:asc">Primary Contact (A - Z)</option>
+                            <option value="sport:asc">Category (A - Z)</option>
+                            <option value="stores:desc">Most Stores</option>
+                            <option value="orders:desc">Most Orders</option>
+                            <option value="date:desc">Newest Onboarded</option>
+                            <option value="date:asc">Oldest Onboarded</option>
+                        </select>
+                    </div>
+
+                    <div class="relative w-full sm:w-64">
+                        <input 
+                            type="text" 
+                            x-model="coachSearch" 
+                            placeholder="Search coaches..." 
+                            class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-7 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors shadow-2xs font-sans"
+                        >
+                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <button 
+                            type="button" 
+                            x-show="coachSearch" 
+                            @click="coachSearch = ''" 
+                            class="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 text-xs font-bold leading-none p-0.5"
+                            style="display: none;"
+                            title="Clear search"
+                        >&times;</button>
+                    </div>
                 </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
                         <tr>
+                            <th class="px-4 py-3.5 text-center w-16 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortCoachTable('sort')" title="Sort by index">
+                                <div class="inline-flex items-center justify-center gap-1">
+                                    <span>Sort</span>
+                                    <span class="text-[10px]" :class="coachSortCol === 'sort' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                        <span x-show="coachSortCol === 'sort'" x-text="coachSortAsc ? '▲' : '▼'"></span>
+                                        <span x-show="coachSortCol !== 'sort'">⇅</span>
+                                    </span>
+                                </div>
+                            </th>
                             <th class="px-6 py-3.5 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortCoachTable('org')" title="Sort by Organization">
                                 <div class="inline-flex items-center gap-1.5">
                                     <span>Organization / School</span>
@@ -526,6 +563,7 @@
                         @forelse($clients as $c)
                             <tr 
                                 class="coach-row hover:bg-slate-50 transition-colors"
+                                data-sort="{{ $loop->iteration }}"
                                 data-org="{{ strtolower($c->organization) }}"
                                 data-contact="{{ strtolower($c->name) }}"
                                 data-sport="{{ strtolower($c->sport) }}"
@@ -534,6 +572,15 @@
                                 data-date="{{ $c->created_at->timestamp }}"
                                 x-show="!coachSearch || '{{ strtolower(addslashes($c->organization . ' ' . $c->name . ' ' . $c->email . ' ' . $c->phone . ' ' . $c->sport)) }}'.includes(coachSearch.toLowerCase().trim())"
                             >
+                                {{-- Sort # --}}
+                                <td class="px-4 py-4 text-center">
+                                    <div class="inline-flex items-center gap-1.5 font-sans text-xs text-slate-400">
+                                        <span class="text-slate-300 font-bold text-sm leading-none select-none">≡</span>
+                                        <span class="w-8 h-7 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-800 font-bold text-xs shadow-2xs">
+                                            {{ $loop->iteration }}
+                                        </span>
+                                    </div>
+                                </td>
                                 <td class="px-6 py-4">
                                     @php
                                         $primaryStore = $c->teamStores->first();
@@ -562,7 +609,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                                <td colspan="7" class="px-6 py-12 text-center text-slate-500">
                                     <p class="font-bold text-base text-slate-700 mb-1">No clients assigned yet</p>
                                     <p class="text-xs text-slate-400">Share your recruitment link with coaches to onboard your first client organization.</p>
                                 </td>
@@ -582,32 +629,61 @@
                     <h3 class="text-sm font-black uppercase tracking-wider text-slate-900">Client Team Stores & Production Pipeline</h3>
                     <span class="text-xs font-bold text-slate-500">{{ $stores->count() }} Stores</span>
                 </div>
-                <div class="relative w-full sm:w-64">
-                    <input 
-                        type="text" 
-                        x-model="storeSearch" 
-                        placeholder="Search stores..." 
-                        class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-7 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors shadow-2xs font-sans"
-                    >
-                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                    <button 
-                        type="button" 
-                        x-show="storeSearch" 
-                        @click="storeSearch = ''" 
-                        class="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 text-xs font-bold leading-none p-0.5"
-                        style="display: none;"
-                        title="Clear search"
-                    >
-                        &times;
-                    </button>
+                <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                    {{-- Quick Sort Dropdown --}}
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-xs font-bold text-slate-400 whitespace-nowrap">Sort:</span>
+                        <select 
+                            :value="storeSortCol + ':' + (storeSortAsc ? 'asc' : 'desc')"
+                            @change="const parts = $event.target.value.split(':'); sortStoreTable(parts[0], parts[1] === 'asc')"
+                            class="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 shadow-2xs cursor-pointer"
+                        >
+                            <option value="sort:asc">Sort # (1 - N)</option>
+                            <option value="name:asc">Store Name (A - Z)</option>
+                            <option value="name:desc">Store Name (Z - A)</option>
+                            <option value="org:asc">Organization (A - Z)</option>
+                            <option value="orders:desc">Most Orders</option>
+                            <option value="deadline:desc">Deadline</option>
+                            <option value="status:asc">Status</option>
+                        </select>
+                    </div>
+
+                    <div class="relative w-full sm:w-64">
+                        <input 
+                            type="text" 
+                            x-model="storeSearch" 
+                            placeholder="Search stores..." 
+                            class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-7 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors shadow-2xs font-sans"
+                        >
+                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <button 
+                            type="button" 
+                            x-show="storeSearch" 
+                            @click="storeSearch = ''" 
+                            class="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 text-xs font-bold leading-none p-0.5"
+                            style="display: none;"
+                            title="Clear search"
+                        >
+                            &times;
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="bg-slate-100/70 text-slate-700 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
                         <tr>
+                            <th class="px-4 py-3.5 text-center w-16 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortStoreTable('sort')" title="Sort by index">
+                                <div class="inline-flex items-center justify-center gap-1">
+                                    <span>Sort</span>
+                                    <span class="text-[10px]" :class="storeSortCol === 'sort' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                        <span x-show="storeSortCol === 'sort'" x-text="storeSortAsc ? '▲' : '▼'"></span>
+                                        <span x-show="storeSortCol !== 'sort'">⇅</span>
+                                    </span>
+                                </div>
+                            </th>
                             <th class="px-6 py-3.5 cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortStoreTable('name')" title="Sort by Store Name">
                                 <div class="inline-flex items-center gap-1.5">
                                     <span>Store Name</span>
@@ -660,13 +736,23 @@
                         @forelse($stores as $s)
                             <tr 
                                 class="store-row hover:bg-slate-50 transition-colors"
+                                data-sort="{{ $loop->iteration }}"
                                 data-name="{{ strtolower($s->name) }}"
                                 data-org="{{ strtolower($s->user?->organization ?? '') }}"
                                 data-orders="{{ $s->parent_orders_count }}"
-                                data-deadline="{{ $s->deadline ? $s->deadline->timestamp : 0 }}"
+                                data-deadline="{{ $s->order_deadline ? $s->order_deadline->timestamp : 0 }}"
                                 data-status="{{ strtolower($s->status) }}"
                                 x-show="!storeSearch || '{{ strtolower(addslashes($s->name . ' ' . ($s->user?->organization ?? '') . ' ' . ($s->user?->name ?? '') . ' ' . ($s->sport ?: ($s->user?->sport ?: 'Athletics')) . ' ' . $s->status)) }}'.includes(storeSearch.toLowerCase().trim())"
                             >
+                                {{-- Sort # --}}
+                                <td class="px-4 py-4 text-center">
+                                    <div class="inline-flex items-center gap-1.5 font-sans text-xs text-slate-400">
+                                        <span class="text-slate-300 font-bold text-sm leading-none select-none">≡</span>
+                                        <span class="w-8 h-7 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-800 font-bold text-xs shadow-2xs">
+                                            {{ $loop->iteration }}
+                                        </span>
+                                    </div>
+                                </td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
                                         @php
@@ -713,7 +799,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                                <td colspan="7" class="px-6 py-12 text-center text-slate-500">
                                     No active stores created by your clients yet.
                                 </td>
                             </tr>
