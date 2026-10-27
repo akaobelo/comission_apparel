@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Mail\CoachRegisteredNotification;
+use App\Mail\NewLeadNotification;
 use App\Mail\OrderSubmittedNotification;
 use App\Mail\StoreRequestedNotification;
 use App\Models\ParentOrder;
+use App\Models\QuoteRequest;
 use App\Models\TeamStore;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -68,7 +70,7 @@ class EmailNotificationService
             }
 
             $orderData = [
-                'type_label'        => 'Master Order Batch',
+                'type_label'        => 'Finalized Master Order',
                 'batch_or_order_id' => substr($batchId, 0, 8),
                 'organization'      => $coach?->organization ?: $store->name,
                 'store_name'        => $store->name,
@@ -135,7 +137,7 @@ class EmailNotificationService
             });
 
             $orderData = [
-                'type_label'        => 'Direct Order Batch',
+                'type_label'        => 'Finalized Direct Order',
                 'batch_or_order_id' => $batchId ? substr($batchId, 0, 8) : ($firstOrder->batch_id ? substr($firstOrder->batch_id, 0, 8) : "#{$firstOrder->id}"),
                 'organization'      => $coach?->organization ?: 'Direct Order',
                 'store_name'        => $firstOrder?->teamStore?->name,
@@ -172,10 +174,19 @@ class EmailNotificationService
 
     /**
      * Notify Admins and assigned Sales Rep of a single customer/parent store order.
+     * Note: Admin notifications for individual orders are suppressed by default to prevent
+     * email inbox clogging during the season. Finalized Masters and Finalized Directs are sent instead.
      */
     public static function notifyParentOrderSubmitted(ParentOrder $order): void
     {
         try {
+            $notifyAdmin = (bool) config('mail.notify_admin_on_individual_orders', false);
+            $notifyRep = (bool) config('mail.notify_rep_on_individual_orders', false);
+
+            if (!$notifyAdmin && !$notifyRep) {
+                return;
+            }
+
             $store = $order->teamStore;
             $coach = $store?->user ?: $order->user;
             $salesRep = $order->salesRep ?: ($store?->salesRep ?: $coach?->salesRep);
@@ -212,14 +223,16 @@ class EmailNotificationService
                 'action_url'        => config('app.url') . '/admin/dashboard',
             ];
 
-            // 1. Send to Super Admins
-            $admins = self::getAdminRecipients();
-            if (!empty($admins)) {
-                Mail::to($admins)->send(new OrderSubmittedNotification($orderData, 'admin'));
+            // 1. Send to Super Admins (only if explicitly enabled)
+            if ($notifyAdmin) {
+                $admins = self::getAdminRecipients();
+                if (!empty($admins)) {
+                    Mail::to($admins)->send(new OrderSubmittedNotification($orderData, 'admin'));
+                }
             }
 
-            // 2. Send to Assigned Sales Rep if any
-            if ($salesRep && !empty($salesRep->email) && filter_var($salesRep->email, FILTER_VALIDATE_EMAIL)) {
+            // 2. Send to Assigned Sales Rep if any (only if explicitly enabled)
+            if ($notifyRep && $salesRep && !empty($salesRep->email) && filter_var($salesRep->email, FILTER_VALIDATE_EMAIL)) {
                 $repData = $orderData;
                 $repData['action_url'] = route('rep.dashboard');
                 Mail::to($salesRep->email)->send(new OrderSubmittedNotification($repData, 'sales_rep'));
@@ -227,6 +240,39 @@ class EmailNotificationService
         } catch (\Throwable $e) {
             Log::error('EmailNotificationService::notifyParentOrderSubmitted failed: ' . $e->getMessage(), [
                 'order_id' => $order->id ?? null,
+                'trace'    => $e->getTraceAsString(),
+            ]);
+        }
+    }
+
+    /**
+     * Notify Admins of a new Quote or Free Mockup Inquiry.
+     */
+    public static function notifyInquirySubmitted(QuoteRequest $quote): void
+    {
+        try {
+            $admins = self::getAdminRecipients();
+            $recipients = $admins;
+
+            // Always ensure Info@TheCommissionApparel.com is included
+            $fallback = 'Info@TheCommissionApparel.com';
+            $hasFallback = false;
+            foreach ($recipients as $email) {
+                if (strcasecmp($email, $fallback) === 0) {
+                    $hasFallback = true;
+                    break;
+                }
+            }
+            if (!$hasFallback) {
+                $recipients[] = $fallback;
+            }
+
+            if (!empty($recipients)) {
+                Mail::to($recipients)->send(new NewLeadNotification($quote));
+            }
+        } catch (\Throwable $e) {
+            Log::error('EmailNotificationService::notifyInquirySubmitted failed: ' . $e->getMessage(), [
+                'quote_id' => $quote->id ?? null,
                 'trace'    => $e->getTraceAsString(),
             ]);
         }

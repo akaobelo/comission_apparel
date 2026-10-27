@@ -122,4 +122,18 @@ return [
     */
     'admin_recipients' => array_values(array_filter(array_map('trim', explode(',', env('ADMIN_NOTIFICATION_EMAILS', 'Luke@speedcapital.com'))))),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Notification Settings
+    |--------------------------------------------------------------------------
+    |
+    | By default, individual athlete/parent orders submitted through Stripe
+    | or public team stores are suppressed to prevent inbox clutter during
+    | peak season. Admins receive Finalized Masters, Finalized Directs,
+    | New Inquiries, and New Store Submissions instead.
+    |
+    */
+    'notify_admin_on_individual_orders' => env('NOTIFY_ADMIN_ON_INDIVIDUAL_ORDERS', false),
+    'notify_rep_on_individual_orders'   => env('NOTIFY_REP_ON_INDIVIDUAL_ORDERS', false),
+
 ];

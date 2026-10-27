@@ -1,7 +1,7 @@
 <x-mail::message>
-# 🚀 New Free Mockup Lead Received
+# 🚀 {{ ($quoteRequest->package_type === 'free_3d_mockup' || $quoteRequest->lead_source === 'landing_page_free_mockup') ? 'New Free Mockup Inquiry Received' : 'New Quote Inquiry Received' }}
 
-A new lead has just been submitted from the **{{ $quoteRequest->lead_source === 'landing_page_free_mockup' ? 'Free Mockup Landing Page (/free-mockup)' : 'Website Quote Form' }}**.
+A new inquiry has just been submitted from the **{{ $quoteRequest->lead_source === 'landing_page_free_mockup' ? 'Free Mockup Landing Page (/free-mockup)' : 'Website Quote Form' }}**.
 
 <x-mail::panel>
 **Contact Details:**

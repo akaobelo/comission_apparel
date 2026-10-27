@@ -94,6 +94,13 @@ class StripeWebhookController extends Controller
                             Log::error("Failed to notify admin on webhook direct order: " . $e->getMessage());
                         }
                     }
+
+                    try {
+                        \App\Services\EmailNotificationService::notifyDirectOrderSubmitted($batchOrders, $firstOrder->user, $batchId);
+                    } catch (\Exception $e) {
+                        Log::error("Failed to send direct order email notification on webhook: " . $e->getMessage());
+                    }
+
                     Log::info("Direct order batch {$batchId} marked as paid and submitted to admin via Stripe webhook.");
                 }
                 return;

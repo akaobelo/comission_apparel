@@ -30,9 +30,11 @@ class NewLeadNotification extends Mailable
     {
         $org = $this->quoteRequest->organization_name ?: 'New Organization';
         $name = trim($this->quoteRequest->first_name . ' ' . $this->quoteRequest->last_name) ?: 'New Lead';
+        $isMockup = ($this->quoteRequest->package_type === 'free_3d_mockup' || $this->quoteRequest->lead_source === 'landing_page_free_mockup');
+        $label = $isMockup ? 'New Free Mockup Inquiry' : 'New Quote Inquiry';
 
         return new Envelope(
-            subject: "New Free Mockup Lead: {$org} - {$name}",
+            subject: "[The Commission Apparel] {$label}: {$org} - {$name}",
             replyTo: [
                 new \Illuminate\Mail\Mailables\Address($this->quoteRequest->email, $name),
             ],

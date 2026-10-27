@@ -1,12 +1,12 @@
 <x-mail::message>
 @if($recipientType === 'sales_rep')
-# 🔔 Great News! An Order Was Placed by Your Client
+# 🔔 Great News! A {{ $orderData['type_label'] ?? 'New Order' }} Was Placed by Your Client
 
-An order has just been submitted by one of your assigned coaches. Here is the summary of the submission:
+A finalized order has just been submitted by one of your assigned coaches. Here is the summary of the submission:
 @else
-# 📦 New Order Submitted
+# 📦 {{ $orderData['type_label'] ?? 'New Order Submitted' }}
 
-A new order submission has arrived and is ready for production processing.
+A finalized order submission has arrived and is ready for production processing.
 @endif
 
 <x-mail::panel>

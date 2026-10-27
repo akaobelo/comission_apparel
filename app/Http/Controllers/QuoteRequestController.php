@@ -65,11 +65,7 @@ class QuoteRequestController extends Controller
                 ->withErrors(['form' => 'Quote requests are not ready yet. Please try again later.']);
         }
 
-        try {
-            Mail::to('Info@TheCommissionApparel.com')->send(new NewLeadNotification($quote));
-        } catch (\Throwable $e) {
-            Log::error('Failed to send quote notification email: ' . $e->getMessage());
-        }
+        \App\Services\EmailNotificationService::notifyInquirySubmitted($quote);
 
         return redirect()
             ->route('quote.success');
@@ -123,11 +119,7 @@ class QuoteRequestController extends Controller
             'status'             => 'new',
         ]);
 
-        try {
-            Mail::to('Info@TheCommissionApparel.com')->send(new NewLeadNotification($lead));
-        } catch (\Throwable $e) {
-            Log::error('Failed to send landing lead notification email: ' . $e->getMessage());
-        }
+        \App\Services\EmailNotificationService::notifyInquirySubmitted($lead);
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
