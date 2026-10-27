@@ -193,6 +193,7 @@ class CoachController extends Controller
 
         $store = TeamStore::create([
             'user_id'      => $user->id,
+            'sales_rep_id' => $user->sales_rep_id,
             'name'         => $request->name,
             'sport'        => $sport,
             'description'  => $request->description,
@@ -209,6 +210,8 @@ class CoachController extends Controller
             \App\Models\User::where('role', 'admin')->get(),
             new \App\Notifications\StoreCreated($store)
         );
+
+        \App\Services\EmailNotificationService::notifyStoreRequested($store);
 
         return redirect()->route('coach.dashboard', ['store_id' => $store->id, 'tab' => 'overview'])
             ->with('success', 'Store "' . $store->name . '" created! Awaiting admin approval. You can start setting it up.');
@@ -389,6 +392,8 @@ class CoachController extends Controller
             \App\Models\User::where('role', 'admin')->get(),
             new \App\Notifications\MasterOrderSubmitted($store)
         );
+
+        \App\Services\EmailNotificationService::notifyMasterOrderSubmitted($store, $batchId);
 
         return redirect()->route('coach.dashboard')
             ->with('success', 'Master order submitted to The Commission Apparel for production!');
@@ -1219,6 +1224,7 @@ class CoachController extends Controller
                     'user' => $user
                 ])
             );
+            \App\Services\EmailNotificationService::notifyDirectOrderSubmitted($draftOrders, $user, $batchId);
 
             return redirect()->route('coach.dashboard')
                 ->with('success', 'Direct orders successfully paid and submitted to production (Test Simulation)!')
@@ -1273,6 +1279,7 @@ class CoachController extends Controller
                                 'user' => $user
                             ])
                         );
+                        \App\Services\EmailNotificationService::notifyDirectOrderSubmitted($orders, $user, $batchId);
                     }
                 }
             } catch (\Exception $e) {

@@ -146,6 +146,7 @@ class StripeWebhookController extends Controller
                     $fullName = trim($order->athlete_first_name . ' ' . $order->athlete_last_name);
                     $store->user->notify(new \App\Notifications\ParentOrderPlaced($fullName, $store->name));
                 }
+                \App\Services\EmailNotificationService::notifyParentOrderSubmitted($order);
             } catch (\Exception $e) {
                 Log::error("Failed to notify coach of paid order #{$order->id}: " . $e->getMessage());
             }

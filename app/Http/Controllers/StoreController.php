@@ -275,6 +275,8 @@ class StoreController extends Controller
             new \App\Notifications\ParentOrderPlaced($fullName, $store->name)
         );
 
+        \App\Services\EmailNotificationService::notifyParentOrderSubmitted($parentOrder);
+
         if ($store->isInHousePayment()) {
             $formattedTotal = '$' . number_format($grandTotal, 2);
             $taxNote = $isTaxExempt ? 'Tax-Exempt' : 'includes state sales tax';
@@ -456,6 +458,7 @@ class StoreController extends Controller
 
             $fullName = $order->athlete_name;
             $store->user->notify(new \App\Notifications\ParentOrderPlaced($fullName, $store->name));
+            \App\Services\EmailNotificationService::notifyParentOrderSubmitted($order);
 
             return redirect()->route('store.checkout.success', ['slug' => $store->slug, 'order' => $order->id])
                 ->with('success', 'Order payment confirmed (Stripe Test Simulation)!');
@@ -499,6 +502,7 @@ class StoreController extends Controller
 
                     $fullName = $order->athlete_name;
                     $store->user->notify(new \App\Notifications\ParentOrderPlaced($fullName, $store->name));
+                    \App\Services\EmailNotificationService::notifyParentOrderSubmitted($order);
                 }
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Error verifying Stripe session on return: ' . $e->getMessage());

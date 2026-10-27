@@ -153,6 +153,11 @@ class User extends Authenticatable
         return $this->belongsTo(User::class, 'sales_rep_id');
     }
 
+    public function salesRep()
+    {
+        return $this->belongsTo(User::class, 'sales_rep_id');
+    }
+
     // Sales Rep has many assigned Coaches/Clients
     public function assignedClients()
     {

@@ -131,6 +131,8 @@ class AuthController extends Controller
             new \App\Notifications\CoachRegistered($user)
         );
 
+        \App\Services\EmailNotificationService::notifyCoachRegistered($user);
+
         // Log them in immediately
         Auth::login($user);
         $request->session()->regenerate();

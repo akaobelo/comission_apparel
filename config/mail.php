@@ -115,4 +115,11 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Super Admin Recipients for System Notifications
+    |--------------------------------------------------------------------------
+    */
+    'admin_recipients' => array_values(array_filter(array_map('trim', explode(',', env('ADMIN_NOTIFICATION_EMAILS', 'Luke@speedcapital.com'))))),
+
 ];
