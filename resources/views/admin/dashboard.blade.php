@@ -187,6 +187,15 @@
                             <span class="w-1.5 h-1.5 rounded-full" :class="activeAdminTab === 'stores' ? 'bg-emerald-400' : 'bg-transparent'"></span>
                         </button>
 
+                        {{-- Total Sales --}}
+                        <button type="button" @click="setTab('total_sales')" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeAdminTab === 'total_sales' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-red-50/40 text-red-600 hover:text-red-700 font-bold border border-slate-200/80 hover:border-red-200 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeAdminTab === 'total_sales' ? 'text-emerald-400' : 'text-slate-400 group-hover:text-red-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span class="truncate">Total Sales</span>
+                            </div>
+                            <span class="w-1.5 h-1.5 rounded-full" :class="activeAdminTab === 'total_sales' ? 'bg-emerald-400' : 'bg-transparent'"></span>
+                        </button>
+
                         {{-- Inquiries & Quotes --}}
                         <button type="button" @click="setTab('quote_inquiries')" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeAdminTab === 'quote_inquiries' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-red-50/40 text-red-600 hover:text-red-700 font-bold border border-slate-200/80 hover:border-red-200 shadow-2xs'">
                             <div class="flex items-center gap-2 min-w-0">
