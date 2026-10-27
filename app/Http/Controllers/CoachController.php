@@ -470,7 +470,8 @@ class CoachController extends Controller
                             }
                         } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
                             foreach ($item['sizes'] as $t => $s) {
-                                $sizesArr[] = "$t: $s";
+                                $typeLabel = \App\Models\DesignCatalog::formatTypeLabel($t);
+                                $sizesArr[] = "$typeLabel: $s";
                             }
                         }
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
@@ -848,7 +849,7 @@ class CoachController extends Controller
             $unitPrice = (float) $design->wholesale_price;
             $qty = max(1, intval($details['qty'] ?? 1));
 
-            $types = $design->types ?? [];
+            $types = $design->expanded_types ?? (!empty($design->types) ? $design->types : []);
             $sizedTypes = DesignCatalog::sizedTypes();
             $hasSizes = count(array_intersect($types, $sizedTypes)) > 0;
 
@@ -932,7 +933,7 @@ class CoachController extends Controller
             'order_type'          => 'direct',
             'athlete_first_name'  => $firstName ?: 'Direct',
             'athlete_last_name'   => $lastName ?: 'Order',
-            'gender'              => $request->filled('gender') ? trim($request->gender) : null,
+            'gender'              => $request->filled('gender') ? trim($request->gender) : ($itemsJson[0]['gender'] ?? null),
             'jersey_name'         => $request->jersey_name,
             'jersey_number'       => $request->jersey_number,
             'backpack_name'       => $request->backpack_name,
@@ -1330,7 +1331,8 @@ class CoachController extends Controller
                             }
                         } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
                             foreach ($item['sizes'] as $t => $s) {
-                                $sizesArr[] = "$t: $s";
+                                $typeLabel = \App\Models\DesignCatalog::formatTypeLabel($t);
+                                $sizesArr[] = "$typeLabel: $s";
                             }
                         }
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : 'N/A';

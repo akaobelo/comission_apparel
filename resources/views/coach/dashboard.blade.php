@@ -421,8 +421,11 @@
                                                         @foreach($group['items']->sortByDesc('id') as $design)
                                                             @php
                                                                 $sizedTypes = \App\Models\DesignCatalog::sizedTypes();
-                                                                $types = $design->types ?? [];
-                                                                $hasSizes = count(array_intersect($types, $sizedTypes)) > 0;
+                                                                $types = $design->expanded_types;
+                                                                $sizedComponents = array_values(array_intersect($types, $sizedTypes));
+                                                                $nonSizedComponents = array_values(array_filter(array_diff($types, $sizedTypes), fn($t) => !str_contains($t, 'package')));
+                                                                $hasSizes = count($sizedComponents) > 0;
+                                                                $isPackage = $design->isPackage() || count($sizedComponents) > 1 || !empty($nonSizedComponents);
                                                             @endphp
                                                             <div x-data="{ selected: false }" x-show="search === '' || '{{ strtolower(addslashes($design->name)) }}'.includes(search.toLowerCase()) || selected" class="border border-slate-200 rounded-xl p-4 transition-colors" :class="selected ? 'bg-primary/5 border-primary' : 'bg-white hover:border-slate-300'">
                                                                 <div class="flex items-start gap-4">
@@ -441,7 +444,7 @@
                                                                             <div>
                                                                                 <h4 class="font-bold text-slate-900 leading-tight font-heading">{{ $design->name }}</h4>
                                                                                 <div class="flex items-center gap-2 mt-1">
-                                                                                    <span class="text-xs text-slate-500 uppercase tracking-wider">{{ implode(', ', $types) }}</span>
+                                                                                    <span class="text-xs text-slate-500 uppercase tracking-wider">{{ implode(', ', array_map(fn($t) => \App\Models\DesignCatalog::formatTypeLabel($t), $types)) }}</span>
                                                                                     @if($design->wholesale_price > 0)
                                                                                         <span class="text-slate-300">•</span>
                                                                                         <span class="text-xs font-bold text-slate-900">${{ number_format($design->wholesale_price, 2) }}</span>
@@ -459,7 +462,60 @@
                                                                         </div>
 
                                                                         <div x-show="selected" x-collapse class="mt-4 pt-4 border-t border-slate-200/60">
-                                                                            @if($hasSizes)
+                                                                            @if($isPackage && ($hasSizes || !empty($nonSizedComponents)))
+                                                                                <div class="space-y-3">
+                                                                                    <div class="flex items-center justify-between">
+                                                                                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-700">Package Component Sizes</span>
+                                                                                        <span class="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">Select size for each piece</span>
+                                                                                    </div>
+
+                                                                                    @if(!empty($sizedComponents))
+                                                                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                                                                            @foreach($sizedComponents as $compType)
+                                                                                                <div class="bg-slate-50 border border-slate-200/80 rounded-lg p-2.5">
+                                                                                                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                                                                                        {{ \App\Models\DesignCatalog::formatTypeLabel($compType) }}
+                                                                                                    </label>
+                                                                                                    <select name="items[{{ $design->id }}][package_sizes][{{ $compType }}]"
+                                                                                                            class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow"
+                                                                                                            :disabled="!selected">
+                                                                                                        <optgroup label="Youth Sizes">
+                                                                                                            @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $size)
+                                                                                                                <option value="{{ $size }}">{{ $size }}</option>
+                                                                                                            @endforeach
+                                                                                                        </optgroup>
+                                                                                                        <optgroup label="Adult Sizes">
+                                                                                                            @foreach(['AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL', 'A4XL', 'A5XL'] as $size)
+                                                                                                                <option value="{{ $size }}" {{ $size === 'AM' ? 'selected' : '' }}>{{ $size }}</option>
+                                                                                                            @endforeach
+                                                                                                        </optgroup>
+                                                                                                    </select>
+                                                                                                </div>
+                                                                                            @endforeach
+                                                                                        </div>
+                                                                                    @endif
+
+                                                                                    @if(!empty($nonSizedComponents))
+                                                                                        <div class="flex flex-wrap gap-2 pt-1">
+                                                                                            @foreach($nonSizedComponents as $nonSizedType)
+                                                                                                <div class="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-600">
+                                                                                                    <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                                                                    <span class="font-medium">{{ \App\Models\DesignCatalog::formatTypeLabel($nonSizedType) }}</span>
+                                                                                                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200/60 px-1.5 py-0.5 rounded">Included (One Size)</span>
+                                                                                                </div>
+                                                                                            @endforeach
+                                                                                        </div>
+                                                                                    @endif
+
+                                                                                    <template x-if="orderMode === 'person'">
+                                                                                        <input type="hidden" name="items[{{ $design->id }}][qty]" value="1" :disabled="!selected">
+                                                                                    </template>
+                                                                                    <div x-show="orderMode === 'item'" class="flex items-center gap-3 pt-2 border-t border-slate-200/60">
+                                                                                        <label class="text-[11px] font-bold uppercase text-slate-600">Package Quantity</label>
+                                                                                        <input type="number" name="items[{{ $design->id }}][qty]" value="1" min="1" class="w-24 border border-slate-300 bg-white rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none" :disabled="!selected || orderMode !== 'item'">
+                                                                                    </div>
+                                                                                </div>
+                                                                            @elseif($hasSizes)
                                                                                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-4 gap-x-8">
                                                                                     @foreach(\App\Models\DesignCatalog::sizeChart() as $size)
                                                                                         <div class="flex items-center gap-3">
@@ -553,7 +609,21 @@
                                             <li class="flex justify-between items-center text-[11px]">
                                                 <span>{{ $item['qty'] }}x {{ $item['name'] }} @if(isset($item['gender'])) <span class="text-[10px] text-slate-400 uppercase">({{ $item['gender'] }})</span> @endif</span>
                                                 @if(!empty($item['sizes']))
-                                                    <span class="text-[10px] text-slate-500 font-mono">({{ implode(', ', array_map(fn($k, $v) => "$v", array_keys($item['sizes']), $item['sizes'])) }})</span>
+                                                    @php
+                                                        $sizeLabels = [];
+                                                        $isMultiSize = count($item['sizes']) > 1;
+                                                        foreach ($item['sizes'] as $k => $v) {
+                                                            if (empty($v)) continue;
+                                                            if ($k === 'default' || is_numeric($k) || !$isMultiSize) {
+                                                                $sizeLabels[] = $v;
+                                                            } else {
+                                                                $sizeLabels[] = \App\Models\DesignCatalog::formatTypeLabel($k) . ': ' . $v;
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    @if(!empty($sizeLabels))
+                                                        <span class="text-[10px] text-slate-500 font-medium">({{ implode(', ', $sizeLabels) }})</span>
+                                                    @endif
                                                 @endif
                                             </li>
                                         @endforeach
@@ -1748,7 +1818,7 @@
                                                                             @if(!empty($item['sizes']))
                                                                                 @foreach($item['sizes'] as $sizeType => $size)
                                                                                     <span class="mr-2 border-r border-slate-200 pr-2 last:border-0 last:mr-0 last:pr-0">
-                                                                                        {{ $sizeType === 'default' ? '' : str_replace('_', ' ', $sizeType).':' }} <strong>{{ $size }}</strong>
+                                                                                        {{ $sizeType === 'default' ? '' : \App\Models\DesignCatalog::formatTypeLabel($sizeType).':' }} <strong>{{ $size }}</strong>
                                                                                     </span>
                                                                                 @endforeach
                                                                             @elseif(!empty($item['size']))

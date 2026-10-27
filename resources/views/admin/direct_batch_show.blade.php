@@ -113,7 +113,7 @@
                                                 @if(!empty($item['sizes']))
                                                     @foreach($item['sizes'] as $sizeType => $size)
                                                         <span class="mr-2 border-r border-slate-200 pr-2 last:border-0 last:mr-0 last:pr-0">
-                                                            {{ $sizeType === 'default' ? '' : str_replace('_', ' ', $sizeType).':' }} <strong>{{ $size }}</strong>
+                                                            {{ $sizeType === 'default' ? '' : \App\Models\DesignCatalog::formatTypeLabel($sizeType).':' }} <strong>{{ $size }}</strong>
                                                         </span>
                                                     @endforeach
                                                 @elseif(!empty($item['size']))

@@ -2322,7 +2322,8 @@ class AdminController extends Controller
                             }
                         } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
                             foreach ($item['sizes'] as $t => $s) {
-                                $sizesArr[] = "$t: $s";
+                                $typeLabel = \App\Models\DesignCatalog::formatTypeLabel($t);
+                                $sizesArr[] = "$typeLabel: $s";
                             }
                         }
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
@@ -2452,7 +2453,8 @@ class AdminController extends Controller
                             }
                         } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
                             foreach ($item['sizes'] as $t => $s) {
-                                $sizesArr[] = "$t: $s";
+                                $typeLabel = \App\Models\DesignCatalog::formatTypeLabel($t);
+                                $sizesArr[] = "$typeLabel: $s";
                             }
                         }
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');

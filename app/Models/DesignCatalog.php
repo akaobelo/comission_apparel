@@ -61,68 +61,50 @@ class DesignCatalog extends Model
     }
 
     // Human-readable type label
+    public static function formatTypeLabel(?string $type): string
+    {
+        if (empty($type)) return '';
+        return match($type) {
+            'accessory'              => 'Accessories',
+            'arm_sleeve'             => 'Arm Sleeves',
+            'backpack'               => 'Backpack',
+            'headwear'               => 'Headwear',
+            'hoodie'                 => 'Hoodies & Pullovers',
+            'jacket'                 => 'Jackets',
+            'leggings'               => 'Leggings/Tights',
+            'pants'                  => 'Pants',
+            'polo'                   => 'Polos',
+            'shirt_short'            => 'Shirts (short sleeve)',
+            'shirt_long'             => 'Shirts (long sleeve)',
+            'shorts'                 => 'Shorts',
+            'socks'                  => 'Socks',
+            'uniform_top'            => 'Uniform (top)',
+            'uniform_bottom'         => 'Uniform (bottom)',
+            'uniform_set'            => 'Uniform Set (top/bottom)',
+            'uniform_set_2'          => 'Uniform Set #2',
+            'warmup_top'             => 'Warm-up (top)',
+            'warmup_bottom'          => 'Warm-up (bottom)',
+            'warmup_set'             => 'Warm-up (top/bottom)',
+            'uniform_package_gold'   => 'Uniform Package (Gold)',
+            'uniform_package_silver' => 'Uniform Package (Silver)',
+            'uniform_package_bronze' => 'Uniform Package (Bronze)',
+            'uniform_package_custom' => 'Uniform Package (Custom)',
+            default                  => ucfirst(str_replace('_', ' ', $type)),
+        };
+    }
+
     public function getTypeLabelAttribute(): string
     {
         if (!empty($this->types) && is_array($this->types)) {
             $labels = [];
             foreach ($this->types as $t) {
-                $labels[] = match($t) {
-                    'accessory'      => 'Accessories',
-                    'arm_sleeve'     => 'Arm Sleeves',
-                    'backpack'       => 'Backpacks',
-                    'headwear'       => 'Headwear',
-                    'hoodie'         => 'Hoodies & Pullovers',
-                    'jacket'         => 'Jackets',
-                    'leggings'       => 'Leggings/Tights',
-                    'pants'          => 'Pants',
-                    'polo'           => 'Polos',
-                    'shirt_short'    => 'Shirts (short sleeve)',
-                    'shirt_long'     => 'Shirts (long sleeve)',
-                    'shorts'         => 'Shorts',
-                    'socks'          => 'Socks',
-                    'uniform_top'    => 'Uniform (top)',
-                    'uniform_bottom' => 'Uniform (bottom)',
-                    'uniform_set'    => 'Uniform Set (top/bottom)',
-                    'warmup_top'     => 'Warm-up (top)',
-                    'warmup_bottom'  => 'Warm-up (bottom)',
-                    'warmup_set'     => 'Warm-up (top/bottom)',
-                    'uniform_package_gold'   => 'Uniform Package (Gold)',
-                    'uniform_package_silver' => 'Uniform Package (Silver)',
-                    'uniform_package_bronze' => 'Uniform Package (Bronze)',
-                    'uniform_package_custom' => 'Uniform Package (Custom)',
-                    default          => ucfirst(str_replace('_', ' ', $t)),
-                };
+                $labels[] = static::formatTypeLabel($t);
             }
             return implode(', ', $labels);
         }
 
         // Fallback to legacy single type
-        return match($this->type) {
-            'accessory'      => 'Accessories',
-            'arm_sleeve'     => 'Arm Sleeves',
-            'backpack'       => 'Backpacks',
-            'headwear'       => 'Headwear',
-            'hoodie'         => 'Hoodies & Pullovers',
-            'jacket'         => 'Jackets',
-            'leggings'       => 'Leggings/Tights',
-            'pants'          => 'Pants',
-            'polo'           => 'Polos',
-            'shirt_short'    => 'Shirts (short sleeve)',
-            'shirt_long'     => 'Shirts (long sleeve)',
-            'shorts'         => 'Shorts',
-            'socks'          => 'Socks',
-            'uniform_top'    => 'Uniform (top)',
-            'uniform_bottom' => 'Uniform (bottom)',
-            'uniform_set'    => 'Uniform Set (top/bottom)',
-            'warmup_top'     => 'Warm-up (top)',
-            'warmup_bottom'  => 'Warm-up (bottom)',
-            'warmup_set'     => 'Warm-up (top/bottom)',
-            'uniform_package_gold'   => 'Uniform Package (Gold)',
-            'uniform_package_silver' => 'Uniform Package (Silver)',
-            'uniform_package_bronze' => 'Uniform Package (Bronze)',
-            'uniform_package_custom' => 'Uniform Package (Custom)',
-            default          => ucfirst(str_replace('_', ' ', $this->type ?? '')),
-        };
+        return static::formatTypeLabel($this->type);
     }
 
     // Category label for display
@@ -151,6 +133,22 @@ class DesignCatalog extends Model
     public static function sizeChart(): array
     {
         return ['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL', 'AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL', 'A4XL', 'A5XL'];
+    }
+
+    public function getExpandedTypesAttribute(): array
+    {
+        $types = !empty($this->types) && is_array($this->types) ? $this->types : ($this->type ? [$this->type] : []);
+        $expanded = [];
+        foreach ($types as $t) {
+            if ($t === 'uniform_package_gold' || $t === 'uniform_package_silver') {
+                $expanded = array_merge($expanded, ['uniform_top', 'uniform_bottom', 'warmup_top', 'warmup_bottom', 'arm_sleeve', 'backpack']);
+            } elseif ($t === 'uniform_package_bronze') {
+                $expanded = array_merge($expanded, ['uniform_top', 'uniform_bottom', 'arm_sleeve', 'backpack']);
+            } else {
+                $expanded[] = $t;
+            }
+        }
+        return array_values(array_unique($expanded));
     }
 
     public function isPackage(): bool
