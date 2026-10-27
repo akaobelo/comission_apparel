@@ -690,23 +690,15 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Payment Collection Method</label>
-                    <div class="space-y-3">
-                        <label class="flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all hover:bg-slate-50 border-slate-300">
-                            <input type="radio" name="payment_mode" value="in_house" checked class="mt-1 text-primary focus:ring-primary">
-                            <div>
-                                <span class="block text-xs font-bold text-slate-900 uppercase tracking-wide">Cash Collection (Default)</span>
-                                <span class="block text-[11px] text-slate-500 mt-0.5 leading-relaxed">You collect funds from the parents directly and we send you an invoice for the manufacturing total.</span>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all hover:bg-slate-50 border-slate-300">
-                            <input type="radio" name="payment_mode" value="online" class="mt-1 text-primary focus:ring-primary">
-                            <div>
-                                <span class="block text-xs font-bold text-slate-900 uppercase tracking-wide">Online Credit Card Payment</span>
-                                <span class="block text-[11px] text-slate-500 mt-1 leading-relaxed">Parents pay securely online via Stripe credit card checkout upon placing their order.</span>
-                                <span class="block text-[11px] text-slate-500 mt-1 leading-relaxed">If you’ve marked up your items, proceeds earned from your sale will be sent to you via Intuit Quickbooks direct deposit once funds have cleared.</span>
-                            </div>
-                        </label>
+                    <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl flex items-start gap-3">
+                        <span class="text-xl">💵</span>
+                        <div>
+                            <span class="block text-xs font-bold text-amber-900 uppercase tracking-wide">Cash Collection (Default)</span>
+                            <span class="block text-[11px] text-amber-800 mt-0.5 leading-relaxed">You collect funds directly from parents. Commission Apparel will invoice you for the manufacturing total upon master order finalization.</span>
+                            <span class="block text-[10px] text-amber-700 mt-1 font-semibold">Note: Online Credit Card Checkout (Stripe) can be enabled by Commission Apparel Super Admin upon request.</span>
+                        </div>
                     </div>
+                    <input type="hidden" name="payment_mode" value="in_house">
                 </div>
                 {{-- <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Package / Order Type</label>
@@ -1368,31 +1360,36 @@
                                 </p>
                             </div>
                         </div>
-                    @else
-                        <form action="{{ route('coach.store.description', $store) }}" method="POST" class="space-y-4">
-                            @csrf
-                            <div>
-                                <div class="space-y-3 mb-3">
-                                    <label class="flex items-start gap-2.5 p-3.5 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
-                                        <input type="radio" name="payment_mode" value="in_house" {{ ($store->payment_mode ?? 'in_house') === 'in_house' ? 'checked' : '' }} class="mt-0.5 text-primary focus:ring-primary">
-                                        <div>
-                                            <span class="block text-xs font-bold text-slate-900 uppercase">Cash Collection</span>
-                                            <span class="block text-[11px] text-slate-500 mt-0.5 leading-relaxed">You collect funds from the parents directly and we send you an invoice for the manufacturing total.</span>
-                                        </div>
-                                    </label>
-                                    <label class="flex items-start gap-2.5 p-3.5 border rounded-lg cursor-pointer transition-all hover:bg-slate-50 {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'border-primary bg-primary/5' : 'border-slate-200' }}">
-                                        <input type="radio" name="payment_mode" value="online" {{ ($store->payment_mode ?? 'in_house') === 'online' ? 'checked' : '' }} class="mt-0.5 text-primary focus:ring-primary">
-                                        <div>
-                                            <span class="block text-xs font-bold text-slate-900 uppercase">Online Credit Card Payment</span>
-                                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Parents pay securely online via Stripe credit card checkout upon placing their order.</p>
-                                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">If you’ve marked up your items, proceeds earned from your sale will be sent to you via Intuit Quickbooks direct deposit once funds have cleared.</p>
-                                        </div>
-                                    </label>
-                                </div>
+                    @elseif($store->isOnlinePayment())
+                        <div class="flex items-start gap-3.5 p-4 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg flex-shrink-0 font-black shadow-sm">
+                                💳
                             </div>
-
-                            <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-800 transition-colors">Save Payment Method</button>
-                        </form>
+                            <div>
+                                <span class="block text-xs font-black uppercase tracking-wider text-emerald-900">Online Credit Card Payment (Stripe Checkout)</span>
+                                <p class="text-xs text-emerald-800 mt-1 leading-relaxed">
+                                    Your store has been moved to <strong>Online Credit Card Payment</strong> by Commission Apparel Super Admin. Parents pay securely online via Stripe checkout upon placing their orders.
+                                </p>
+                                <p class="text-[11px] text-emerald-600 font-semibold mt-2">
+                                    Note: Payment method is managed by Super Admin. If you need to switch back to Cash Collection, please contact Super Admin support.
+                                </p>
+                            </div>
+                        </div>
+                    @else
+                        <div class="flex items-start gap-3.5 p-4 rounded-xl bg-amber-50/70 border border-amber-200">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg flex-shrink-0 font-black shadow-sm">
+                                💵
+                            </div>
+                            <div>
+                                <span class="block text-xs font-black uppercase tracking-wider text-amber-900">Cash Collection (Default)</span>
+                                <p class="text-xs text-amber-800 mt-1 leading-relaxed">
+                                    Your store is set to <strong>Cash Collection</strong>. You collect funds from parents directly, and Commission Apparel invoices you for the manufacturing total when your master order is finalized.
+                                </p>
+                                <p class="text-[11px] text-amber-700 font-semibold mt-2">
+                                    Note: To enable Online Credit Card Payment (Stripe Checkout) for this store, please contact Commission Apparel Super Admin.
+                                </p>
+                            </div>
+                        </div>
                     @endif
                 </div>
             </div>

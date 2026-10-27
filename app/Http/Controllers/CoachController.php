@@ -200,7 +200,7 @@ class CoachController extends Controller
             'slug'         => Str::slug($request->name) . '-' . strtolower(Str::random(6)),
             'logo_path'    => $user->logo_path,
             'package_type' => $request->package_type ?? 'individual',
-            'payment_mode' => $request->payment_mode ?? 'in_house',
+            'payment_mode' => 'in_house', // Default to Cash Collection unless admin moves to Online pay
             'status'       => 'pending',
         ]);
 
@@ -747,30 +747,17 @@ class CoachController extends Controller
     {
         if ($store->user_id !== $request->user()->id) abort(403);
 
-        if ($store->isCheckPayment()) {
+        if ($request->has('description')) {
+            $request->validate([
+                'description' => 'nullable|string|max:1000',
+            ]);
+            $store->update(['description' => $request->description]);
             return redirect()->route('coach.dashboard')
-                ->with('error', 'Payment method is managed by Super Admin (Pay by Check) and cannot be modified.');
+                ->with('success', "Store description updated.");
         }
 
-        $request->validate([
-            'payment_mode' => ['required', 'in:in_house,online'],
-        ]);
-
-        $store->update(['payment_mode' => $request->payment_mode]);
-
-        if ($request->payment_mode === 'online') {
-            $store->parentOrders()->where(function($q) {
-                $q->whereNull('payment_status')
-                  ->orWhere('payment_status', 'not_applicable');
-            })->update(['payment_status' => 'pending']);
-        } else {
-            $store->parentOrders()->where('payment_status', 'pending')
-                  ->update(['payment_status' => 'not_applicable']);
-        }
-
-        $label = $request->payment_mode === 'online' ? 'Online Credit Card Payment' : 'Cash Collection (In-House)';
         return redirect()->route('coach.dashboard')
-            ->with('success', "Payment collection method updated to: {$label}.");
+            ->with('info', 'Payment collection method is managed by Commission Apparel Super Admin. Please contact Super Admin to adjust payment options.');
     }
 
     public function updateProfileLogo(Request $request)

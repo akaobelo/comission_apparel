@@ -6,7 +6,10 @@ $kernel->bootstrap();
 
 use App\Models\TeamStore;
 
-$stores = TeamStore::orderBy('created_at', 'desc')->get();
-foreach ($stores as $store) {
-    echo "ID: {$store->id}, Name: {$store->name}, Status: {$store->status}, Archived: " . ($store->is_archived ? 'Yes' : 'No') . ", Sort Order: {$store->sort_order}, Created: {$store->created_at}\n";
+$updated = TeamStore::where('status', 'pending')->update(['payment_mode' => 'in_house']);
+echo "Pending stores updated to in_house: {$updated}\n";
+
+$stores = TeamStore::where('status', 'pending')->get();
+foreach ($stores as $s) {
+    echo "ID: {$s->id}, Name: {$s->name}, Status: {$s->status}, Mode: {$s->payment_mode}\n";
 }

@@ -1559,12 +1559,43 @@ class AdminController extends Controller
 
     // ─── STORE MANAGEMENT ────────────────────────────────────────────────────────
 
-    public function approveStore(TeamStore $store)
+    public function approveStore(Request $request, TeamStore $store)
     {
-        $store->update(['status' => 'approved']);
+        // When a new club is approved, default to Cash Collection ('in_house')
+        // unless admin explicitly specifies otherwise or moves it to Online pay.
+        $mode = $request->input('payment_mode', 'in_house');
+        if (!in_array($mode, ['in_house', 'online', 'check'], true)) {
+            $mode = 'in_house';
+        }
+
+        $store->update([
+            'status'       => 'approved',
+            'payment_mode' => $mode,
+        ]);
+
+        if ($mode === 'online') {
+            $store->parentOrders()->where(function($q) {
+                $q->whereNull('payment_status')
+                  ->orWhere('payment_status', 'not_applicable');
+            })->update(['payment_status' => 'pending']);
+        } else {
+            $store->parentOrders()->where('payment_status', 'pending')
+                  ->update([
+                      'payment_status' => 'not_applicable',
+                      'status'         => 'Submitted',
+                  ]);
+        }
+
         $store->user->notify(new \App\Notifications\StoreApproved($store));
+
+        $label = match($mode) {
+            'online' => 'Online Credit Card Payment (Stripe)',
+            'check'  => 'Pay by Check (Waived)',
+            default  => 'Cash Collection',
+        };
+
         return redirect()->route('admin.dashboard')
-            ->with('success', "Store \"{$store->name}\" has been activated.");
+            ->with('success', "Store \"{$store->name}\" has been approved with {$label}.");
     }
 
     public function declineStore(TeamStore $store)
@@ -1592,6 +1623,7 @@ class AdminController extends Controller
             'logo_path'    => $user->logo_path,
             'package_type' => 'individual', // Admins usually sell individually for campaigns
             'status'       => 'approved', // Auto-approved since admin created it
+            'payment_mode' => 'in_house', // Default to Cash Collection
             'pricing_approved' => true,   // Auto-approved
             'order_deadline' => $request->order_deadline,
         ]);
