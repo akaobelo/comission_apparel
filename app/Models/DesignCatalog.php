@@ -154,11 +154,13 @@ class DesignCatalog extends Model
     public function isPackage(): bool
     {
         if (str_contains((string)$this->type, 'package')) return true;
-        if (str_contains((string)$this->category, 'package')) return true;
         if (is_array($this->types)) {
             foreach ($this->types as $t) {
                 if (str_contains((string)$t, 'package')) return true;
             }
+        }
+        if (stripos((string)$this->name, 'package') !== false) {
+            return true;
         }
         return false;
     }

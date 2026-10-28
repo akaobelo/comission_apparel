@@ -425,7 +425,7 @@
                                                                 $sizedComponents = array_values(array_intersect($types, $sizedTypes));
                                                                 $nonSizedComponents = array_values(array_filter(array_diff($types, $sizedTypes), fn($t) => !str_contains($t, 'package')));
                                                                 $hasSizes = count($sizedComponents) > 0;
-                                                                $isPackage = $design->isPackage() || count($sizedComponents) > 1 || !empty($nonSizedComponents);
+                                                                $isPackage = $design->isPackage();
                                                             @endphp
                                                             <div x-data="{ selected: false, qty: 1 }" x-show="search === '' || '{{ strtolower(addslashes($design->name)) }}'.includes(search.toLowerCase()) || selected" class="border border-slate-200 rounded-xl p-4 transition-colors" :class="selected ? 'bg-primary/5 border-primary' : 'bg-white hover:border-slate-300'">
                                                                 <div class="flex items-start gap-4">
@@ -507,15 +507,15 @@
                                                                                                 <label class="text-[11px] font-black uppercase tracking-wider text-slate-700">Package Quantity:</label>
                                                                                                 <div class="inline-flex items-center border border-slate-300 rounded-lg bg-slate-50 overflow-hidden shadow-inner">
                                                                                                     <button type="button" @click="if (qty > 1) qty--" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-black text-sm transition-colors border-r border-slate-200 select-none">−</button>
-                                                                                                    <input type="number" name="items[{{ $design->id }}][qty]" x-model.number="qty" min="1" max="25" class="w-14 text-center py-1.5 text-xs font-black text-slate-800 bg-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" :disabled="!selected || orderMode !== 'item'">
-                                                                                                    <button type="button" @click="if (qty < 25) qty++" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-black text-sm transition-colors border-l border-slate-200 select-none">+</button>
+                                                                                                    <input type="number" name="items[{{ $design->id }}][qty]" x-model.number="qty" min="1" max="50" class="w-14 text-center py-1.5 text-xs font-black text-slate-800 bg-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" :disabled="!selected || orderMode !== 'item'">
+                                                                                                    <button type="button" @click="if (qty < 50) qty++" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-black text-sm transition-colors border-l border-slate-200 select-none">+</button>
                                                                                                 </div>
                                                                                             </div>
                                                                                             <span class="text-xs text-slate-500 font-medium">Select the size & cut for each of your <strong class="text-slate-800" x-text="qty"></strong> unit(s) below:</span>
                                                                                         </div>
 
                                                                                         <div class="space-y-3">
-                                                                                            @for($u = 1; $u <= 25; $u++)
+                                                                                            @for($u = 1; $u <= 50; $u++)
                                                                                                 <div x-show="qty >= {{ $u }}" class="p-4 bg-slate-50/80 border border-slate-200 rounded-xl space-y-3 transition-all">
                                                                                                     <div class="flex items-center justify-between border-b border-slate-200 pb-2">
                                                                                                         <span class="text-xs font-black uppercase tracking-wider text-slate-900">
