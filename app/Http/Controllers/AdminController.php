@@ -2321,9 +2321,15 @@ class AdminController extends Controller
                                 }
                             }
                         } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
+                            $isMultiSize = count($item['sizes']) > 1;
                             foreach ($item['sizes'] as $t => $s) {
-                                $typeLabel = \App\Models\DesignCatalog::formatTypeLabel($t);
-                                $sizesArr[] = "$typeLabel: $s";
+                                if (empty($s)) continue;
+                                if ($t === 'default' || is_numeric($t) || !$isMultiSize) {
+                                    $sizesArr[] = $s;
+                                } else {
+                                    $typeLabel = \App\Models\DesignCatalog::formatTypeLabel($t);
+                                    $sizesArr[] = "$typeLabel: $s";
+                                }
                             }
                         }
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
@@ -2452,9 +2458,15 @@ class AdminController extends Controller
                                 }
                             }
                         } elseif (isset($item['sizes']) && is_array($item['sizes'])) {
+                            $isMultiSize = count($item['sizes']) > 1;
                             foreach ($item['sizes'] as $t => $s) {
-                                $typeLabel = \App\Models\DesignCatalog::formatTypeLabel($t);
-                                $sizesArr[] = "$typeLabel: $s";
+                                if (empty($s)) continue;
+                                if ($t === 'default' || is_numeric($t) || !$isMultiSize) {
+                                    $sizesArr[] = $s;
+                                } else {
+                                    $typeLabel = \App\Models\DesignCatalog::formatTypeLabel($t);
+                                    $sizesArr[] = "$typeLabel: $s";
+                                }
                             }
                         }
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');

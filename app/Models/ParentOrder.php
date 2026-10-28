@@ -444,7 +444,7 @@ class ParentOrder extends Model
             $savedPrice = (float) ($item['unit_price'] ?? $item['price'] ?? 0);
             return [
                 'retail_price'    => $savedPrice,
-                'wholesale_price' => 0.0,
+                'wholesale_price' => $savedPrice,
             ];
         }
 
