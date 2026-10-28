@@ -853,7 +853,43 @@ class CoachController extends Controller
             $sizedTypes = DesignCatalog::sizedTypes();
             $hasSizes = count(array_intersect($types, $sizedTypes)) > 0;
 
-            if (isset($details['package_sizes']) && is_array($details['package_sizes'])) {
+            if (isset($details['units']) && is_array($details['units'])) {
+                $maxUnits = max(1, intval($details['qty'] ?? count($details['units'])));
+                $consolidated = [];
+                foreach ($details['units'] as $unitIdx => $unitData) {
+                    if ($unitIdx >= $maxUnits) {
+                        break;
+                    }
+                    $unitGender = !empty($unitData['gender']) ? $unitData['gender'] : ($details['gender'] ?? 'Unisex');
+                    $unitSizes = [];
+                    if (isset($unitData['package_sizes']) && is_array($unitData['package_sizes'])) {
+                        foreach ($unitData['package_sizes'] as $t => $s) {
+                            if (!empty($s)) {
+                                $unitSizes[$t] = $s;
+                            }
+                        }
+                    }
+                    if (!empty($unitSizes)) {
+                        $sigKey = $unitGender . '|' . json_encode($unitSizes);
+                        if (isset($consolidated[$sigKey])) {
+                            $consolidated[$sigKey]['qty'] += 1;
+                        } else {
+                            $consolidated[$sigKey] = [
+                                'id'         => $designId,
+                                'name'       => $design->name,
+                                'types'      => $types,
+                                'qty'        => 1,
+                                'gender'     => $unitGender,
+                                'sizes'      => $unitSizes,
+                                'unit_price' => $unitPrice,
+                            ];
+                        }
+                    }
+                }
+                foreach ($consolidated as $entry) {
+                    $itemsJson[] = $entry;
+                }
+            } else if (isset($details['package_sizes']) && is_array($details['package_sizes'])) {
                 $qty = max(1, intval($details['qty'] ?? 1));
                 $entry = [
                     'id'           => $designId,

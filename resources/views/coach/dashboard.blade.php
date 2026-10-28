@@ -427,7 +427,7 @@
                                                                 $hasSizes = count($sizedComponents) > 0;
                                                                 $isPackage = $design->isPackage() || count($sizedComponents) > 1 || !empty($nonSizedComponents);
                                                             @endphp
-                                                            <div x-data="{ selected: false }" x-show="search === '' || '{{ strtolower(addslashes($design->name)) }}'.includes(search.toLowerCase()) || selected" class="border border-slate-200 rounded-xl p-4 transition-colors" :class="selected ? 'bg-primary/5 border-primary' : 'bg-white hover:border-slate-300'">
+                                                            <div x-data="{ selected: false, qty: 1 }" x-show="search === '' || '{{ strtolower(addslashes($design->name)) }}'.includes(search.toLowerCase()) || selected" class="border border-slate-200 rounded-xl p-4 transition-colors" :class="selected ? 'bg-primary/5 border-primary' : 'bg-white hover:border-slate-300'">
                                                                 <div class="flex items-start gap-4">
                                                                     <div class="pt-1">
                                                                         <input type="checkbox" name="items[{{ $design->id }}][selected]" value="1" x-model="selected" class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary">
@@ -451,9 +451,9 @@
                                                                                     @endif
                                                                                 </div>
                                                                             </div>
-                                                                            <div x-show="selected" class="flex items-center gap-3 shrink-0">
+                                                                            <div x-show="selected && (orderMode === 'person' || !{{ $isPackage ? 'true' : 'false' }})" class="flex items-center gap-3 shrink-0">
                                                                                 <label class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Gender</label>
-                                                                                <select name="items[{{ $design->id }}][gender]" class="border border-slate-300 bg-white rounded-lg px-3 py-1.5 text-sm font-medium focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" required :disabled="!selected">
+                                                                                <select name="items[{{ $design->id }}][gender]" class="border border-slate-300 bg-white rounded-lg px-3 py-1.5 text-sm font-medium focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" :required="selected && (orderMode === 'person' || !{{ $isPackage ? 'true' : 'false' }})" :disabled="!selected || (orderMode === 'item' && {{ $isPackage ? 'true' : 'false' }})">
                                                                                     <option value="" disabled selected>Select Gender...</option>
                                                                                     <option value="Male">Male</option>
                                                                                     <option value="Female">Female</option>
@@ -463,40 +463,113 @@
 
                                                                         <div x-show="selected" x-collapse class="mt-4 pt-4 border-t border-slate-200/60">
                                                                             @if($isPackage && ($hasSizes || !empty($nonSizedComponents)))
-                                                                                <div class="space-y-3">
-                                                                                    <div class="flex items-center justify-between">
-                                                                                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-700">Package Component Sizes</span>
-                                                                                        <span class="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">Select size for each piece</span>
+                                                                                <div class="space-y-4">
+                                                                                    {{-- BY PERSON (Single Athlete) --}}
+                                                                                    <div x-show="orderMode === 'person'" class="space-y-3">
+                                                                                        <div class="flex items-center justify-between">
+                                                                                            <span class="text-[11px] font-black uppercase tracking-wider text-slate-700">Package Component Sizes</span>
+                                                                                            <span class="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">Select size for each piece</span>
+                                                                                        </div>
+
+                                                                                        @if(!empty($sizedComponents))
+                                                                                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                                                                                @foreach($sizedComponents as $compType)
+                                                                                                    <div class="bg-slate-50 border border-slate-200/80 rounded-lg p-2.5">
+                                                                                                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                                                                                            {{ \App\Models\DesignCatalog::formatTypeLabel($compType) }}
+                                                                                                        </label>
+                                                                                                        <select name="items[{{ $design->id }}][package_sizes][{{ $compType }}]"
+                                                                                                                class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow"
+                                                                                                                :disabled="!selected || orderMode !== 'person'">
+                                                                                                            <optgroup label="Youth Sizes">
+                                                                                                                @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $size)
+                                                                                                                    <option value="{{ $size }}">{{ $size }}</option>
+                                                                                                                @endforeach
+                                                                                                            </optgroup>
+                                                                                                            <optgroup label="Adult Sizes">
+                                                                                                                @foreach(['AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL', 'A4XL', 'A5XL'] as $size)
+                                                                                                                    <option value="{{ $size }}" {{ $size === 'AM' ? 'selected' : '' }}>{{ $size }}</option>
+                                                                                                                @endforeach
+                                                                                                            </optgroup>
+                                                                                                        </select>
+                                                                                                    </div>
+                                                                                                @endforeach
+                                                                                            </div>
+                                                                                        @endif
+
+                                                                                        <input type="hidden" name="items[{{ $design->id }}][qty]" value="1" :disabled="!selected || orderMode !== 'person'">
                                                                                     </div>
 
-                                                                                    @if(!empty($sizedComponents))
-                                                                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                                                                            @foreach($sizedComponents as $compType)
-                                                                                                <div class="bg-slate-50 border border-slate-200/80 rounded-lg p-2.5">
-                                                                                                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                                                                                                        {{ \App\Models\DesignCatalog::formatTypeLabel($compType) }}
-                                                                                                    </label>
-                                                                                                    <select name="items[{{ $design->id }}][package_sizes][{{ $compType }}]"
-                                                                                                            class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow"
-                                                                                                            :disabled="!selected">
-                                                                                                        <optgroup label="Youth Sizes">
-                                                                                                            @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $size)
-                                                                                                                <option value="{{ $size }}">{{ $size }}</option>
-                                                                                                            @endforeach
-                                                                                                        </optgroup>
-                                                                                                        <optgroup label="Adult Sizes">
-                                                                                                            @foreach(['AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL', 'A4XL', 'A5XL'] as $size)
-                                                                                                                <option value="{{ $size }}" {{ $size === 'AM' ? 'selected' : '' }}>{{ $size }}</option>
-                                                                                                            @endforeach
-                                                                                                        </optgroup>
-                                                                                                    </select>
+                                                                                    {{-- BY ITEM (Bulk Units) --}}
+                                                                                    <div x-show="orderMode === 'item'" class="space-y-4">
+                                                                                        <div class="p-3 bg-white border border-slate-200 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                                                                                            <div class="flex items-center gap-3">
+                                                                                                <label class="text-[11px] font-black uppercase tracking-wider text-slate-700">Package Quantity:</label>
+                                                                                                <div class="inline-flex items-center border border-slate-300 rounded-lg bg-slate-50 overflow-hidden shadow-inner">
+                                                                                                    <button type="button" @click="if (qty > 1) qty--" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-black text-sm transition-colors border-r border-slate-200 select-none">−</button>
+                                                                                                    <input type="number" name="items[{{ $design->id }}][qty]" x-model.number="qty" min="1" max="25" class="w-14 text-center py-1.5 text-xs font-black text-slate-800 bg-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" :disabled="!selected || orderMode !== 'item'">
+                                                                                                    <button type="button" @click="if (qty < 25) qty++" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-black text-sm transition-colors border-l border-slate-200 select-none">+</button>
                                                                                                 </div>
-                                                                                            @endforeach
+                                                                                            </div>
+                                                                                            <span class="text-xs text-slate-500 font-medium">Select the size & cut for each of your <strong class="text-slate-800" x-text="qty"></strong> unit(s) below:</span>
                                                                                         </div>
-                                                                                    @endif
 
+                                                                                        <div class="space-y-3">
+                                                                                            @for($u = 1; $u <= 25; $u++)
+                                                                                                <div x-show="qty >= {{ $u }}" class="p-4 bg-slate-50/80 border border-slate-200 rounded-xl space-y-3 transition-all">
+                                                                                                    <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                                                                                                        <span class="text-xs font-black uppercase tracking-wider text-slate-900">
+                                                                                                            <span x-show="qty > 1">Unit {{ $u }} Size & Cut</span>
+                                                                                                            <span x-show="qty <= 1">Unit Sizes & Cut</span>
+                                                                                                        </span>
+                                                                                                        <span class="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">Required</span>
+                                                                                                    </div>
+
+                                                                                                    <div class="mb-2">
+                                                                                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Gender / Cut Pattern <span class="text-red-500">*</span></label>
+                                                                                                        <select name="items[{{ $design->id }}][units][{{ $u - 1 }}][gender]"
+                                                                                                                class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow"
+                                                                                                                :disabled="!selected || orderMode !== 'item' || qty < {{ $u }}"
+                                                                                                                :required="selected && orderMode === 'item' && qty >= {{ $u }}">
+                                                                                                            <option value="" disabled selected>Select Cut / Pattern...</option>
+                                                                                                            <option value="Male">Men's / Boy's Cut</option>
+                                                                                                            <option value="Female">Women's / Girl's Cut</option>
+                                                                                                        </select>
+                                                                                                    </div>
+
+                                                                                                    @if(!empty($sizedComponents))
+                                                                                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
+                                                                                                            @foreach($sizedComponents as $compType)
+                                                                                                                <div class="bg-white border border-slate-200 rounded-lg p-2.5 shadow-sm">
+                                                                                                                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                                                                                                        {{ \App\Models\DesignCatalog::formatTypeLabel($compType) }} Size <span class="text-red-500">*</span>
+                                                                                                                    </label>
+                                                                                                                    <select name="items[{{ $design->id }}][units][{{ $u - 1 }}][package_sizes][{{ $compType }}]"
+                                                                                                                            class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow"
+                                                                                                                            :disabled="!selected || orderMode !== 'item' || qty < {{ $u }}">
+                                                                                                                        <optgroup label="Youth Sizes">
+                                                                                                                            @foreach(['YXXS', 'YXS', 'YS', 'YM', 'YL', 'YXL'] as $size)
+                                                                                                                                <option value="{{ $size }}">{{ $size }}</option>
+                                                                                                                            @endforeach
+                                                                                                                        </optgroup>
+                                                                                                                        <optgroup label="Adult Sizes">
+                                                                                                                            @foreach(['AXS', 'AS', 'AM', 'AL', 'AXL', 'A2XL', 'A3XL', 'A4XL', 'A5XL'] as $size)
+                                                                                                                                <option value="{{ $size }}" {{ $size === 'AM' ? 'selected' : '' }}>{{ $size }}</option>
+                                                                                                                            @endforeach
+                                                                                                                        </optgroup>
+                                                                                                                    </select>
+                                                                                                                </div>
+                                                                                                            @endforeach
+                                                                                                        </div>
+                                                                                                    @endif
+                                                                                                </div>
+                                                                                            @endfor
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                    {{-- NON-SIZED ACCESSORIES (e.g. Backpack) --}}
                                                                                     @if(!empty($nonSizedComponents))
-                                                                                        <div class="flex flex-wrap gap-2 pt-1">
+                                                                                        <div class="flex flex-wrap gap-2 pt-1 border-t border-slate-200/60">
                                                                                             @foreach($nonSizedComponents as $nonSizedType)
                                                                                                 <div class="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-600">
                                                                                                     <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -506,14 +579,6 @@
                                                                                             @endforeach
                                                                                         </div>
                                                                                     @endif
-
-                                                                                    <template x-if="orderMode === 'person'">
-                                                                                        <input type="hidden" name="items[{{ $design->id }}][qty]" value="1" :disabled="!selected">
-                                                                                    </template>
-                                                                                    <div x-show="orderMode === 'item'" class="flex items-center gap-3 pt-2 border-t border-slate-200/60">
-                                                                                        <label class="text-[11px] font-bold uppercase text-slate-600">Package Quantity</label>
-                                                                                        <input type="number" name="items[{{ $design->id }}][qty]" value="1" min="1" class="w-24 border border-slate-300 bg-white rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none" :disabled="!selected || orderMode !== 'item'">
-                                                                                    </div>
                                                                                 </div>
                                                                             @elseif($hasSizes)
                                                                                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-4 gap-x-8">
