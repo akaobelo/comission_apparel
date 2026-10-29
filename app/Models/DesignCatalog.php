@@ -36,16 +36,14 @@ class DesignCatalog extends Model
     protected static function booted()
     {
         static::creating(function ($design) {
-            if ($design->design_collection_id) {
-                \DB::table('design_catalog')
-                    ->where('design_collection_id', $design->design_collection_id)
-                    ->increment('sort_order');
-            } else {
-                \DB::table('design_catalog')
-                    ->whereNull('design_collection_id')
-                    ->increment('sort_order');
+            if (empty($design->sort_order)) {
+                if ($design->design_collection_id) {
+                    $max = static::where('design_collection_id', $design->design_collection_id)->max('sort_order') ?? 0;
+                } else {
+                    $max = static::whereNull('design_collection_id')->max('sort_order') ?? 0;
+                }
+                $design->sort_order = $max + 1;
             }
-            $design->sort_order = 1;
         });
     }
 
