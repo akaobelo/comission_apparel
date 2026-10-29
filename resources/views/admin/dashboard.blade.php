@@ -482,7 +482,7 @@
                                         <button class="px-3 py-1.5 bg-white border border-red-300 text-red-600 hover:bg-red-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Decline</button>
                                     </form>
                                     <a href="{{ route('store.show', $store->slug) }}" target="_blank" class="px-3 py-1.5 bg-white border border-slate-300 text-blue-600 hover:text-blue-800 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">View Store ↗</a>
-                                    <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Edit</a>
+                                    <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'stores'])]) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg transition-colors">Edit</a>
                                 </div>
                             </div>
                             @endforeach
@@ -545,7 +545,7 @@
                                             <div class="min-w-0 flex-1">
                                                 {{-- Store Name & Details --}}
                                                 <div>
-                                                    <a href="{{ route('admin.store.edit', $store) }}" class="font-bold text-xs sm:text-sm text-slate-900 hover:text-secondary transition-colors break-words leading-snug block">
+                                                    <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'active_team_stores'])]) }}" class="font-bold text-xs sm:text-sm text-slate-900 hover:text-secondary transition-colors break-words leading-snug block">
                                                         {{ $store->name }}
                                                     </a>
                                                     <div class="text-[11px] text-slate-500 mt-0.5 truncate">
@@ -605,7 +605,7 @@
                                                             <button type="submit" class="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold rounded-md shadow-sm transition-colors whitespace-nowrap" title="Finalize Master Order">Finalize</button>
                                                         </form>
                                                         @endif
-                                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-2.5 py-1 bg-white border border-secondary text-secondary text-[11px] font-bold rounded-md hover:bg-secondary hover:text-white transition-colors">Edit</a>
+                                                        <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'active_team_stores'])]) }}" class="px-2.5 py-1 bg-white border border-secondary text-secondary text-[11px] font-bold rounded-md hover:bg-secondary hover:text-white transition-colors">Edit</a>
                                                     </div>
                                                 </div>
                                             </div>
@@ -686,7 +686,7 @@
                                             </div>
                                             <div class="flex flex-col gap-1.5 flex-shrink-0 w-full md:w-auto">
                                                 @if($store)
-                                                    <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review Store</a>
+                                                    <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'finalized_master_orders'])]) }}" class="px-3 py-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review Store</a>
                                                     <div class="flex gap-1.5">
                                                         <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-50 transition-colors text-center">Roster</a>
                                                         <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-2.5 py-1 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate</a>
@@ -1020,7 +1020,7 @@
                                         @method('DELETE')
                                         <button type="submit" class="px-2.5 py-1 bg-white border border-red-300 text-red-600 text-[11px] font-bold rounded hover:bg-red-50 transition-colors">Delete</button>
                                     </form>
-                                    <a href="{{ route('admin.store.edit', $store) }}" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">View</a>
+                                    <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'archived_stores_orders'])]) }}" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">View</a>
                                 </div>
                             </div>
                             @endforeach
@@ -1060,7 +1060,7 @@
                                     @if($isDirect)
                                         <a href="{{ route('admin.direct-batch.show', $batchId) }}" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">View Batch</a>
                                     @elseif($store)
-                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">View Store</a>
+                                        <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'archived_stores_orders'])]) }}" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">View Store</a>
                                     @endif
                                     <form action="{{ route('admin.archived-orders.delete', $batchId) }}" method="POST" onsubmit="return confirm('Permanently delete this archived order batch? This cannot be undone.')">
                                         @csrf
@@ -1399,7 +1399,7 @@
                                         </td>
                                         <td class="px-5 py-4">
                                             <div class="font-bold text-slate-900 flex items-center gap-2">
-                                                <a href="{{ route('admin.store.edit', $store) }}" class="text-sm hover:text-secondary transition-colors">{{ $store->name }}</a>
+                                                <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'active_team_stores'])]) }}" class="text-sm hover:text-secondary transition-colors">{{ $store->name }}</a>
                                             </div>
                                             <div class="text-xs text-slate-400 mt-0.5">Slug: {{ $store->slug }}</div>
                                         </td>
@@ -1462,7 +1462,7 @@
                                                     <button type="submit" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap" title="Finalize Master Order">Finalize</button>
                                                 </form>
                                                 @endif
-                                                <a href="{{ route('admin.store.edit', $store) }}" class="px-3.5 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
+                                                <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'active_team_stores'])]) }}" class="px-3.5 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
                                                 <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this active store?')" class="inline-block m-0">
                                                     @csrf
                                                     <button type="submit" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors">Archive</button>
@@ -1709,7 +1709,7 @@
 
                                         <div class="flex flex-col gap-2 min-w-[150px]">
                                             @if($store)
-                                                <a href="{{ route('admin.store.edit', $store) }}" class="px-3.5 py-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center shadow-sm">Review Store</a>
+                                                <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'finalized_master_orders'])]) }}" class="px-3.5 py-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center shadow-sm">Review Store</a>
                                                 <div class="flex gap-1.5">
                                                     <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-50 transition-colors text-center">Roster</a>
                                                     <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-2.5 py-1 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate</a>
@@ -1926,7 +1926,7 @@
                                             <tr class="hover:bg-slate-50/80 transition-colors">
                                                 <td class="px-6 py-4">
                                                     <div class="font-bold text-slate-900 flex items-center gap-2">
-                                                        <a href="{{ route('admin.store.edit', $store) }}" class="text-sm hover:text-secondary transition-colors">{{ $store->name }}</a>
+                                                        <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'archived_stores_orders'])]) }}" class="text-sm hover:text-secondary transition-colors">{{ $store->name }}</a>
                                                     </div>
                                                     <div class="text-xs text-slate-400 mt-0.5">Slug: {{ $store->slug }}</div>
                                                 </td>
@@ -1958,7 +1958,7 @@
                                                             @csrf
                                                             <button type="submit" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-sm">Unarchive</button>
                                                         </form>
-                                                        <a href="{{ route('admin.store.edit', $store) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-sm">View Store</a>
+                                                        <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'archived_stores_orders'])]) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-sm">View Store</a>
                                                         <form action="{{ route('admin.stores.delete', $store) }}" method="POST" onsubmit="return confirm('Delete this archived store and all related data? This cannot be undone.')" class="inline-block m-0">
                                                             @csrf
                                                             @method('DELETE')
@@ -2061,7 +2061,7 @@
                                                     </div>
                                                 @elseif($store)
                                                     <div class="min-w-[120px]">
-                                                        <a href="{{ route('admin.store.edit', $store) }}" class="block px-3.5 py-2 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-primary/90 transition-colors text-center shadow-sm">View Store</a>
+                                                        <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'archived_stores_orders'])]) }}" class="block px-3.5 py-2 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-primary/90 transition-colors text-center shadow-sm">View Store</a>
                                                     </div>
                                                 @endif
                                                 <form action="{{ route('admin.archived-orders.delete', $batchId) }}" method="POST" onsubmit="return confirm('Permanently delete this archived order batch? This cannot be undone.')">
@@ -5000,7 +5000,7 @@
                             </div>
                             <p class="text-xs text-slate-500 uppercase tracking-wider">{{ $store->items->count() }} Items Assigned</p>
                         </div>
-                        <a href="{{ route('admin.store.edit', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg shadow-sm transition-colors flex items-center gap-1">
+                        <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'campaigns'])]) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg shadow-sm transition-colors flex items-center gap-1">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             Manage Store
                         </a>

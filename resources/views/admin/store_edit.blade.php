@@ -6,7 +6,19 @@
         $returnUrl = request('return_to');
         if (!$returnUrl) {
             $referer = request()->headers->get('referer');
-            if ($referer && (str_contains($referer, 'sales-rep') || str_contains($referer, 'sales_rep') || str_contains($referer, 'sales-reps') || str_contains($referer, 'tab=coaches') || str_contains($referer, 'coach'))) {
+            if ($referer && (
+                str_contains($referer, 'sales-rep') || 
+                str_contains($referer, 'sales_rep') || 
+                str_contains($referer, 'sales-reps') || 
+                str_contains($referer, 'tab=active_team_stores') || 
+                str_contains($referer, 'active_team_stores') || 
+                str_contains($referer, 'tab=coaches') || 
+                str_contains($referer, 'coach') ||
+                str_contains($referer, 'tab=finalized_master_orders') ||
+                str_contains($referer, 'tab=archived_stores_orders') ||
+                str_contains($referer, 'tab=campaigns') ||
+                str_contains($referer, 'tab=stores')
+            )) {
                 $returnUrl = $referer;
             }
         }
@@ -16,22 +28,36 @@
             if (preg_match('/sales[-_]reps?\/(\d+)/', $returnUrl, $matches)) {
                 $checkUser = \App\Models\User::find($matches[1]);
                 if (!$checkUser || !$checkUser->isSalesRep()) {
-                    // Invalid sales rep or user is a coach -> return to coaches list
-                    $returnUrl = route('admin.dashboard', ['tab' => 'coaches']);
+                    // Invalid sales rep or user is a coach -> return to active stores or coaches list
+                    $returnUrl = ($store->status === 'approved' && !$store->is_archived)
+                        ? route('admin.dashboard', ['tab' => 'active_team_stores'])
+                        : route('admin.dashboard', ['tab' => 'coaches']);
                 }
             }
         }
 
-        // By default, stores are managed under coaches, so default back is the Coaches Database
-        $defaultBack = route('admin.dashboard', ['tab' => 'coaches']);
+        // Default back: Active Stores if active, otherwise Coaches Database
+        $defaultBack = ($store->status === 'approved' && !$store->is_archived)
+            ? route('admin.dashboard', ['tab' => 'active_team_stores'])
+            : route('admin.dashboard', ['tab' => 'coaches']);
         $backUrl = $returnUrl ?: $defaultBack;
         
         if ($backUrl && (str_contains($backUrl, 'sales-rep') || str_contains($backUrl, 'sales_rep') || str_contains($backUrl, 'sales-reps'))) {
             $backLabel = 'Back to Sales Partner';
+        } elseif ($backUrl && (str_contains($backUrl, 'tab=active_team_stores') || str_contains($backUrl, 'active_team_stores'))) {
+            $backLabel = 'Back to Active Stores';
+        } elseif ($backUrl && str_contains($backUrl, 'tab=campaigns')) {
+            $backLabel = 'Back to Campaign Stores';
+        } elseif ($backUrl && str_contains($backUrl, 'tab=finalized_master_orders')) {
+            $backLabel = 'Back to Finalized Master Orders';
+        } elseif ($backUrl && str_contains($backUrl, 'tab=archived_stores_orders')) {
+            $backLabel = 'Back to Archived Stores';
         } elseif ($backUrl && (str_contains($backUrl, 'tab=coaches') || str_contains($backUrl, '/admin/coach/'))) {
             $backLabel = 'Back to Coaches';
+        } elseif ($backUrl && str_contains($backUrl, 'tab=stores')) {
+            $backLabel = 'Back to Snapshot View';
         } else {
-            $backLabel = 'Back to Coaches';
+            $backLabel = ($store->status === 'approved' && !$store->is_archived) ? 'Back to Active Stores' : 'Back to Coaches';
         }
     @endphp
     <div class="mb-4">
@@ -613,7 +639,7 @@
                                 </td>
                                 <td class="px-5 py-3 text-slate-500 text-xs">{{ $order->created_at->format('M d, Y') }}</td>
                                 <td class="px-5 py-3">
-                                    <a href="{{ route('admin.order.edit', $order) }}" class="px-3 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
+                                    <a href="{{ route('admin.order.edit', ['order' => $order, 'return_to' => request()->fullUrl()]) }}" class="px-3 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
                                 </td>
                             </tr>
                             @endforeach
