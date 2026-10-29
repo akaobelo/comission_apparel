@@ -484,6 +484,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::delete('/admin/testimonials/{testimonial}', [AdminController::class, 'deleteTestimonial'])->name('admin.testimonials.delete');
 
     // Quotes
+    Route::get('/admin/quotes/export', [AdminController::class, 'exportQuotesCSV'])->name('admin.quotes.export');
     Route::post('/admin/quote/{quoteRequest}/mark-addressed', [AdminController::class, 'markQuoteAddressed'])->name('admin.quote.mark-addressed');
     Route::delete('/admin/quote/{quoteRequest}', [AdminController::class, 'deleteQuote'])->name('admin.quote.delete');
 

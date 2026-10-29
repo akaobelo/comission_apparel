@@ -2932,6 +2932,92 @@ class AdminController extends Controller
         return redirect()->route('admin.dashboard')->with('success', 'Hero media removed successfully.');
     }
 
+    public function exportQuotesCSV(Request $request)
+    {
+        $quoteRequestsQuery = QuoteRequest::query();
+
+        if ($request->filled('quote_search')) {
+            $qs = $request->input('quote_search');
+            $quoteRequestsQuery->where(function ($q) use ($qs) {
+                $q->where('organization_name', 'like', "%{$qs}%")
+                  ->orWhere('first_name', 'like', "%{$qs}%")
+                  ->orWhere('last_name', 'like', "%{$qs}%")
+                  ->orWhere('email', 'like', "%{$qs}%");
+            });
+        }
+
+        $quotes = $quoteRequestsQuery->latest()->get();
+        $filename = "inquiries_export_" . date('Y-m-d_H-i') . ".csv";
+        $handle = fopen('php://output', 'w');
+
+        ob_start();
+        // UTF-8 BOM for Microsoft Excel compatibility
+        fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        fputcsv($handle, [
+            'ID',
+            'Date Submitted',
+            'Status',
+            'Lead Source',
+            'Organization Name',
+            'Organization Type',
+            'First Name',
+            'Last Name',
+            'Position / Title',
+            'Email',
+            'Phone',
+            'Sport / Apparel Category',
+            'Estimated Quantity',
+            'Package Type',
+            'Target Delivery Date',
+            'TCA Sales Rep',
+            'Design Vision & Notes',
+            'UTM Source',
+            'UTM Medium',
+            'UTM Campaign',
+            'UTM Term',
+            'UTM Content',
+        ]);
+
+        foreach ($quotes as $quote) {
+            $package = $quote->package_type ? ucwords(str_replace('_', ' ', $quote->package_type)) : '';
+            $status = $quote->status ? ucfirst($quote->status) : 'New';
+            $source = $quote->lead_source === 'landing_page_free_mockup' ? 'Free Mockup Ad Lead' : 'Quote Form';
+
+            fputcsv($handle, [
+                $quote->id,
+                $quote->created_at ? $quote->created_at->format('Y-m-d H:i:s') : '',
+                $status,
+                $source,
+                $quote->organization_name ?? '',
+                $quote->organization_type ?? '',
+                $quote->first_name ?? '',
+                $quote->last_name ?? '',
+                $quote->position_title ?? '',
+                $quote->email ?? '',
+                $quote->phone ?? '',
+                $quote->apparel_category ?? '',
+                $quote->raw_quantity ?: $quote->estimated_quantity,
+                $package,
+                $quote->target_delivery_date ? $quote->target_delivery_date->format('Y-m-d') : '',
+                $quote->sales_rep ?? '',
+                $quote->design_vision ?? '',
+                $quote->utm_source ?? '',
+                $quote->utm_medium ?? '',
+                $quote->utm_campaign ?? '',
+                $quote->utm_term ?? '',
+                $quote->utm_content ?? '',
+            ]);
+        }
+        fclose($handle);
+
+        $csv = ob_get_clean();
+
+        return response($csv)
+            ->header('Content-Type', 'text/csv; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
     public function markQuoteAddressed(\App\Models\QuoteRequest $quoteRequest)
     {
         $quoteRequest->update(['status' => 'addressed']);

@@ -748,6 +748,10 @@
                             <p class="text-xs text-slate-500 mt-0.5">Public quote requests submitted from the website.</p>
                         </div>
                         <div class="flex items-center gap-3 text-slate-400">
+                            <a href="{{ route('admin.quotes.export', request()->only('quote_search')) }}" @click.stop class="px-2.5 py-1 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 hover:text-slate-900 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1.5" title="Export Inquiries to CSV">
+                                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                Export CSV
+                            </a>
                             <span class="text-xs font-bold text-slate-500">{{ $quoteRequestsTotal }} Inquiries</span>
                             <svg class="w-5 h-5 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
@@ -1484,7 +1488,7 @@
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-6 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2.5 flex-wrap">
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 flex items-center gap-2">
                                 <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                                 Quote Inquiries
@@ -1493,6 +1497,10 @@
                             @if($newQuoteRequestsCount > 0)
                                 <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-600 text-white animate-pulse">{{ $newQuoteRequestsCount }} New</span>
                             @endif
+                            <a href="{{ route('admin.quotes.export', request()->only('quote_search')) }}" class="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm whitespace-nowrap inline-flex items-center gap-1.5" title="Export Inquiries to CSV">
+                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                Export CSV
+                            </a>
                         </div>
                         <p class="text-xs text-slate-500 mt-1">Public quote inquiries and lead requests from coaches and organizations.</p>
                     </div>
