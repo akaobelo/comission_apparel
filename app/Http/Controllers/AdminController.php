@@ -525,11 +525,21 @@ class AdminController extends Controller
 
                 // Reassign active / in-progress orders and batches for this coach to the new rep.
                 // Orders already paid out (commission_status == 'paid') remain locked to their historical payout record.
+                // Historical / archived orders belong to the historical archive and are not transferred.
                 $activeOrders = ParentOrder::where(function($q) use ($user, $coachStoreIds) {
                         $q->where('user_id', $user->id)
                           ->orWhereIn('team_store_id', $coachStoreIds);
                     })
                     ->where('commission_status', '!=', 'paid')
+                    ->where('is_archived', false)
+                    ->where(function($q) {
+                        $q->whereNull('status')
+                          ->orWhereNotIn('status', ['Cancelled', 'Draft', 'Archived', 'Refunded']);
+                    })
+                    ->where(function($q) {
+                        $q->whereNull('team_store_id')
+                          ->orWhereHas('teamStore', fn($sq) => $sq->where('is_archived', false));
+                    })
                     ->get();
 
                 foreach ($activeOrders as $ord) {
@@ -707,9 +717,32 @@ class AdminController extends Controller
             $client->rep_orders_count = $orders->where('user_id', $client->id)->count();
         }
 
-        // Automatically stamp rep attribution and sync financials for qualifying orders
+        // Separate active vs archived orders
+        // An order is archived if:
+        // 1. $o->is_archived is true
+        // 2. OR its team store is archived
+        // 3. OR the coach/store has been unassigned from this sales rep
+        $isOrderArchived = function ($o) use ($clientIds, $storeIds) {
+            if ($o->is_archived) {
+                return true;
+            }
+            if ($o->teamStore && $o->teamStore->is_archived) {
+                return true;
+            }
+            $hasAssignedCoach = $o->user_id && in_array($o->user_id, $clientIds);
+            $hasAssignedStore = $o->team_store_id && in_array($o->team_store_id, $storeIds);
+            if (!$hasAssignedCoach && !$hasAssignedStore) {
+                return true;
+            }
+            return false;
+        };
+
+        // Automatically stamp rep attribution and sync financials ONLY for active qualifying orders
         $repRate = $user->getEffectiveCommissionRate();
         foreach ($orders as $ord) {
+            if ($isOrderArchived($ord)) {
+                continue; // Never auto-stamp rep attribution onto archived historical orders
+            }
             $dirty = false;
             if (empty($ord->sales_rep_id)) {
                 $ord->sales_rep_id = $user->id;
@@ -744,41 +777,22 @@ class AdminController extends Controller
             });
         }
 
-        $totalQualifyingSales = $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales());
-        $totalManufacturingCost = $orders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost());
-        $totalTariffs = $orders->sum(fn($o) => (float)$o->tariff_amount);
-        $totalFees = $orders->sum(fn($o) => (float)$o->fee_deduction);
-        $totalNetMargin = $orders->sum(fn($o) => (float)$o->net_margin);
+        $archivedOrders = $orders->filter($isOrderArchived)->values();
+        $activeOrders = $orders->reject($isOrderArchived)->values();
 
-        $pendingCommission = $orders->where('commission_status', 'pending')->sum(fn($o) => (float)$o->rep_commission_earned);
-        $clearedCommission = $orders->where('commission_status', 'cleared')->sum(fn($o) => (float)$o->rep_commission_earned);
+        // Metrics for active production (Pending & Cleared payout strictly reflect active book of business)
+        $totalQualifyingSales = $activeOrders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales());
+        $totalManufacturingCost = $activeOrders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost());
+        $totalTariffs = $activeOrders->sum(fn($o) => (float)$o->tariff_amount);
+        $totalFees = $activeOrders->sum(fn($o) => (float)$o->fee_deduction);
+        $totalNetMargin = $activeOrders->sum(fn($o) => (float)$o->net_margin);
+
+        $pendingCommission = $activeOrders->where('commission_status', 'pending')->sum(fn($o) => (float)$o->rep_commission_earned);
+        $clearedCommission = $activeOrders->where('commission_status', 'cleared')->sum(fn($o) => (float)$o->rep_commission_earned);
         $paidCommission = $orders->where('commission_status', 'paid')->sum(fn($o) => (float)$o->rep_commission_earned);
         $lifetimeCommissionEarned = $orders->sum(fn($o) => (float)$o->rep_commission_earned);
 
         $referralUrl = $user->referral_url;
-
-        // Separate active vs archived orders
-        // An order is archived if:
-        // 1. $o->is_archived is true
-        // 2. OR its team store is archived
-        // 3. OR the coach/store has been unassigned from this sales rep
-        $isOrderArchived = function ($o) use ($clientIds, $storeIds) {
-            if ($o->is_archived) {
-                return true;
-            }
-            if ($o->teamStore && $o->teamStore->is_archived) {
-                return true;
-            }
-            $hasAssignedCoach = $o->user_id && in_array($o->user_id, $clientIds);
-            $hasAssignedStore = $o->team_store_id && in_array($o->team_store_id, $storeIds);
-            if (!$hasAssignedCoach && !$hasAssignedStore) {
-                return true;
-            }
-            return false;
-        };
-
-        $archivedOrders = $orders->filter($isOrderArchived)->values();
-        $activeOrders = $orders->reject($isOrderArchived)->values();
 
         $orderBatches = \App\Models\ParentOrder::groupOrdersIntoBatches($activeOrders, $user);
         $archivedOrderBatches = \App\Models\ParentOrder::groupOrdersIntoBatches($archivedOrders, $user);
@@ -2057,17 +2071,17 @@ class AdminController extends Controller
         $salesReps = User::whereIn('role', ['sales_rep', 'partner', 'agent'])->get();
 
         // If batch orders are active/unpaid and coach has an assigned sales rep,
-        // ensure active batch orders match the coach's currently assigned sales rep
+        // ensure active batch orders match the coach's currently assigned sales rep (never reassign archived batches)
         if ($coach && $coach->sales_rep_id) {
             $coachRep = User::find($coach->sales_rep_id);
             if ($coachRep) {
                 $needsSync = $orders->contains(function($ord) use ($coach) {
-                    return $ord->commission_status !== 'paid' && $ord->sales_rep_id !== $coach->sales_rep_id;
+                    return !$ord->is_archived && (!$ord->teamStore || !$ord->teamStore->is_archived) && $ord->commission_status !== 'paid' && $ord->sales_rep_id !== $coach->sales_rep_id;
                 });
                 if ($needsSync) {
                     $rate = $coachRep->getEffectiveCommissionRate();
                     foreach ($orders as $ord) {
-                        if ($ord->commission_status !== 'paid') {
+                        if (!$ord->is_archived && (!$ord->teamStore || !$ord->teamStore->is_archived) && $ord->commission_status !== 'paid') {
                             $ord->sales_rep_id = $coachRep->id;
                             $ord->calculateAndApplyCommission($rate);
                             $ord->save();

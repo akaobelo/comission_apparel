@@ -94,20 +94,6 @@ class SalesRepController extends Controller
             });
         }
 
-        // Financial Metrics
-        $totalQualifyingSales = $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales());
-        $totalManufacturingCost = $orders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost());
-        $totalTariffs = $orders->sum(fn($o) => (float)$o->tariff_amount);
-        $totalFees = $orders->sum(fn($o) => (float)$o->fee_deduction);
-        $totalNetMargin = $orders->sum(fn($o) => (float)$o->net_margin);
-
-        $pendingCommission = $orders->where('commission_status', 'pending')->sum(fn($o) => (float)$o->rep_commission_earned);
-        $clearedCommission = $orders->where('commission_status', 'cleared')->sum(fn($o) => (float)$o->rep_commission_earned);
-        $paidCommission = $orders->where('commission_status', 'paid')->sum(fn($o) => (float)$o->rep_commission_earned);
-        $lifetimeCommissionEarned = $orders->sum(fn($o) => (float)$o->rep_commission_earned);
-
-        $referralUrl = $user->referral_url;
-
         // Active vs Archived split:
         // An order is archived if it is explicitly archived, its team store is archived,
         // or its coach/client is no longer assigned to this sales rep.
@@ -128,6 +114,20 @@ class SalesRepController extends Controller
 
         $activeOrders = $orders->filter(fn($o) => !$isOrderArchived($o))->values();
         $archivedOrders = $orders->filter(fn($o) => $isOrderArchived($o))->values();
+
+        // Financial Metrics (Pending & Cleared payout strictly reflect active book of business)
+        $totalQualifyingSales = $activeOrders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales());
+        $totalManufacturingCost = $activeOrders->sum(fn($o) => (float)$o->getEffectiveManufacturingCost());
+        $totalTariffs = $activeOrders->sum(fn($o) => (float)$o->tariff_amount);
+        $totalFees = $activeOrders->sum(fn($o) => (float)$o->fee_deduction);
+        $totalNetMargin = $activeOrders->sum(fn($o) => (float)$o->net_margin);
+
+        $pendingCommission = $activeOrders->where('commission_status', 'pending')->sum(fn($o) => (float)$o->rep_commission_earned);
+        $clearedCommission = $activeOrders->where('commission_status', 'cleared')->sum(fn($o) => (float)$o->rep_commission_earned);
+        $paidCommission = $orders->where('commission_status', 'paid')->sum(fn($o) => (float)$o->rep_commission_earned);
+        $lifetimeCommissionEarned = $orders->sum(fn($o) => (float)$o->rep_commission_earned);
+
+        $referralUrl = $user->referral_url;
 
         $orderBatches = \App\Models\ParentOrder::groupOrdersIntoBatches($activeOrders, $user);
         $archivedOrderBatches = \App\Models\ParentOrder::groupOrdersIntoBatches($archivedOrders, $user);

@@ -185,7 +185,34 @@ class SyncSalesRepAssignmentsCommand extends Command
             }
         }
 
-        // 8. Unlink mistakenly stamped orders from Earl Smith:
+        // 8. Clean up Michael McCovery / newly created partner accounts:
+        // Clear any archived or historical orders that were swept up upon creation, keeping only legitimate active orders or legitimately paid orders.
+        $mccovery = User::where(function($q) {
+                $q->where('email', 'like', '%mmccm2%')
+                  ->orWhere('name', 'like', '%Michael McCovery%');
+            })->first();
+
+        if ($mccovery) {
+            // Find all archived orders or orders from archived stores with pending commission stamped with McCovery's id
+            $mccoveryArchived = ParentOrder::where('sales_rep_id', $mccovery->id)
+                ->where('commission_status', '!=', 'paid')
+                ->where(function($q) use ($mccovery) {
+                    $q->where('is_archived', true)
+                      ->orWhere('created_at', '<', $mccovery->created_at->startOfDay())
+                      ->orWhereHas('teamStore', fn($sq) => $sq->where('is_archived', true));
+                })
+                ->get();
+
+            foreach ($mccoveryArchived as $mOrd) {
+                $mOrd->sales_rep_id = null;
+                $mOrd->applied_rep_commission_rate = null;
+                $mOrd->rep_commission_earned = 0.00;
+                $mOrd->save();
+                $this->info("Cleared mistakenly stamped sales_rep_id and commission on historical Order #{$mOrd->id} for Michael McCovery");
+            }
+        }
+
+        // 9. Unlink mistakenly stamped orders from Earl Smith:
         // Any order stamped with Earl's ID where the coach is NOT assigned to Earl,
         // or where the coach is assigned to another sales partner (e.g. Yohanda or Ernie):
         if ($earl) {

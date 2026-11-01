@@ -420,5 +420,95 @@ class SalesRepPlatformTest extends TestCase
         $response->assertDontSee('Capella University');
         $response->assertDontSee('William Bazemore');
     }
+
+    /**
+     * Test assigning coach to new rep never transfers archived historical orders,
+     * and pending payout strictly excludes archived orders.
+     */
+    public function test_assigning_coach_does_not_transfer_archived_orders_and_pending_payout_excludes_archived()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $rep = User::factory()->create([
+            'first_name'      => 'Michael',
+            'last_name'       => 'McCovery',
+            'email'           => 'mmccm2@gmail.com',
+            'role'            => 'sales_rep',
+            'commission_rate' => 30.0,
+            'created_at'      => now(),
+        ]);
+
+        $coach = User::factory()->create([
+            'role'         => 'coach',
+            'first_name'   => 'Michael',
+            'last_name'    => 'McCovery',
+            'organization' => 'The Lane 4 store',
+        ]);
+
+        // Historical archived order from past season (created 5 days ago, prior to rep assignment)
+        $archivedOrder = ParentOrder::create([
+            'user_id'            => $coach->id,
+            'athlete_first_name' => 'Past',
+            'athlete_last_name'  => 'Runner',
+            'subtotal'           => 440.00,
+            'total_paid'         => 440.00,
+            'manufacturing_cost' => 0.00,
+            'net_margin'         => 440.00,
+            'status'             => 'Processing',
+            'commission_status'  => 'pending',
+            'order_type'         => 'direct',
+            'is_archived'        => true,
+            'items_json'         => [],
+        ]);
+        $archivedOrder->created_at = now()->subDays(5);
+        $archivedOrder->save(['timestamps' => false]);
+
+        // Assign coach to rep
+        $response = $this->actingAs($admin)->post("/admin/coach/{$coach->id}/update", [
+            'first_name'   => $coach->first_name,
+            'last_name'    => $coach->last_name,
+            'email'        => $coach->email,
+            'organization' => $coach->organization,
+            'phone'        => $coach->phone ?? '1234567890',
+            'sport'        => $coach->sport ?? 'Track',
+            'status'       => 'active',
+            'sales_rep_id' => $rep->id,
+        ]);
+        $response->assertRedirect();
+
+        // Archived order must NOT be assigned to new rep
+        $archivedOrder->refresh();
+        $this->assertNotEquals($rep->id, $archivedOrder->sales_rep_id, 'Archived order should not be reassigned to new sales rep');
+
+        // Legitimate active order paid to rep
+        $activeOrder = ParentOrder::create([
+            'user_id'                     => $coach->id,
+            'athlete_first_name'          => 'Active',
+            'athlete_last_name'           => 'Athlete',
+            'subtotal'                    => 980.00,
+            'total_paid'                  => 980.00,
+            'manufacturing_cost'          => 308.00,
+            'tariff_amount'               => 155.27,
+            'net_margin'                  => 516.73,
+            'applied_rep_commission_rate' => 30.0,
+            'rep_commission_earned'       => 155.02,
+            'sales_rep_id'                => $rep->id,
+            'commission_status'           => 'paid',
+            'status'                      => 'Processing',
+            'order_type'                  => 'direct',
+            'is_archived'                 => false,
+            'items_json'                  => [],
+        ]);
+
+        $viewResponse = $this->actingAs($admin)->get("/admin/sales-reps/{$rep->id}");
+        $viewResponse->assertStatus(200);
+
+        // Pending Payout must be $0.00, NOT $132.00
+        $viewResponse->assertSee('$0.00');
+        $viewResponse->assertDontSee('$132.00');
+        // Lifetime paid must show $155.02
+        $viewResponse->assertSee('$155.02');
+        // Active Qualifying Sales must show $980.00
+        $viewResponse->assertSee('$980.00');
+    }
 }
 
