@@ -97,7 +97,7 @@ class SalesRepController extends Controller
         // Active vs Archived split:
         // An order is archived if it is explicitly archived, its team store is archived,
         // or its coach/client is no longer assigned to this sales rep.
-        $isOrderArchived = function($o) use ($clientIds, $storeIds) {
+        $isOrderArchived = function($o) use ($clientIds, $storeIds, $user) {
             if (!empty($o->is_archived)) {
                 return true;
             }
@@ -106,7 +106,8 @@ class SalesRepController extends Controller
             }
             $hasAssignedCoach = $o->user_id && in_array($o->user_id, $clientIds);
             $hasAssignedStore = $o->team_store_id && in_array($o->team_store_id, $storeIds);
-            if (!$hasAssignedCoach && !$hasAssignedStore) {
+            $isExplicitRepOrder = ($o->sales_rep_id == $user->id);
+            if (!$hasAssignedCoach && !$hasAssignedStore && !$isExplicitRepOrder) {
                 return true;
             }
             return false;
