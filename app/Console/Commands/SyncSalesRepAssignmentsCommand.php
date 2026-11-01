@@ -163,18 +163,19 @@ class SyncSalesRepAssignmentsCommand extends Command
         }
 
         // 7. Clear mistakenly attributed historical orders from reps
-        // If an order was placed BEFORE the client was assigned to the rep, and is NOT an active direct batch:
+        // If an order was placed BEFORE the client was assigned to the rep, and is an archived order or unassigned batch:
         // Clear sales_rep_id so it doesn't inflate the rep's Qualifying Sales or past batches.
+        // DO NOT clear active orders that have already been legitimately paid out to this rep.
         foreach ($assignedCoaches as $coach) {
             if (!$coach->sales_rep_assigned_at) continue;
 
             $pastOrders = ParentOrder::where('user_id', $coach->id)
                 ->where('created_at', '<', $coach->sales_rep_assigned_at)
                 ->where('sales_rep_id', $coach->sales_rep_id)
+                ->where('commission_status', '!=', 'paid')
                 ->where(function($q) {
                     $q->where('is_archived', true)
-                      ->orWhereNull('batch_id')
-                      ->orWhere('commission_status', 'paid');
+                      ->orWhereNull('batch_id');
                 })
                 ->get();
 
@@ -187,12 +188,56 @@ class SyncSalesRepAssignmentsCommand extends Command
 
         // 8. Clean up Michael McCovery / newly created partner accounts:
         // Clear any archived or historical orders that were swept up upon creation, keeping only legitimate active orders or legitimately paid orders.
-        $mccovery = User::where(function($q) {
-                $q->where('email', 'like', '%mmccm2%')
-                  ->orWhere('name', 'like', '%Michael McCovery%');
-            })->first();
+        $mccovery = User::where('email', 'like', '%mmccm2%')
+            ->orWhere(function($q) {
+                $q->where('first_name', 'like', '%Michael%')
+                  ->where('last_name', 'like', '%McCovery%');
+            })
+            ->first();
 
         if ($mccovery) {
+            // Restore Order #889 (The Lane 4 store direct batch order legitimately paid to Michael McCovery)
+            $order889 = ParentOrder::find(889);
+            if ($order889) {
+                $order889->sales_rep_id = $mccovery->id;
+                $order889->applied_rep_commission_rate = 30.0;
+                $order889->rep_commission_earned = 155.02;
+                $order889->commission_status = 'paid';
+                $order889->is_archived = false;
+                $order889->save();
+                $this->info("Restored Order #889 to Michael McCovery as PAID ($155.02)");
+            }
+
+            // Also check by coach Lane 4 Track Club or The Lane 4 store
+            $coach = User::where('email', 'like', '%lane4track%')
+                ->orWhere('organization', 'like', '%Lane 4%')
+                ->first();
+            if ($coach) {
+                $coachOrders = ParentOrder::where('user_id', $coach->id)
+                    ->where('commission_status', 'paid')
+                    ->where('is_archived', false)
+                    ->get();
+                foreach ($coachOrders as $cOrd) {
+                    $cOrd->sales_rep_id = $mccovery->id;
+                    $cOrd->save();
+                    $this->info("Restored coach Order #{$cOrd->id} to Michael McCovery as PAID");
+                }
+            }
+
+            // Also search by batch or store if ID differs in any environment
+            $lane4Store = TeamStore::where('name', 'like', '%Lane 4%')->first();
+            if ($lane4Store) {
+                $paidLane4Orders = ParentOrder::where('team_store_id', $lane4Store->id)
+                    ->where('commission_status', 'paid')
+                    ->where('is_archived', false)
+                    ->get();
+                foreach ($paidLane4Orders as $pOrd) {
+                    $pOrd->sales_rep_id = $mccovery->id;
+                    $pOrd->save();
+                    $this->info("Restored Lane 4 paid Order #{$pOrd->id} to Michael McCovery");
+                }
+            }
+
             // Find all archived orders or orders from archived stores with pending commission stamped with McCovery's id
             $mccoveryArchived = ParentOrder::where('sales_rep_id', $mccovery->id)
                 ->where('commission_status', '!=', 'paid')

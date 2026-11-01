@@ -303,6 +303,11 @@ class ParentOrder extends Model
                     return true;
                 }
 
+                // 4. Order already disbursed / paid to this sales rep
+                if ($ord->commission_status === 'paid' && $ord->sales_rep_id == $rep->id) {
+                    return true;
+                }
+
                 // Historical activity prior to assignment belongs exclusively to Super Admin lifetime archive
                 return false;
             }
