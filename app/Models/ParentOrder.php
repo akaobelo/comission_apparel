@@ -39,6 +39,7 @@ class ParentOrder extends Model
         'stripe_session_id',
         'stripe_payment_intent_id',
         'paid_at',
+        'submitted_at',
         'user_id',
         'sales_rep_id',
         'batch_id',
@@ -140,6 +141,7 @@ class ParentOrder extends Model
         'shipping_amount' => 'decimal:2',
         'total_paid'      => 'decimal:2',
         'paid_at'         => 'datetime',
+        'submitted_at'    => 'datetime',
         'is_archived' => 'boolean',
         'manufacturing_cost' => 'decimal:2',
         'tariff_amount'      => 'decimal:2',
@@ -150,6 +152,11 @@ class ParentOrder extends Model
         'rep_commission_earned'       => 'decimal:2',
         'paid_to_rep_at'     => 'datetime',
     ];
+
+    public function getSubmissionDateAttribute()
+    {
+        return $this->submitted_at ?? $this->paid_at ?? $this->created_at;
+    }
 
     public function teamStore()
     {
@@ -702,7 +709,7 @@ class ParentOrder extends Model
                 'rep_cut'          => $commission,
                 'split_rate'       => $splitRate,
                 'status'           => $status,
-                'latest_date'      => $batchOrders->max('created_at'),
+                'latest_date'      => $batchOrders->max(fn($o) => $o->submitted_at ?? $o->paid_at ?? $o->created_at),
                 'orders'           => $batchOrders,
             ]);
         }

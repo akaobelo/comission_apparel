@@ -175,7 +175,7 @@
                             @endif
                         </div>
                     </div>
-                    <div class="flex justify-between text-sm"><span class="text-slate-500">Submitted</span><span class="font-bold text-slate-900">{{ $firstOrder->created_at?->format('M d, Y') ?? '—' }}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Submitted</span><span class="font-bold text-slate-900">{{ ($firstOrder->submitted_at ?? $firstOrder->paid_at ?? $firstOrder->created_at)?->format('M d, Y') ?? '—' }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Payment Mode</span>
                         <span class="font-bold text-slate-900 uppercase text-xs">{{ $isOnlinePayment ? 'Online (Stripe)' : ($isCheckPayment ? 'Pay by Check' : 'In-House') }}</span>
                     </div>

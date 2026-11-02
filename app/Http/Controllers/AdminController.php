@@ -110,7 +110,7 @@ class AdminController extends Controller
             ->whereNotNull('batch_id')
             ->where('status', '!=', 'Pending')
             ->where('is_archived', false)
-            ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(COALESCE(paid_at, updated_at, created_at)) as latest_batch_date'), \Illuminate\Support\Facades\DB::raw('MAX(id) as latest_order_id'))
+            ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(COALESCE(submitted_at, paid_at, created_at)) as latest_batch_date'), \Illuminate\Support\Facades\DB::raw('MAX(id) as latest_order_id'))
             ->groupBy('batch_id');
 
         $finalizedStoreBatchIds = $finalizedStoreBatchQuery->orderByDesc('latest_batch_date')
@@ -193,7 +193,7 @@ class AdminController extends Controller
             ->whereNotNull('batch_id')
             ->whereNotIn('status', ['Pending', 'Draft'])
             ->where('is_archived', false)
-            ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(COALESCE(paid_at, updated_at, created_at)) as latest_batch_date'), \Illuminate\Support\Facades\DB::raw('MAX(id) as latest_order_id'))
+            ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(COALESCE(submitted_at, paid_at, created_at)) as latest_batch_date'), \Illuminate\Support\Facades\DB::raw('MAX(id) as latest_order_id'))
             ->groupBy('batch_id');
 
         $finalizedDirectPerPage = (int) $request->input('finalized_direct_per_page', 50);
@@ -1731,7 +1731,7 @@ class AdminController extends Controller
         $validated['is_tax_exempt'] = $request->boolean('is_tax_exempt');
 
         if ($request->filled('order_deadline')) {
-            $deadlineTime = $request->input('order_deadline_time', '00:00');
+            $deadlineTime = $request->input('order_deadline_time', '23:59');
             $hour = ($deadlineTime === '23:59' || $deadlineTime === '23:59:59') ? 23 : 0;
             $min = ($deadlineTime === '23:59' || $deadlineTime === '23:59:59') ? 59 : 0;
             $sec = ($deadlineTime === '23:59' || $deadlineTime === '23:59:59') ? 59 : 0;
@@ -2438,8 +2438,9 @@ class AdminController extends Controller
         $batchId = (string) \Illuminate\Support\Str::uuid();
 
         $updateData = [
-            'status'   => 'Submitted to Admin',
-            'batch_id' => $batchId,
+            'status'       => 'Submitted to Admin',
+            'batch_id'     => $batchId,
+            'submitted_at' => \Illuminate\Support\Facades\DB::raw('COALESCE(submitted_at, paid_at, created_at, NOW())'),
         ];
 
         if ($store->isCheckPayment() || ($store->payment_mode ?? 'in_house') === 'in_house') {

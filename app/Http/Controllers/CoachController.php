@@ -93,13 +93,13 @@ class CoachController extends Controller
         // Group batched orders by batch
         $directOrderBatches = $batchedOrders->groupBy('batch_id')->sortByDesc(function ($orders) {
             $latestTime = $orders->max(function ($o) {
-                return $o->paid_at ?? $o->updated_at ?? $o->created_at;
+                return $o->submitted_at ?? $o->paid_at ?? $o->created_at;
             });
             return [$latestTime, $orders->max('id')];
         });
         $archivedOrderBatches = $archivedBatchedOrders->groupBy('batch_id')->sortByDesc(function ($orders) {
             $latestTime = $orders->max(function ($o) {
-                return $o->paid_at ?? $o->updated_at ?? $o->created_at;
+                return $o->submitted_at ?? $o->paid_at ?? $o->created_at;
             });
             return [$latestTime, $orders->max('id')];
         });
@@ -332,7 +332,7 @@ class CoachController extends Controller
             'deadline_time' => 'nullable|string',
         ]);
 
-        $deadlineTime = $request->input('deadline_time', '00:00');
+        $deadlineTime = $request->input('deadline_time', '23:59');
         $hour = ($deadlineTime === '23:59' || $deadlineTime === '23:59:59') ? 23 : 0;
         $min = ($deadlineTime === '23:59' || $deadlineTime === '23:59:59') ? 59 : 0;
         $sec = ($deadlineTime === '23:59' || $deadlineTime === '23:59:59') ? 59 : 0;
@@ -381,8 +381,9 @@ class CoachController extends Controller
         $batchId = (string) Str::uuid();
 
         $updateData = [
-            'status' => 'Submitted to Admin',
-            'batch_id' => $batchId
+            'status'       => 'Submitted to Admin',
+            'batch_id'     => $batchId,
+            'submitted_at' => \Illuminate\Support\Facades\DB::raw('COALESCE(submitted_at, paid_at, created_at, NOW())'),
         ];
         if ($store->isCheckPayment()) {
             $updateData['payment_status'] = 'not_applicable';
@@ -1066,6 +1067,7 @@ class CoachController extends Controller
                     'sales_rep_id'   => $order->sales_rep_id ?: ($user->sales_rep_id ?? $activeStore?->sales_rep_id),
                     'status'         => 'Submitted to Admin',
                     'payment_status' => 'not_applicable',
+                    'submitted_at'   => now(),
                     'subtotal'       => $orderSubtotal,
                     'tax_amount'     => $orderTax,
                     'fee_amount'     => 0.00,
@@ -1247,6 +1249,7 @@ class CoachController extends Controller
                     'sales_rep_id'   => $order->sales_rep_id ?: ($user->sales_rep_id ?? $activeStore?->sales_rep_id),
                     'status'         => 'Submitted to Admin',
                     'payment_status' => 'paid',
+                    'submitted_at'   => now(),
                     'paid_at'        => now(),
                     'total_paid'     => $order->getCalculatedSubtotal(),
                 ]);
@@ -1303,6 +1306,7 @@ class CoachController extends Controller
                             'order_type'               => 'direct',
                             'sales_rep_id'             => $order->sales_rep_id ?: ($user->sales_rep_id ?? $order->teamStore?->sales_rep_id),
                             'stripe_payment_intent_id' => $session->payment_intent,
+                            'submitted_at'             => $order->submitted_at ?? now(),
                             'paid_at'                  => now(),
                         ]);
                     }

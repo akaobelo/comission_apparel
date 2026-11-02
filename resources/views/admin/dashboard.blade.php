@@ -885,8 +885,7 @@
                                     $batchOrders = $batchData['orders'] ?? collect();
                                     $totalItems = $batchOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
                                     $coach = $batchOrders->first()?->user;
-                                    $batchSubmittedDate = $batchOrders->first(fn($o) => !empty($o->paid_at))?->paid_at
-                                        ?? $batchOrders->max(fn($o) => $o->updated_at ?? $o->created_at);
+                                    $batchSubmittedDate = $batchOrders->max(fn($o) => $o->submitted_at ?? $o->paid_at ?? $o->created_at);
                                 @endphp
                                 <div class="p-4">
                                     <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
@@ -2041,8 +2040,7 @@
                                 $batchOrders = $batchData['orders'] ?? collect();
                                 $totalItems = $batchOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
                                 $coach = $batchOrders->first()?->user;
-                                $batchSubmittedDate = $batchOrders->first(fn($o) => !empty($o->paid_at))?->paid_at
-                                    ?? $batchOrders->max(fn($o) => $o->updated_at ?? $o->created_at);
+                                $batchSubmittedDate = $batchOrders->max(fn($o) => $o->submitted_at ?? $o->paid_at ?? $o->created_at);
                             @endphp
                             <div class="p-6 transition-colors"
                                  :class="{

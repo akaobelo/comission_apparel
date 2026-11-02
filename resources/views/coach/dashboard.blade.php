@@ -1250,14 +1250,16 @@
             @if(!$isLocked)
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
                 <h3 class="text-sm font-black uppercase tracking-tight text-slate-900 mb-4">Order Deadline</h3>
-                <form action="{{ route('coach.store.deadline', $store) }}" method="POST" class="flex flex-col sm:flex-row gap-3">
+                <form action="{{ route('coach.store.deadline', $store) }}" method="POST" class="space-y-2">
                     @csrf
-                    <input type="date" name="deadline" value="{{ $store->order_deadline?->format('Y-m-d') }}" class="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-900 focus:border-primary focus:outline-none shadow-sm text-sm">
-                    <select name="deadline_time" class="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-xs font-bold text-slate-700 focus:border-primary focus:outline-none shadow-sm">
-                        <option value="23:59" {{ ($store->order_deadline && $store->order_deadline->format('H:i') === '23:59') ? 'selected' : '' }}>11:59 PM on Date (End of Day EST)</option>
-                        <option value="00:00" {{ ($store->order_deadline && $store->order_deadline->format('H:i') === '00:00') || !$store->order_deadline ? 'selected' : '' }}>11:59 PM Day Prior (Midnight EST)</option>
-                    </select>
-                    <button type="submit" class="px-5 py-2.5 bg-secondary text-white text-sm font-bold rounded-lg hover:bg-[#a11825] transition-colors whitespace-nowrap">Set Deadline</button>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="date" name="deadline" value="{{ $store->order_deadline?->format('Y-m-d') }}" class="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-900 focus:border-primary focus:outline-none shadow-sm text-sm">
+                        <input type="hidden" name="deadline_time" value="23:59">
+                        <button type="submit" class="px-5 py-2.5 bg-secondary text-white text-sm font-bold rounded-lg hover:bg-[#a11825] transition-colors whitespace-nowrap">Set Deadline</button>
+                    </div>
+                    <div class="text-center sm:text-left pt-1">
+                        <span class="text-xs font-bold text-red-600">Note: The store will close at 11:59PM on the deadline date listed</span>
+                    </div>
                 </form>
             </div>
             @endif
@@ -1926,7 +1928,7 @@
                                             @endphp
                                             <div class="p-6 space-y-3">
                                                 <div class="flex justify-between text-sm"><span class="text-slate-500">Coach</span><span class="font-bold text-slate-900 text-right">{{ $firstOrder->user->first_name ?? 'Unknown' }} {{ $firstOrder->user->last_name ?? '' }}<br><span class="text-xs font-normal text-slate-500">{{ $firstOrder->teamStore?->name ?? $firstOrder->user->organization ?? '' }}</span></span></div>
-                                                <div class="flex justify-between text-sm"><span class="text-slate-500">Submitted</span><span class="font-bold text-slate-900">{{ $firstOrder->created_at?->format('M d, Y') ?? '—' }}</span></div>
+                                                <div class="flex justify-between text-sm"><span class="text-slate-500">Submitted</span><span class="font-bold text-slate-900">{{ ($firstOrder->submitted_at ?? $firstOrder->paid_at ?? $firstOrder->created_at)?->format('M d, Y') ?? '—' }}</span></div>
                                                 <div class="flex justify-between text-sm"><span class="text-slate-500">Payment Mode</span>
                                                     <span class="font-bold text-slate-900 uppercase text-xs">{{ $isOnlinePayment ? 'Online (Stripe)' : ($isCheckPayment ? 'Pay by Check' : 'In-House') }}</span>
                                                 </div>

@@ -78,6 +78,7 @@ class StripeWebhookController extends Controller
                             'status'                   => 'Submitted to Admin',
                             'payment_status'           => 'paid',
                             'stripe_payment_intent_id' => $paymentIntentId ?? $bo->stripe_payment_intent_id,
+                            'submitted_at'             => $bo->submitted_at ?? now(),
                             'paid_at'                  => now(),
                         ]);
                     }
@@ -129,6 +130,7 @@ class StripeWebhookController extends Controller
             'payment_status'          => 'paid',
             'status'                  => 'Submitted',
             'stripe_payment_intent_id'=> $paymentIntentId ?? $order->stripe_payment_intent_id,
+            'submitted_at'            => $order->submitted_at ?? now(),
             'paid_at'                 => now(),
         ]);
 

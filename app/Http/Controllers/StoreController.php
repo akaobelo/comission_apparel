@@ -252,6 +252,7 @@ class StoreController extends Controller
             'items_json'          => $itemsJson,
             'status'              => $store->isOnlinePayment() ? 'Pending Payment' : 'Submitted',
             'payment_status'      => $store->isOnlinePayment() ? 'pending' : 'not_applicable',
+            'submitted_at'        => $store->isOnlinePayment() ? null : now(),
             'subtotal'            => $subtotal,
             'tax_amount'          => $taxAmount,
             'fee_amount'          => $feeAmount,
@@ -446,6 +447,7 @@ class StoreController extends Controller
             $order->update([
                 'payment_status' => 'paid',
                 'status'         => 'Submitted',
+                'submitted_at'   => $order->submitted_at ?? now(),
                 'paid_at'        => now(),
             ]);
 
@@ -483,6 +485,7 @@ class StoreController extends Controller
                         'payment_status'          => 'paid',
                         'status'                  => 'Submitted',
                         'stripe_payment_intent_id'=> $session->payment_intent,
+                        'submitted_at'            => $order->submitted_at ?? now(),
                         'paid_at'                 => now(),
                     ];
 
