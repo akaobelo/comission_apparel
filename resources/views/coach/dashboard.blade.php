@@ -1250,10 +1250,14 @@
             @if(!$isLocked)
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
                 <h3 class="text-sm font-black uppercase tracking-tight text-slate-900 mb-4">Order Deadline</h3>
-                <form action="{{ route('coach.store.deadline', $store) }}" method="POST" class="flex gap-3">
+                <form action="{{ route('coach.store.deadline', $store) }}" method="POST" class="flex flex-col sm:flex-row gap-3">
                     @csrf
                     <input type="date" name="deadline" value="{{ $store->order_deadline?->format('Y-m-d') }}" class="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-900 focus:border-primary focus:outline-none shadow-sm text-sm">
-                    <button type="submit" class="px-5 py-2.5 bg-secondary text-white text-sm font-bold rounded-lg hover:bg-[#a11825] transition-colors">Set Deadline</button>
+                    <select name="deadline_time" class="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-xs font-bold text-slate-700 focus:border-primary focus:outline-none shadow-sm">
+                        <option value="23:59" {{ ($store->order_deadline && $store->order_deadline->format('H:i') === '23:59') ? 'selected' : '' }}>11:59 PM on Date (End of Day EST)</option>
+                        <option value="00:00" {{ ($store->order_deadline && $store->order_deadline->format('H:i') === '00:00') || !$store->order_deadline ? 'selected' : '' }}>11:59 PM Day Prior (Midnight EST)</option>
+                    </select>
+                    <button type="submit" class="px-5 py-2.5 bg-secondary text-white text-sm font-bold rounded-lg hover:bg-[#a11825] transition-colors whitespace-nowrap">Set Deadline</button>
                 </form>
             </div>
             @endif

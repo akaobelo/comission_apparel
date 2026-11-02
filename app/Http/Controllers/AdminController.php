@@ -196,9 +196,14 @@ class AdminController extends Controller
             ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(COALESCE(paid_at, updated_at, created_at)) as latest_batch_date'), \Illuminate\Support\Facades\DB::raw('MAX(id) as latest_order_id'))
             ->groupBy('batch_id');
 
+        $finalizedDirectPerPage = (int) $request->input('finalized_direct_per_page', 50);
+        if ($finalizedDirectPerPage <= 0 || $finalizedDirectPerPage > 200) {
+            $finalizedDirectPerPage = 50;
+        }
+
         $finalizedDirectBatchIds = $finalizedDirectBatchQuery->orderByDesc('latest_batch_date')
             ->orderByDesc('latest_order_id')
-            ->paginate(10, ['*'], 'finalized_direct_page')
+            ->paginate($finalizedDirectPerPage, ['*'], 'finalized_direct_page')
             ->withQueryString();
 
         $finalizedDirectOrderBatches = ParentOrder::whereIn('batch_id', $finalizedDirectBatchIds->pluck('batch_id'))
@@ -1630,6 +1635,11 @@ class AdminController extends Controller
 
         $user = $request->user();
 
+        $deadline = null;
+        if ($request->filled('order_deadline')) {
+            $deadline = \Carbon\Carbon::parse($request->order_deadline, 'America/New_York')->setTime(23, 59, 59);
+        }
+
         $store = TeamStore::create([
             'user_id'      => $user->id,
             'name'         => $request->name,
@@ -1640,7 +1650,7 @@ class AdminController extends Controller
             'status'       => 'approved', // Auto-approved since admin created it
             'payment_mode' => 'in_house', // Default to Cash Collection
             'pricing_approved' => true,   // Auto-approved
-            'order_deadline' => $request->order_deadline,
+            'order_deadline' => $deadline,
         ]);
 
         return redirect()->route('admin.store.edit', $store)
@@ -1709,6 +1719,7 @@ class AdminController extends Controller
             'description'  => ['nullable', 'string'],
             'package_type' => ['nullable', 'in:package_a,package_b,package_c,individual'],
             'order_deadline' => ['nullable', 'date'],
+            'order_deadline_time' => ['nullable', 'string'],
             'status'       => ['required', 'in:pending,approved,submitted_to_admin,declined'],
             'pricing_approved' => ['boolean'],
             'is_tax_exempt'    => ['boolean'],
@@ -1718,6 +1729,19 @@ class AdminController extends Controller
 
         $validated['pricing_approved'] = $request->boolean('pricing_approved');
         $validated['is_tax_exempt'] = $request->boolean('is_tax_exempt');
+
+        if ($request->filled('order_deadline')) {
+            $deadlineTime = $request->input('order_deadline_time', '00:00');
+            $hour = ($deadlineTime === '23:59' || $deadlineTime === '23:59:59') ? 23 : 0;
+            $min = ($deadlineTime === '23:59' || $deadlineTime === '23:59:59') ? 59 : 0;
+            $sec = ($deadlineTime === '23:59' || $deadlineTime === '23:59:59') ? 59 : 0;
+
+            $validated['order_deadline'] = \Carbon\Carbon::parse($request->order_deadline, 'America/New_York')
+                ->setTime($hour, $min, $sec);
+        } else {
+            $validated['order_deadline'] = null;
+        }
+        unset($validated['order_deadline_time']);
 
         $store->update($validated);
 
@@ -2626,8 +2650,69 @@ class AdminController extends Controller
         ]);
 
         ParentOrder::where('batch_id', $batchId)->update(['status' => $request->status]);
+        \Illuminate\Support\Facades\Cache::forget('admin_global_sales_summary');
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Batch status updated to ' . $request->status . '.',
+                'batch_id' => $batchId,
+                'status' => $request->status,
+            ]);
+        }
 
         return back()->with('success', 'Batch status updated to ' . $request->status . '.');
+    }
+
+    public function bulkUpdateBatchStatus(Request $request)
+    {
+        $updatedCount = 0;
+
+        if ($request->has('batch_statuses') && is_array($request->batch_statuses)) {
+            $batchStatuses = $request->input('batch_statuses');
+            foreach ($batchStatuses as $bId => $status) {
+                if (!empty($bId) && !empty($status)) {
+                    $count = ParentOrder::where('batch_id', $bId)->update(['status' => $status]);
+                    if ($count > 0) {
+                        $updatedCount++;
+                    }
+                }
+            }
+            \Illuminate\Support\Facades\Cache::forget('admin_global_sales_summary');
+            $message = "Successfully updated {$updatedCount} order batch statuses.";
+        } elseif ($request->has('batch_ids') && $request->has('status')) {
+            $validated = $request->validate([
+                'batch_ids' => ['required', 'array'],
+                'batch_ids.*' => ['required', 'string'],
+                'status' => ['required', 'string', 'max:255'],
+            ]);
+
+            $batchIds = $validated['batch_ids'];
+            $status = $validated['status'];
+
+            ParentOrder::whereIn('batch_id', $batchIds)->update(['status' => $status]);
+            \Illuminate\Support\Facades\Cache::forget('admin_global_sales_summary');
+            $updatedCount = count($batchIds);
+            $message = "Successfully updated {$updatedCount} batches to '{$status}'.";
+        } else {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No batches or statuses were provided to update.',
+                ], 422);
+            }
+            return back()->with('error', 'No batches or statuses selected.');
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'updated_count' => $updatedCount,
+            ]);
+        }
+
+        return back()->with('success', $message);
     }
 
     // ─── LANDING COLLECTIONS ──────────────────────────────────────────────────────

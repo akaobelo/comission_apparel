@@ -702,7 +702,7 @@
                                                     <form action="{{ route('admin.batch.status.update', $batchId) }}" method="POST" class="flex items-center justify-between bg-white border border-slate-200 rounded-md p-1.5 gap-1.5 shadow-sm">
                                                         @csrf
                                                         <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status:</span>
-                                                        <select name="status" onchange="this.form.submit()" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full max-w-[125px]">
+                                                        <select name="status" onchange="quickUpdateBatchStatus(this, '{{ $batchId }}')" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full max-w-[125px]">
                                                             <option value="Submitted to Admin" @if(($batchOrders->first()?->status ?? '') == 'Submitted to Admin') selected @endif>Submitted to Admin</option>
                                                             <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
                                                             <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
@@ -937,7 +937,7 @@
                                             <form action="{{ route('admin.batch.status.update', $batchId) }}" method="POST" class="flex items-center justify-between bg-white border border-slate-200 rounded-md p-1.5 gap-1.5 shadow-sm">
                                                 @csrf
                                                 <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status:</span>
-                                                <select name="status" onchange="this.form.submit()" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full max-w-[125px]">
+                                                <select name="status" onchange="quickUpdateBatchStatus(this, '{{ $batchId }}')" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full max-w-[125px]">
                                                     <option value="Submitted to Admin" @if(($batchOrders->first()?->status ?? '') == 'Submitted to Admin') selected @endif>Submitted to Admin</option>
                                                     <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
                                                     <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
@@ -1689,7 +1689,7 @@
                                             <form action="{{ route('admin.batch.status.update', $batchId) }}" method="POST" class="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2 gap-2 shadow-sm">
                                                 @csrf
                                                 <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status:</span>
-                                                <select name="status" onchange="this.form.submit()" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-primary">
+                                                <select name="status" onchange="quickUpdateBatchStatus(this, '{{ $batchId }}')" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-primary">
                                                     <option value="Submitted to Admin" @if(($batchOrders->first()?->status ?? '') == 'Submitted to Admin') selected @endif>Submitted to Admin</option>
                                                     <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
                                                     <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
@@ -1748,24 +1748,293 @@
         </div>
 
         {{-- ═══ FINALIZED DIRECT ORDERS TAB (FULL PAGE VIEW) ═══ --}}
-        <div x-show="activeAdminTab === 'finalized_direct_orders'" x-cloak class="space-y-6">
+        <div x-show="activeAdminTab === 'finalized_direct_orders'" x-cloak class="space-y-6" x-data="{
+            selectedBatchIds: [],
+            bulkStatus: 'In Production',
+            isBulkUpdating: false,
+            bulkMessage: '',
+            bulkSuccess: true,
+            modifiedStatuses: {},
+            allBatchIds: [{{ $finalizedDirectOrderBatches->keys()->map(fn($id) => "'" . addslashes($id) . "'")->implode(',') }}],
+            originalStatuses: {
+                @foreach($finalizedDirectOrderBatches as $bId => $bData)
+                    '{{ addslashes($bId) }}': '{{ addslashes($bData['orders']->first()?->status ?? 'Submitted to Admin') }}',
+                @endforeach
+            },
+            currentStatuses: {
+                @foreach($finalizedDirectOrderBatches as $bId => $bData)
+                    '{{ addslashes($bId) }}': '{{ addslashes($bData['orders']->first()?->status ?? 'Submitted to Admin') }}',
+                @endforeach
+            },
+            savingSingleId: null,
+
+            toggleAllBatches(e) {
+                if (e.target.checked) {
+                    this.selectedBatchIds = [...this.allBatchIds];
+                } else {
+                    this.selectedBatchIds = [];
+                }
+            },
+            toggleBatch(id) {
+                id = String(id);
+                const idx = this.selectedBatchIds.indexOf(id);
+                if (idx > -1) {
+                    this.selectedBatchIds.splice(idx, 1);
+                } else {
+                    this.selectedBatchIds.push(id);
+                }
+            },
+            selectAll() {
+                this.selectedBatchIds = [...this.allBatchIds];
+            },
+            deselectAll() {
+                this.selectedBatchIds = [];
+            },
+            onStatusChange(batchId, newStatus) {
+                this.currentStatuses[batchId] = newStatus;
+                if (newStatus !== this.originalStatuses[batchId]) {
+                    this.modifiedStatuses[batchId] = newStatus;
+                } else {
+                    delete this.modifiedStatuses[batchId];
+                }
+                this.modifiedStatuses = { ...this.modifiedStatuses };
+            },
+            get modifiedCount() {
+                return Object.keys(this.modifiedStatuses).length;
+            },
+            discardChanges() {
+                Object.keys(this.modifiedStatuses).forEach(id => {
+                    this.currentStatuses[id] = this.originalStatuses[id];
+                });
+                this.modifiedStatuses = {};
+            },
+            async saveSingleStatus(batchId) {
+                const newStatus = this.currentStatuses[batchId];
+                if (!newStatus) return;
+                this.savingSingleId = batchId;
+                this.bulkMessage = '';
+                try {
+                    const token = document.querySelector('meta[name=\'csrf-token\']')?.getAttribute('content') || '{{ csrf_token() }}';
+                    const res = await fetch(`/admin/batch/${encodeURIComponent(batchId)}/status`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ status: newStatus })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.originalStatuses[batchId] = newStatus;
+                        delete this.modifiedStatuses[batchId];
+                        this.modifiedStatuses = { ...this.modifiedStatuses };
+                        this.bulkMessage = `✓ Batch status saved to ${newStatus}.`;
+                        this.bulkSuccess = true;
+                        setTimeout(() => { if (this.bulkMessage.includes(newStatus)) this.bulkMessage = ''; }, 4000);
+                    } else {
+                        this.bulkMessage = data.message || 'Failed to update status.';
+                        this.bulkSuccess = false;
+                    }
+                } catch (e) {
+                    console.error(e);
+                    this.bulkMessage = 'Network error while updating status.';
+                    this.bulkSuccess = false;
+                } finally {
+                    this.savingSingleId = null;
+                }
+            },
+            async applyMassAssign() {
+                if (!this.selectedBatchIds.length) return;
+                this.isBulkUpdating = true;
+                this.bulkMessage = '';
+                try {
+                    const token = document.querySelector('meta[name=\'csrf-token\']')?.getAttribute('content') || '{{ csrf_token() }}';
+                    const res = await fetch('{{ route('admin.batches.bulk-status') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            batch_ids: this.selectedBatchIds,
+                            status: this.bulkStatus
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.selectedBatchIds.forEach(id => {
+                            this.originalStatuses[id] = this.bulkStatus;
+                            this.currentStatuses[id] = this.bulkStatus;
+                            delete this.modifiedStatuses[id];
+                        });
+                        this.modifiedStatuses = { ...this.modifiedStatuses };
+                        this.bulkMessage = data.message || `✓ Updated ${this.selectedBatchIds.length} batches to ${this.bulkStatus}.`;
+                        this.bulkSuccess = true;
+                        this.selectedBatchIds = [];
+                        setTimeout(() => { this.bulkMessage = ''; }, 5000);
+                    } else {
+                        this.bulkMessage = data.message || 'Error updating batches.';
+                        this.bulkSuccess = false;
+                    }
+                } catch (e) {
+                    console.error(e);
+                    this.bulkMessage = 'Error connecting to server.';
+                    this.bulkSuccess = false;
+                } finally {
+                    this.isBulkUpdating = false;
+                }
+            },
+            async saveAllModifiedStatuses() {
+                if (!this.modifiedCount) return;
+                this.isBulkUpdating = true;
+                this.bulkMessage = '';
+                try {
+                    const token = document.querySelector('meta[name=\'csrf-token\']')?.getAttribute('content') || '{{ csrf_token() }}';
+                    const res = await fetch('{{ route('admin.batches.bulk-status') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            batch_statuses: this.modifiedStatuses
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        Object.keys(this.modifiedStatuses).forEach(id => {
+                            this.originalStatuses[id] = this.modifiedStatuses[id];
+                        });
+                        this.modifiedStatuses = {};
+                        this.bulkMessage = data.message || '✓ All batch status changes saved successfully.';
+                        this.bulkSuccess = true;
+                        setTimeout(() => { this.bulkMessage = ''; }, 5000);
+                    } else {
+                        this.bulkMessage = data.message || 'Error saving changes.';
+                        this.bulkSuccess = false;
+                    }
+                } catch (e) {
+                    console.error(e);
+                    this.bulkMessage = 'Error connecting to server.';
+                    this.bulkSuccess = false;
+                } finally {
+                    this.isBulkUpdating = false;
+                }
+            }
+        }">
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-6 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 flex items-center gap-2">
                                 <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                                 Finalized Direct Orders
                             </h2>
                             <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-100 text-purple-800 border border-purple-200">{{ isset($finalizedDirectBatchesPaginator) ? $finalizedDirectBatchesPaginator->total() : $finalizedDirectOrderBatches->count() }} Batches</span>
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200 text-slate-700">50 per page</span>
                         </div>
                         <p class="text-xs text-slate-500 mt-1">Direct order batches submitted by coaches without a storefront in full-page management view.</p>
                     </div>
+                    <div class="flex items-center gap-3">
+                        <template x-if="modifiedCount > 0">
+                            <button type="button" 
+                                    @click="saveAllModifiedStatuses()" 
+                                    :disabled="isBulkUpdating" 
+                                    class="px-4 py-2 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer animate-pulse">
+                                <svg x-show="isBulkUpdating" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                <span>Save All Changes (<span x-text="modifiedCount"></span>)</span>
+                            </button>
+                        </template>
+                    </div>
                 </div>
+
+                {{-- Bulk Feedback Alert --}}
+                <div x-show="bulkMessage" x-cloak x-transition
+                     class="p-4 rounded-xl text-xs font-bold flex items-center justify-between border shadow-sm mx-6 mt-6"
+                     :class="bulkSuccess ? 'bg-emerald-50 text-emerald-900 border-emerald-200' : 'bg-red-50 text-red-900 border-red-200'">
+                    <div class="flex items-center gap-2">
+                        <svg x-show="bulkSuccess" class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <svg x-show="!bulkSuccess" class="w-4 h-4 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <span x-text="bulkMessage"></span>
+                    </div>
+                    <button type="button" @click="bulkMessage = ''" class="text-slate-400 hover:text-slate-600 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                {{-- Bulk Actions Bar (Appears when 1+ batches are selected) --}}
+                <div x-show="selectedBatchIds.length > 0" x-cloak x-transition
+                     class="bg-slate-900 text-white p-3.5 sm:px-5 sm:py-3 rounded-xl shadow-lg mx-6 mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 border border-slate-700">
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <span class="inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-full bg-purple-600 text-white text-xs font-black" x-text="selectedBatchIds.length"></span>
+                        <span class="text-xs sm:text-sm font-bold text-white">
+                            <span x-text="selectedBatchIds.length"></span> <span x-text="selectedBatchIds.length === 1 ? 'batch' : 'batches'"></span> selected
+                        </span>
+                        <span class="text-slate-500">|</span>
+                        <button type="button" @click="selectAll()" class="text-xs text-purple-300 hover:text-white underline cursor-pointer">Select all (<span x-text="allBatchIds.length"></span>)</button>
+                        <span class="text-slate-500">·</span>
+                        <button type="button" @click="deselectAll()" class="text-xs text-slate-400 hover:text-white underline cursor-pointer">Clear selection</button>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-end">
+                        <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Mass Assign Status:</span>
+                        <select x-model="bulkStatus" class="bg-slate-800 text-white text-xs font-bold rounded-lg px-3 py-1.5 border border-slate-600 focus:outline-none focus:border-purple-500 cursor-pointer">
+                            <option value="Submitted to Admin">Submitted to Admin</option>
+                            <option value="Processing">Processing</option>
+                            <option value="In Production">In Production</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                        <button type="button" 
+                                @click="applyMassAssign()" 
+                                :disabled="isBulkUpdating"
+                                class="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-sm transition-all disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer">
+                            <svg x-show="isBulkUpdating" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            <span x-text="isBulkUpdating ? 'Updating...' : 'Update Selected'"></span>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Unsaved Status Changes Alert (Appears when individual dropdowns are modified) --}}
+                <div x-show="modifiedCount > 0 && selectedBatchIds.length === 0" x-cloak x-transition
+                     class="bg-amber-500/10 border border-amber-300 text-amber-900 p-3 sm:px-5 sm:py-2.5 rounded-xl shadow-xs mx-6 mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <span class="text-xs font-bold">
+                            You have modified <span class="font-black text-amber-950" x-text="modifiedCount"></span> <span x-text="modifiedCount === 1 ? 'batch status' : 'batch statuses'"></span> without saving yet.
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" @click="discardChanges()" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 transition-colors cursor-pointer">Discard</button>
+                        <button type="button" @click="saveAllModifiedStatuses()" :disabled="isBulkUpdating" class="px-4 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-sm transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+                            <svg x-show="isBulkUpdating" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            <span x-text="isBulkUpdating ? 'Saving...' : 'Save All Changes'"></span>
+                        </button>
+                    </div>
+                </div>
+
                 <div id="finalized-direct-orders-full-results">
                     @if($finalizedDirectOrderBatches->isEmpty())
                         <div class="p-12 text-center text-slate-400 text-sm">No finalized direct orders.</div>
                     @else
+                        {{-- Select All header toggle --}}
+                        <div class="px-6 py-2.5 bg-slate-50/70 border-b border-slate-200/80 flex items-center justify-between text-xs text-slate-500 font-semibold mt-4">
+                            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" @change="toggleAllBatches($event)" :checked="selectedBatchIds.length > 0 && selectedBatchIds.length === allBatchIds.length" class="w-4 h-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer">
+                                <span class="text-xs font-bold text-slate-700">Select All On Page</span>
+                            </label>
+                            <div class="text-[11px] text-slate-400">
+                                Select status and click Save All — no automatic page reloads
+                            </div>
+                        </div>
+
                         <div class="divide-y divide-slate-100">
                             @foreach($finalizedDirectOrderBatches as $batchId => $batchData)
                             @php
@@ -1775,50 +2044,81 @@
                                 $batchSubmittedDate = $batchOrders->first(fn($o) => !empty($o->paid_at))?->paid_at
                                     ?? $batchOrders->max(fn($o) => $o->updated_at ?? $o->created_at);
                             @endphp
-                            <div class="p-6 hover:bg-slate-50/60 transition-colors">
+                            <div class="p-6 transition-colors"
+                                 :class="{
+                                     'bg-purple-50/60 ring-1 ring-inset ring-purple-200': selectedBatchIds.includes('{{ $batchId }}'),
+                                     'bg-amber-50/40': modifiedStatuses['{{ $batchId }}'] && !selectedBatchIds.includes('{{ $batchId }}'),
+                                     'hover:bg-slate-50/60': !selectedBatchIds.includes('{{ $batchId }}') && !modifiedStatuses['{{ $batchId }}']
+                                 }">
                                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-                                    <div class="min-w-0 flex-1">
-                                        <div class="flex items-center gap-2.5 flex-wrap">
-                                            <span class="font-black text-slate-900 text-base uppercase">Direct Order Batch</span>
-                                            @if($batchOrders->first()?->payment_status === 'paid')
-                                                <span class="px-2.5 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold uppercase tracking-wider rounded-md border border-green-200">✓ Paid Online</span>
-                                            @elseif($batchOrders->first()?->payment_status === 'not_applicable')
-                                                <span class="px-2.5 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold uppercase tracking-wider rounded-md border border-blue-200">📑 Pay by Check / PO</span>
-                                            @endif
+                                    <div class="flex items-start gap-3.5 min-w-0 flex-1">
+                                        <div class="pt-1 flex-shrink-0">
+                                            <input type="checkbox" 
+                                                   :checked="selectedBatchIds.includes('{{ $batchId }}')" 
+                                                   @change="toggleBatch('{{ $batchId }}')" 
+                                                   class="w-4 h-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer">
                                         </div>
-                                        <div class="text-xs text-slate-600 mt-1">
-                                            Coach: <span class="font-bold text-slate-800">{{ $coach?->name ?? 'Unknown' }}</span> — {{ $batchOrders->first()?->teamStore?->name ?? $coach?->organization ?? '—' }}
-                                        </div>
-                                        <div class="mt-3.5 grid grid-cols-3 gap-3 max-w-md">
-                                            <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
-                                                <div class="text-xl font-black text-primary">{{ $batchOrders->count() }}</div>
-                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Orders</div>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2.5 flex-wrap">
+                                                <span class="font-black text-slate-900 text-base uppercase">Direct Order Batch</span>
+                                                @if($batchOrders->first()?->payment_status === 'paid')
+                                                    <span class="px-2.5 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold uppercase tracking-wider rounded-md border border-green-200">✓ Paid Online</span>
+                                                @elseif($batchOrders->first()?->payment_status === 'not_applicable')
+                                                    <span class="px-2.5 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold uppercase tracking-wider rounded-md border border-blue-200">📑 Pay by Check / PO</span>
+                                                @endif
+                                                <template x-if="modifiedStatuses['{{ $batchId }}']">
+                                                    <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider rounded-md border border-amber-300">
+                                                        Unsaved (New: <span x-text="modifiedStatuses['{{ $batchId }}']"></span>)
+                                                    </span>
+                                                </template>
                                             </div>
-                                            <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
-                                                <div class="text-xl font-black text-slate-900">{{ $totalItems }}</div>
-                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
+                                            <div class="text-xs text-slate-600 mt-1">
+                                                Coach: <span class="font-bold text-slate-800">{{ $coach?->name ?? 'Unknown' }}</span> — {{ $batchOrders->first()?->teamStore?->name ?? $coach?->organization ?? '—' }}
                                             </div>
-                                            <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
-                                                <div class="text-sm font-bold text-slate-900 mt-1">{{ $batchSubmittedDate?->format('M d, Y') ?? 'Unknown' }}</div>
-                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Submitted</div>
+                                            <div class="mt-3.5 grid grid-cols-3 gap-3 max-w-md">
+                                                <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
+                                                    <div class="text-xl font-black text-primary">{{ $batchOrders->count() }}</div>
+                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Orders</div>
+                                                </div>
+                                                <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
+                                                    <div class="text-xl font-black text-slate-900">{{ $totalItems }}</div>
+                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
+                                                </div>
+                                                <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
+                                                    <div class="text-sm font-bold text-slate-900 mt-1">{{ $batchSubmittedDate?->format('M d, Y') ?? 'Unknown' }}</div>
+                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Submitted</div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 flex-shrink-0">
-                                        <div class="min-w-[190px]">
-                                            <form action="{{ route('admin.batch.status.update', $batchId) }}" method="POST" class="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2 gap-2 shadow-sm">
-                                                @csrf
+                                        <div class="min-w-[210px]">
+                                            <div class="flex items-center justify-between bg-white border rounded-lg p-2 gap-2 shadow-sm transition-colors"
+                                                 :class="modifiedStatuses['{{ $batchId }}'] ? 'border-amber-400 ring-1 ring-amber-300' : 'border-slate-200'">
                                                 <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status:</span>
-                                                <select name="status" onchange="this.form.submit()" class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-primary">
-                                                    <option value="Submitted to Admin" @if(($batchOrders->first()?->status ?? '') == 'Submitted to Admin') selected @endif>Submitted to Admin</option>
-                                                    <option value="Processing" @if(($batchOrders->first()?->status ?? '') == 'Processing') selected @endif>Processing</option>
-                                                    <option value="In Production" @if(($batchOrders->first()?->status ?? '') == 'In Production') selected @endif>In Production</option>
-                                                    <option value="Shipped" @if(($batchOrders->first()?->status ?? '') == 'Shipped') selected @endif>Shipped</option>
-                                                    <option value="Delivered" @if(($batchOrders->first()?->status ?? '') == 'Delivered') selected @endif>Delivered</option>
-                                                    <option value="Completed" @if(($batchOrders->first()?->status ?? '') == 'Completed') selected @endif>Completed</option>
-                                                </select>
-                                            </form>
+                                                <div class="flex items-center gap-1.5 flex-1 justify-end">
+                                                    <select :value="currentStatuses['{{ $batchId }}']" 
+                                                            @change="onStatusChange('{{ $batchId }}', $event.target.value)" 
+                                                            class="text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-purple-600 cursor-pointer">
+                                                        <option value="Submitted to Admin">Submitted to Admin</option>
+                                                        <option value="Processing">Processing</option>
+                                                        <option value="In Production">In Production</option>
+                                                        <option value="Shipped">Shipped</option>
+                                                        <option value="Delivered">Delivered</option>
+                                                        <option value="Completed">Completed</option>
+                                                    </select>
+                                                    <button type="button" 
+                                                            x-show="modifiedStatuses['{{ $batchId }}']"
+                                                            @click="saveSingleStatus('{{ $batchId }}')"
+                                                            :disabled="savingSingleId === '{{ $batchId }}'"
+                                                            title="Save this batch status"
+                                                            class="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold uppercase rounded shadow-xs transition-colors inline-flex items-center gap-1 cursor-pointer">
+                                                        <svg x-show="savingSingleId === '{{ $batchId }}'" class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                                        <span x-text="savingSingleId === '{{ $batchId }}' ? '...' : 'Save'"></span>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div class="flex flex-col gap-2 min-w-[150px]">
@@ -5731,6 +6031,40 @@
             if (badge) {
                 badge.innerHTML = '<span class="text-red-600 font-black text-[10px]">✕ Error</span>';
             }
+        }
+    };
+
+    window.quickUpdateBatchStatus = async function(selectEl, batchId) {
+        const newVal = selectEl.value;
+        const originalBorder = selectEl.style.borderColor;
+        selectEl.disabled = true;
+
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+            const res = await fetch(`/admin/batch/${encodeURIComponent(batchId)}/status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ status: newVal })
+            });
+            const data = await res.json();
+            if (data.success) {
+                selectEl.style.borderColor = '#10b981';
+                setTimeout(() => {
+                    selectEl.style.borderColor = originalBorder;
+                }, 2000);
+            } else {
+                selectEl.form?.submit();
+            }
+        } catch (err) {
+            console.error('Failed to update batch status:', err);
+            selectEl.form?.submit();
+        } finally {
+            selectEl.disabled = false;
         }
     };
 </script>

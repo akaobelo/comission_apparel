@@ -121,6 +121,13 @@
         <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-4 text-center flex-shrink-0 w-full md:w-auto mt-2 md:mt-0">
             <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Order Deadline</p>
             <div class="text-xl font-black text-slate-900">{{ $store->order_deadline->format('M d, Y') }}</div>
+            <div class="text-[10px] font-bold text-slate-500 uppercase mt-0.5 tracking-wider">
+                @if($store->order_deadline->format('H:i') === '00:00')
+                    11:59 PM (Day Prior) EST
+                @else
+                    11:59 PM EST
+                @endif
+            </div>
             @if($store->order_deadline->isPast())
                 <div class="text-red-500 text-[10px] font-bold uppercase mt-1">Deadline Passed</div>
             @else

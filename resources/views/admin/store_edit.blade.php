@@ -144,8 +144,19 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Order Deadline</label>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Order Deadline Date</label>
                                 <input type="date" name="order_deadline" value="{{ old('order_deadline', $store->order_deadline?->format('Y-m-d')) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                <div class="mt-2.5 flex items-center gap-2">
+                                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Closes At:</span>
+                                    <select name="order_deadline_time" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 focus:border-primary focus:outline-none shadow-2xs">
+                                        <option value="23:59" {{ (old('order_deadline_time') === '23:59' || ($store->order_deadline && $store->order_deadline->format('H:i') === '23:59')) ? 'selected' : '' }}>
+                                            11:59 PM on Deadline Date (End of Day EST)
+                                        </option>
+                                        <option value="00:00" {{ (old('order_deadline_time') === '00:00' || ($store->order_deadline && $store->order_deadline->format('H:i') === '00:00') || !$store->order_deadline) ? 'selected' : '' }}>
+                                            11:59 PM Day Prior (Midnight start of deadline - 1 min to deadline EST)
+                                        </option>
+                                    </select>
+                                </div>
                             </div>
                             <div class="col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                                 <div class="flex items-center justify-between mb-2">

@@ -329,9 +329,16 @@ class CoachController extends Controller
 
         $request->validate([
             'deadline' => 'required|date|after:today',
+            'deadline_time' => 'nullable|string',
         ]);
 
-        $store->update(['order_deadline' => $request->deadline]);
+        $deadlineTime = $request->input('deadline_time', '00:00');
+        $hour = ($deadlineTime === '23:59' || $deadlineTime === '23:59:59') ? 23 : 0;
+        $min = ($deadlineTime === '23:59' || $deadlineTime === '23:59:59') ? 59 : 0;
+        $sec = ($deadlineTime === '23:59' || $deadlineTime === '23:59:59') ? 59 : 0;
+
+        $deadline = \Carbon\Carbon::parse($request->deadline, 'America/New_York')->setTime($hour, $min, $sec);
+        $store->update(['order_deadline' => $deadline]);
         return redirect()->route('coach.dashboard')
             ->with('success', 'Order deadline updated.');
     }
