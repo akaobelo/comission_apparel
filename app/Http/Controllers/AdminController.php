@@ -2440,7 +2440,7 @@ class AdminController extends Controller
         $updateData = [
             'status'       => 'Submitted to Admin',
             'batch_id'     => $batchId,
-            'submitted_at' => \Illuminate\Support\Facades\DB::raw('COALESCE(submitted_at, paid_at, created_at, NOW())'),
+            'submitted_at' => \Illuminate\Support\Facades\DB::raw('COALESCE(submitted_at, paid_at, created_at, CURRENT_TIMESTAMP)'),
         ];
 
         if ($store->isCheckPayment() || ($store->payment_mode ?? 'in_house') === 'in_house') {

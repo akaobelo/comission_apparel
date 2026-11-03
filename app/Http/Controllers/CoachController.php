@@ -383,7 +383,7 @@ class CoachController extends Controller
         $updateData = [
             'status'       => 'Submitted to Admin',
             'batch_id'     => $batchId,
-            'submitted_at' => \Illuminate\Support\Facades\DB::raw('COALESCE(submitted_at, paid_at, created_at, NOW())'),
+            'submitted_at' => \Illuminate\Support\Facades\DB::raw('COALESCE(submitted_at, paid_at, created_at, CURRENT_TIMESTAMP)'),
         ];
         if ($store->isCheckPayment()) {
             $updateData['payment_status'] = 'not_applicable';
