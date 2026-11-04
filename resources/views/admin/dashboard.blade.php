@@ -605,6 +605,9 @@
                                                             <button type="submit" class="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold rounded-md shadow-sm transition-colors whitespace-nowrap" title="Finalize Master Order">Finalize</button>
                                                         </form>
                                                         @endif
+                                                        @if($store->parentOrders->count() > 0)
+                                                        <a href="{{ route('admin.stores.export-manufacturer', $store) }}" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-md shadow-sm transition-colors whitespace-nowrap" title="Download Manufacturer Visual Excel (.xlsx)">📊 Visual Excel</a>
+                                                        @endif
                                                         <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'active_team_stores'])]) }}" class="px-2.5 py-1 bg-white border border-secondary text-secondary text-[11px] font-bold rounded-md hover:bg-secondary hover:text-white transition-colors">Edit</a>
                                                     </div>
                                                 </div>
@@ -696,6 +699,7 @@
                                                         <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-50 transition-colors text-center">Roster</a>
                                                         <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-2.5 py-1 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate</a>
                                                     </div>
+                                                    <a href="{{ route('admin.batch.export-manufacturer', $batchId) }}" class="w-full px-2.5 py-1 bg-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-emerald-700 transition-colors text-center shadow-sm">📊 Visual Excel</a>
                                                     <form action="{{ route('admin.store-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
                                                         @csrf
                                                         <button type="submit" class="w-full px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-[11px] font-bold uppercase tracking-wide rounded-md transition-colors text-center">Mark Addressed</button>
@@ -935,6 +939,7 @@
                                                 <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-50 transition-colors text-center">Roster</a>
                                                 <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-2.5 py-1 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate</a>
                                             </div>
+                                            <a href="{{ route('admin.batch.export-manufacturer', $batchId) }}" class="w-full px-2.5 py-1 bg-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-emerald-700 transition-colors text-center shadow-sm">📊 Visual Excel</a>
                                             <form action="{{ route('admin.direct-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
                                                 @csrf
                                                 <button type="submit" class="w-full px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-[11px] font-bold uppercase tracking-wide rounded-md transition-colors text-center">Mark Addressed</button>
@@ -1471,6 +1476,9 @@
                                                     <button type="submit" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap" title="Finalize Master Order">Finalize</button>
                                                 </form>
                                                 @endif
+                                                @if($store->parentOrders->count() > 0)
+                                                <a href="{{ route('admin.stores.export-manufacturer', $store) }}" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap" title="Download Manufacturer Visual Excel (.xlsx)">📊 Visual Excel</a>
+                                                @endif
                                                 <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'active_team_stores'])]) }}" class="px-3.5 py-1.5 bg-white border border-secondary text-secondary text-xs font-bold rounded-lg hover:bg-secondary hover:text-white transition-colors">Edit</a>
                                                 <form action="{{ route('admin.stores.archive', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to archive this active store?')" class="inline-block m-0">
                                                     @csrf
@@ -1732,6 +1740,7 @@
                                                     <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-50 transition-colors text-center">Roster</a>
                                                     <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-2.5 py-1 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate</a>
                                                 </div>
+                                                <a href="{{ route('admin.batch.export-manufacturer', $batchId) }}" class="w-full px-2.5 py-1 bg-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-emerald-700 transition-colors text-center shadow-sm">📊 Visual Excel</a>
                                                 <form action="{{ route('admin.store-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
                                                     @csrf
                                                     <button type="submit" class="w-full px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-[11px] font-bold uppercase tracking-wide rounded-md transition-colors text-center">Mark Addressed</button>
@@ -2137,6 +2146,7 @@
                                                 <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-50 transition-colors text-center">Roster</a>
                                                 <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-2.5 py-1 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate</a>
                                             </div>
+                                            <a href="{{ route('admin.batch.export-manufacturer', $batchId) }}" class="w-full px-2.5 py-1 bg-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-emerald-700 transition-colors text-center shadow-sm">📊 Visual Excel</a>
                                             <form action="{{ route('admin.direct-batch.mark-addressed', $batchId) }}" method="POST" onsubmit="return confirm('Mark this batch as addressed to remove it from the new count?')" class="w-full">
                                                 @csrf
                                                 <button type="submit" class="w-full px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 text-[11px] font-bold uppercase tracking-wide rounded-md transition-colors text-center">Mark Addressed</button>
@@ -2376,10 +2386,12 @@
                                                             <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-2 py-1 bg-white border border-slate-300 text-slate-700 text-[10px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-50 transition-colors text-center shadow-sm">Roster</a>
                                                             <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-2 py-1 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate</a>
                                                         </div>
+                                                        <a href="{{ route('admin.batch.export-manufacturer', $batchId) }}" class="w-full px-2 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wide rounded-md hover:bg-emerald-700 transition-colors text-center shadow-sm">📊 Visual Excel</a>
                                                     </div>
                                                 @elseif($store)
-                                                    <div class="min-w-[120px]">
-                                                        <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'archived_stores_orders'])]) }}" class="block px-3.5 py-2 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-primary/90 transition-colors text-center shadow-sm">View Store</a>
+                                                    <div class="flex flex-col gap-1.5 min-w-[130px]">
+                                                        <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'archived_stores_orders'])]) }}" class="block px-3.5 py-1.5 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-primary/90 transition-colors text-center shadow-sm">View Store</a>
+                                                        <a href="{{ route('admin.batch.export-manufacturer', $batchId) }}" class="w-full px-2 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wide rounded-md hover:bg-emerald-700 transition-colors text-center shadow-sm">📊 Visual Excel</a>
                                                     </div>
                                                 @endif
                                                 <form action="{{ route('admin.archived-orders.delete', $batchId) }}" method="POST" onsubmit="return confirm('Permanently delete this archived order batch? This cannot be undone.')">

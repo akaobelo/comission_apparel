@@ -70,6 +70,9 @@
                             <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="px-3 py-1.5 bg-slate-900 border border-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-800 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
                                 Aggregate CSV
                             </a>
+                            <a href="{{ route('admin.batch.export-manufacturer', $batchId) }}" class="px-3 py-1.5 bg-emerald-600 border border-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+                                📊 Visual Excel (.xlsx)
+                            </a>
                         </div>
                     </div>
                 </div>

@@ -2644,6 +2644,58 @@ class AdminController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    public function exportStoreManufacturerXlsx(TeamStore $store, \App\Services\ManufacturerExcelExportService $excelService)
+    {
+        $store->load([
+            'items' => function ($q) {
+                $q->orderBy('sort_order', 'asc')->orderBy('id', 'asc');
+            },
+            'items.designCatalog',
+            'items.components.designCatalog',
+            'parentOrders' => function ($q) {
+                $q->where('is_archived', false)->where('status', '!=', 'Pending Payment');
+            }
+        ]);
+
+        $orders = $store->parentOrders;
+        $title = $store->name . ' — Manufacturer Order Sheet';
+        $xlsxPath = $excelService->generateXlsx($orders, $store, $title);
+        $filename = "{$store->slug}-manufacturer-visual-sheet.xlsx";
+
+        return response()->download($xlsxPath, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
+    }
+
+    public function exportBatchManufacturerXlsx(Request $request, $batchId, \App\Services\ManufacturerExcelExportService $excelService)
+    {
+        $orders = ParentOrder::with([
+            'teamStore.items' => function ($q) {
+                $q->orderBy('sort_order', 'asc')->orderBy('id', 'asc');
+            },
+            'teamStore.items.designCatalog',
+            'teamStore.items.components.designCatalog',
+            'user'
+        ])->where('batch_id', $batchId)->get();
+
+        if ($orders->isEmpty()) {
+            abort(404);
+        }
+
+        $store = $orders->first()?->teamStore;
+        $coach = $orders->first()?->user ?? $store?->user;
+        $label = $store ? $store->name : ($coach?->organization ?: ($coach?->name ?: 'Batch ' . substr((string) $batchId, 0, 8)));
+        $slug = $store ? $store->slug : \Illuminate\Support\Str::slug($label);
+
+        $title = $label . ' — Manufacturer Order Sheet';
+        $xlsxPath = $excelService->generateXlsx($orders, $store, $title);
+        $filename = "{$slug}-manufacturer-visual-sheet.xlsx";
+
+        return response()->download($xlsxPath, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
+    }
+
     public function updateBatchStatus(Request $request, $batchId)
     {
         $request->validate([

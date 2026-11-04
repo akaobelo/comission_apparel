@@ -433,6 +433,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/direct-batch/{batch_id}/store', [AdminController::class, 'updateDirectBatchStore'])->name('admin.direct-batch.store.update');
     Route::get('/admin/batch/{batch_id}/export', [AdminController::class, 'exportBatchCSV'])->name('admin.batch.export');
     Route::get('/admin/batch/{batch_id}/export-aggregate', [AdminController::class, 'exportBatchAggregationCSV'])->name('admin.batch.export-aggregate');
+    Route::get('/admin/batch/{batch_id}/export-manufacturer', [AdminController::class, 'exportBatchManufacturerXlsx'])->name('admin.batch.export-manufacturer');
     Route::post('/admin/batch/{batch_id}/status', [AdminController::class, 'updateBatchStatus'])->name('admin.batch.status.update');
     Route::post('/admin/batches/bulk-status', [AdminController::class, 'bulkUpdateBatchStatus'])->name('admin.batches.bulk-status');
     Route::post('/admin/direct-batch/{batch_id}/mark-addressed', [AdminController::class, 'markDirectBatchAddressed'])->name('admin.direct-batch.mark-addressed');
@@ -450,6 +451,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/stores/{store}/package/{package}/attach', [AdminController::class, 'attachPackageComponent'])->name('admin.store.package.attach');
     Route::delete('/admin/stores/{store}/package/{package}/detach/{component}', [AdminController::class, 'detachPackageComponent'])->name('admin.store.package.detach');
     Route::get('/admin/stores/{store}/export', [AdminController::class, 'exportOrderCSV'])->name('admin.stores.export');
+    Route::get('/admin/stores/{store}/export-manufacturer', [AdminController::class, 'exportStoreManufacturerXlsx'])->name('admin.stores.export-manufacturer');
     Route::post('/admin/stores/{store}/finalize-batch', [AdminController::class, 'finalizeStoreBatch'])->name('admin.stores.finalize-batch');
 
     // Order editing

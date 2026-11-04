@@ -203,9 +203,10 @@
                                 </label>
                             </div>
                         </div>
-                        <div class="flex gap-3">
+                        <div class="flex flex-wrap gap-3">
                             <button type="submit" class="btn btn-primary py-3 px-8 text-sm uppercase tracking-wider">Save Changes</button>
                             <a href="{{ route('admin.stores.export', $store) }}" class="btn btn-outline py-3 px-6 text-sm uppercase tracking-wider">Export CSV</a>
+                            <a href="{{ route('admin.stores.export-manufacturer', $store) }}" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors inline-flex items-center gap-2 shadow-sm">📊 Visual Excel (.xlsx)</a>
                         </div>
                     </form>
                 </div>
@@ -588,6 +589,9 @@
                             Aggregate CSV
                         </a>
                         @endif
+                        <a href="{{ route('admin.stores.export-manufacturer', $store->id) }}" class="px-3 py-1.5 bg-emerald-600 border border-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+                            📊 Visual Excel (.xlsx)
+                        </a>
                     </div>
                 </div>
                 @if($store->parentOrders->isEmpty())
