@@ -68,18 +68,71 @@ class StripeWebhookController extends Controller
         $orderType = $session->metadata->type ?? null;
         $paymentIntentId = $session->payment_intent ?? null;
 
+        if ($orderType === 'master_order') {
+            $storeId = $session->metadata->team_store_id ?? null;
+            $batchOrders = collect();
+            if ($sessionId) {
+                $batchOrders = ParentOrder::where('stripe_session_id', $sessionId)->get();
+            }
+            if ($batchOrders->isEmpty() && $batchId) {
+                $batchOrders = ParentOrder::where('batch_id', $batchId)->get();
+            }
+            if ($batchOrders->isNotEmpty()) {
+                $firstOrder = $batchOrders->first();
+                $store = $firstOrder->teamStore ?? ($storeId ? \App\Models\TeamStore::find($storeId) : null);
+                $resolvedBatchId = $firstOrder->batch_id ?: ($batchId ?: (string) \Illuminate\Support\Str::uuid());
+                $alreadyNotified = ($firstOrder->status === 'Submitted to Admin' && $firstOrder->isPaid());
+
+                if (!$alreadyNotified) {
+                    $submittedAt = now();
+                    foreach ($batchOrders as $bo) {
+                        $bo->update([
+                            'batch_id'                 => $resolvedBatchId,
+                            'status'                   => 'Submitted to Admin',
+                            'payment_status'           => 'paid',
+                            'stripe_payment_intent_id' => $paymentIntentId ?? $bo->stripe_payment_intent_id,
+                            'submitted_at'             => $submittedAt,
+                            'paid_at'                  => $submittedAt,
+                        ]);
+                    }
+
+                    if ($store) {
+                        $store->update(['status' => 'submitted_to_admin']);
+                        try {
+                            \Illuminate\Support\Facades\Notification::send(
+                                \App\Models\User::where('role', 'admin')->get(),
+                                new \App\Notifications\MasterOrderSubmitted($store)
+                            );
+                        } catch (\Exception $e) {
+                            Log::error("Failed to notify admin on webhook master order: " . $e->getMessage());
+                        }
+
+                        try {
+                            \App\Services\EmailNotificationService::notifyMasterOrderSubmitted($store, $resolvedBatchId);
+                        } catch (\Exception $e) {
+                            Log::error("Failed to send master order email notification on webhook: " . $e->getMessage());
+                        }
+                    }
+
+                    Log::info("Master order batch {$resolvedBatchId} marked as paid and submitted to admin via Stripe webhook.");
+                }
+                return;
+            }
+        }
+
         if ($orderType === 'direct_order' || $batchId) {
             $batchOrders = ParentOrder::where('batch_id', $batchId)->get();
             if ($batchOrders->isNotEmpty()) {
                 $firstOrder = $batchOrders->first();
                 if (!$firstOrder->isPaid()) {
+                    $submittedAt = now();
                     foreach ($batchOrders as $bo) {
                         $bo->update([
                             'status'                   => 'Submitted to Admin',
                             'payment_status'           => 'paid',
                             'stripe_payment_intent_id' => $paymentIntentId ?? $bo->stripe_payment_intent_id,
-                            'submitted_at'             => $bo->submitted_at ?? now(),
-                            'paid_at'                  => now(),
+                            'submitted_at'             => $submittedAt,
+                            'paid_at'                  => $submittedAt,
                         ]);
                     }
                     if ($firstOrder->user) {

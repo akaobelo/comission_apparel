@@ -93,5 +93,125 @@ class PayByCheckTest extends TestCase
         $this->assertEquals('Submitted to Admin', $order->fresh()->status);
         $this->assertEquals('not_applicable', $order->fresh()->payment_status);
         $this->assertNotNull($order->fresh()->batch_id);
+        $this->assertNotNull($order->fresh()->submitted_at);
+    }
+
+    public function test_cash_collection_store_cannot_bypass_payment_on_master_order_submit()
+    {
+        config(['services.stripe.secret' => '']);
+
+        $coach = User::factory()->create(['role' => 'coach']);
+
+        $store = TeamStore::create([
+            'user_id' => $coach->id,
+            'name' => 'StingerNation',
+            'slug' => 'stinger-nation',
+            'status' => 'approved',
+            'pricing_approved' => true,
+            'payment_mode' => 'in_house',
+        ]);
+
+        $order = ParentOrder::create([
+            'team_store_id' => $store->id,
+            'athlete_first_name' => 'Jane',
+            'athlete_last_name' => 'Smith',
+            'parent_email' => 'parent@sunland.edu',
+            'gender' => 'Female',
+            'items_json' => [[
+                'name' => 'Uniform Package',
+                'qty' => 1,
+                'retail_price' => 120,
+                'base_price' => 80,
+            ]],
+            'status' => 'Submitted',
+            'payment_status' => 'not_applicable',
+            'subtotal' => 120.00,
+            'total_paid' => 120.00,
+        ]);
+
+        $response = $this->actingAs($coach)->post(route('coach.store.submit', $store), [
+            'shipping_address' => '5380 West State Road 84, Davie, FL 33314',
+            'acknowledge_unpaid' => '1',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertEquals('approved', $store->fresh()->status);
+        $this->assertEquals('Submitted', $order->fresh()->status);
+        $this->assertNull($order->fresh()->batch_id);
+        $this->assertEquals('5380 West State Road 84, Davie, FL 33314', $store->fresh()->shipping_address);
+    }
+
+    public function test_finalized_master_orders_capture_submission_date_and_sort_latest_first()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $coachA = User::factory()->create(['role' => 'coach']);
+        $coachB = User::factory()->create(['role' => 'coach']);
+
+        $olderSubmittedStore = TeamStore::create([
+            'user_id' => $coachA->id,
+            'name' => 'Milwaukee Mustangs',
+            'slug' => 'milwaukee-mustangs',
+            'status' => 'submitted_to_admin',
+            'pricing_approved' => true,
+            'payment_mode' => 'online',
+        ]);
+
+        // Parent ordered Oct 26, master order submitted Oct 28
+        ParentOrder::unguard();
+        ParentOrder::create([
+            'team_store_id' => $olderSubmittedStore->id,
+            'batch_id' => 'batch-older',
+            'athlete_first_name' => 'Alex',
+            'athlete_last_name' => 'Runner',
+            'parent_email' => 'alex@example.com',
+            'gender' => 'Male',
+            'items_json' => [['name' => 'Singlet', 'qty' => 1, 'retail_price' => 45]],
+            'status' => 'Submitted to Admin',
+            'payment_status' => 'paid',
+            'subtotal' => 45.00,
+            'total_paid' => 45.00,
+            'created_at' => now()->subDays(9),
+            'submitted_at' => now()->subDays(7),
+        ]);
+
+        $newerSubmittedStore = TeamStore::create([
+            'user_id' => $coachB->id,
+            'name' => 'Sunland StingerNation',
+            'slug' => 'sunland-stingernation',
+            'status' => 'approved',
+            'pricing_approved' => true,
+            'payment_mode' => 'check',
+        ]);
+
+        // Parent placed sizing order 29 days ago (Oct 06), but Coach submits Master Order TODAY
+        $parentOrderFromOct6 = ParentOrder::create([
+            'team_store_id' => $newerSubmittedStore->id,
+            'athlete_first_name' => 'Taylor',
+            'athlete_last_name' => 'Swift',
+            'parent_email' => 'taylor@example.com',
+            'gender' => 'Female',
+            'items_json' => [['name' => 'Track Suit', 'qty' => 2, 'retail_price' => 75]],
+            'status' => 'Submitted',
+            'payment_status' => 'not_applicable',
+            'subtotal' => 150.00,
+            'total_paid' => 150.00,
+            'created_at' => now()->subDays(29),
+            'submitted_at' => now()->subDays(29),
+        ]);
+        ParentOrder::reguard();
+
+        // Coach finalizes Master Order today
+        $this->actingAs($coachB)->post(route('coach.store.submit', $newerSubmittedStore), [
+            'shipping_address' => '5380 West State Road 84, Davie, FL 33314',
+        ]);
+
+        $freshOrder = $parentOrderFromOct6->fresh();
+        $this->assertEquals('Submitted to Admin', $freshOrder->status);
+        $this->assertTrue($freshOrder->submitted_at->isToday(), 'Master order submission should overwrite parent order submitted_at with today\'s submission timestamp.');
+
+        // Verify Admin Dashboard lists Sunland StingerNation FIRST before Milwaukee Mustangs
+        $dashboardResponse = $this->actingAs($admin)->get(route('admin.dashboard', ['tab' => 'finalized_master_orders']));
+        $dashboardResponse->assertStatus(200);
+        $dashboardResponse->assertSeeInOrder(['Sunland StingerNation', 'Milwaukee Mustangs']);
     }
 }

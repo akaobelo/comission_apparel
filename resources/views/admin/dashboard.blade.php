@@ -645,6 +645,7 @@
                                         $coach = $store ? $store->user : null;
                                         $totalAthletes = $batchOrders->count();
                                         $totalItems = $batchOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
+                                        $batchSubmittedDate = $batchOrders->max(fn($o) => $o->submitted_at ?? $o->paid_at ?? $o->created_at);
                                     @endphp
                                     <div class="p-4">
                                         <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
@@ -667,9 +668,9 @@
                                                             Pay by Check
                                                         </span>
                                                     @endif
-                                                    <span class="text-[11px] text-slate-400 uppercase tracking-wide font-bold">Batch: {{ $batchOrders->first()?->created_at?->format('M d, Y') ?? 'Unknown' }}</span>
+                                                    <span class="text-[11px] text-slate-400 uppercase tracking-wide font-bold">Submitted: {{ $batchSubmittedDate?->format('M d, Y') ?? 'Unknown' }}</span>
                                                 </div>
-                                                <div class="mt-2.5 grid grid-cols-3 gap-2">
+                                                <div class="mt-2.5 grid grid-cols-4 gap-2">
                                                     <div class="bg-slate-50 rounded-lg p-2 border border-slate-200 text-center">
                                                         <div class="text-lg font-black text-primary">{{ $totalAthletes }}</div>
                                                         <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Athletes</div>
@@ -677,6 +678,10 @@
                                                     <div class="bg-slate-50 rounded-lg p-2 border border-slate-200 text-center">
                                                         <div class="text-lg font-black text-slate-900">{{ $totalItems }}</div>
                                                         <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
+                                                    </div>
+                                                    <div class="bg-slate-50 rounded-lg p-2 border border-slate-200 text-center">
+                                                        <div class="text-xs font-bold text-slate-900 mt-1">{{ $batchSubmittedDate?->format('M d') ?? '—' }}</div>
+                                                        <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Submitted</div>
                                                     </div>
                                                     <div class="bg-slate-50 rounded-lg p-2 border border-slate-200 text-center">
                                                         <div class="text-xs font-bold text-slate-900 mt-1">{{ $store && $store->order_deadline ? $store->order_deadline->format('M d') : '—' }}</div>
@@ -907,6 +912,7 @@
                                                         📑 Pay by Check / PO
                                                     </span>
                                                 @endif
+                                                <span class="text-[11px] text-slate-400 uppercase tracking-wide font-bold">Submitted: {{ $batchSubmittedDate?->format('M d, Y') ?? 'Unknown' }}</span>
                                             </div>
                                             <div class="mt-2.5 grid grid-cols-3 gap-2">
                                                 <div class="bg-slate-50 rounded-lg p-2 border border-slate-200 text-center">
@@ -1649,6 +1655,7 @@
                                 $coach = $store ? $store->user : null;
                                 $totalAthletes = $batchOrders->count();
                                 $totalItems = $batchOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
+                                $batchSubmittedDate = $batchOrders->max(fn($o) => $o->submitted_at ?? $o->paid_at ?? $o->created_at);
                             @endphp
                             <div class="p-6 hover:bg-slate-50/60 transition-colors">
                                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
@@ -1661,12 +1668,12 @@
                                             @if($store && $store->isCheckPayment())
                                                 <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-black uppercase tracking-wider rounded border border-blue-200">Pay by Check</span>
                                             @endif
-                                            <span class="text-xs text-slate-400 font-bold uppercase">Batch: {{ $batchOrders->first()?->created_at?->format('M d, Y') ?? 'Unknown' }}</span>
+                                            <span class="text-xs text-slate-400 font-bold uppercase">Submitted: {{ $batchSubmittedDate?->format('M d, Y') ?? 'Unknown' }}</span>
                                         </div>
                                         <div class="text-xs text-slate-600 mt-1">
                                             Coach: <span class="font-bold text-slate-800">{{ $coach ? $coach->name : 'Unknown' }}</span> — {{ $coach ? $coach->organization : '—' }}
                                         </div>
-                                        <div class="mt-3.5 grid grid-cols-3 gap-3 max-w-md">
+                                        <div class="mt-3.5 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-xl">
                                             <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
                                                 <div class="text-xl font-black text-primary">{{ $totalAthletes }}</div>
                                                 <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Athletes</div>
@@ -1674,6 +1681,10 @@
                                             <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
                                                 <div class="text-xl font-black text-slate-900">{{ $totalItems }}</div>
                                                 <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Items</div>
+                                            </div>
+                                            <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
+                                                <div class="text-sm font-bold text-slate-900 mt-1">{{ $batchSubmittedDate?->format('M d, Y') ?? '—' }}</div>
+                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Submitted</div>
                                             </div>
                                             <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200 text-center">
                                                 <div class="text-sm font-bold text-slate-900 mt-1">{{ $store && $store->order_deadline ? $store->order_deadline->format('M d, Y') : '—' }}</div>
@@ -2064,6 +2075,7 @@
                                                 @elseif($batchOrders->first()?->payment_status === 'not_applicable')
                                                     <span class="px-2.5 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold uppercase tracking-wider rounded-md border border-blue-200">📑 Pay by Check / PO</span>
                                                 @endif
+                                                <span class="text-xs text-slate-400 font-bold uppercase">Submitted: {{ $batchSubmittedDate?->format('M d, Y') ?? 'Unknown' }}</span>
                                                 <template x-if="modifiedStatuses['{{ $batchId }}']">
                                                     <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider rounded-md border border-amber-300">
                                                         Unsaved (New: <span x-text="modifiedStatuses['{{ $batchId }}']"></span>)

@@ -340,6 +340,9 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     Route::post('/coach/store/{store}/roster/upload', [CoachController::class, 'addRosterUpload'])->name('coach.store.roster.upload');
     Route::get('/coach/store/{store}/export', [CoachController::class, 'exportOrderCSV'])->name('coach.store.export');
     Route::post('/coach/store/{store}/submit', [CoachController::class, 'submitMasterOrder'])->name('coach.store.submit');
+    Route::get('/coach/store/{store}/checkout/success', [CoachController::class, 'masterOrderCheckoutSuccess'])->name('coach.store.checkout.success');
+    Route::get('/coach/store/{store}/checkout/cancel', [CoachController::class, 'masterOrderCheckoutCancel'])->name('coach.store.checkout.cancel');
+    Route::post('/coach/store/{store}/batch/{batchId}/pay', [CoachController::class, 'payMasterOrderBatch'])->name('coach.store.batch.pay');
     Route::post('/coach/store/{store}/reopen', [CoachController::class, 'reopenStore'])->name('coach.store.reopen');
     Route::post('/coach/store/{store}/approve-pricing', [CoachController::class, 'approvePricing'])->name('coach.store.pricing.approve');
     Route::post('/coach/store/{store}/cover', [CoachController::class, 'updateCoverImage'])->name('coach.store.cover');

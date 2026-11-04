@@ -355,56 +355,381 @@ class CoachController extends Controller
         }
 
         $request->validate($rules, [
-            'acknowledge_unpaid.accepted' => 'You must acknowledge that orders with "Pending Payment" will not be processed before submitting.',
+            'acknowledge_unpaid.accepted' => $store->isInHousePayment()
+                ? 'You must confirm your order review and payment acknowledgment before proceeding to checkout.'
+                : 'You must acknowledge that orders with "Pending Payment" will not be processed before submitting.',
         ]);
 
-        $unbatchedOrders = $store->parentOrders()
+        // 1. Pay by Check (Super Admin waived payment requirements)
+        if ($store->isCheckPayment()) {
+            $unbatchedOrders = $store->parentOrders()
+                ->whereNull('batch_id')
+                ->where('is_archived', false)
+                ->where('status', '!=', 'Pending Payment');
+
+            if ($unbatchedOrders->count() === 0) {
+                return redirect()->route('coach.dashboard')
+                    ->with('error', 'No orders are available to submit for this store.');
+            }
+
+            $batchId = (string) Str::uuid();
+            $now = now();
+
+            $unbatchedOrders->update([
+                'status'         => 'Submitted to Admin',
+                'batch_id'       => $batchId,
+                'payment_status' => 'not_applicable',
+                'submitted_at'   => $now,
+            ]);
+
+            $store->update([
+                'status'           => 'submitted_to_admin',
+                'shipping_address' => $request->shipping_address,
+            ]);
+
+            \Illuminate\Support\Facades\Notification::send(
+                \App\Models\User::where('role', 'admin')->get(),
+                new \App\Notifications\MasterOrderSubmitted($store)
+            );
+
+            \App\Services\EmailNotificationService::notifyMasterOrderSubmitted($store, $batchId);
+
+            return redirect()->route('coach.dashboard')
+                ->with('success', 'Master order submitted to The Commission Apparel for production (Pay by Check)!');
+        }
+
+        // 2. Online Credit Card Payment (Parents pay via Stripe at individual checkout)
+        if ($store->isOnlinePayment()) {
+            $unbatchedOrders = $store->parentOrders()
+                ->whereNull('batch_id')
+                ->where('is_archived', false)
+                ->where('payment_status', 'paid');
+
+            if ($unbatchedOrders->count() === 0) {
+                return redirect()->route('coach.dashboard')
+                    ->with('error', 'No confirmed paid orders are ready to submit. Please ensure all online orders are paid before finalizing.');
+            }
+
+            $batchId = (string) Str::uuid();
+            $now = now();
+
+            $unbatchedOrders->update([
+                'status'       => 'Submitted to Admin',
+                'batch_id'     => $batchId,
+                'submitted_at' => $now,
+            ]);
+
+            $store->update([
+                'status'           => 'submitted_to_admin',
+                'shipping_address' => $request->shipping_address,
+            ]);
+
+            \Illuminate\Support\Facades\Notification::send(
+                \App\Models\User::where('role', 'admin')->get(),
+                new \App\Notifications\MasterOrderSubmitted($store)
+            );
+
+            \App\Services\EmailNotificationService::notifyMasterOrderSubmitted($store, $batchId);
+
+            return redirect()->route('coach.dashboard')
+                ->with('success', 'Master order submitted to The Commission Apparel for production!');
+        }
+
+        // 3. Cash Collection ('in_house') — Coach collected funds from parents; coach must pay manufacturing total via Stripe before order is finalized
+        $store->update([
+            'shipping_address' => $request->shipping_address,
+        ]);
+
+        $orders = $store->parentOrders()
             ->whereNull('batch_id')
             ->where('is_archived', false)
-            ->where(function($q) use ($store) {
-                if ($store->isCheckPayment()) {
-                    // Payment requirements waived for Pay by Check stores
-                    $q->whereNotNull('id');
-                } else {
-                    $q->where('payment_status', 'paid')
-                      ->orWhere('payment_status', 'not_applicable');
-                }
-            });
+            ->where('status', '!=', 'Pending Payment')
+            ->get();
 
-        if ($unbatchedOrders->count() === 0) {
+        if ($orders->isEmpty()) {
             return redirect()->route('coach.dashboard')
-                ->with('error', $store->isCheckPayment() 
-                    ? 'No orders are available to submit for this store.'
-                    : 'No confirmed orders are ready to submit. Please ensure all online orders are paid before finalizing.');
+                ->with('error', 'No orders are available to submit for this store.');
         }
 
-        $batchId = (string) Str::uuid();
+        return $this->initiateMasterOrderStripeCheckout($store, $orders);
+    }
 
-        $updateData = [
-            'status'       => 'Submitted to Admin',
-            'batch_id'     => $batchId,
-            'submitted_at' => \Illuminate\Support\Facades\DB::raw('COALESCE(submitted_at, paid_at, created_at, CURRENT_TIMESTAMP)'),
-        ];
-        if ($store->isCheckPayment()) {
-            $updateData['payment_status'] = 'not_applicable';
+    public function payMasterOrderBatch(Request $request, TeamStore $store, $batchId)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $orders = $store->parentOrders()
+            ->where('batch_id', $batchId)
+            ->where('is_archived', false)
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'Master order batch not found.');
         }
 
-        $unbatchedOrders->update($updateData);
+        if ($orders->every(fn($o) => $o->isPaid())) {
+            return redirect()->route('coach.dashboard')
+                ->with('info', 'This master order batch has already been paid.');
+        }
 
-        $store->update([
-            'status' => 'submitted_to_admin',
-            'shipping_address' => $request->shipping_address
-        ]);
-        
-        \Illuminate\Support\Facades\Notification::send(
-            \App\Models\User::where('role', 'admin')->get(),
-            new \App\Notifications\MasterOrderSubmitted($store)
-        );
+        return $this->initiateMasterOrderStripeCheckout($store, $orders, (string) $batchId);
+    }
 
-        \App\Services\EmailNotificationService::notifyMasterOrderSubmitted($store, $batchId);
+    protected function initiateMasterOrderStripeCheckout(TeamStore $store, $orders, ?string $existingBatchId = null)
+    {
+        $user = $store->user ?: request()->user();
+        $store->loadMissing('items');
+
+        $unpaidOrders = $orders->reject(fn($o) => $o->isPaid())->values();
+        if ($unpaidOrders->isEmpty()) {
+            $batchId = $existingBatchId ?: (string) Str::uuid();
+            $now = now();
+            foreach ($orders as $ord) {
+                $ord->update([
+                    'status'       => 'Submitted to Admin',
+                    'batch_id'     => $batchId,
+                    'submitted_at' => $now,
+                ]);
+            }
+            $store->update(['status' => 'submitted_to_admin']);
+            return redirect()->route('coach.dashboard')
+                ->with('success', 'Master order submitted to The Commission Apparel for production!');
+        }
+
+        $wholesaleSubtotal = 0.0;
+        $orderWholesaleMap = [];
+        $lineItems = [];
+
+        foreach ($unpaidOrders as $order) {
+            $orderMfg = 0.0;
+            $itemsJson = is_array($order->items_json) ? $order->items_json : [];
+            foreach ($itemsJson as $itemEntry) {
+                $qty = max(1, intval($itemEntry['qty'] ?? 1));
+                $prices = \App\Models\ParentOrder::getItemPrices($itemEntry, $store);
+                $mfgUnitPrice = (float) ($prices['wholesale_price'] ?? 0);
+                if ($mfgUnitPrice <= 0) {
+                    $mfgUnitPrice = (float) ($prices['retail_price'] ?? 0);
+                }
+                $orderMfg += ($mfgUnitPrice * $qty);
+
+                $unitCents = max(50, intval(round($mfgUnitPrice * 100)));
+                $sizesDesc = '';
+                if (!empty($itemEntry['sizes']) && is_array($itemEntry['sizes'])) {
+                    $sizesDesc = ' (Sizes: ' . implode(', ', array_map(fn($k, $v) => "{$k}: {$v}", array_keys($itemEntry['sizes']), $itemEntry['sizes'])) . ')';
+                }
+                $genderDesc = isset($itemEntry['gender']) ? ' [' . $itemEntry['gender'] . ']' : '';
+
+                $lineItems[] = [
+                    'price_data' => [
+                        'currency'     => 'usd',
+                        'unit_amount'  => $unitCents,
+                        'product_data' => [
+                            'name'        => ($itemEntry['name'] ?? 'Team Apparel Item') . $genderDesc,
+                            'description' => 'Athlete: ' . ($order->athlete_name ?: 'Team Order') . $sizesDesc,
+                        ],
+                    ],
+                    'quantity'   => $qty,
+                ];
+            }
+            $orderWholesaleMap[$order->id] = round($orderMfg, 2);
+            $wholesaleSubtotal += $orderMfg;
+        }
+
+        $wholesaleSubtotal = round($wholesaleSubtotal, 2);
+        if ($wholesaleSubtotal <= 0) {
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'The master order manufacturing total must be greater than $0.00 before checkout.');
+        }
+
+        $isTaxExempt = (bool) $store->isTaxExempt();
+        $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
+        $taxAmount = $isTaxExempt ? 0.00 : round($wholesaleSubtotal * $taxRate, 2);
+
+        $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+        $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+        $preFeeTotal = $wholesaleSubtotal + $taxAmount;
+        $grandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
+        $feeAmount = round($grandTotal - $preFeeTotal, 2);
+
+        $batchId = $existingBatchId ?: (string) Str::uuid();
+        $stripeSecret = config('services.stripe.secret');
+
+        if ($stripeSecret) {
+            try {
+                $stripe = new \Stripe\StripeClient($stripeSecret);
+
+                if ($taxAmount > 0) {
+                    $lineItems[] = [
+                        'price_data' => [
+                            'currency'     => 'usd',
+                            'unit_amount'  => intval(round($taxAmount * 100)),
+                            'product_data' => [
+                                'name'        => 'Sales Tax (7.5%)',
+                                'description' => 'Mandatory sales tax per transaction',
+                            ],
+                        ],
+                        'quantity'   => 1,
+                    ];
+                }
+
+                if ($feeAmount > 0) {
+                    $lineItems[] = [
+                        'price_data' => [
+                            'currency'     => 'usd',
+                            'unit_amount'  => intval(round($feeAmount * 100)),
+                            'product_data' => [
+                                'name'        => 'Card Processing Fee',
+                                'description' => 'Credit card processing fee',
+                            ],
+                        ],
+                        'quantity'   => 1,
+                    ];
+                }
+
+                $sessionParams = [
+                    'payment_method_types' => ['card'],
+                    'line_items'           => $lineItems,
+                    'mode'                 => 'payment',
+                    'client_reference_id'  => (string) $batchId,
+                    'metadata'             => [
+                        'type'         => 'master_order',
+                        'batch_id'     => $batchId,
+                        'store_id'     => $store->id,
+                        'user_id'      => $user?->id,
+                        'organization' => $store->name,
+                        'subtotal'     => $wholesaleSubtotal,
+                        'tax_amount'   => $taxAmount,
+                        'fee_amount'   => $feeAmount,
+                        'grand_total'  => $grandTotal,
+                    ],
+                    'success_url'          => route('coach.store.checkout.success', $store) . '?session_id={CHECKOUT_SESSION_ID}&batch_id=' . $batchId,
+                    'cancel_url'           => route('coach.store.checkout.cancel', $store) . '?batch_id=' . $batchId,
+                ];
+
+                if (!empty($user?->email) && filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+                    $sessionParams['customer_email'] = $user->email;
+                }
+
+                $session = $stripe->checkout->sessions->create($sessionParams);
+
+                $runningTax = 0.0;
+                $runningFee = 0.0;
+                $runningTotal = 0.0;
+                $orderCount = count($unpaidOrders);
+                $idx = 0;
+
+                foreach ($unpaidOrders as $order) {
+                    $idx++;
+                    $orderMfg = $orderWholesaleMap[$order->id] ?? 0.0;
+                    $ratio = $wholesaleSubtotal > 0 ? ($orderMfg / $wholesaleSubtotal) : (1 / $orderCount);
+
+                    if ($idx === $orderCount) {
+                        $orderTax = round($taxAmount - $runningTax, 2);
+                        $orderFee = round($feeAmount - $runningFee, 2);
+                        $orderTotalPaid = round($grandTotal - $runningTotal, 2);
+                    } else {
+                        $orderTax = $isTaxExempt ? 0.00 : round($wholesaleSubtotal > 0 ? ($taxAmount * $ratio) : 0, 2);
+                        $orderFee = round($feeAmount * $ratio, 2);
+                        $orderTotalPaid = round($orderMfg + $orderTax + $orderFee, 2);
+                        $runningTax += $orderTax;
+                        $runningFee += $orderFee;
+                        $runningTotal += $orderTotalPaid;
+                    }
+
+                    $order->update([
+                        'stripe_session_id'  => $session->id,
+                        'manufacturing_cost' => $orderMfg > 0 ? $orderMfg : $order->manufacturing_cost,
+                        'tax_amount'         => $orderTax,
+                        'fee_amount'         => $orderFee,
+                        'total_paid'         => $orderTotalPaid,
+                    ]);
+                }
+
+                return redirect($session->url);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Master order Stripe Checkout creation failed: ' . $e->getMessage());
+                return redirect()->route('coach.dashboard')
+                    ->with('error', 'Payment gateway error: ' . $e->getMessage());
+            }
+        }
 
         return redirect()->route('coach.dashboard')
-            ->with('success', 'Master order submitted to The Commission Apparel for production!');
+            ->with('error', 'Online payment gateway is required to submit a Cash Collection master order. Please contact Commission Apparel support.');
+    }
+
+    public function masterOrderCheckoutSuccess(Request $request, TeamStore $store)
+    {
+        if ($store->user_id !== $request->user()->id) abort(403);
+
+        $batchId = $request->query('batch_id');
+        $sessionId = $request->query('session_id');
+
+        $orders = collect();
+        if ($sessionId) {
+            $orders = $store->parentOrders()->where('stripe_session_id', $sessionId)->get();
+        }
+        if ($orders->isEmpty() && $batchId) {
+            $orders = $store->parentOrders()->where('batch_id', $batchId)->get();
+        }
+
+        if ($orders->isEmpty()) {
+            return redirect()->route('coach.dashboard')
+                ->with('error', 'Master order batch not found.');
+        }
+
+        $stripeSecret = config('services.stripe.secret');
+
+        if ($sessionId && $stripeSecret) {
+            try {
+                $stripe = new \Stripe\StripeClient($stripeSecret);
+                $session = $stripe->checkout->sessions->retrieve($sessionId);
+
+                if ($session->payment_status === 'paid') {
+                    $resolvedBatchId = $batchId ?: ($session->metadata->batch_id ?? (string) Str::uuid());
+                    $firstOrder = $orders->first();
+                    $alreadyNotified = ($firstOrder->status === 'Submitted to Admin' && $firstOrder->isPaid());
+                    $now = now();
+
+                    foreach ($orders as $order) {
+                        $order->update([
+                            'batch_id'                 => $order->batch_id ?: $resolvedBatchId,
+                            'status'                   => 'Submitted to Admin',
+                            'payment_status'           => 'paid',
+                            'sales_rep_id'             => $order->sales_rep_id ?: ($store->sales_rep_id ?? $store->user?->sales_rep_id),
+                            'stripe_payment_intent_id' => $session->payment_intent,
+                            'submitted_at'             => $now,
+                            'paid_at'                  => $now,
+                        ]);
+                    }
+
+                    $store->update(['status' => 'submitted_to_admin']);
+
+                    if (!$alreadyNotified) {
+                        \Illuminate\Support\Facades\Notification::send(
+                            \App\Models\User::where('role', 'admin')->get(),
+                            new \App\Notifications\MasterOrderSubmitted($store)
+                        );
+                        \App\Services\EmailNotificationService::notifyMasterOrderSubmitted($store, $resolvedBatchId);
+                    }
+
+                    return redirect()->route('coach.dashboard')
+                        ->with('success', 'Payment successful! Your master order has been submitted to The Commission Apparel for production!')
+                        ->with('activeCoachTab', 'order_status');
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Error verifying Stripe session for master order return: ' . $e->getMessage());
+            }
+        }
+
+        return redirect()->route('coach.dashboard')
+            ->with('error', 'Payment could not be verified yet. If you completed payment, your order will update automatically in a moment.');
+    }
+
+    public function masterOrderCheckoutCancel(Request $request, TeamStore $store)
+    {
+        return redirect()->route('coach.dashboard')
+            ->with('error', 'Online payment was cancelled. Your store orders are still saved — please complete payment whenever you are ready to submit your master order to production.');
     }
 
     public function exportOrderCSV(TeamStore $store)
@@ -1306,7 +1631,7 @@ class CoachController extends Controller
                             'order_type'               => 'direct',
                             'sales_rep_id'             => $order->sales_rep_id ?: ($user->sales_rep_id ?? $order->teamStore?->sales_rep_id),
                             'stripe_payment_intent_id' => $session->payment_intent,
-                            'submitted_at'             => $order->submitted_at ?? now(),
+                            'submitted_at'             => now(),
                             'paid_at'                  => now(),
                         ]);
                     }

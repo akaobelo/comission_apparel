@@ -987,6 +987,40 @@
                                                 </p>
                                                 <input type="hidden" name="acknowledge_unpaid" value="1">
                                             </div>
+                                        @elseif($store->isInHousePayment())
+                                            @php
+                                                $unbatchedStoreOrders = $store->parentOrders->whereNull('batch_id');
+                                                $inHouseFinancials = \App\Models\ParentOrder::calculateBatchFinancials($unbatchedStoreOrders, $store);
+                                                $inHouseWholesale = $inHouseFinancials['total_wholesale'] ?? 0;
+                                                $inHouseTaxRate = $store->isTaxExempt() ? 0 : 0.075;
+                                                $inHouseTax = round($inHouseWholesale * $inHouseTaxRate, 2);
+                                                $inHouseSubtotalWithTax = $inHouseWholesale + $inHouseTax;
+                                                $inHouseTotalGross = ($inHouseSubtotalWithTax > 0) ? round(($inHouseSubtotalWithTax + 0.30) / (1 - 0.029), 2) : 0;
+                                                $inHouseCardFee = max(0, round($inHouseTotalGross - $inHouseSubtotalWithTax, 2));
+                                            @endphp
+                                            <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 mb-6 space-y-2.5">
+                                                <div class="flex items-center gap-2 text-xs font-bold text-amber-900">
+                                                    <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                                    <span>Cash Collection — Manufacturing Payment Required</span>
+                                                </div>
+                                                <div class="bg-white/90 border border-amber-200/80 rounded-lg p-2.5 text-xs space-y-1 text-slate-700">
+                                                    <div class="flex justify-between"><span>Due to TCA (Wholesale):</span><span class="font-bold text-slate-900">${{ number_format($inHouseWholesale, 2) }}</span></div>
+                                                    <div class="flex justify-between"><span>Sales Tax {{ $store->isTaxExempt() ? '(501(c)(3) Waived)' : '(7.5%)' }}:</span><span class="font-bold text-slate-900">${{ number_format($inHouseTax, 2) }}</span></div>
+                                                    <div class="flex justify-between"><span>Card Processing Fee:</span><span class="font-bold text-slate-900">${{ number_format($inHouseCardFee, 2) }}</span></div>
+                                                    <div class="flex justify-between pt-1 border-t border-amber-200 font-black text-secondary"><span>Total Due at Checkout:</span><span>${{ number_format($inHouseTotalGross, 2) }}</span></div>
+                                                </div>
+                                                <label class="flex items-start gap-3 cursor-pointer select-none pt-1">
+                                                    <input type="checkbox"
+                                                           name="acknowledge_unpaid"
+                                                           x-model="agreedUnpaid"
+                                                           required
+                                                           value="1"
+                                                           class="mt-0.5 w-4 h-4 rounded text-secondary border-slate-300 focus:ring-secondary cursor-pointer">
+                                                    <span class="text-xs text-slate-700 leading-relaxed font-medium">
+                                                        I have collected funds from parents/athletes and am ready to pay the manufacturing balance via Stripe Checkout to submit this Master Order to production.
+                                                    </span>
+                                                </label>
+                                            </div>
                                         @else
                                             <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 mb-6">
                                                 @php
@@ -1017,7 +1051,7 @@
                                             <button type="submit" 
                                                     :disabled="!agreedUnpaid" 
                                                     :class="agreedUnpaid ? 'bg-secondary hover:bg-[#a11825] cursor-pointer' : 'bg-slate-300 text-slate-500 cursor-not-allowed'"
-                                                    class="flex-1 py-3 text-white font-bold uppercase text-xs tracking-wider rounded-lg transition-colors">Submit Final</button>
+                                                    class="flex-1 py-3 text-white font-bold uppercase text-xs tracking-wider rounded-lg transition-colors">{{ $store->isInHousePayment() ? 'Pay & Submit Final' : 'Submit Final' }}</button>
                                         </div>
                                     </form>
                                 </div>
@@ -1760,7 +1794,7 @@
                     foreach ($archivedOrderBatches->filter(fn($v, $k) => $k !== '') as $batchId => $batchOrders) {
                         $allBatches->push(['id' => $batchId, 'orders' => $batchOrders, 'archived' => true]);
                     }
-                    $allBatches = $allBatches->sortByDesc(fn($b) => $b['orders']->first()->created_at);
+                    $allBatches = $allBatches->sortByDesc(fn($b) => $b['orders']->max(fn($o) => $o->submitted_at ?? $o->paid_at ?? $o->created_at));
                 @endphp
 
                 @if($allBatches->isEmpty())
@@ -1781,6 +1815,9 @@
                             $status = $firstOrder->status ?? 'Submitted to Admin';
                             $isDirect = $firstOrder->isDirectOrder();
                             $isMaster = !$isDirect;
+                            $batchSubmittedDate = $batchOrders->max(fn($o) => $o->submitted_at ?? $o->paid_at ?? $o->created_at);
+                            $isBatchCheckPayment = $isMaster ? (bool) ($firstOrder->teamStore?->isCheckPayment()) : ($firstOrder->payment_status === 'not_applicable');
+                            $isBatchInHouseUnpaid = $isMaster && $firstOrder->teamStore?->isInHousePayment() && $firstOrder->payment_status !== 'paid';
 
                             $statusBadge = $isArchived ? 'ARCHIVED' : ($status === 'Shipped' ? 'SHIPPED' : strtoupper($status));
                             $totalItems = $batchOrders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
@@ -1816,7 +1853,7 @@
                                     {{ $totalItems }}
                                 </div>
                                 <div class="col-span-3 md:col-span-2 text-sm text-slate-600">
-                                    {{ $firstOrder->created_at->format('M d, Y') }}
+                                    {{ $batchSubmittedDate?->format('M d, Y') ?? '—' }}
                                 </div>
                                 <div class="col-span-2 md:col-span-2 text-right flex flex-col items-end gap-1">
                                     <span class="{{ $badgeColor }} text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border">{{ $statusBadge }}</span>
@@ -1825,9 +1862,13 @@
                                             <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                             PAID
                                         </span>
-                                    @elseif($firstOrder->payment_status === 'not_applicable')
+                                    @elseif($isBatchCheckPayment)
                                         <span class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
                                             Pay by Check
+                                        </span>
+                                    @elseif($isBatchInHouseUnpaid)
+                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-300">
+                                            Payment Due
                                         </span>
                                     @endif
                                 </div>
@@ -1923,12 +1964,12 @@
                                             </div>
                                             @php
                                                 $isOnlinePayment = ($firstOrder->payment_status === 'paid' || $firstOrder->stripe_session_id || ($financials['total_online_paid'] ?? 0) > 0);
-                                                $isCheckPayment = ($firstOrder->payment_status === 'not_applicable');
-                                                $isTaxExempt = (bool) ($firstOrder->user?->is_tax_exempt);
+                                                $isCheckPayment = $isBatchCheckPayment;
+                                                $isTaxExempt = $isMaster ? (bool) ($firstOrder->teamStore?->isTaxExempt()) : (bool) ($firstOrder->user?->is_tax_exempt);
                                             @endphp
                                             <div class="p-6 space-y-3">
-                                                <div class="flex justify-between text-sm"><span class="text-slate-500">Coach</span><span class="font-bold text-slate-900 text-right">{{ $firstOrder->user->first_name ?? 'Unknown' }} {{ $firstOrder->user->last_name ?? '' }}<br><span class="text-xs font-normal text-slate-500">{{ $firstOrder->teamStore?->name ?? $firstOrder->user->organization ?? '' }}</span></span></div>
-                                                <div class="flex justify-between text-sm"><span class="text-slate-500">Submitted</span><span class="font-bold text-slate-900">{{ ($firstOrder->submitted_at ?? $firstOrder->paid_at ?? $firstOrder->created_at)?->format('M d, Y') ?? '—' }}</span></div>
+                                                <div class="flex justify-between text-sm"><span class="text-slate-500">Coach</span><span class="font-bold text-slate-900 text-right">{{ $firstOrder->user->first_name ?? $firstOrder->teamStore?->user?->first_name ?? 'Unknown' }} {{ $firstOrder->user->last_name ?? $firstOrder->teamStore?->user?->last_name ?? '' }}<br><span class="text-xs font-normal text-slate-500">{{ $firstOrder->teamStore?->name ?? $firstOrder->user->organization ?? '' }}</span></span></div>
+                                                <div class="flex justify-between text-sm"><span class="text-slate-500">Submitted</span><span class="font-bold text-slate-900">{{ $batchSubmittedDate?->format('M d, Y') ?? '—' }}</span></div>
                                                 <div class="flex justify-between text-sm"><span class="text-slate-500">Payment Mode</span>
                                                     <span class="font-bold text-slate-900 uppercase text-xs">{{ $isOnlinePayment ? 'Online (Stripe)' : ($isCheckPayment ? 'Pay by Check' : 'In-House') }}</span>
                                                 </div>
@@ -1947,6 +1988,16 @@
                                                         <div class="flex justify-between text-sm pt-1 border-t border-slate-100"><span class="font-bold text-emerald-600">Online Payment (Stripe)</span><span class="font-bold text-emerald-600">${{ number_format($financials['total_online_paid'] ?? 0, 2) }}</span></div>
                                                     @endif
                                                     <div class="flex justify-between text-sm pt-1 border-t border-slate-100"><span class="font-bold text-secondary">Due to TCA</span><span class="font-bold text-secondary">${{ number_format($financials['total_wholesale'] ?? 0, 2) }}</span></div>
+                                                    @if($isBatchInHouseUnpaid && $firstOrder->teamStore && ($financials['total_wholesale'] ?? 0) > 0)
+                                                        <div class="pt-3 mt-2 border-t border-slate-200">
+                                                            <form action="{{ route('coach.store.batch.pay', [$firstOrder->teamStore, $batchId]) }}" method="POST">
+                                                                @csrf
+                                                                <button type="submit" class="w-full py-2.5 px-4 bg-secondary hover:bg-[#a11825] text-white text-xs font-black uppercase tracking-wider rounded-lg transition-colors shadow-sm cursor-pointer">
+                                                                    Pay Manufacturing Balance (${{ number_format($financials['total_wholesale'] ?? 0, 2) }} + Fees)
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
