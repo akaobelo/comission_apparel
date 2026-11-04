@@ -2308,43 +2308,19 @@ class AdminController extends Controller
             "Expires"             => "0"
         ];
 
-        $isExempt = (bool) $store->isTaxExempt();
-        $taxRate = $isExempt ? 0.00 : 0.075;
-        $taxRateStr = $isExempt ? '0% (Exempt)' : '7.5%';
-
         $columns = [
-            'Store Name', 'Order ID', 'Submission Date', 'Payment Mode', 'Payment Status',
+            'Store Name', 'Order ID', 'Submission Date',
             'Athlete First Name', 'Athlete Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Item Price', 'Total Row Price',
-            'Tax Rate', 'Row Tax', 'Total Row With Tax',
-            'Athlete Subtotal', 'Athlete Tax', 'Athlete Total to Collect',
-            'Manufacture Price', 'Total Manufacture Price', 'Special Notes', 'Edited?'
+            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity'
         ];
 
-        $callback = function() use ($store, $orders, $columns, $isExempt, $taxRate, $taxRateStr) {
+        $callback = function() use ($store, $orders, $columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
             foreach ($orders as $order) {
                 if (is_array($order->items_json)) {
-                    if ($order->isPaid() && (float) $order->subtotal > 0) {
-                        $athleteSubtotal = (float) $order->subtotal;
-                        $athleteTax = $isExempt ? 0.00 : (float) ($order->tax_amount > 0 ? $order->tax_amount : round($athleteSubtotal * $taxRate, 2));
-                        $athleteTotalToCollect = $order->total_paid > 0 ? (float) $order->total_paid : round($athleteSubtotal + $athleteTax, 2);
-                    } else {
-                        $athleteSubtotal = (float) $order->getCalculatedSubtotal($store);
-                        $athleteTax = $isExempt ? 0.00 : round($athleteSubtotal * $taxRate, 2);
-                        if ($store->isOnlinePayment() && !$order->isPaid()) {
-                            $feePercent = (float) config('services.stripe.fee_percent', 0.029);
-                            $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
-                            $preFee = $athleteSubtotal + $athleteTax;
-                            $athleteTotalToCollect = round(($preFee + $feeFixed) / (1 - $feePercent), 2);
-                        } else {
-                            $athleteTotalToCollect = round($athleteSubtotal + $athleteTax, 2);
-                        }
-                    }
-
                     foreach ($order->items_json as $item) {
                         $typesStr = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
                         
@@ -2374,20 +2350,11 @@ class AdminController extends Controller
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
 
                         $qty = $item['qty'] ?? 1;
-                        $prices = \App\Models\ParentOrder::getItemPrices($item, $store);
-                        $itemPrice = $prices['retail_price'];
-                        $totalRowPrice = $itemPrice * $qty;
-                        $rowTax = $isExempt ? 0.00 : round($totalRowPrice * $taxRate, 2);
-                        $totalRowWithTax = round($totalRowPrice + $rowTax, 2);
-                        $mfgPrice = $prices['wholesale_price'];
-                        $totalMfgPrice = $mfgPrice * $qty;
 
                         fputcsv($file, [
                             $store->name,
                             $order->id,
                             $order->created_at->format('Y-m-d'),
-                            $store->payment_mode ?? 'in_house',
-                            $order->payment_status ?? 'not_applicable',
                             $order->athlete_first_name,
                             $order->athlete_last_name,
                             $order->parent_email ?? '',
@@ -2401,18 +2368,6 @@ class AdminController extends Controller
                             $typesStr,
                             $sizesStr,
                             $qty,
-                            number_format($itemPrice, 2, '.', ''),
-                            number_format($totalRowPrice, 2, '.', ''),
-                            $taxRateStr,
-                            number_format($rowTax, 2, '.', ''),
-                            number_format($totalRowWithTax, 2, '.', ''),
-                            number_format($athleteSubtotal, 2, '.', ''),
-                            number_format($athleteTax, 2, '.', ''),
-                            number_format($athleteTotalToCollect, 2, '.', ''),
-                            number_format($mfgPrice, 2, '.', ''),
-                            number_format($totalMfgPrice, 2, '.', ''),
-                            $order->special_notes ?? '',
-                            $order->is_edited ? 'Yes' : 'No',
                         ]);
                     }
                 }
@@ -2472,9 +2427,9 @@ class AdminController extends Controller
         ];
 
         $columns = [
-            'Payment Status', 'First Name', 'Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
+            'First Name', 'Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Item', 'Types', 'Sizes', 'Qty', 'Item Price', 'Total Price', 'Manufacture Price', 'Total Manufacture Price', 'Special Notes', 'Edited?'
+            'Item', 'Types', 'Sizes', 'Qty'
         ];
 
         $callback = function() use ($orders, $columns) {
@@ -2511,18 +2466,9 @@ class AdminController extends Controller
                         }
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
 
-                        $itemPrice = 0;
-                        $mfgPrice = 0;
-                        $prices = \App\Models\ParentOrder::getItemPrices($item, $order->teamStore);
-                        $itemPrice = $prices['retail_price'];
-                        $mfgPrice = $prices['wholesale_price'];
-                        
                         $qty = $item['qty'] ?? 1;
-                        $totalPrice = $itemPrice * $qty;
-                        $totalMfgPrice = $mfgPrice * $qty;
 
                         fputcsv($file, [
-                            $order->payment_status ?? 'not_applicable',
                             $order->athlete_first_name,
                             $order->athlete_last_name,
                             $order->parent_email ?? '',
@@ -2536,12 +2482,6 @@ class AdminController extends Controller
                             $typesStr,
                             $sizesStr,
                             $qty,
-                            number_format($itemPrice, 2, '.', ''),
-                            number_format($totalPrice, 2, '.', ''),
-                            number_format($mfgPrice, 2, '.', ''),
-                            number_format($totalMfgPrice, 2, '.', ''),
-                            $order->special_notes ?? '',
-                            $order->is_edited ? 'Yes' : 'No',
                         ]);
                     }
                 }
@@ -2567,7 +2507,7 @@ class AdminController extends Controller
             "Expires"             => "0"
         ];
 
-        $columns = ['Item Name', 'Gender / Cut', 'Type', 'Size', 'Unit Price', 'Total Quantity', 'Total Price', 'Manufacture Price', 'Total Manufacture Price'];
+        $columns = ['Item Name', 'Gender / Cut', 'Type', 'Size', 'Total Quantity'];
         
         $aggregated = [];
 
@@ -2577,12 +2517,6 @@ class AdminController extends Controller
                     $itemQty = max(1, (int)($item['qty'] ?? 1));
                     $gender = $item['gender'] ?? $order->gender ?? 'Not Specified';
 
-                    $itemPrice = 0;
-                    $mfgPrice = 0;
-                    $prices = \App\Models\ParentOrder::getItemPrices($item, $order->teamStore);
-                    $itemPrice = $prices['retail_price'];
-                    $mfgPrice = $prices['wholesale_price'];
-
                     if (isset($item['components']) && is_array($item['components'])) {
                         foreach ($item['components'] as $comp) {
                             $compQty = $itemQty * max(1, (int)($comp['qty'] ?? 1));
@@ -2590,17 +2524,17 @@ class AdminController extends Controller
                             
                             if (isset($comp['sizes']) && is_array($comp['sizes'])) {
                                 foreach ($comp['sizes'] as $type => $size) {
-                                    $key = "{$name}|{$gender}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
+                                    $key = "{$name}|{$gender}|{$type}|{$size}";
                                     $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
                                 }
                             } elseif (!empty($comp['size'])) {
                                 $type = isset($comp['types']) ? implode(', ', $comp['types']) : ($comp['type'] ?? 'N/A');
                                 $size = $comp['size'];
-                                $key = "{$name}|{$gender}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
+                                $key = "{$name}|{$gender}|{$type}|{$size}";
                                 $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
                             } else {
                                 $type = isset($comp['types']) ? implode(', ', $comp['types']) : ($comp['type'] ?? 'N/A');
-                                $key = "{$name}|{$gender}|{$type}|N/A|{$itemPrice}|{$mfgPrice}";
+                                $key = "{$name}|{$gender}|{$type}|N/A";
                                 $aggregated[$key] = ($aggregated[$key] ?? 0) + $compQty;
                             }
                         }
@@ -2609,17 +2543,17 @@ class AdminController extends Controller
                         
                         if (isset($item['sizes']) && is_array($item['sizes'])) {
                             foreach ($item['sizes'] as $type => $size) {
-                                $key = "{$name}|{$gender}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
+                                $key = "{$name}|{$gender}|{$type}|{$size}";
                                 $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
                             }
                         } elseif (!empty($item['size'])) {
                             $type = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
                             $size = $item['size'];
-                            $key = "{$name}|{$gender}|{$type}|{$size}|{$itemPrice}|{$mfgPrice}";
+                            $key = "{$name}|{$gender}|{$type}|{$size}";
                             $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
                         } else {
                             $type = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
-                            $key = "{$name}|{$gender}|{$type}|N/A|{$itemPrice}|{$mfgPrice}";
+                            $key = "{$name}|{$gender}|{$type}|N/A";
                             $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
                         }
                     }
@@ -2632,11 +2566,7 @@ class AdminController extends Controller
             fputcsv($file, $columns);
             foreach ($aggregated as $key => $qty) {
                 $parts = explode('|', $key);
-                $unitPrice = (float)($parts[4] ?? 0);
-                $totalPrice = $unitPrice * $qty;
-                $mfgPrice = (float)($parts[5] ?? 0);
-                $totalMfgPrice = $mfgPrice * $qty;
-                fputcsv($file, [$parts[0], $parts[1], $parts[2], $parts[3], number_format($unitPrice, 2, '.', ''), $qty, number_format($totalPrice, 2, '.', ''), number_format($mfgPrice, 2, '.', ''), number_format($totalMfgPrice, 2, '.', '')]);
+                fputcsv($file, [$parts[0], $parts[1], $parts[2], $parts[3], $qty]);
             }
             fclose($file);
         };

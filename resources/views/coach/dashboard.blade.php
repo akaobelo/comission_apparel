@@ -944,6 +944,7 @@
                             <span>View Store</span>
                             <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                         </a>
+                        <a href="{{ route('coach.store.export-manufacturer', $store) }}" class="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-bold uppercase rounded-lg transition-colors shadow-sm" title="Download Visual Excel with Product Photos & Size Matrix">📊 Visual Excel</a>
                         <a href="{{ route('coach.store.export', $store) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase rounded-lg transition-colors">Export CSV</a>
                         @if(!$isLocked && $totalAthletes > 0)
                         <div x-data="{ openSubmitModal: false, agreedUnpaid: {{ $store->isCheckPayment() ? 'true' : 'false' }} }">
@@ -1888,6 +1889,9 @@
                                                 <div class="flex items-center gap-4">
                                                     <div class="text-xs font-bold text-slate-500">{{ $batchOrders->count() }} Orders</div>
                                                     <div class="flex flex-wrap gap-2">
+                                                        <a href="{{ route('coach.direct-order.export-manufacturer', $batchId) }}" class="px-3 py-1.5 bg-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap" title="Download Visual Excel with Product Photos & Size Matrix">
+                                                            📊 Visual Excel
+                                                        </a>
                                                         <a href="{{ route('coach.direct-order.export', $batchId) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
                                                             Roster CSV

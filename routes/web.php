@@ -339,6 +339,7 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     Route::post('/coach/store/{store}/roster/paste', [CoachController::class, 'addRosterPaste'])->name('coach.store.roster.paste');
     Route::post('/coach/store/{store}/roster/upload', [CoachController::class, 'addRosterUpload'])->name('coach.store.roster.upload');
     Route::get('/coach/store/{store}/export', [CoachController::class, 'exportOrderCSV'])->name('coach.store.export');
+    Route::get('/coach/store/{store}/export-manufacturer', [CoachController::class, 'exportStoreManufacturerXlsx'])->name('coach.store.export-manufacturer');
     Route::post('/coach/store/{store}/submit', [CoachController::class, 'submitMasterOrder'])->name('coach.store.submit');
     Route::get('/coach/store/{store}/checkout/success', [CoachController::class, 'masterOrderCheckoutSuccess'])->name('coach.store.checkout.success');
     Route::get('/coach/store/{store}/checkout/cancel', [CoachController::class, 'masterOrderCheckoutCancel'])->name('coach.store.checkout.cancel');
@@ -367,6 +368,7 @@ Route::middleware(['auth', CoachMiddleware::class])->group(function () {
     Route::get('/coach/direct-order/checkout/success', [CoachController::class, 'directOrderCheckoutSuccess'])->name('coach.direct-order.checkout.success');
     Route::get('/coach/direct-order/checkout/cancel', [CoachController::class, 'directOrderCheckoutCancel'])->name('coach.direct-order.checkout.cancel');
     Route::get('/coach/direct-order/export/{batchId}', [CoachController::class, 'exportDirectOrderBatch'])->name('coach.direct-order.export');
+    Route::get('/coach/direct-order/export-manufacturer/{batchId}', [CoachController::class, 'exportDirectOrderBatchManufacturerXlsx'])->name('coach.direct-order.export-manufacturer');
     Route::post('/coach/direct-order/archive/{batchId}', [CoachController::class, 'archiveDirectOrderBatch'])->name('coach.direct-order.archive');
 });
 

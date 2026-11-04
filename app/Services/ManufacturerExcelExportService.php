@@ -459,10 +459,6 @@ class ManufacturerExcelExportService
                 $baseSort = (int) ($storeItem?->sort_order ?? $design?->sort_order ?? 999);
                 $itemIdentifier = $storeItem ? ('si_' . $storeItem->id) : ($design ? ('dc_' . $design->id) : ('nm_' . $this->normalizeKey($itemName)));
 
-                $prices = ParentOrder::getItemPrices($item, $store ?? $order->teamStore);
-                $unitPrice = (float) ($prices['retail_price'] ?? 0);
-                $mfgPrice = (float) ($prices['wholesale_price'] ?? 0);
-
                 // Extract individual garment pieces from this item
                 $pieces = []; // [['col_key' => ..., 'label' => ..., 'type' => ..., 'size' => ..., 'qty' => ..., 'image' => ..., 'sub_order' => ...]]
 
@@ -629,11 +625,6 @@ class ManufacturerExcelExportService
                     'types'          => implode(', ', array_map(fn($t) => DesignCatalog::formatTypeLabel((string) $t), $item['types'] ?? [$item['type'] ?? ''])),
                     'sizes'          => implode(' | ', $sizesSummary),
                     'qty'            => $itemQty,
-                    'unit_price'     => $unitPrice,
-                    'total_price'    => $unitPrice * $itemQty,
-                    'mfg_price'      => $mfgPrice,
-                    'total_mfg'      => $mfgPrice * $itemQty,
-                    'special_notes'  => $athleteRow['special_notes'],
                 ];
             }
 
@@ -1039,11 +1030,6 @@ class ManufacturerExcelExportService
             'Garment Type(s)',
             'Size(s)',
             'Quantity',
-            'Unit Price',
-            'Total Price',
-            'Manufacture Price',
-            'Total Manufacture Price',
-            'Special Notes',
         ];
 
         $rowsXml = [];
@@ -1068,11 +1054,6 @@ class ManufacturerExcelExportService
                 [9, $r['types'], 's', 5],
                 [10, $r['sizes'], 's', 6],
                 [11, (int) $r['qty'], 'n', 3],
-                [12, round((float) $r['unit_price'], 2), 'n', 7],
-                [13, round((float) $r['total_price'], 2), 'n', 7],
-                [14, round((float) $r['mfg_price'], 2), 'n', 7],
-                [15, round((float) $r['total_mfg'], 2), 'n', 7],
-                [16, $r['special_notes'], 's', 5],
             ]);
             $rowNum++;
         }
@@ -1090,11 +1071,6 @@ class ManufacturerExcelExportService
             10 => 24,
             11 => 28,
             12 => 11,
-            13 => 12,
-            14 => 12,
-            15 => 16,
-            16 => 18,
-            17 => 26,
         ];
 
         return $this->finalizeWorksheetXml($rowsXml, $colWidths, [], $addSharedString);
