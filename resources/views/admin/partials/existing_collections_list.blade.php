@@ -293,9 +293,12 @@ if (!isset($typeOptions)) {
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name</label>
                                                 <div class="relative">
                                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none appearance-none">
-                                                        <option value="">No Collection</option>
-                                                        <template x-for="col in (window.allCollectionsList || [])" :key="col.id">
-                                                            <option :value="col.id" :selected="String(col.id) === '{{ (string) $design->design_collection_id }}'" x-text="col.name"></option>
+                                                        @if($design->design_collection_id)
+                                                            <option value="{{ $design->design_collection_id }}" selected>{{ $collection->name }}</option>
+                                                        @endif
+                                                        <option value="" {{ !$design->design_collection_id ? 'selected' : '' }}>No Collection</option>
+                                                        <template x-for="col in (window.allCollectionsList || []).filter(c => String(c.id) !== '{{ (string) $design->design_collection_id }}')" :key="col.id">
+                                                            <option :value="col.id" x-text="col.name"></option>
                                                         </template>
                                                     </select>
                                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
@@ -372,7 +375,7 @@ if (!isset($typeOptions)) {
                                                     <template x-for="val in selectedTypes" :key="val">
                                                         <div class="bg-white p-2 rounded border border-blue-100 shadow-2xs">
                                                             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1" x-text="(window.catalogTypeOptions && window.catalogTypeOptions[val]) ? window.catalogTypeOptions[val] : val"></label>
-                                                            <select :name="'component_design_ids[' + val + ']'" @change="savedCompIds[val] = $event.target.value" class="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                                            <select :name="'component_design_ids[' + val + ']'" x-init="$nextTick(() => { if (savedCompIds[val]) $el.value = String(savedCompIds[val]); })" @change="savedCompIds[val] = $event.target.value" class="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none">
                                                                 <option value="">-- Auto-detect / Use Package Image --</option>
                                                                 <template x-for="cand in items.filter(i => i.id !== {{ $design->id }})" :key="cand.id">
                                                                     <option :value="cand.id" :selected="String(savedCompIds[val] || '') === String(cand.id)" x-text="cand.name + ' (' + (cand.type_label || '') + ')'"></option>
