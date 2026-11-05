@@ -35,6 +35,9 @@
             @endphp
 <script>
     window.availableSportsList = {!! json_encode(is_array($availableSports) ? array_values($availableSports) : $availableSports->values()->all()) !!};
+    window.catalogTypeOptions = {!! json_encode($typeOptions) !!};
+    window.allCollectionsList = {!! json_encode($allCollections->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)->map(fn($col) => ['id' => $col->id, 'name' => $col->name])->values()) !!};
+    window.allCoachesList = {!! json_encode($allCoaches->map(fn($c) => ['id' => $c->id, 'label' => ($c->teamStore?->name ?? $c->organization ?? 'No Org') . ' (' . $c->first_name . ' ' . $c->last_name . ')'])->values()) !!};
 </script>
 <div class="max-w-[1600px] mx-auto px-6 pb-8" style="padding-top: clamp(2rem, 10vw, 7rem);">
     @if(session('success'))
@@ -1046,7 +1049,7 @@
                                 <div class="min-w-0 flex-1">
                                     <div class="font-bold text-xs sm:text-sm text-slate-700 break-words">{{ $store->name }}</div>
                                     <div class="text-[11px] text-slate-500 mt-0.5">
-                                        {{ $store->user?->name ?? 'Unknown' }} · {{ $store->parentOrders->count() }} orders
+                                        {{ $store->user?->name ?? 'Unknown' }} · {{ $store->parent_orders_count ?? $store->parentOrders->count() }} orders
                                         @if($store->updated_at)
                                             · Archived {{ $store->updated_at->format('M d, Y') }}
                                         @endif
@@ -2320,7 +2323,7 @@
                                                 </td>
                                                 <td class="px-6 py-4 text-center">
                                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-700">
-                                                        {{ $store->parentOrders->count() }} orders
+                                                        {{ $store->parent_orders_count ?? $store->parentOrders->count() }} orders
                                                     </span>
                                                 </td>
                                                 <td class="px-6 py-4">
@@ -4678,9 +4681,9 @@
                                     </template>
                                     <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2.5 py-1.5 w-44 sm:w-48 focus:border-primary focus:outline-none shadow-sm">
                                         <option value="">Assign selected to...</option>
-                                        @foreach($allCoaches as $c)
-                                            <option value="{{ $c->id }}">{{ $c->teamStore?->name ?? $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
-                                        @endforeach
+                                        <template x-for="c in (window.allCoachesList || [])" :key="c.id">
+                                            <option :value="c.id" x-text="c.label"></option>
+                                        </template>
                                     </select>
                                     <button type="submit" class="text-xs font-bold uppercase px-3 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors shadow-sm whitespace-nowrap">Mass Assign</button>
                                 </form>
@@ -4737,8 +4740,9 @@
                                            form="bulk-sort-form"
                                            class="sort-order-input-catalog-col w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm text-center">
                                 </div>
-                                <details class="mt-2">
+                                <details class="mt-2" x-data="{ editOpen: false }" @toggle="editOpen = $el.open">
                                     <summary class="text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer hover:text-primary">Edit design</summary>
+                                    <template x-if="editOpen">
                                     <form action="{{ route('admin.design.update', $design) }}" method="POST" enctype="multipart/form-data" class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
                                         @csrf
                                         @method('PUT')
@@ -4752,9 +4756,9 @@
                                                 <div class="relative">
                                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none appearance-none">
                                                         <option value="">No Collection</option>
-                                                        @foreach($allCollections->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE) as $col)
-                                                            <option value="{{ $col->id }}" {{ $design->design_collection_id == $col->id ? 'selected' : '' }}>{{ $col->name }}</option>
-                                                        @endforeach
+                                                        <template x-for="col in (window.allCollectionsList || [])" :key="col.id">
+                                                            <option :value="col.id" :selected="String(col.id) === '{{ (string) $design->design_collection_id }}'" x-text="col.name"></option>
+                                                        </template>
                                                     </select>
                                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
                                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -4904,6 +4908,7 @@
                                             Save Changes
                                         </button>
                                     </form>
+                                    </template>
                                 </details>
                             </div>
                         </div>
@@ -4913,9 +4918,9 @@
                                         @csrf
                                         <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2 py-1 w-32 focus:border-primary focus:outline-none">
                                             <option value="">Assign to coach...</option>
-                                            @foreach($allCoaches as $c)
-                                                <option value="{{ $c->id }}">{{ $c->teamStore?->name ?? $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
-                                            @endforeach
+                                            <template x-for="c in (window.allCoachesList || [])" :key="c.id">
+                                                <option :value="c.id" x-text="c.label"></option>
+                                            </template>
                                         </select>
                                         <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors" title="Assign Design to Coach">Assign</button>
                                     </form>
@@ -5427,7 +5432,7 @@
                                 <h3 class="font-black text-slate-900 uppercase text-lg leading-none">{{ $store->name }}</h3>
                                 <span class="bg-green-100 text-green-800 border border-green-200 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">Active</span>
                             </div>
-                            <p class="text-xs text-slate-500 uppercase tracking-wider">{{ $store->items->count() }} Items Assigned</p>
+                            <p class="text-xs text-slate-500 uppercase tracking-wider">{{ $store->items_count ?? $store->items->count() }} Items Assigned</p>
                         </div>
                         <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'campaigns'])]) }}" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wide rounded-lg shadow-sm transition-colors flex items-center gap-1">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>

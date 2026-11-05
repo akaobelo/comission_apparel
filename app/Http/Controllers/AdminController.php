@@ -25,11 +25,13 @@ class AdminController extends Controller
 
     public function dashboard(Request $request)
     {
+        @ini_set('memory_limit', '512M');
+
         // Fast partial response for collections accordion AJAX
         if ($request->input('ajax_section') === 'collections' || $request->header('X-Ajax-Section') === 'collections') {
             $collectionSearch = $request->input('collection_search');
             $collectionsQuery = \App\Models\DesignCollection::with(['designs' => function($q) {
-                $q->with('coaches')->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc');
+                $q->with(['coaches:id,first_name,last_name,organization'])->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc');
             }]);
 
             if (!empty($collectionSearch)) {
@@ -141,7 +143,7 @@ class AdminController extends Controller
         // Unassigned designs paginated
         $unassignedSearch = $request->input('unassigned_search');
         $unassignedQuery = DesignCatalog::whereNull('design_collection_id')
-            ->with(['designCollection', 'coaches']);
+            ->with(['designCollection:id,name', 'coaches:id,first_name,last_name,organization']);
 
         if (!empty($unassignedSearch)) {
             $unassignedQuery->where(function($q) use ($unassignedSearch) {
@@ -229,7 +231,8 @@ class AdminController extends Controller
 
         // Archived stores
         $archivedStoresQuery = TeamStore::where('is_archived', true)
-            ->with(['user', 'parentOrders']);
+            ->with(['user'])
+            ->withCount('parentOrders');
 
         if ($request->filled('archive_search')) {
             $search = $request->archive_search;
@@ -334,7 +337,7 @@ class AdminController extends Controller
         // Paginate collections (10 per page) and eager load designs & coaches for those collections only
         $collectionSearch = $request->input('collection_search');
         $collectionsQuery = \App\Models\DesignCollection::with(['designs' => function($q) {
-            $q->with('coaches')->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc');
+            $q->with(['coaches:id,first_name,last_name,organization'])->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc');
         }]);
 
         if (!empty($collectionSearch)) {
@@ -381,17 +384,17 @@ class AdminController extends Controller
 
         $campaignStores = TeamStore::whereHas('user', function($q) {
             $q->where('role', 'admin');
-        })->latest()->get();
+        })->withCount('items')->latest()->get();
 
-        // Optimize memory by plucking store IDs via distinct SQL query
-        $storeIds = \App\Models\ParentOrder::whereIn('status', ['In Production', 'Shipped', 'Delivered', 'Processing', 'Completed'])
-            ->whereNotNull('team_store_id')
-            ->distinct()
-            ->pluck('team_store_id');
-            
-        $storesMap = TeamStore::whereIn('id', $storeIds)->with('items')->get()->keyBy('id');
-        
-        $globalSalesSummary = \Illuminate\Support\Facades\Cache::remember('admin_global_sales_summary', 300, function() use ($storeIds, $storesMap) {
+        $globalSalesSummary = \Illuminate\Support\Facades\Cache::remember('admin_global_sales_summary', 300, function() {
+            // Optimize memory by plucking store IDs via distinct SQL query only when computing cache
+            $storeIds = \App\Models\ParentOrder::whereIn('status', ['In Production', 'Shipped', 'Delivered', 'Processing', 'Completed'])
+                ->whereNotNull('team_store_id')
+                ->distinct()
+                ->pluck('team_store_id');
+
+            $storesMap = TeamStore::whereIn('id', $storeIds)->with('items')->get()->keyBy('id');
+
             $summary = [
                 'orders_count' => 0,
                 'total_sales' => 0,
@@ -1103,6 +1106,8 @@ class AdminController extends Controller
 
     public function createDesign(Request $request)
     {
+        @ini_set('memory_limit', '512M');
+
         $validated = $request->validate([
             'name'                 => ['required', 'string', 'max:255'],
             'design_collection_id' => ['nullable', 'exists:design_collections,id'],
@@ -1186,6 +1191,8 @@ class AdminController extends Controller
 
     public function updateDesign(Request $request, DesignCatalog $design)
     {
+        @ini_set('memory_limit', '512M');
+
         $oldDesignName = $design->name;
 
         $validated = $request->validate([

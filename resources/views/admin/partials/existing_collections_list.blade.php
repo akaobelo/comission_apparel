@@ -21,9 +21,19 @@ if (!isset($typeOptions)) {
         'warmup_top' => 'Warm-up (top)',
         'warmup_bottom' => 'Warm-up (bottom)',
         'warmup_set' => 'Warm-up (top/bottom)',
+        'warmup_set_2' => 'Warm-up Set #2 (top/bottom)',
+        'uniform_package_gold' => 'Uniform Package (Gold)',
+        'uniform_package_silver' => 'Uniform Package (Silver)',
+        'uniform_package_bronze' => 'Uniform Package (Bronze)',
+        'uniform_package_custom' => 'Uniform Package (Custom)',
     ];
 }
 @endphp
+<script>
+    window.catalogTypeOptions = window.catalogTypeOptions || {!! json_encode($typeOptions) !!};
+    window.allCollectionsList = {!! json_encode($allCollections->map(fn($col) => ['id' => $col->id, 'name' => $col->name])->values()) !!};
+    window.allCoachesList = window.allCoachesList || {!! json_encode($allCoaches->map(fn($c) => ['id' => $c->id, 'label' => ($c->teamStore?->name ?? $c->organization ?? 'No Org') . ' (' . $c->first_name . ' ' . $c->last_name . ')'])->values()) !!};
+</script>
 
 @if($designCollections->isEmpty())
     <div class="p-8 text-center text-slate-500 font-bold uppercase tracking-widest text-sm">
@@ -155,6 +165,7 @@ if (!isset($typeOptions)) {
                 return [
                     'id' => $d->id,
                     'name' => $d->name,
+                    'type_label' => $d->type_label,
                     'collection_name' => $d->designCollection ? $d->designCollection->name : '',
                     'coach_name' => $d->coaches->map(function($c) { return $c->first_name . ' ' . $c->last_name; })->implode(', ')
                 ];
@@ -222,9 +233,9 @@ if (!isset($typeOptions)) {
                         </template>
                         <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2.5 py-1.5 w-48 focus:border-primary focus:outline-none shadow-sm">
                             <option value="">Assign selected to...</option>
-                            @foreach($allCoaches as $c)
-                                <option value="{{ $c->id }}">{{ $c->teamStore?->name ?? $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
-                            @endforeach
+                            <template x-for="c in (window.allCoachesList || [])" :key="c.id">
+                                <option :value="c.id" x-text="c.label"></option>
+                            </template>
                         </select>
                         <button type="submit" class="text-xs font-bold uppercase px-3 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors">Mass Assign</button>
                     </form>
@@ -267,8 +278,9 @@ if (!isset($typeOptions)) {
                                            form="bulk-sort-form-{{ $collection->id }}"
                                            class="sort-order-input-catalog-col w-16 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none shadow-sm text-center">
                                 </div>
-                                <details class="mt-2">
+                                <details class="mt-2" x-data="{ editOpen: false }" @toggle="editOpen = $el.open">
                                     <summary class="text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer hover:text-primary">Edit design</summary>
+                                    <template x-if="editOpen">
                                     <form action="{{ route('admin.design.update', $design) }}" method="POST" enctype="multipart/form-data" class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
                                         @csrf
                                         @method('PUT')
@@ -282,9 +294,9 @@ if (!isset($typeOptions)) {
                                                 <div class="relative">
                                                     <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded px-2.5 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none appearance-none">
                                                         <option value="">No Collection</option>
-                                                        @foreach($allCollections as $col)
-                                                            <option value="{{ $col->id }}" {{ $design->design_collection_id == $col->id ? 'selected' : '' }}>{{ $col->name }}</option>
-                                                        @endforeach
+                                                        <template x-for="col in (window.allCollectionsList || [])" :key="col.id">
+                                                            <option :value="col.id" :selected="String(col.id) === '{{ (string) $design->design_collection_id }}'" x-text="col.name"></option>
+                                                        </template>
                                                     </select>
                                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
                                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -328,7 +340,10 @@ if (!isset($typeOptions)) {
                                                 </datalist>
                                             </div>
                                         </div>
-                                        <div x-data="{ selectedTypes: {{ json_encode(array_values($design->types ?? [])) }} }">
+                                        <div x-data="{
+                                            selectedTypes: {{ json_encode(array_values($design->types ?? [])) }},
+                                            savedCompIds: {{ json_encode((object) (is_array($design->component_design_ids) ? $design->component_design_ids : [])) }}
+                                        }">
                                             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Item Types</label>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                                                 @foreach($typeOptions as $val => $label)
@@ -354,24 +369,17 @@ if (!isset($typeOptions)) {
                                                     Select which item in <strong>{{ $collection->name }}</strong> corresponds to each checked piece so the Manufacturer Excel Chart pulls the exact garment image and combines quantities automatically:
                                                 </p>
                                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                                                    @foreach($typeOptions as $val => $label)
-                                                        @php
-                                                            $savedCompId = is_array($design->component_design_ids) ? ($design->component_design_ids[$val] ?? '') : '';
-                                                        @endphp
-                                                        <div x-show="selectedTypes.includes('{{ $val }}')" x-cloak class="bg-white p-2 rounded border border-blue-100 shadow-2xs">
-                                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1">{{ $label }}</label>
-                                                            <select name="component_design_ids[{{ $val }}]" :disabled="!selectedTypes.includes('{{ $val }}')" class="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                                    <template x-for="val in selectedTypes" :key="val">
+                                                        <div class="bg-white p-2 rounded border border-blue-100 shadow-2xs">
+                                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1" x-text="(window.catalogTypeOptions && window.catalogTypeOptions[val]) ? window.catalogTypeOptions[val] : val"></label>
+                                                            <select :name="'component_design_ids[' + val + ']'" @change="savedCompIds[val] = $event.target.value" class="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none">
                                                                 <option value="">-- Auto-detect / Use Package Image --</option>
-                                                                @foreach($collectionItems as $candidateItem)
-                                                                    @if($candidateItem->id !== $design->id)
-                                                                        <option value="{{ $candidateItem->id }}" {{ (string) $savedCompId === (string) $candidateItem->id ? 'selected' : '' }}>
-                                                                            {{ $candidateItem->name }} ({{ $candidateItem->type_label }})
-                                                                        </option>
-                                                                    @endif
-                                                                @endforeach
+                                                                <template x-for="cand in items.filter(i => i.id !== {{ $design->id }})" :key="cand.id">
+                                                                    <option :value="cand.id" :selected="String(savedCompIds[val] || '') === String(cand.id)" x-text="cand.name + ' (' + (cand.type_label || '') + ')'"></option>
+                                                                </template>
                                                             </select>
                                                         </div>
-                                                    @endforeach
+                                                    </template>
                                                 </div>
                                             </div>
                                         </div>
@@ -464,6 +472,7 @@ if (!isset($typeOptions)) {
                                             Save Changes
                                         </button>
                                     </form>
+                                    </template>
                                 </details>
                             </div>
                         </div>
@@ -473,9 +482,9 @@ if (!isset($typeOptions)) {
                                     @csrf
                                     <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2 py-1 w-32 focus:border-primary focus:outline-none">
                                         <option value="">Assign to coach...</option>
-                                        @foreach($allCoaches as $c)
-                                            <option value="{{ $c->id }}">{{ $c->teamStore?->name ?? $c->organization ?? 'No Org' }} ({{ $c->first_name }} {{ $c->last_name }})</option>
-                                        @endforeach
+                                        <template x-for="c in (window.allCoachesList || [])" :key="c.id">
+                                            <option :value="c.id" x-text="c.label"></option>
+                                        </template>
                                     </select>
                                     <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors" title="Assign Design to Coach">Assign</button>
                                 </form>

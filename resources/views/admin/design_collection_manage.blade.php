@@ -105,8 +105,17 @@
                         'warmup_top' => 'Warm-up (top)',
                         'warmup_bottom' => 'Warm-up (bottom)',
                         'warmup_set' => 'Warm-up (top/bottom)',
+                        'warmup_set_2' => 'Warm-up Set #2 (top/bottom)',
+                        'uniform_package_gold' => 'Uniform Package (Gold)',
+                        'uniform_package_silver' => 'Uniform Package (Silver)',
+                        'uniform_package_bronze' => 'Uniform Package (Bronze)',
+                        'uniform_package_custom' => 'Uniform Package (Custom)',
                     ];
                 @endphp
+                <script>
+                    window.manageCollectionTypeOptions = {!! json_encode($typeOptions) !!};
+                    window.manageCollectionItems = {!! json_encode($collection->designs->map(fn($d) => ['id' => $d->id, 'name' => $d->name, 'type_label' => $d->type_label])->values()) !!};
+                </script>
                 @if($collection->designs->isEmpty())
                     <div class="p-10 text-center">
                         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4">
@@ -120,7 +129,11 @@
                         @csrf
                         <div id="sortable-list" class="divide-y divide-slate-100 max-h-[800px] overflow-y-auto">
                             @foreach($collection->designs as $index => $design)
-                                <div x-data="{ editingItem: false, selectedTypes: {{ json_encode(array_values($design->types ?? [])) }} }"
+                                <div x-data="{
+                                        editingItem: false,
+                                        selectedTypes: {{ json_encode(array_values($design->types ?? [])) }},
+                                        savedCompIds: {{ json_encode((object) (is_array($design->component_design_ids) ? $design->component_design_ids : [])) }}
+                                     }"
                                      x-show="search === '' || '{{ strtolower(addslashes($design->name)) }}'.includes(search.toLowerCase()) || '{{ strtolower(addslashes($design->sport)) }}'.includes(search.toLowerCase())" 
                                      class="sortable-item p-4 hover:bg-slate-50 transition-colors bg-white">
                                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -175,7 +188,8 @@
                                     </div>
 
                                     <!-- Inline Edit & Package Piece Mapping Drawer -->
-                                    <div x-show="editingItem" x-cloak class="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                                    <template x-if="editingItem">
+                                    <div class="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
                                         <input type="hidden" name="design_collection_id" value="{{ $collection->id }}" form="edit-design-{{ $design->id }}">
                                         <input type="hidden" name="sport" value="{{ $design->sport }}" form="edit-design-{{ $design->id }}">
                                         <input type="hidden" name="category" value="{{ $design->category ?: 'individual' }}" form="edit-design-{{ $design->id }}">
@@ -222,24 +236,17 @@
                                                 Pick which item in <strong>{{ $collection->name }}</strong> corresponds to each checked piece so the Manufacturer Excel Chart pulls the exact garment image and combines quantities automatically:
                                             </p>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                                                @foreach($typeOptions as $val => $label)
-                                                    @php
-                                                        $savedCompId = is_array($design->component_design_ids) ? ($design->component_design_ids[$val] ?? '') : '';
-                                                    @endphp
-                                                    <div x-show="selectedTypes.includes('{{ $val }}')" x-cloak class="bg-white p-2 rounded border border-blue-100 shadow-2xs">
-                                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1">{{ $label }}</label>
-                                                        <select name="component_design_ids[{{ $val }}]" form="edit-design-{{ $design->id }}" :disabled="!selectedTypes.includes('{{ $val }}')" class="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                                <template x-for="val in selectedTypes" :key="val">
+                                                    <div class="bg-white p-2 rounded border border-blue-100 shadow-2xs">
+                                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1" x-text="(window.manageCollectionTypeOptions && window.manageCollectionTypeOptions[val]) ? window.manageCollectionTypeOptions[val] : val"></label>
+                                                        <select :name="'component_design_ids[' + val + ']'" form="edit-design-{{ $design->id }}" @change="savedCompIds[val] = $event.target.value" class="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none">
                                                             <option value="">-- Auto-detect / Use Package Image --</option>
-                                                            @foreach($collection->designs as $candidateItem)
-                                                                @if($candidateItem->id !== $design->id)
-                                                                    <option value="{{ $candidateItem->id }}" {{ (string) $savedCompId === (string) $candidateItem->id ? 'selected' : '' }}>
-                                                                        {{ $candidateItem->name }} ({{ $candidateItem->type_label }})
-                                                                    </option>
-                                                                @endif
-                                                            @endforeach
+                                                            <template x-for="cand in (window.manageCollectionItems || []).filter(i => i.id !== {{ $design->id }})" :key="cand.id">
+                                                                <option :value="cand.id" :selected="String(savedCompIds[val] || '') === String(cand.id)" x-text="cand.name + ' (' + (cand.type_label || '') + ')'"></option>
+                                                            </template>
                                                         </select>
                                                     </div>
-                                                @endforeach
+                                                </template>
                                             </div>
                                         </div>
 
@@ -252,6 +259,7 @@
                                             </button>
                                         </div>
                                     </div>
+                                    </template>
                                 </div>
                             @endforeach
                         </div>
