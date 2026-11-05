@@ -46,7 +46,14 @@ class StoreItem extends Model
     public function isPackage()
     {
         if ($this->type === 'package') return true;
+        $nameLower = strtolower((string) $this->name);
+        if (str_contains($nameLower, 'package') || str_contains($nameLower, 'pkg') || str_contains($nameLower, 'bundle')) {
+            return true;
+        }
         if (is_array($this->types)) {
+            if (count($this->types) > 2) {
+                return true;
+            }
             foreach ($this->types as $t) {
                 if (str_contains($t, 'package')) return true;
             }

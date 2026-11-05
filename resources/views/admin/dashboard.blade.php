@@ -4156,6 +4156,22 @@
                     </div>
                 </div>
 
+                @php
+                    $collectionDesignsLookup = [];
+                    foreach ($allCollections as $colItem) {
+                        $collectionDesignsLookup[$colItem->id] = ($colItem->designs ?? collect())->map(function($d) {
+                            return [
+                                'id' => $d->id,
+                                'name' => $d->name,
+                                'type_label' => $d->type_label,
+                            ];
+                        })->values()->all();
+                    }
+                @endphp
+                <script>
+                    window.collectionDesignsMap = @json($collectionDesignsLookup);
+                </script>
+
                 <!-- ADD NEW PACKAGE -->
                 <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden xl:col-span-2" x-data="{ expandedAddPackage: {{ $errors->any() ? 'true' : 'false' }}, init() { const k = 'admin_add_new_package'; if (!{{ $errors->any() ? 'true' : 'false' }}) this.expandedAddPackage = localStorage.getItem(k) === 'true'; $watch('expandedAddPackage', v => localStorage.setItem(k, v)) } }">
                     <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer" @click="expandedAddPackage = !expandedAddPackage">
@@ -4167,7 +4183,16 @@
                     </div>
                     <div class="p-5" x-show="expandedAddPackage" x-cloak>
                         <form action="{{ route('admin.design.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4"
-                              x-data="{ typesError: false }"
+                              x-data="{
+                                  typesError: false,
+                                  selectedCollectionId: '{{ old('design_collection_id', '') }}',
+                                  selectedTypes: {{ json_encode(array_values(old('types', []))) }},
+                                  get collectionItems() {
+                                      return (window.collectionDesignsMap && this.selectedCollectionId && window.collectionDesignsMap[this.selectedCollectionId])
+                                          ? window.collectionDesignsMap[this.selectedCollectionId]
+                                          : [];
+                                  }
+                              }"
                               @submit="
                                   const checked = $el.querySelectorAll('input[name=\'types[]\']:checked');
                                   if (checked.length === 0) {
@@ -4193,7 +4218,7 @@
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name (Optional)</label>
                                 <div class="relative">
-                                    <select name="design_collection_id" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
+                                    <select name="design_collection_id" x-model="selectedCollectionId" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm appearance-none">
                                         <option value="">Select a Collection...</option>
                                         @foreach($allCollections->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE) as $col)
                                             <option value="{{ $col->id }}" {{ old('design_collection_id') == $col->id ? 'selected' : '' }}>{{ $col->name }}</option>
@@ -4265,12 +4290,35 @@
                                 @foreach($typeOptions as $val => $label)
                                 <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
                                     <input type="checkbox" name="types[]" value="{{ $val }}"
-                                           {{ in_array($val, old('types', [])) ? 'checked' : '' }}
+                                           x-model="selectedTypes"
                                            @change="typesError = false; const f = $el.form.querySelector('input[name=\'types[]\']'); if (f) f.setCustomValidity('');"
                                            class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
                                     <span class="text-xs">{{ $label }}</span>
                                 </label>
                                 @endforeach
+                            </div>
+
+                            <div x-show="selectedTypes.length > 1" x-cloak class="mt-3 p-3.5 bg-blue-50/70 border border-blue-200 rounded-lg space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-black uppercase tracking-wider text-blue-900">Package / Set Piece Mapping (Link Exact Item per Piece)</span>
+                                    <span class="text-[10px] font-semibold text-blue-700">Links by ID (safe if renamed later)</span>
+                                </div>
+                                <p x-show="!selectedCollectionId" class="text-xs text-amber-700 font-semibold">
+                                    Select a "Collection Name" above first to choose existing items from that collection for each checked piece.
+                                </p>
+                                <div x-show="selectedCollectionId" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                                    @foreach($typeOptions as $val => $label)
+                                        <div x-show="selectedTypes.includes('{{ $val }}')" x-cloak class="bg-white p-2.5 rounded border border-blue-100 shadow-2xs">
+                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1">{{ $label }}</label>
+                                            <select name="component_design_ids[{{ $val }}]" :disabled="!selectedTypes.includes('{{ $val }}')" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                                <option value="">-- Auto-detect / Use Package Image --</option>
+                                                <template x-for="cItem in collectionItems" :key="cItem.id">
+                                                    <option :value="cItem.id" x-text="cItem.name + ' (' + cItem.type_label + ')'"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
                         <div>

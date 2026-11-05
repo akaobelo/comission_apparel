@@ -451,6 +451,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/stores/{store}/item', [AdminController::class, 'addStoreItem'])->name('admin.store.item.add');
     Route::post('/admin/stores/item/{item}/remove', [AdminController::class, 'removeStoreItem'])->name('admin.store.item.remove');
     Route::post('/admin/stores/{store}/package/{package}/attach', [AdminController::class, 'attachPackageComponent'])->name('admin.store.package.attach');
+    Route::post('/admin/stores/{store}/package/{package}/map-pieces', [AdminController::class, 'updatePackagePieceMapping'])->name('admin.store.package.map-pieces');
     Route::delete('/admin/stores/{store}/package/{package}/detach/{component}', [AdminController::class, 'detachPackageComponent'])->name('admin.store.package.detach');
     Route::get('/admin/stores/{store}/export', [AdminController::class, 'exportOrderCSV'])->name('admin.stores.export');
     Route::get('/admin/stores/{store}/export-manufacturer', [AdminController::class, 'exportStoreManufacturerXlsx'])->name('admin.stores.export-manufacturer');

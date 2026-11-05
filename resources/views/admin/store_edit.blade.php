@@ -496,48 +496,74 @@
 
             {{-- Package Management --}}
             @php
-                $packages = $store->items->filter->isPackage();
+                $packages = $store->items->filter(fn($it) => $it->isPackage() || (is_array($it->types) && count($it->types) > 1));
+                $storeCollectionIds = $store->items->map(fn($it) => $it->designCatalog?->design_collection_id)->filter()->unique()->values()->all();
+                $candidateDesignsForStore = $allDesigns->filter(function($d) use ($store, $storeCollectionIds) {
+                    if ($store->items->pluck('design_catalog_id')->contains($d->id)) {
+                        return true;
+                    }
+                    if (!empty($storeCollectionIds) && in_array($d->design_collection_id, $storeCollectionIds)) {
+                        return true;
+                    }
+                    return false;
+                })->values();
+                if ($candidateDesignsForStore->isEmpty()) {
+                    $candidateDesignsForStore = $allDesigns;
+                }
             @endphp
             @if($packages->isNotEmpty())
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                    <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Package Configuration</h2>
+                    <div>
+                        <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Package & Multi-Piece Mapping</h2>
+                        <p class="text-xs text-slate-500 mt-1">Select the exact item for each piece inside a Package or Set so the Visual Excel (.xlsx) export pulls that item's photo and combines its quantities.</p>
+                    </div>
                 </div>
                 <div class="p-5 space-y-6">
                     @foreach($packages as $package)
+                    @php
+                        $pkgTypes = is_array($package->types) ? $package->types : ($package->type ? [$package->type] : []);
+                        $savedMap = is_array($package->component_design_ids) && !empty($package->component_design_ids)
+                            ? $package->component_design_ids
+                            : (is_array($package->designCatalog?->component_design_ids) ? $package->designCatalog->component_design_ids : []);
+                    @endphp
                     <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                        <div class="font-bold text-slate-900 mb-3">{{ $package->name }}</div>
-                        
-                        @if($package->components->isNotEmpty())
-                            <div class="mb-4 space-y-2">
-                                <label class="block text-[10px] font-black uppercase tracking-wider text-slate-500">Included Items</label>
-                                @foreach($package->components as $component)
-                                    <div class="flex items-center justify-between bg-white border border-slate-200 p-2 rounded">
-                                        <span class="text-sm font-medium text-slate-700">{{ $component->name }}</span>
-                                        <form action="{{ route('admin.store.package.detach', [$store, $package, $component]) }}" method="POST" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-500 hover:text-red-700 text-[10px] font-black uppercase tracking-wider">Remove</button>
-                                        </form>
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="font-bold text-slate-900">{{ $package->name }}</div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">{{ count($pkgTypes) }} Pieces</span>
+                        </div>
+
+                        @if(count($pkgTypes) > 1)
+                        <form action="{{ route('admin.store.package.map-pieces', [$store, $package]) }}" method="POST" class="space-y-3">
+                            @csrf
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                @foreach($pkgTypes as $tKey)
+                                    @php
+                                        $tLabel = \App\Models\DesignCatalog::formatTypeLabel((string) $tKey);
+                                        $selectedCompDesignId = $savedMap[$tKey] ?? '';
+                                    @endphp
+                                    <div class="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1">{{ $tLabel }}</label>
+                                        <select name="component_design_ids[{{ $tKey }}]" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                            <option value="">-- Auto-detect / Use Package Image --</option>
+                                            @foreach($candidateDesignsForStore as $candDesign)
+                                                @if($candDesign->id !== $package->design_catalog_id)
+                                                    <option value="{{ $candDesign->id }}" {{ (string) $selectedCompDesignId === (string) $candDesign->id ? 'selected' : '' }}>
+                                                        {{ $candDesign->name }} ({{ $candDesign->type_label }})
+                                                    </option>
+                                                @endif
+                                            @endforeach
+                                        </select>
                                     </div>
                                 @endforeach
                             </div>
-                        @else
-                            <div class="text-sm text-slate-500 mb-4 italic">No items attached to this package yet.</div>
-                        @endif
-
-                        <form action="{{ route('admin.store.package.attach', [$store, $package]) }}" method="POST" class="flex gap-2">
-                            @csrf
-                            <select name="component_id" required class="flex-1 bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm">
-                                <option value="">-- Select an item to add to this package --</option>
-                                @foreach($store->items->where('id', '!=', $package->id) as $potentialComponent)
-                                    @if(!$package->components->contains($potentialComponent->id) && !$potentialComponent->isPackage())
-                                        <option value="{{ $potentialComponent->id }}">{{ $potentialComponent->name }}</option>
-                                    @endif
-                                @endforeach
-                            </select>
-                            <button type="submit" class="btn btn-primary py-2 px-4 text-xs uppercase tracking-wider">Add Item</button>
+                            <div class="flex justify-end pt-1">
+                                <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors shadow-sm">
+                                    Save Piece Links for {{ $package->name }}
+                                </button>
+                            </div>
                         </form>
+                        @endif
                     </div>
                     @endforeach
                 </div>

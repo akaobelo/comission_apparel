@@ -351,8 +351,15 @@ class AdminController extends Controller
             ->paginate(10, ['*'], 'collection_page')
             ->withQueryString();
 
-        // Complete list of collections for selection dropdowns
-        $allCollections = \App\Models\DesignCollection::select('id', 'name')->orderBy('name', 'asc')->get();
+        // Complete list of collections for selection dropdowns (with lightweight design list for package piece mapping)
+        $allCollections = \App\Models\DesignCollection::select('id', 'name')
+            ->with(['designs' => function($q) {
+                $q->select('id', 'design_collection_id', 'name', 'types', 'type', 'sort_order')
+                  ->orderBy('sort_order', 'asc')
+                  ->orderBy('id', 'asc');
+            }])
+            ->orderBy('name', 'asc')
+            ->get();
 
         // Paginate password reset logs
         $passwordResetLogs = PasswordResetLog::with(['user' => function($q) {
@@ -2079,6 +2086,39 @@ class AdminController extends Controller
 
         return redirect()->route('admin.store.edit', $store)
             ->with('success', "Removed component from package.");
+    }
+
+    public function updatePackagePieceMapping(Request $request, TeamStore $store, StoreItem $package)
+    {
+        if ($package->team_store_id !== $store->id) {
+            abort(403, 'Package does not belong to this store.');
+        }
+
+        $request->validate([
+            'component_design_ids'   => ['nullable', 'array'],
+            'component_design_ids.*' => ['nullable', 'integer', 'exists:design_catalog,id'],
+        ]);
+
+        $pkgTypes = is_array($package->types) ? $package->types : ($package->type ? [$package->type] : []);
+        $cleanComponentIds = [];
+        if (is_array($request->input('component_design_ids'))) {
+            foreach ($request->input('component_design_ids') as $tKey => $compId) {
+                if (in_array($tKey, $pkgTypes, true) && !empty($compId) && (int) $compId !== (int) $package->design_catalog_id) {
+                    $cleanComponentIds[$tKey] = (int) $compId;
+                }
+            }
+        }
+
+        $mappedValue = !empty($cleanComponentIds) ? $cleanComponentIds : null;
+        $package->update(['component_design_ids' => $mappedValue]);
+
+        if ($package->design_catalog_id) {
+            DesignCatalog::where('id', $package->design_catalog_id)->update(['component_design_ids' => $mappedValue]);
+            StoreItem::where('design_catalog_id', $package->design_catalog_id)->update(['component_design_ids' => $mappedValue]);
+        }
+
+        return redirect()->route('admin.store.edit', $store)
+            ->with('success', "Saved piece mapping for \"{$package->name}\".");
     }
 
     public function updateCoverImage(Request $request, TeamStore $store)
