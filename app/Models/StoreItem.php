@@ -12,6 +12,7 @@ class StoreItem extends Model
         'name',
         'type',
         'types',
+        'component_design_ids',
         'image_url',
         'image_paths',
         'wholesale_price',
@@ -23,6 +24,7 @@ class StoreItem extends Model
         'wholesale_price' => 'decimal:2',
         'retail_price'    => 'decimal:2',
         'types'           => 'array',
+        'component_design_ids' => 'array',
         'image_paths'     => 'array',
     ];
 

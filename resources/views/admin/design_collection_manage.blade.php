@@ -83,6 +83,30 @@
                     <span>Search filter is active. Clear search before dragging to reorder items to avoid order conflicts.</span>
                 </div>
                 
+                @php
+                    $typeOptions = [
+                        'accessory' => 'Accessories',
+                        'arm_sleeve' => 'Arm Sleeves',
+                        'backpack' => 'Backpacks',
+                        'headwear' => 'Headwear',
+                        'hoodie' => 'Hoodies & Pullovers',
+                        'jacket' => 'Jackets',
+                        'leggings' => 'Leggings/Tights',
+                        'pants' => 'Pants',
+                        'polo' => 'Polos',
+                        'shirt_short' => 'Shirts (short sleeve)',
+                        'shirt_long' => 'Shirts (long sleeve)',
+                        'shorts' => 'Shorts',
+                        'socks' => 'Socks',
+                        'uniform_top' => 'Uniform (top)',
+                        'uniform_bottom' => 'Uniform (bottom)',
+                        'uniform_set' => 'Uniform Set (top/bottom)',
+                        'uniform_set_2' => 'Uniform Set #2 (top/bottom)',
+                        'warmup_top' => 'Warm-up (top)',
+                        'warmup_bottom' => 'Warm-up (bottom)',
+                        'warmup_set' => 'Warm-up (top/bottom)',
+                    ];
+                @endphp
                 @if($collection->designs->isEmpty())
                     <div class="p-10 text-center">
                         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4">
@@ -96,51 +120,137 @@
                         @csrf
                         <div id="sortable-list" class="divide-y divide-slate-100 max-h-[800px] overflow-y-auto">
                             @foreach($collection->designs as $index => $design)
-                                <div x-show="search === '' || '{{ strtolower(addslashes($design->name)) }}'.includes(search.toLowerCase()) || '{{ strtolower(addslashes($design->sport)) }}'.includes(search.toLowerCase())" 
-                                     class="sortable-item p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors bg-white">
-                                    <div class="flex items-center gap-4 flex-1">
-                                        <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1" title="Drag to reorder">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
-                                        </div>
-                                        <div class="sort-number-display text-slate-400 font-black text-xl opacity-50 w-6 text-center">
-                                            {{ $design->sort_order }}
-                                        </div>
-                                        @php
-                                            $imageSrc = null;
-                                            if (!empty($design->image_paths)) {
-                                                $imageSrc = $design->image_paths[0];
-                                            } elseif ($design->image_url) {
-                                                $imageSrc = $design->image_url;
-                                            }
-                                        @endphp
-                                        @if($imageSrc)
-                                            <div class="w-12 h-16 rounded overflow-hidden flex-shrink-0 border border-slate-200">
-                                                <img src="{{ asset($imageSrc) }}" class="w-full h-full object-cover">
+                                <div x-data="{ editingItem: false, selectedTypes: {{ json_encode(array_values($design->types ?? [])) }} }"
+                                     x-show="search === '' || '{{ strtolower(addslashes($design->name)) }}'.includes(search.toLowerCase()) || '{{ strtolower(addslashes($design->sport)) }}'.includes(search.toLowerCase())" 
+                                     class="sortable-item p-4 hover:bg-slate-50 transition-colors bg-white">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div class="flex items-center gap-4 flex-1">
+                                            <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1" title="Drag to reorder">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
                                             </div>
-                                        @else
-                                            <div class="w-12 h-16 rounded bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                                                <span class="text-[10px] text-slate-400 font-bold uppercase">No Img</span>
+                                            <div class="sort-number-display text-slate-400 font-black text-xl opacity-50 w-6 text-center">
+                                                {{ $design->sort_order }}
                                             </div>
-                                        @endif
+                                            @php
+                                                $imageSrc = null;
+                                                if (!empty($design->image_paths)) {
+                                                    $imageSrc = $design->image_paths[0];
+                                                } elseif ($design->image_url) {
+                                                    $imageSrc = $design->image_url;
+                                                }
+                                            @endphp
+                                            @if($imageSrc)
+                                                <div class="w-12 h-16 rounded overflow-hidden flex-shrink-0 border border-slate-200">
+                                                    <img src="{{ asset($imageSrc) }}" class="w-full h-full object-cover">
+                                                </div>
+                                            @else
+                                                <div class="w-12 h-16 rounded bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                                    <span class="text-[10px] text-slate-400 font-bold uppercase">No Img</span>
+                                                </div>
+                                            @endif
+                                            
+                                            <div>
+                                                <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
+                                                <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-1">
+                                                    {{ $design->sport ? $design->sport . ' · ' : '' }}{{ $design->type_label }}
+                                                </div>
+                                                <button type="button" @click="editingItem = !editingItem" class="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-blue-600 hover:text-blue-800">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                    <span x-text="editingItem ? 'Close Editor' : 'Edit Name / Package Pieces'"></span>
+                                                </button>
+                                            </div>
+                                        </div>
                                         
-                                        <div>
-                                            <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
-                                            <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-1">
-                                                {{ $design->sport ? $design->sport . ' · ' : '' }}{{ $design->type_label }}
+                                        <div class="flex items-center gap-3 shrink-0">
+                                            <div class="flex flex-col">
+                                                <label class="text-[10px] font-bold uppercase text-slate-500 mb-1">Sort Order</label>
+                                                <input type="hidden" name="designs[{{ $design->id }}][id]" value="{{ $design->id }}">
+                                                <input type="number" name="designs[{{ $design->id }}][sort_order]" value="{{ $design->sort_order }}" required class="sort-order-input w-20 bg-white border border-slate-300 rounded px-2 py-1.5 text-sm text-center text-slate-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-sm">
                                             </div>
+                                            <div class="h-10 w-px bg-slate-200 mx-1"></div>
+                                            <button type="button" onclick="if(confirm('Remove this design from the collection? (It will not be deleted from the system)')) { document.getElementById('remove-design-{{ $design->id }}').submit(); }" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors mt-4" title="Remove from Collection">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
                                         </div>
                                     </div>
-                                    
-                                    <div class="flex items-center gap-3 shrink-0">
-                                        <div class="flex flex-col">
-                                            <label class="text-[10px] font-bold uppercase text-slate-500 mb-1">Sort Order</label>
-                                            <input type="hidden" name="designs[{{ $design->id }}][id]" value="{{ $design->id }}">
-                                            <input type="number" name="designs[{{ $design->id }}][sort_order]" value="{{ $design->sort_order }}" required class="sort-order-input w-20 bg-white border border-slate-300 rounded px-2 py-1.5 text-sm text-center text-slate-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-sm">
+
+                                    <!-- Inline Edit & Package Piece Mapping Drawer -->
+                                    <div x-show="editingItem" x-cloak class="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                                        <input type="hidden" name="design_collection_id" value="{{ $collection->id }}" form="edit-design-{{ $design->id }}">
+                                        <input type="hidden" name="sport" value="{{ $design->sport }}" form="edit-design-{{ $design->id }}">
+                                        <input type="hidden" name="category" value="{{ $design->category ?: 'individual' }}" form="edit-design-{{ $design->id }}">
+                                        <input type="hidden" name="wholesale_price" value="{{ $design->wholesale_price }}" form="edit-design-{{ $design->id }}">
+                                        <input type="hidden" name="sort_order" value="{{ $design->sort_order }}" form="edit-design-{{ $design->id }}">
+                                        <input type="hidden" name="description" value="{{ $design->description }}" form="edit-design-{{ $design->id }}">
+                                        @if($design->has_name_field)
+                                            <input type="hidden" name="has_name_field" value="1" form="edit-design-{{ $design->id }}">
+                                        @endif
+                                        @if($design->has_number_field)
+                                            <input type="hidden" name="has_number_field" value="1" form="edit-design-{{ $design->id }}">
+                                        @endif
+
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Design / Package Name</label>
+                                            <input type="text" name="name" value="{{ $design->name }}" required form="edit-design-{{ $design->id }}" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:border-primary focus:outline-none">
                                         </div>
-                                        <div class="h-10 w-px bg-slate-200 mx-1"></div>
-                                        <button type="button" onclick="if(confirm('Remove this design from the collection? (It will not be deleted from the system)')) { document.getElementById('remove-design-{{ $design->id }}').submit(); }" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors mt-4" title="Remove from Collection">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </button>
+
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Item Types</label>
+                                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                                @foreach($typeOptions as $val => $label)
+                                                    <label class="flex items-center gap-1.5 text-[11px] text-slate-700 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            name="types[]"
+                                                            value="{{ $val }}"
+                                                            x-model="selectedTypes"
+                                                            form="edit-design-{{ $design->id }}"
+                                                            class="rounded border-slate-300 text-primary focus:ring-primary"
+                                                        >
+                                                        <span>{{ $label }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+
+                                        <div x-show="selectedTypes.length > 1" x-cloak class="p-3 bg-blue-50/80 border border-blue-200 rounded-lg space-y-2">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-[10px] font-black uppercase tracking-wider text-blue-900">Package / Set Piece Mapping (Link Exact Item per Piece)</span>
+                                                <span class="text-[9px] font-semibold text-blue-700">Links by ID (safe if renamed later)</span>
+                                            </div>
+                                            <p class="text-[10px] text-slate-600 leading-snug">
+                                                Pick which item in <strong>{{ $collection->name }}</strong> corresponds to each checked piece so the Manufacturer Excel Chart pulls the exact garment image and combines quantities automatically:
+                                            </p>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                                                @foreach($typeOptions as $val => $label)
+                                                    @php
+                                                        $savedCompId = is_array($design->component_design_ids) ? ($design->component_design_ids[$val] ?? '') : '';
+                                                    @endphp
+                                                    <div x-show="selectedTypes.includes('{{ $val }}')" x-cloak class="bg-white p-2 rounded border border-blue-100 shadow-2xs">
+                                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1">{{ $label }}</label>
+                                                        <select name="component_design_ids[{{ $val }}]" form="edit-design-{{ $design->id }}" :disabled="!selectedTypes.includes('{{ $val }}')" class="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                                            <option value="">-- Auto-detect / Use Package Image --</option>
+                                                            @foreach($collection->designs as $candidateItem)
+                                                                @if($candidateItem->id !== $design->id)
+                                                                    <option value="{{ $candidateItem->id }}" {{ (string) $savedCompId === (string) $candidateItem->id ? 'selected' : '' }}>
+                                                                        {{ $candidateItem->name }} ({{ $candidateItem->type_label }})
+                                                                    </option>
+                                                                @endif
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+
+                                        <div class="flex justify-end gap-2 pt-1">
+                                            <button type="button" @click="editingItem = false" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-slate-100">
+                                                Cancel
+                                            </button>
+                                            <button type="submit" form="edit-design-{{ $design->id }}" class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">
+                                                Save Item & Piece Links
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             @endforeach
@@ -152,10 +262,15 @@
                         </div>
                     </form>
 
-                    <!-- Hidden remove forms -->
+                    <!-- Hidden remove & edit forms -->
                     @foreach($collection->designs as $design)
                         <form id="remove-design-{{ $design->id }}" action="{{ route('admin.design-collection.remove-item', ['collection' => $collection->id, 'design' => $design->id]) }}" method="POST" class="hidden">
                             @csrf
+                        </form>
+                        <form id="edit-design-{{ $design->id }}" action="{{ route('admin.design.update', $design) }}" method="POST" class="hidden">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="return_to" value="{{ route('admin.design-collection.manage', $collection) }}">
                         </form>
                     @endforeach
                 @endif

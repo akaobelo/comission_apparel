@@ -407,9 +407,10 @@ class ParentOrder extends Model
                 });
             }
 
-            // 5. Fallback by design_catalog_id alone if name was not provided
+            // 5. Fallback by store_item.id or design_catalog_id alone (e.g. if the item was renamed after order placement)
             if (!$storeItem && $itemId) {
-                $storeItem = $store->items->firstWhere('design_catalog_id', $itemId);
+                $storeItem = $store->items->firstWhere('id', $itemId)
+                    ?: $store->items->firstWhere('design_catalog_id', $itemId);
             }
 
             if ($storeItem) {

@@ -15,6 +15,7 @@ class DesignCatalog extends Model
         'sport',
         'type',
         'types',
+        'component_design_ids',
         'category',
         'image_url',
         'image_paths',
@@ -30,6 +31,7 @@ class DesignCatalog extends Model
         'has_number_field' => 'boolean',
         'wholesale_price' => 'decimal:2',
         'types' => 'array',
+        'component_design_ids' => 'array',
         'image_paths' => 'array',
     ];
 

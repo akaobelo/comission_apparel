@@ -328,21 +328,51 @@ if (!isset($typeOptions)) {
                                                 </datalist>
                                             </div>
                                         </div>
-                                        <div>
+                                        <div x-data="{ selectedTypes: {{ json_encode(array_values($design->types ?? [])) }} }">
                                             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Item Types</label>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                                                 @foreach($typeOptions as $val => $label)
-                                                    <label class="flex items-center gap-1.5 text-[10px] text-slate-700">
+                                                    <label class="flex items-center gap-1.5 text-[10px] text-slate-700 cursor-pointer">
                                                         <input
                                                             type="checkbox"
                                                             name="types[]"
                                                             value="{{ $val }}"
+                                                            x-model="selectedTypes"
                                                             class="rounded border-slate-300 text-primary focus:ring-primary"
-                                                            {{ in_array($val, $design->types ?? []) ? 'checked' : '' }}
                                                         >
                                                         <span>{{ $label }}</span>
                                                     </label>
                                                 @endforeach
+                                            </div>
+
+                                            <div x-show="selectedTypes.length > 1" x-cloak class="mt-3 p-3 bg-blue-50/70 border border-blue-200 rounded-lg space-y-2">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-[10px] font-black uppercase tracking-wider text-blue-900">Package / Set Piece Mapping (Link Exact Item per Piece)</span>
+                                                    <span class="text-[9px] font-semibold text-blue-700">Links by ID (safe if renamed later)</span>
+                                                </div>
+                                                <p class="text-[10px] text-slate-600 leading-snug">
+                                                    Select which item in <strong>{{ $collection->name }}</strong> corresponds to each checked piece so the Manufacturer Excel Chart pulls the exact garment image and combines quantities automatically:
+                                                </p>
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                                                    @foreach($typeOptions as $val => $label)
+                                                        @php
+                                                            $savedCompId = is_array($design->component_design_ids) ? ($design->component_design_ids[$val] ?? '') : '';
+                                                        @endphp
+                                                        <div x-show="selectedTypes.includes('{{ $val }}')" x-cloak class="bg-white p-2 rounded border border-blue-100 shadow-2xs">
+                                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1">{{ $label }}</label>
+                                                            <select name="component_design_ids[{{ $val }}]" :disabled="!selectedTypes.includes('{{ $val }}')" class="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                                                <option value="">-- Auto-detect / Use Package Image --</option>
+                                                                @foreach($collectionItems as $candidateItem)
+                                                                    @if($candidateItem->id !== $design->id)
+                                                                        <option value="{{ $candidateItem->id }}" {{ (string) $savedCompId === (string) $candidateItem->id ? 'selected' : '' }}>
+                                                                            {{ $candidateItem->name }} ({{ $candidateItem->type_label }})
+                                                                        </option>
+                                                                    @endif
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
                                             </div>
                                         </div>
                                         <div>

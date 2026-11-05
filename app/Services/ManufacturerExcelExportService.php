@@ -84,13 +84,20 @@ class ManufacturerExcelExportService
                 if ($si->designCatalog?->design_collection_id) {
                     $collectionIds[] = (int) $si->designCatalog->design_collection_id;
                 }
+                foreach (($si->component_design_ids ?? $si->designCatalog?->component_design_ids ?? []) as $cId) {
+                    if (!empty($cId) && is_numeric($cId)) {
+                        $designIds[] = (int) $cId;
+                    }
+                }
             }
         }
 
         foreach ($orders as $ord) {
+            $isDirect = $ord->isDirectOrder();
             if (is_array($ord->items_json)) {
                 foreach ($ord->items_json as $it) {
-                    if (!empty($it['id']) && is_numeric($it['id'])) {
+                    // Only Direct Orders store design_catalog.id in $it['id']; Store Orders store store_items.id!
+                    if ($isDirect && !empty($it['id']) && is_numeric($it['id'])) {
                         $designIds[] = (int) $it['id'];
                     }
                     if (!empty($it['name'])) {
@@ -118,13 +125,47 @@ class ManufacturerExcelExportService
                 if ($d->design_collection_id) {
                     $collectionIds[] = (int) $d->design_collection_id;
                 }
+                foreach (($d->component_design_ids ?? []) as $cId) {
+                    if (!empty($cId) && is_numeric($cId)) {
+                        $designIds[] = (int) $cId;
+                    }
+                }
             }
         }
 
         $collectionIds = array_values(array_unique(array_filter($collectionIds)));
-        if (!empty($collectionIds)) {
-            $collectionDesigns = DesignCatalog::whereIn('design_collection_id', $collectionIds)->get();
-            $allDesigns = $initialDesigns->merge($collectionDesigns)->unique('id')->values();
+
+        // Also extract leading brand/team prefix words (e.g., "Legacy", "RLA", "Elite") in case single designs were left unassigned
+        $prefixWords = [];
+        if ($store && !empty($store->name)) {
+            $firstWord = strtok(trim($store->name), " \t\n\r-—_");
+            if ($firstWord && strlen($firstWord) >= 3) {
+                $prefixWords[] = $firstWord;
+            }
+        }
+        foreach ($designNames as $dn) {
+            $firstWord = strtok(trim($dn), " \t\n\r-—_");
+            if ($firstWord && strlen($firstWord) >= 3) {
+                $prefixWords[] = $firstWord;
+            }
+        }
+        $prefixWords = array_values(array_unique($prefixWords));
+
+        $designIds = array_values(array_unique($designIds));
+
+        if (!empty($collectionIds) || !empty($prefixWords) || !empty($designIds)) {
+            $extraDesigns = DesignCatalog::where(function ($q) use ($collectionIds, $prefixWords, $designIds) {
+                if (!empty($collectionIds)) {
+                    $q->whereIn('design_collection_id', $collectionIds);
+                }
+                if (!empty($designIds)) {
+                    $q->orWhereIn('id', $designIds);
+                }
+                foreach ($prefixWords as $pw) {
+                    $q->orWhere('name', 'like', $pw . '%');
+                }
+            })->get();
+            $allDesigns = $initialDesigns->merge($extraDesigns)->unique('id')->values();
         } else {
             $allDesigns = $initialDesigns;
         }
@@ -174,7 +215,9 @@ class ManufacturerExcelExportService
             }
         }
 
-        // Build the 3 Worksheets
+        // Build the 2 Worksheets requested for manufacturer production:
+        // 1. Quantity by Size Chart (pieces needed by size & gender)
+        // 2. Full Order Roster (flat roster to label pieces by athlete name)
         $sharedStrings = [];
         $sharedStringMap = [];
         $addSharedString = function (string $str) use (&$sharedStrings, &$sharedStringMap): int {
@@ -188,20 +231,8 @@ class ManufacturerExcelExportService
             return $sharedStringMap[$clean];
         };
 
-        // Sheet 1: Athlete Visual Chart (matches Luke's bottom screenshot + customizations + size totals)
-        $sheet1 = $this->buildAthleteVisualSheet(
-            $title,
-            $columns,
-            $athleteRows,
-            $sizeTotals,
-            $allSizesUsed,
-            $colMediaMap,
-            $mediaFiles,
-            $addSharedString
-        );
-
-        // Sheet 2: Quantity by Size Chart (matches Luke's top staircase screenshot grouped by Gender)
-        $sheet2 = $this->buildStaircaseAggregateSheet(
+        // Sheet 1: Quantity by Size Chart (staircase aggregate grouped by Gender)
+        $sheet1 = $this->buildStaircaseAggregateSheet(
             $title,
             $columns,
             $aggRows,
@@ -211,8 +242,8 @@ class ManufacturerExcelExportService
             $addSharedString
         );
 
-        // Sheet 3: Full Order Roster (complete flat line-item table for filtering/reference)
-        $sheet3 = $this->buildFullRosterSheet(
+        // Sheet 2: Full Order Roster (complete flat line-item table for labeling by name)
+        $sheet2 = $this->buildFullRosterSheet(
             $title,
             $flatRoster,
             $addSharedString
@@ -226,16 +257,15 @@ class ManufacturerExcelExportService
         }
 
         $hasDrawing1 = !empty($sheet1['drawings']);
-        $hasDrawing2 = !empty($sheet2['drawings']);
 
-        $zip->addFromString('[Content_Types].xml', $this->buildContentTypesXml($hasDrawing1, $hasDrawing2, !empty($mediaFiles)));
+        $zip->addFromString('[Content_Types].xml', $this->buildContentTypesXml($hasDrawing1, false, !empty($mediaFiles)));
         $zip->addFromString('_rels/.rels', $this->buildRootRelsXml());
         $zip->addFromString('xl/workbook.xml', $this->buildWorkbookXml());
         $zip->addFromString('xl/_rels/workbook.xml.rels', $this->buildWorkbookRelsXml());
         $zip->addFromString('xl/styles.xml', $this->buildStylesXml());
         $zip->addFromString('xl/sharedStrings.xml', $this->buildSharedStringsXml($sharedStrings));
 
-        // Add Sheet 1
+        // Add Sheet 1: Quantity by Size Chart
         $zip->addFromString('xl/worksheets/sheet1.xml', $sheet1['xml']);
         if ($hasDrawing1) {
             $zip->addFromString('xl/worksheets/_rels/sheet1.xml.rels', $this->buildSheetRelsXml(1));
@@ -243,16 +273,8 @@ class ManufacturerExcelExportService
             $zip->addFromString('xl/drawings/_rels/drawing1.xml.rels', $sheet1['drawingRelsXml']);
         }
 
-        // Add Sheet 2
+        // Add Sheet 2: Full Order Roster
         $zip->addFromString('xl/worksheets/sheet2.xml', $sheet2['xml']);
-        if ($hasDrawing2) {
-            $zip->addFromString('xl/worksheets/_rels/sheet2.xml.rels', $this->buildSheetRelsXml(2));
-            $zip->addFromString('xl/drawings/drawing2.xml', $sheet2['drawingXml']);
-            $zip->addFromString('xl/drawings/_rels/drawing2.xml.rels', $sheet2['drawingRelsXml']);
-        }
-
-        // Add Sheet 3
-        $zip->addFromString('xl/worksheets/sheet3.xml', $sheet3['xml']);
 
         // Add embedded PNG images into xl/media/
         foreach ($mediaFiles as $mIdx => $media) {
@@ -295,13 +317,13 @@ class ManufacturerExcelExportService
         $sizedTypesList = DesignCatalog::sizedTypes();
 
         // Helper to resolve a StoreItem and DesignCatalog for an order item entry
-        $resolveModels = function (array $item) use ($storeItems, $designsById, $designsByName, $designsByNorm) {
+        $resolveModels = function (array $item, bool $isDirectOrder = false) use ($storeItems, $designsById, $designsByName, $designsByNorm) {
             $itemId = isset($item['id']) ? (int) $item['id'] : null;
             $itemName = trim((string) ($item['name'] ?? ''));
             $normName = $this->normalizeKey($itemName);
 
             $storeItem = null;
-            if ($storeItems->isNotEmpty()) {
+            if (!$isDirectOrder && $storeItems->isNotEmpty()) {
                 if ($itemId) {
                     $cand = $storeItems->firstWhere('id', $itemId);
                     if ($cand && ($itemName === '' || strcasecmp(trim($cand->name), $itemName) === 0)) {
@@ -320,8 +342,9 @@ class ManufacturerExcelExportService
                 if (!$storeItem && $normName !== '') {
                     $storeItem = $storeItems->first(fn($si) => $this->normalizeKey($si->name) === $normName);
                 }
+                // If the item was renamed in the store/catalog after the order was placed, match by store_items.id!
                 if (!$storeItem && $itemId) {
-                    $storeItem = $storeItems->firstWhere('design_catalog_id', $itemId);
+                    $storeItem = $storeItems->firstWhere('id', $itemId) ?? $storeItems->firstWhere('design_catalog_id', $itemId);
                 }
             }
 
@@ -335,7 +358,8 @@ class ManufacturerExcelExportService
             if (!$design && $itemName !== '') {
                 $design = $designsByName[strtolower($itemName)] ?? ($designsByNorm[$normName] ?? null);
             }
-            if (!$design && $itemId && isset($designsById[$itemId])) {
+            // Only fall back to raw $designsById[$itemId] for Direct Orders (where $itemId is a design_catalog.id, not a store_items.id!)
+            if (!$design && ($isDirectOrder || $storeItems->isEmpty()) && $itemId && isset($designsById[$itemId])) {
                 $design = $designsById[$itemId];
             }
 
@@ -455,7 +479,13 @@ class ManufacturerExcelExportService
                     $athleteRow['gender'] = $itemGender;
                 }
 
-                [$storeItem, $design] = $resolveModels($item);
+                $isDirect = $order->isDirectOrder();
+                [$storeItem, $design] = $resolveModels($item, $isDirect);
+                if ($storeItem && !empty($storeItem->name)) {
+                    $itemName = trim((string) $storeItem->name);
+                } elseif ($design && !empty($design->name) && $itemName === 'Unknown Item') {
+                    $itemName = trim((string) $design->name);
+                }
                 $baseSort = (int) ($storeItem?->sort_order ?? $design?->sort_order ?? 999);
                 $itemIdentifier = $storeItem ? ('si_' . $storeItem->id) : ($design ? ('dc_' . $design->id) : ('nm_' . $this->normalizeKey($itemName)));
 
@@ -466,7 +496,10 @@ class ManufacturerExcelExportService
                     foreach ($item['components'] as $compIdx => $comp) {
                         $compName = trim((string) ($comp['name'] ?? 'Component'));
                         $compQty = $itemQty * max(1, (int) ($comp['qty'] ?? 1));
-                        [$compStoreItem, $compDesign] = $resolveModels($comp);
+                        [$compStoreItem, $compDesign] = $resolveModels($comp, $isDirect);
+                        if ($compStoreItem && !empty($compStoreItem->name)) {
+                            $compName = trim((string) $compStoreItem->name);
+                        }
 
                         if (!empty($comp['sizes']) && is_array($comp['sizes'])) {
                             $isMultiComp = count($comp['sizes']) > 1;
@@ -518,41 +551,100 @@ class ManufacturerExcelExportService
 
                     $totalDistinctPieces = count($sizesMap) + count($extraNonSized);
                     $isMultiPiece = $totalDistinctPieces > 1;
+                    $componentDesignIds = is_array($storeItem?->component_design_ids) && !empty($storeItem->component_design_ids)
+                        ? $storeItem->component_design_ids
+                        : (is_array($design?->component_design_ids) ? $design->component_design_ids : []);
+
+                    $resolveMappedPiece = function (string $typeKey, bool $defaultMulti) use (
+                        $componentDesignIds,
+                        $storeItems,
+                        $designsById,
+                        $storeItem,
+                        $design,
+                        $itemName,
+                        $itemIdentifier,
+                        $baseSort,
+                        $itemGender,
+                        $resolveGarmentImage,
+                        $typeSortWeight
+                    ): array {
+                        $tLabel = ($typeKey === 'default' || is_numeric($typeKey)) ? '' : DesignCatalog::formatTypeLabel($typeKey);
+
+                        if (!empty($componentDesignIds[$typeKey])) {
+                            $linkedDesignId = (int) $componentDesignIds[$typeKey];
+                            $linkedStoreItem = $storeItems->firstWhere('design_catalog_id', $linkedDesignId);
+                            $linkedDesign = $designsById->get($linkedDesignId) ?? $linkedStoreItem?->designCatalog;
+
+                            if ($linkedStoreItem || $linkedDesign) {
+                                $linkedName = trim((string) ($linkedStoreItem?->name ?: $linkedDesign?->name ?: $itemName));
+                                $linkedIdentifier = $linkedStoreItem ? ('si_' . $linkedStoreItem->id) : ('dc_' . $linkedDesign->id);
+                                $linkedSort = (int) ($linkedStoreItem?->sort_order ?? $linkedDesign?->sort_order ?? $baseSort);
+                                $linkedTypes = is_array($linkedStoreItem?->types) && !empty($linkedStoreItem->types)
+                                    ? $linkedStoreItem->types
+                                    : (is_array($linkedDesign?->types) ? $linkedDesign->types : []);
+                                $linkedIsMulti = count($linkedTypes) > 1;
+
+                                $colLabel = ($linkedIsMulti && $tLabel !== '') ? "{$linkedName} - {$tLabel}" : $linkedName;
+                                $colKey = $linkedIsMulti ? "{$linkedIdentifier}_{$typeKey}" : $linkedIdentifier;
+                                $img = $resolveGarmentImage($linkedStoreItem, $linkedDesign, $linkedName, $typeKey, $itemGender, $linkedIsMulti);
+
+                                return [
+                                    'col_key'     => $colKey,
+                                    'label'       => $colLabel,
+                                    'image'       => $img,
+                                    'sort_order'  => $linkedSort,
+                                    'sub_order'   => $linkedIsMulti ? ($typeSortWeight[$typeKey] ?? 50) : 0,
+                                    'linked_name' => $linkedName,
+                                ];
+                            }
+                        }
+
+                        $colLabel = ($defaultMulti && $tLabel !== '') ? "{$itemName} - {$tLabel}" : $itemName;
+                        $colKey = $defaultMulti ? "{$itemIdentifier}_{$typeKey}" : $itemIdentifier;
+                        $img = $resolveGarmentImage($storeItem, $design, $itemName, $typeKey, $itemGender, $defaultMulti);
+
+                        return [
+                            'col_key'     => $colKey,
+                            'label'       => $colLabel,
+                            'image'       => $img,
+                            'sort_order'  => $baseSort,
+                            'sub_order'   => $typeSortWeight[$typeKey] ?? 50,
+                            'linked_name' => null,
+                        ];
+                    };
 
                     if (!empty($sizesMap)) {
                         foreach ($sizesMap as $t => $s) {
                             $typeKey = (string) $t;
-                            $tLabel = ($typeKey === 'default' || is_numeric($typeKey)) ? '' : DesignCatalog::formatTypeLabel($typeKey);
-                            $colLabel = ($isMultiPiece && $tLabel !== '') ? "{$itemName} - {$tLabel}" : $itemName;
-                            $colKey = $isMultiPiece ? "{$itemIdentifier}_{$typeKey}" : $itemIdentifier;
-                            $img = $resolveGarmentImage($storeItem, $design, $itemName, $typeKey, $itemGender, $isMultiPiece);
+                            $mapped = $resolveMappedPiece($typeKey, $isMultiPiece);
 
                             $pieces[] = [
-                                'col_key'   => $colKey,
-                                'label'     => $colLabel,
-                                'type'      => $typeKey,
-                                'size'      => trim((string) $s),
-                                'qty'       => $itemQty,
-                                'image'     => $img,
-                                'sub_order' => $typeSortWeight[$typeKey] ?? 50,
+                                'col_key'     => $mapped['col_key'],
+                                'label'       => $mapped['label'],
+                                'type'        => $typeKey,
+                                'size'        => trim((string) $s),
+                                'qty'         => $itemQty,
+                                'image'       => $mapped['image'],
+                                'sort_order'  => $mapped['sort_order'],
+                                'sub_order'   => $mapped['sub_order'],
+                                'linked_name' => $mapped['linked_name'],
                             ];
                         }
                     }
 
                     foreach ($extraNonSized as $nsType) {
-                        $tLabel = DesignCatalog::formatTypeLabel($nsType);
-                        $colLabel = $isMultiPiece ? "{$itemName} - {$tLabel}" : $itemName;
-                        $colKey = $isMultiPiece ? "{$itemIdentifier}_{$nsType}" : $itemIdentifier;
-                        $img = $resolveGarmentImage($storeItem, $design, $itemName, $nsType, $itemGender, true);
+                        $mapped = $resolveMappedPiece($nsType, $isMultiPiece);
 
                         $pieces[] = [
-                            'col_key'   => $colKey,
-                            'label'     => $colLabel,
-                            'type'      => $nsType,
-                            'size'      => 'One Size',
-                            'qty'       => $itemQty,
-                            'image'     => $img,
-                            'sub_order' => $typeSortWeight[$nsType] ?? 80,
+                            'col_key'     => $mapped['col_key'],
+                            'label'       => $mapped['label'],
+                            'type'        => $nsType,
+                            'size'        => 'One Size',
+                            'qty'         => $itemQty,
+                            'image'       => $mapped['image'],
+                            'sort_order'  => $mapped['sort_order'],
+                            'sub_order'   => $mapped['sub_order'],
+                            'linked_name' => $mapped['linked_name'],
                         ];
                     }
 
@@ -581,8 +673,9 @@ class ManufacturerExcelExportService
                         $sizeStr = 'ONE SIZE';
                     }
                     $qty = (int) $p['qty'];
+                    $pieceSortOrder = (int) ($p['sort_order'] ?? $baseSort);
 
-                    $ensureColumn($cKey, $p['label'], $p['image'], $baseSort, $p['sub_order']);
+                    $ensureColumn($cKey, $p['label'], $p['image'], $pieceSortOrder, $p['sub_order']);
                     $columns[$cKey]['total_qty'] += $qty;
 
                     $athleteRow['cells'][$cKey][] = [
@@ -604,12 +697,18 @@ class ManufacturerExcelExportService
                     $aggMap[$genderBucket][$cKey][$sizeStr]['qty'] += $qty;
                 }
 
-                // Also add to flat roster for Sheet 3
+                // Also add to flat roster for Sheet 2
                 $sizesSummary = [];
                 foreach ($pieces as $p) {
-                    $sizesSummary[] = count($pieces) > 1
-                        ? (DesignCatalog::formatTypeLabel($p['type']) . ': ' . $p['size'])
-                        : $p['size'];
+                    if (count($pieces) > 1) {
+                        $piecePrefix = DesignCatalog::formatTypeLabel($p['type']);
+                        if (!empty($p['linked_name']) && strcasecmp($p['linked_name'], $itemName) !== 0) {
+                            $piecePrefix .= ' (' . $p['linked_name'] . ')';
+                        }
+                        $sizesSummary[] = $piecePrefix . ': ' . $p['size'];
+                    } else {
+                        $sizesSummary[] = $p['size'];
+                    }
                 }
 
                 $flatRoster[] = [
@@ -1077,6 +1176,97 @@ class ManufacturerExcelExportService
     }
 
     /**
+     * Check whether a single-piece catalog/store item can represent $targetGarmentType,
+     * returning a positive type-match score or null if incompatible.
+     * Handles cases where a Warm-up Top is categorized as 'jacket', 'hoodie', 'shirt_long', or 'uniform_top'
+     * (e.g. "RLA Qt. Zip Jacket", "Elite Warm-up Top"), or Warm-up Bottom as 'pants'/'leggings'.
+     */
+    protected function matchSingleGarmentTypeScore(string $targetGarmentType, array $itemTypes, string $itemName): ?int
+    {
+        if (count($itemTypes) !== 1) {
+            return null;
+        }
+
+        $actualType = (string) $itemTypes[0];
+        $nameLower = strtolower(trim($itemName));
+        $nameSaysWarmup = str_contains($nameLower, 'warm-up') || str_contains($nameLower, 'warmup') || str_contains($nameLower, 'warm up');
+        $nameSaysTop = str_contains($nameLower, 'top') || str_contains($nameLower, 'jacket') || str_contains($nameLower, 'hoodie') || str_contains($nameLower, 'zip') || str_contains($nameLower, 'pullover');
+        $nameSaysBottom = str_contains($nameLower, 'bottom') || str_contains($nameLower, 'jogger') || str_contains($nameLower, 'pant') || str_contains($nameLower, 'legging') || str_contains($nameLower, 'tight');
+
+        if ($targetGarmentType === 'warmup_top') {
+            if ($actualType === 'warmup_top') {
+                return 30;
+            }
+            if ($nameSaysWarmup && !$nameSaysBottom && in_array($actualType, ['jacket', 'hoodie', 'shirt_long', 'uniform_top', 'shirt_short'], true)) {
+                return 28;
+            }
+            if (in_array($actualType, ['jacket', 'hoodie'], true) && !str_contains($nameLower, 't-shirt') && !str_contains($nameLower, 'tee')) {
+                return 22;
+            }
+            if ($actualType === 'shirt_long' && $nameSaysTop) {
+                return 18;
+            }
+            return null;
+        }
+
+        if ($targetGarmentType === 'warmup_bottom') {
+            if ($actualType === 'warmup_bottom') {
+                return 30;
+            }
+            if ($nameSaysWarmup && !$nameSaysTop && in_array($actualType, ['pants', 'leggings', 'shorts', 'uniform_bottom'], true)) {
+                return 28;
+            }
+            if (in_array($actualType, ['pants', 'leggings'], true) && $nameSaysBottom) {
+                return 22;
+            }
+            return null;
+        }
+
+        if ($targetGarmentType === 'uniform_top') {
+            // Prevent a Warm-up Top accidentally tagged as 'uniform_top' from matching as a Uniform Top
+            if ($nameSaysWarmup) {
+                return null;
+            }
+            return $actualType === 'uniform_top' ? 30 : null;
+        }
+
+        if ($targetGarmentType === 'uniform_bottom') {
+            if ($nameSaysWarmup) {
+                return null;
+            }
+            if ($actualType === 'uniform_bottom') {
+                return 30;
+            }
+            if (in_array($actualType, ['shorts', 'leggings'], true)) {
+                return 20;
+            }
+            return null;
+        }
+
+        if ($targetGarmentType === 'arm_sleeve') {
+            if ($actualType === 'arm_sleeve') {
+                return 30;
+            }
+            if ($actualType === 'accessory' && str_contains($nameLower, 'sleeve')) {
+                return 28;
+            }
+            return null;
+        }
+
+        if ($targetGarmentType === 'shirt_short') {
+            if ($actualType === 'shirt_short' && !$nameSaysWarmup) {
+                return 30;
+            }
+            if ($actualType === 'hoodie' && (str_contains($nameLower, 't-shirt') || str_contains($nameLower, 'shirt'))) {
+                return 25;
+            }
+            return null;
+        }
+
+        return $actualType === $targetGarmentType ? 30 : null;
+    }
+
+    /**
      * Find the best single-garment flat-lay image when a Package or Set is split into individual garment columns.
      */
     protected function findBestSingleGarmentImage(
@@ -1088,31 +1278,79 @@ class ManufacturerExcelExportService
         Collection $allDesigns
     ): ?string {
         $candidates = [];
+        $parentPrefix = strtolower((string) strtok(trim($parentItemName), " \t\n\r-—_"));
 
         // 1. Check single-type items in the current store first
         foreach ($storeItems as $si) {
             $types = is_array($si->types) ? $si->types : ($si->type ? [$si->type] : []);
-            if (count($types) === 1 && $types[0] === $garmentType) {
+            $typeScore = $this->matchSingleGarmentTypeScore($garmentType, $types, (string) $si->name);
+            if ($typeScore !== null) {
                 $paths = !empty($si->image_paths) ? $si->image_paths : ($si->image_url ? [$si->image_url] : ($si->designCatalog?->image_paths ?? []));
                 $img = $this->pickFlatLayImage($paths);
                 if ($img) {
-                    $candidates[] = ['name' => $si->name, 'image' => $img, 'source_bonus' => 20];
+                    $candidates[] = ['name' => (string) $si->name, 'image' => $img, 'source_bonus' => 20 + $typeScore];
                 }
             }
         }
 
-        // 2. Check single-type designs in the same DesignCollection
-        if ($collectionId) {
+        // 2. Check single-type designs in DesignCatalog (same DesignCollection or matching brand/team prefix)
+        foreach ($allDesigns as $d) {
+            $sameCollection = $collectionId && (int) $d->design_collection_id === (int) $collectionId;
+            $dPrefix = strtolower((string) strtok(trim((string) $d->name), " \t\n\r-—_"));
+            $samePrefix = strlen($parentPrefix) >= 3 && $dPrefix === $parentPrefix;
+
+            if (!$sameCollection && !$samePrefix) {
+                continue;
+            }
+
+            $types = is_array($d->types) ? $d->types : ($d->type ? [$d->type] : []);
+            $typeScore = $this->matchSingleGarmentTypeScore($garmentType, $types, (string) $d->name);
+            if ($typeScore !== null) {
+                $paths = !empty($d->image_paths) ? $d->image_paths : ($d->image_url ? [$d->image_url] : []);
+                $img = $this->pickFlatLayImage($paths);
+                if ($img) {
+                    $colBonus = $sameCollection ? 15 : 8;
+                    $candidates[] = ['name' => (string) $d->name, 'image' => $img, 'source_bonus' => $colBonus + $typeScore];
+                }
+            }
+        }
+
+        $parentLower = preg_replace('/#\s+(\d+)/', '#$1', strtolower($parentItemName)) ?? strtolower($parentItemName);
+        $isPackage = str_contains($parentLower, 'package') || str_contains($parentLower, 'pkg') || str_contains($parentLower, 'bundle');
+
+        // 3. If this is a multi-piece Package (e.g. "Legacy Uni Package #1") and no 1-piece Warm-up or Uniform exists,
+        // fall back to a dedicated 2-piece Set in the store/collection (e.g. "Legacy Warm-up #1 (Set)")
+        // so the column shows the Warm-up Set or Uniform Set image instead of the 5-piece full Package collage!
+        if (empty($candidates) && $isPackage) {
+            foreach ($storeItems as $si) {
+                if (strcasecmp(trim((string) $si->name), trim($parentItemName)) === 0) {
+                    continue;
+                }
+                $types = is_array($si->types) ? $si->types : ($si->type ? [$si->type] : []);
+                if (count($types) === 2 && in_array($garmentType, $types, true)) {
+                    $paths = !empty($si->image_paths) ? $si->image_paths : ($si->image_url ? [$si->image_url] : ($si->designCatalog?->image_paths ?? []));
+                    $img = $this->pickFlatLayImage($paths);
+                    if ($img) {
+                        $candidates[] = ['name' => (string) $si->name, 'image' => $img, 'source_bonus' => 25];
+                    }
+                }
+            }
             foreach ($allDesigns as $d) {
-                if ((int) $d->design_collection_id !== (int) $collectionId) {
+                if (strcasecmp(trim((string) $d->name), trim($parentItemName)) === 0) {
+                    continue;
+                }
+                $sameCollection = $collectionId && (int) $d->design_collection_id === (int) $collectionId;
+                $dPrefix = strtolower((string) strtok(trim((string) $d->name), " \t\n\r-—_"));
+                $samePrefix = strlen($parentPrefix) >= 3 && $dPrefix === $parentPrefix;
+                if (!$sameCollection && !$samePrefix) {
                     continue;
                 }
                 $types = is_array($d->types) ? $d->types : ($d->type ? [$d->type] : []);
-                if (count($types) === 1 && $types[0] === $garmentType) {
+                if (count($types) === 2 && in_array($garmentType, $types, true)) {
                     $paths = !empty($d->image_paths) ? $d->image_paths : ($d->image_url ? [$d->image_url] : []);
                     $img = $this->pickFlatLayImage($paths);
                     if ($img) {
-                        $candidates[] = ['name' => $d->name, 'image' => $img, 'source_bonus' => 10];
+                        $candidates[] = ['name' => (string) $d->name, 'image' => $img, 'source_bonus' => 15];
                     }
                 }
             }
@@ -1122,25 +1360,70 @@ class ManufacturerExcelExportService
             return null;
         }
 
+        // If this is a multi-piece Package (e.g. "Legacy Uni Package #1") and the club has multiple numbered
+        // variations for this garment type (e.g. Uni #1 through Uni #7), do not guess which variation is inside
+        // the package based on the package number (#1 != Uni #1); fall back to the Package's own mockup image.
+        if ($isPackage) {
+            $distinctCandNums = [];
+            foreach ($candidates as $cand) {
+                $cName = preg_replace('/#\s+(\d+)/', '#$1', strtolower($cand['name'])) ?? strtolower($cand['name']);
+                if (preg_match('/#(\d+)/', $cName, $cm)) {
+                    $distinctCandNums[$cm[1]] = true;
+                }
+            }
+            if (count($distinctCandNums) > 1) {
+                return null;
+            }
+        }
+
+        // Extract specific design number (#1, #2, #6, #7, etc.) if present on the parent item
+        $parentNum = null;
+        if (!$isPackage && preg_match('/#(\d+)/', $parentLower, $m)) {
+            $parentNum = $m[1];
+        }
+
         // Score candidates by keyword similarity with parent item name & gender
-        $parentLower = strtolower($parentItemName);
         $genderLower = strtolower($gender);
         $isFemale = str_contains($genderLower, 'fem') || str_contains($genderLower, 'girl') || str_contains($genderLower, 'wom') || str_contains($parentLower, 'racerback') || str_contains($parentLower, 'female') || str_contains($parentLower, 'girl');
         $isMale = (!$isFemale) && (str_contains($genderLower, 'male') || str_contains($genderLower, 'boy') || str_contains($genderLower, 'men') || str_contains($parentLower, 'tank') || str_contains($parentLower, 'male'));
 
-        $styleKeywords = ['racerback', 'tank', 'spandex', 'compression', 'jogger', 'hoodie', 'zipper', 'pullover', 'alt', 'alternate', 'primary', 'secondary', '#1', '#2', '#3', '#4', '#5'];
+        $styleKeywords = ['racerback', 'tank', 'spandex', 'compression', 'jogger', 'hoodie', 'zipper', 'qt. zip', 'quarter zip', 'pullover', 'drifit', 'alt', 'alternate', 'primary', 'secondary'];
 
         $bestImg = null;
         $bestScore = -999;
 
         foreach ($candidates as $cand) {
-            $cName = strtolower($cand['name']);
+            $cName = preg_replace('/#\s+(\d+)/', '#$1', strtolower($cand['name'])) ?? strtolower($cand['name']);
+            $candNum = null;
+            if (preg_match('/#(\d+)/', $cName, $cm)) {
+                $candNum = $cm[1];
+            }
+
+            // If the parent is a numbered Uniform Set (not a Package, e.g. "Legacy Uni #6 Set" or "Legacy Uni #1 Set"),
+            // do NOT pull a single garment from a different uniform number (#1 vs #6)!
+            if (!$isPackage && $parentNum !== null && in_array($garmentType, ['uniform_top', 'uniform_bottom'], true)) {
+                if ($candNum !== $parentNum) {
+                    continue;
+                }
+            }
+
             $score = $cand['source_bonus'];
+
+            if ($parentNum !== null && $candNum === $parentNum) {
+                $score += 45;
+            }
 
             foreach ($styleKeywords as $kw) {
                 if (str_contains($parentLower, $kw) && str_contains($cName, $kw)) {
                     $score += 30;
                 }
+            }
+
+            // Bonus when the candidate explicitly says 'top' for *_top or 'bottom' for *_bottom
+            if (str_ends_with($garmentType, '_top') && (str_contains($cName, 'top') || str_contains($cName, 'jacket') || str_contains($cName, 'hoodie'))) {
+                $score += 10;
+            } elseif (str_ends_with($garmentType, '_bottom') && (str_contains($cName, 'bottom') || str_contains($cName, 'jogger') || str_contains($cName, 'legging') || str_contains($cName, 'pant'))) {
+                $score += 10;
             }
 
             $candIsFemale = str_contains($cName, 'female') || str_contains($cName, 'girl') || str_contains($cName, 'racerback');
@@ -1462,7 +1745,6 @@ class ManufacturerExcelExportService
         $xml .= '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>';
         $xml .= '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
         $xml .= '<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
-        $xml .= '<Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
         $xml .= '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
         $xml .= '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>';
         if ($hasDrawing1) {
@@ -1488,9 +1770,8 @@ class ManufacturerExcelExportService
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n"
             . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
             . '<sheets>'
-            . '<sheet name="Athlete Visual Chart" sheetId="1" r:id="rId1"/>'
-            . '<sheet name="Quantity by Size Chart" sheetId="2" r:id="rId2"/>'
-            . '<sheet name="Full Order Roster" sheetId="3" r:id="rId3"/>'
+            . '<sheet name="Quantity by Size Chart" sheetId="1" r:id="rId1"/>'
+            . '<sheet name="Full Order Roster" sheetId="2" r:id="rId2"/>'
             . '</sheets>'
             . '</workbook>';
     }
@@ -1501,9 +1782,8 @@ class ManufacturerExcelExportService
             . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
             . '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>'
-            . '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/>'
-            . '<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
-            . '<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>'
+            . '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+            . '<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>'
             . '</Relationships>';
     }
 

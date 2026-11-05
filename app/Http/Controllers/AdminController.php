@@ -1101,6 +1101,8 @@ class AdminController extends Controller
             'sport'            => ['nullable', 'string', 'max:100'],
             'types'            => ['required', 'array', 'min:1'],
             'types.*'          => ['string', 'in:accessory,arm_sleeve,backpack,headwear,hoodie,jacket,leggings,pants,polo,shirt_short,shirt_long,shorts,socks,uniform_top,uniform_bottom,uniform_set,uniform_set_2,warmup_top,warmup_bottom,warmup_set,warmup_set_2,uniform_package_gold,uniform_package_silver,uniform_package_bronze,uniform_package_custom'],
+            'component_design_ids'   => ['nullable', 'array'],
+            'component_design_ids.*' => ['nullable', 'integer', 'exists:design_catalog,id'],
             'category'         => ['required', 'string', 'max:255'],
             'images'           => ['nullable', 'array', 'max:100'],
             'images.*'         => ['image', 'max:10240'], // max 10MB per image
@@ -1114,6 +1116,16 @@ class AdminController extends Controller
 
         $validated['has_name_field']   = $request->boolean('has_name_field');
         $validated['has_number_field'] = $request->boolean('has_number_field');
+
+        $cleanComponentIds = [];
+        if (is_array($request->input('component_design_ids'))) {
+            foreach ($request->input('component_design_ids') as $tKey => $compId) {
+                if (in_array($tKey, $validated['types'], true) && !empty($compId)) {
+                    $cleanComponentIds[$tKey] = (int) $compId;
+                }
+            }
+        }
+        $validated['component_design_ids'] = !empty($cleanComponentIds) ? $cleanComponentIds : null;
 
         $imagePaths = [];
         if ($request->hasFile('images')) {
@@ -1166,12 +1178,16 @@ class AdminController extends Controller
 
     public function updateDesign(Request $request, DesignCatalog $design)
     {
+        $oldDesignName = $design->name;
+
         $validated = $request->validate([
             'name'                 => ['required', 'string', 'max:255'],
             'design_collection_id' => ['nullable', 'exists:design_collections,id'],
             'sport'            => ['nullable', 'string', 'max:100'],
             'types'            => ['required', 'array', 'min:1'],
             'types.*'          => ['string', 'in:accessory,arm_sleeve,backpack,headwear,hoodie,jacket,leggings,pants,polo,shirt_short,shirt_long,shorts,socks,uniform_top,uniform_bottom,uniform_set,uniform_set_2,warmup_top,warmup_bottom,warmup_set,warmup_set_2,uniform_package_gold,uniform_package_silver,uniform_package_bronze,uniform_package_custom'],
+            'component_design_ids'   => ['nullable', 'array'],
+            'component_design_ids.*' => ['nullable', 'integer', 'exists:design_catalog,id'],
             'category'         => ['required', 'string', 'max:255'],
             'images'           => ['nullable', 'array', 'max:100'],
             'images.*'         => ['image', 'max:10240'],
@@ -1185,6 +1201,16 @@ class AdminController extends Controller
 
         $validated['has_name_field'] = $request->boolean('has_name_field');
         $validated['has_number_field'] = $request->boolean('has_number_field');
+
+        $cleanComponentIds = [];
+        if (is_array($request->input('component_design_ids'))) {
+            foreach ($request->input('component_design_ids') as $tKey => $compId) {
+                if (in_array($tKey, $validated['types'], true) && !empty($compId) && (int) $compId !== (int) $design->id) {
+                    $cleanComponentIds[$tKey] = (int) $compId;
+                }
+            }
+        }
+        $validated['component_design_ids'] = !empty($cleanComponentIds) ? $cleanComponentIds : null;
 
         $existingPaths = is_array($design->image_paths) ? $design->image_paths : [];
 
@@ -1240,9 +1266,12 @@ class AdminController extends Controller
         $design->update($validated);
 
         // Keep existing store items in sync when base design details change.
+        $affectedStoreItems = StoreItem::where('design_catalog_id', $design->id)->get(['id', 'team_store_id', 'name']);
+
         $syncData = [
             'name' => $validated['name'],
             'types' => $validated['types'],
+            'component_design_ids' => $validated['component_design_ids'],
             'wholesale_price' => $validated['wholesale_price'] ?? null,
         ];
         
@@ -1252,6 +1281,46 @@ class AdminController extends Controller
         }
 
         StoreItem::where('design_catalog_id', $design->id)->update($syncData);
+
+        // If the design name changed, keep existing orders' items_json item name in sync
+        // so renaming an item never orphans existing orders or pulls mismatched items.
+        if (trim((string) $oldDesignName) !== trim((string) $validated['name'])) {
+            $storeItemIdsByStore = [];
+            $oldNamesByStore = [];
+            foreach ($affectedStoreItems as $asi) {
+                $storeItemIdsByStore[$asi->team_store_id][(int) $asi->id] = true;
+                $oldNamesByStore[$asi->team_store_id][strtolower(trim((string) $asi->name))] = true;
+                $oldNamesByStore[$asi->team_store_id][strtolower(trim((string) $oldDesignName))] = true;
+            }
+
+            if (!empty($storeItemIdsByStore)) {
+                $storeOrders = ParentOrder::whereIn('team_store_id', array_keys($storeItemIdsByStore))->get();
+                foreach ($storeOrders as $ord) {
+                    if (!is_array($ord->items_json)) {
+                        continue;
+                    }
+                    $sId = (int) $ord->team_store_id;
+                    $changed = false;
+                    $items = $ord->items_json;
+                    foreach ($items as $idx => $it) {
+                        $itId = isset($it['id']) ? (int) $it['id'] : 0;
+                        $itNameLower = strtolower(trim((string) ($it['name'] ?? '')));
+                        if (isset($storeItemIdsByStore[$sId][$itId]) || ($itNameLower !== '' && isset($oldNamesByStore[$sId][$itNameLower]))) {
+                            $items[$idx]['name'] = $validated['name'];
+                            $changed = true;
+                        }
+                    }
+                    if ($changed) {
+                        $ord->update(['items_json' => $items]);
+                    }
+                }
+            }
+        }
+
+        if ($request->filled('return_to')) {
+            return redirect($request->input('return_to'))
+                ->with('success', "Design \"{$design->name}\" updated.");
+        }
 
         return redirect()->route('admin.dashboard')
             ->with('success', "Design \"{$design->name}\" updated.");
@@ -1882,9 +1951,12 @@ class AdminController extends Controller
             'items.*.sort_order' => ['nullable', 'integer'],
         ]);
 
+        $renamedStoreItems = [];
+
         foreach ($request->items as $itemId => $data) {
             $storeItem = $store->items()->find($itemId);
             if ($storeItem) {
+                $oldItemName = (string) $storeItem->name;
                 $updateData = [];
 
                 if (array_key_exists('name', $data) && $data['name'] !== null && trim($data['name']) !== '') {
@@ -1905,6 +1977,43 @@ class AdminController extends Controller
 
                 if (!empty($updateData)) {
                     $storeItem->update($updateData);
+                    if (isset($updateData['name']) && trim($oldItemName) !== $updateData['name']) {
+                        $renamedStoreItems[(int) $storeItem->id] = [
+                            'old_lower' => strtolower(trim($oldItemName)),
+                            'new_name'  => $updateData['name'],
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Keep existing store orders' items_json item name in sync when a store item is renamed
+        if (!empty($renamedStoreItems)) {
+            $storeOrders = $store->parentOrders()->get();
+            foreach ($storeOrders as $ord) {
+                if (!is_array($ord->items_json)) {
+                    continue;
+                }
+                $changed = false;
+                $items = $ord->items_json;
+                foreach ($items as $idx => $it) {
+                    $itId = isset($it['id']) ? (int) $it['id'] : 0;
+                    $itNameLower = strtolower(trim((string) ($it['name'] ?? '')));
+                    if (isset($renamedStoreItems[$itId])) {
+                        $items[$idx]['name'] = $renamedStoreItems[$itId]['new_name'];
+                        $changed = true;
+                    } else {
+                        foreach ($renamedStoreItems as $rInfo) {
+                            if ($itNameLower !== '' && $itNameLower === $rInfo['old_lower']) {
+                                $items[$idx]['name'] = $rInfo['new_name'];
+                                $changed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if ($changed) {
+                    $ord->update(['items_json' => $items]);
                 }
             }
         }
@@ -2044,15 +2153,16 @@ class AdminController extends Controller
         $retailPrice = $request->filled('retail_price') ? max($request->retail_price, $design->wholesale_price) : $design->wholesale_price;
 
         $store->items()->create([
-            'design_catalog_id' => $design->id,
-            'name'              => $design->name,
-            'type'              => null,
-            'types'             => $design->types,
-            'image_url'         => null,
-            'image_paths'       => $design->image_paths,
-            'wholesale_price'   => $design->wholesale_price,
-            'retail_price'      => $retailPrice,
-            'sort_order'        => $maxSort + 1,
+            'design_catalog_id'    => $design->id,
+            'name'                 => $design->name,
+            'type'                 => null,
+            'types'                => $design->types,
+            'component_design_ids' => $design->component_design_ids,
+            'image_url'            => null,
+            'image_paths'          => $design->image_paths,
+            'wholesale_price'      => $design->wholesale_price,
+            'retail_price'         => $retailPrice,
+            'sort_order'           => $maxSort + 1,
         ]);
 
         if ($request->wantsJson() || $request->ajax()) {
