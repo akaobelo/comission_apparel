@@ -1009,33 +1009,38 @@ class ManufacturerExcelExportService
             [0, $bannerText, 's', 9],
         ]);
 
-        // Row 2: Tall Product Mockup Image Row (height 135pt = ~180px)
-        $imageRowCells = [
-            [0, 'PRODUCT MOCKUPS', 's', 11],
-            [1, '', 's', 11],
-            [2, '', 's', 11],
-        ];
-        foreach ($colKeys as $idx => $cKey) {
-            $colIdx = $fixedCount + $idx;
-            $imageRowCells[] = [$colIdx, '', 's', 11];
-            if (isset($colMediaMap[$cKey])) {
-                $mIdx = $colMediaMap[$cKey];
-                $drawings[] = [
-                    'col'        => $colIdx,
-                    'row'        => 1, // 0-based Row 2
-                    'media_idx'  => $mIdx,
-                    'width_px'   => $mediaFiles[$mIdx]['width'],
-                    'height_px'  => $mediaFiles[$mIdx]['height'],
-                    'cell_w_px'  => 145,
-                    'cell_h_px'  => 180,
-                ];
+        // Helper to emit the Tall Product Mockup Image Row (height 135pt = ~180px) at any 1-based row number
+        $emitMockupImageRow = function (int $rowNum) use (&$rowsXml, &$drawings, $colKeys, $fixedCount, $colMediaMap, $mediaFiles): void {
+            $imageRowCells = [
+                [0, 'PRODUCT MOCKUPS', 's', 11],
+                [1, '', 's', 11],
+                [2, '', 's', 11],
+            ];
+            foreach ($colKeys as $idx => $cKey) {
+                $colIdx = $fixedCount + $idx;
+                $imageRowCells[] = [$colIdx, '', 's', 11];
+                if (isset($colMediaMap[$cKey])) {
+                    $mIdx = $colMediaMap[$cKey];
+                    $drawings[] = [
+                        'col'        => $colIdx,
+                        'row'        => $rowNum - 1, // 0-based row index for Excel drawing anchor
+                        'media_idx'  => $mIdx,
+                        'width_px'   => $mediaFiles[$mIdx]['width'],
+                        'height_px'  => $mediaFiles[$mIdx]['height'],
+                        'cell_w_px'  => 145,
+                        'cell_h_px'  => 180,
+                    ];
+                }
             }
-        }
-        $rowsXml[] = $this->buildRowXml(2, 135, $imageRowCells);
+            $rowsXml[] = $this->buildRowXml($rowNum, 135, $imageRowCells);
+        };
+
+        // Row 2: Tall Product Mockup Image Row at top of sheet
+        $emitMockupImageRow(2);
 
         $currentRow = 3;
 
-        // Render each Gender section with its own Dark Navy Header Bar (#1E3A5F) just like Luke's top_chart.png!
+        // Render each Gender section with its own Product Mockups + Dark Navy Header Bar (#1E3A5F)
         if (empty($aggRows)) {
             $headerCells = [
                 [0, 'Order Type', 's', 2],
@@ -1048,7 +1053,15 @@ class ManufacturerExcelExportService
             $rowsXml[] = $this->buildRowXml($currentRow, 32, $headerCells);
             $currentRow++;
         } else {
+            $sectionIdx = 0;
             foreach ($aggRows as $genderLabel => $gRows) {
+                // Repeat the Product Mockup Images row at the dividing line before Male (and any subsequent gender section)
+                if ($sectionIdx > 0) {
+                    $emitMockupImageRow($currentRow);
+                    $currentRow++;
+                }
+                $sectionIdx++;
+
                 // Dark Navy Section Header Row
                 $headerCells = [
                     [0, 'Order Type', 's', 2],

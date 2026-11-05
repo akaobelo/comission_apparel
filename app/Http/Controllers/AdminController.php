@@ -165,7 +165,8 @@ class AdminController extends Controller
         $activeStoresQuery = TeamStore::whereIn('status', ['approved', 'submitted_to_admin'])
             ->where('is_archived', false)
             ->with(['user', 'parentOrders' => function($q) {
-                $q->whereNull('batch_id')
+                $q->select('id', 'team_store_id')
+                  ->whereNull('batch_id')
                   ->where('is_archived', false)
                   ->where('status', '!=', 'Pending Payment');
             }]);

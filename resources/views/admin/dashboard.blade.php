@@ -495,7 +495,32 @@
             {{-- ═══ 4 SQUARES GRID ═══ --}}
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                 {{-- ═══ SQUARE 1: ACTIVE TEAM STORES ═══ --}}
-                <div x-data="{ expanded: false, init() { const k = 'admin_active_team_stores'; this.expanded = localStorage.getItem(k) !== 'false'; $watch('expanded', v => localStorage.setItem(k, v)) } }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                <div x-data="{
+                    expanded: false,
+                    searchQuery: @js(request('active_store_search', '')),
+                    visibleCount: {{ $productionStores->count() }},
+                    init() {
+                        const k = 'admin_active_team_stores';
+                        this.expanded = localStorage.getItem(k) !== 'false';
+                        $watch('expanded', v => localStorage.setItem(k, v));
+                        if (this.searchQuery) {
+                            this.$nextTick(() => this.filterStores());
+                        }
+                    },
+                    filterStores() {
+                        const q = (this.searchQuery || '').toLowerCase().trim();
+                        const list = document.getElementById('update-active-stores-sortable-list');
+                        if (!list) return;
+                        let count = 0;
+                        list.querySelectorAll('.visible-sortable-item').forEach(el => {
+                            const hay = (el.dataset.search || '').toLowerCase();
+                            const match = !q || hay.includes(q);
+                            el.style.display = match ? '' : 'none';
+                            if (match) count++;
+                        });
+                        this.visibleCount = count;
+                    }
+                }" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
                     <div @click="expanded = !expanded" class="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors flex-shrink-0">
                         <div>
                             <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Active Team Stores</h2>
@@ -508,34 +533,37 @@
                                 </form>
                                 <button type="button" onclick="submitStoresBulkSort()" class="px-3 py-1.5 bg-secondary text-white text-[11px] font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors">Save Sort</button>
                             </div>
-                            <span class="text-xs font-bold text-slate-500">{{ $productionStores->count() }} Stores</span>
+                            <span class="text-xs font-bold text-slate-500"><span x-text="visibleCount">{{ $productionStores->count() }}</span> Stores</span>
                             <svg class="w-5 h-5 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
                     <div x-show="expanded" x-collapse>
                         <div class="h-[420px] lg:h-[380px] flex flex-col bg-white">
                             <div class="p-3 border-b border-slate-100 bg-white flex-shrink-0">
-                                <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-md"
-                                      hx-get="{{ route('admin.dashboard') }}"
-                                      hx-target="#active-stores-results"
-                                      hx-select="#active-stores-results"
-                                      hx-swap="outerHTML"
-                                      hx-trigger="input from:input[name='active_store_search'] delay:300ms, submit"
-                                      hx-push-url="true">
-                                    <input type="text" name="active_store_search" value="{{ request('active_store_search') }}" placeholder="Search active stores..." class="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                                <form @submit.prevent="filterStores()" class="flex gap-2 max-w-md">
+                                    <input type="text"
+                                           name="active_store_search"
+                                           x-model="searchQuery"
+                                           @input="filterStores()"
+                                           placeholder="Search active stores..."
+                                           class="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none">
                                     <button type="submit" class="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
-                                    @if(request('active_store_search'))
-                                        <a href="{{ route('admin.dashboard') }}" class="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</a>
-                                    @endif
+                                    <button type="button"
+                                            x-show="searchQuery.length > 0"
+                                            x-cloak
+                                            @click="searchQuery = ''; filterStores()"
+                                            class="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</button>
                                 </form>
                             </div>
                             <div id="active-stores-results" class="flex-1 min-h-0 flex flex-col">
                             @if($productionStores->isEmpty())
                                 <div class="flex-1 flex items-center justify-center p-8 text-center text-slate-400 text-sm">No active stores.</div>
                             @else
-                                <div id="update-active-stores-sortable-list" class="divide-y divide-slate-100 flex-1 overflow-y-auto">
+                                <div x-show="visibleCount === 0" x-cloak class="flex-1 flex items-center justify-center p-8 text-center text-slate-400 text-sm">No matching active stores found.</div>
+                                <div id="update-active-stores-sortable-list" x-show="visibleCount > 0" class="divide-y divide-slate-100 flex-1 overflow-y-auto">
                                     @foreach($productionStores as $store)
-                                    <div class="p-3 sm:p-3.5 visible-sortable-item bg-white hover:bg-slate-50/70 transition-colors">
+                                    <div class="p-3 sm:p-3.5 visible-sortable-item bg-white hover:bg-slate-50/70 transition-colors"
+                                         data-search="{{ strtolower(($store->name ?? '') . ' ' . ($store->slug ?? '') . ' ' . ($store->user?->name ?? '') . ' ' . ($store->user?->organization ?? '') . ' ' . ($store->user?->email ?? '') . ' ' . ($store->user?->phone ?? '')) }}">
                                         <div class="flex items-start gap-2.5">
                                             {{-- Drag Handle --}}
                                             <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors p-1 -ml-1 flex-shrink-0 touch-none mt-0.5" title="Drag to reorder">
@@ -1106,12 +1134,32 @@
         <div x-show="activeAdminTab === 'active_team_stores'" x-cloak class="space-y-6" x-data="{
             sortCol: null,
             sortAsc: true,
+            searchQuery: @js(request('active_store_search', '')),
+            visibleCount: {{ $productionStores->count() }},
             selectedStoreIds: [],
             bulkPaymentMode: 'in_house',
             isBulkUpdating: false,
             bulkMessage: '',
             bulkSuccess: true,
             allStoreIds: [{{ $productionStores->pluck('id')->implode(',') }}],
+            init() {
+                if (this.searchQuery) {
+                    this.$nextTick(() => this.filterStores());
+                }
+            },
+            filterStores() {
+                const q = (this.searchQuery || '').toLowerCase().trim();
+                const tbody = document.getElementById('update-active-stores-sortable-list-full');
+                if (!tbody) return;
+                let count = 0;
+                tbody.querySelectorAll('tr.visible-sortable-item').forEach(row => {
+                    const hay = (row.dataset.search || '').toLowerCase();
+                    const match = !q || hay.includes(q);
+                    row.style.display = match ? '' : 'none';
+                    if (match) count++;
+                });
+                this.visibleCount = count;
+            },
             toggleAllStores(e) {
                 if (e.target.checked) {
                     this.selectedStoreIds = this.allStoreIds.map(String);
@@ -1232,7 +1280,7 @@
                                 <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                 Active Team Stores
                             </h2>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-green-100 text-green-800 border border-green-200">{{ $productionStores->count() }} Stores</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-green-100 text-green-800 border border-green-200"><span x-text="visibleCount">{{ $productionStores->count() }}</span> Stores</span>
                         </div>
                         <p class="text-xs text-slate-500 mt-1">Currently open stores accepting orders in full-page management view. Click any column title to sort.</p>
                     </div>
@@ -1241,18 +1289,19 @@
                             @csrf
                         </form>
                         <button type="button" onclick="submitStoresBulkSortFull()" class="w-full sm:w-auto px-4 py-2 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm hover:bg-[#a11825] transition-colors whitespace-nowrap">Save Sort</button>
-                        <form action="{{ route('admin.dashboard') }}" method="GET" class="flex gap-2 max-w-sm w-full"
-                              hx-get="{{ route('admin.dashboard') }}"
-                              hx-target="#active-stores-full-results"
-                              hx-select="#active-stores-full-results"
-                              hx-swap="outerHTML"
-                              hx-trigger="input from:input[name='active_store_search'] delay:300ms, submit"
-                              hx-push-url="true">
-                            <input type="text" name="active_store_search" value="{{ request('active_store_search') }}" placeholder="Search active stores..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                        <form @submit.prevent="filterStores()" class="flex gap-2 max-w-sm w-full">
+                            <input type="text"
+                                   name="active_store_search"
+                                   x-model="searchQuery"
+                                   @input="filterStores()"
+                                   placeholder="Search active stores..."
+                                   class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none">
                             <button type="submit" class="px-3.5 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">Search</button>
-                            @if(request('active_store_search'))
-                                <a href="{{ route('admin.dashboard') }}" class="px-3 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</a>
-                            @endif
+                            <button type="button"
+                                    x-show="searchQuery.length > 0"
+                                    x-cloak
+                                    @click="searchQuery = ''; filterStores()"
+                                    class="px-3 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-colors">Clear</button>
                         </form>
                     </div>
                 </div>
@@ -1260,6 +1309,7 @@
                     @if($productionStores->isEmpty())
                         <div class="p-12 text-center text-slate-400 text-sm">No active stores found.</div>
                     @else
+                        <div x-show="visibleCount === 0" x-cloak class="p-12 text-center text-slate-400 text-sm">No matching active stores found.</div>
                         {{-- Bulk Actions Bar (Appears when 1+ stores are selected) --}}
                         <div x-show="selectedStoreIds.length > 0" x-cloak x-transition
                              class="bg-slate-900 text-white p-3.5 sm:px-5 sm:py-3 rounded-xl shadow-lg mb-4 flex flex-col sm:flex-row items-center justify-between gap-3 border border-slate-700">
@@ -1302,7 +1352,7 @@
                             <button type="button" @click="bulkMessage = ''" class="text-slate-400 hover:text-slate-600 font-black px-1">✕</button>
                         </div>
 
-                        <div class="overflow-x-auto">
+                        <div x-show="visibleCount > 0" class="overflow-x-auto">
                             <table class="w-full text-left whitespace-nowrap">
                                 <thead class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
                                     <tr>
@@ -1386,6 +1436,7 @@
                                         data-sort="{{ $store->sort_order ?? 0 }}"
                                         data-name="{{ strtolower(addslashes($store->name)) }}"
                                         data-coach="{{ strtolower(addslashes(($store->user?->name ?? '') . ' ' . ($store->user?->organization ?? ''))) }}"
+                                        data-search="{{ strtolower(($store->name ?? '') . ' ' . ($store->slug ?? '') . ' ' . ($store->user?->name ?? '') . ' ' . ($store->user?->organization ?? '') . ' ' . ($store->user?->email ?? '') . ' ' . ($store->user?->phone ?? '')) }}"
                                         data-date="{{ $store->created_at ? $store->created_at->timestamp : 0 }}"
                                         data-orders="{{ $store->parentOrders->count() }}"
                                         data-deadline="{{ $store->order_deadline ? $store->order_deadline->timestamp : 0 }}"
