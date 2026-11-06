@@ -81,10 +81,21 @@ class DesignCatalog extends Model
             'uniform_top'            => 'Uniform (top)',
             'uniform_bottom'         => 'Uniform (bottom)',
             'uniform_set'            => 'Uniform Set (top/bottom)',
-            'uniform_set_2'          => 'Uniform Set #2',
+            'uniform_2_top'          => 'Uniform #2 (top)',
+            'uniform_2_bottom'       => 'Uniform #2 (bottom)',
+            'uniform_set_2'          => 'Uniform #2 (Set)',
+            'uniform_3_top'          => 'Uniform #3 (top)',
+            'uniform_3_bottom'       => 'Uniform #3 (bottom)',
+            'uniform_set_3'          => 'Uniform #3 (Set)',
+            'uniform_4_top'          => 'Uniform #4 (top)',
+            'uniform_4_bottom'       => 'Uniform #4 (bottom)',
+            'uniform_set_4'          => 'Uniform #4 (Set)',
             'warmup_top'             => 'Warm-up (top)',
             'warmup_bottom'          => 'Warm-up (bottom)',
             'warmup_set'             => 'Warm-up (top/bottom)',
+            'warmup_2_top'           => 'Warm-up #2 (top)',
+            'warmup_2_bottom'        => 'Warm-up #2 (bottom)',
+            'warmup_set_2'           => 'Warm-up #2 (set)',
             'uniform_package_gold'   => 'Uniform Package (Gold)',
             'uniform_package_silver' => 'Uniform Package (Silver)',
             'uniform_package_bronze' => 'Uniform Package (Bronze)',
@@ -124,8 +135,13 @@ class DesignCatalog extends Model
     {
         return [
             'accessory', 'arm_sleeve', 'headwear', 'hoodie', 'jacket', 'leggings', 'pants', 
-            'polo', 'shirt_short', 'shirt_long', 'shorts', 'socks', 'uniform_top', 'uniform_bottom', 
-            'uniform_set', 'uniform_set_2', 'warmup_top', 'warmup_bottom', 'warmup_set'
+            'polo', 'shirt_short', 'shirt_long', 'shorts', 'socks',
+            'uniform_top', 'uniform_bottom', 'uniform_set',
+            'uniform_2_top', 'uniform_2_bottom', 'uniform_set_2',
+            'uniform_3_top', 'uniform_3_bottom', 'uniform_set_3',
+            'uniform_4_top', 'uniform_4_bottom', 'uniform_set_4',
+            'warmup_top', 'warmup_bottom', 'warmup_set',
+            'warmup_2_top', 'warmup_2_bottom', 'warmup_set_2',
         ];
     }
 
