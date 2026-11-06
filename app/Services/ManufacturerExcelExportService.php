@@ -458,9 +458,12 @@ class ManufacturerExcelExportService
             'jacket'           => 26,
             'backpack'         => 27,
             'arm_sleeve'       => 28,
-            'socks'            => 29,
-            'headwear'         => 30,
-            'accessory'        => 31,
+            'arm_sleeve_2'     => 29,
+            'arm_sleeve_3'     => 30,
+            'arm_sleeve_4'     => 31,
+            'socks'            => 32,
+            'headwear'         => 33,
+            'accessory'        => 34,
         ];
 
         foreach ($orders as $order) {

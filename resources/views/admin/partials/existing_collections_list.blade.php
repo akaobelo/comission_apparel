@@ -3,6 +3,9 @@ if (!isset($typeOptions)) {
     $typeOptions = [
         'accessory' => 'Accessories',
         'arm_sleeve' => 'Arm Sleeves',
+        'arm_sleeve_2' => 'Arm Sleeves #2',
+        'arm_sleeve_3' => 'Arm Sleeves #3',
+        'arm_sleeve_4' => 'Arm Sleeves #4',
         'backpack' => 'Backpacks',
         'headwear' => 'Headwear',
         'hoodie' => 'Hoodies & Pullovers',

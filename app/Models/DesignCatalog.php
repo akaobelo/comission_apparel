@@ -67,6 +67,9 @@ class DesignCatalog extends Model
         return match($type) {
             'accessory'              => 'Accessories',
             'arm_sleeve'             => 'Arm Sleeves',
+            'arm_sleeve_2'           => 'Arm Sleeves #2',
+            'arm_sleeve_3'           => 'Arm Sleeves #3',
+            'arm_sleeve_4'           => 'Arm Sleeves #4',
             'backpack'               => 'Backpack',
             'headwear'               => 'Headwear',
             'hoodie'                 => 'Hoodies & Pullovers',
@@ -134,7 +137,8 @@ class DesignCatalog extends Model
     public static function sizedTypes(): array
     {
         return [
-            'accessory', 'arm_sleeve', 'headwear', 'hoodie', 'jacket', 'leggings', 'pants', 
+            'accessory', 'arm_sleeve', 'arm_sleeve_2', 'arm_sleeve_3', 'arm_sleeve_4',
+            'headwear', 'hoodie', 'jacket', 'leggings', 'pants', 
             'polo', 'shirt_short', 'shirt_long', 'shorts', 'socks',
             'uniform_top', 'uniform_bottom', 'uniform_set',
             'uniform_2_top', 'uniform_2_bottom', 'uniform_set_2',
