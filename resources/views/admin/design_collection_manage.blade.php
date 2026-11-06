@@ -128,6 +128,76 @@
                 <script>
                     window.manageCollectionTypeOptions = {!! json_encode($typeOptions) !!};
                     window.manageCollectionItems = {!! json_encode($collection->designs->map(fn($d) => ['id' => $d->id, 'name' => $d->name, 'type_label' => $d->type_label])->values()) !!};
+
+                    window.submitManageCollectionItemUpdate = function(event, designId) {
+                        const form = event.target;
+                        const submitBtn = document.querySelector('button[form="edit-design-' + designId + '"]');
+                        const statusEl = document.getElementById('manage-save-status-' + designId);
+                        const origText = submitBtn ? submitBtn.textContent : 'Save Item & Piece Links';
+
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'Saving...';
+                        }
+                        if (statusEl) {
+                            statusEl.textContent = '';
+                            statusEl.className = 'text-[10px] font-bold uppercase tracking-wider hidden';
+                        }
+
+                        fetch(form.action, {
+                            method: 'POST',
+                            body: new FormData(form),
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        })
+                        .then(async res => {
+                            const data = await res.json().catch(() => null);
+                            if (!res.ok || !data || !data.success) {
+                                let errMsg = (data && data.message) ? data.message : 'Failed to save changes.';
+                                if (data && data.errors) {
+                                    errMsg = Object.values(data.errors).flat().join(' ');
+                                }
+                                throw new Error(errMsg);
+                            }
+                            return data;
+                        })
+                        .then(data => {
+                            const d = data.design;
+                            if (d) {
+                                const titleEl = document.getElementById('manage-design-title-' + designId);
+                                if (titleEl) titleEl.textContent = d.name;
+
+                                const subEl = document.getElementById('manage-design-subtitle-' + designId);
+                                if (subEl) subEl.textContent = (d.sport ? d.sport + ' · ' : '') + (d.type_label || '');
+
+                                if (Array.isArray(window.manageCollectionItems)) {
+                                    const found = window.manageCollectionItems.find(i => Number(i.id) === Number(designId));
+                                    if (found) {
+                                        found.name = d.name;
+                                        found.type_label = d.type_label;
+                                    }
+                                }
+                            }
+                            if (statusEl) {
+                                statusEl.textContent = '✓ Saved!';
+                                statusEl.className = 'text-[10px] font-bold uppercase tracking-wider text-emerald-600 inline-flex items-center';
+                            }
+                        })
+                        .catch(err => {
+                            if (statusEl) {
+                                statusEl.textContent = err.message || 'Error saving';
+                                statusEl.className = 'text-[10px] font-bold uppercase tracking-wider text-red-600 inline-flex items-center';
+                            }
+                        })
+                        .finally(() => {
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = origText;
+                            }
+                        });
+                    };
                 </script>
                 @if($collection->designs->isEmpty())
                     <div class="p-10 text-center">
@@ -176,8 +246,8 @@
                                             @endif
                                             
                                             <div>
-                                                <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
-                                                <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-1">
+                                                <div id="manage-design-title-{{ $design->id }}" class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
+                                                <div id="manage-design-subtitle-{{ $design->id }}" class="text-[10px] font-bold uppercase tracking-wider text-primary mt-1">
                                                     {{ $design->sport ? $design->sport . ' · ' : '' }}{{ $design->type_label }}
                                                 </div>
                                                 <button type="button" @click="editingItem = !editingItem" class="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-blue-600 hover:text-blue-800">
@@ -263,7 +333,8 @@
                                             </div>
                                         </div>
 
-                                        <div class="flex justify-end gap-2 pt-1">
+                                        <div class="flex items-center justify-end gap-2 pt-1">
+                                            <span id="manage-save-status-{{ $design->id }}" class="text-[10px] font-bold uppercase tracking-wider hidden"></span>
                                             <button type="button" @click="editingItem = false" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-slate-100">
                                                 Cancel
                                             </button>
@@ -288,7 +359,7 @@
                         <form id="remove-design-{{ $design->id }}" action="{{ route('admin.design-collection.remove-item', ['collection' => $collection->id, 'design' => $design->id]) }}" method="POST" class="hidden">
                             @csrf
                         </form>
-                        <form id="edit-design-{{ $design->id }}" action="{{ route('admin.design.update', $design) }}" method="POST" class="hidden">
+                        <form id="edit-design-{{ $design->id }}" action="{{ route('admin.design.update', $design) }}" method="POST" class="hidden" onsubmit="event.preventDefault(); window.submitManageCollectionItemUpdate(event, {{ $design->id }});">
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="return_to" value="{{ route('admin.design-collection.manage', $collection) }}">

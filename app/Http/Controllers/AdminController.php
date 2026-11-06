@@ -1163,11 +1163,16 @@ class AdminController extends Controller
 
         DesignCatalog::create($validated);
 
-        return redirect()->route('admin.dashboard')
+        if ($request->filled('return_to')) {
+            return redirect($request->input('return_to'))
+                ->with('success', "Design \"{$validated['name']}\" added to catalog.");
+        }
+
+        return redirect()->back()
             ->with('success', "Design \"{$validated['name']}\" added to catalog.");
     }
 
-    public function deleteDesign(DesignCatalog $design)
+    public function deleteDesign(Request $request, DesignCatalog $design)
     {
         $name = $design->name;
 
@@ -1185,7 +1190,13 @@ class AdminController extends Controller
         \App\Models\StoreItem::where('design_catalog_id', $design->id)->delete();
 
         $design->delete();
-        return redirect()->route('admin.dashboard')
+
+        if ($request->filled('return_to')) {
+            return redirect($request->input('return_to'))
+                ->with('success', "Design \"{$name}\" removed from catalog.");
+        }
+
+        return redirect()->back()
             ->with('success', "Design \"{$name}\" removed from catalog.");
     }
 
@@ -1332,12 +1343,34 @@ class AdminController extends Controller
             }
         }
 
+        if ($request->wantsJson() || $request->ajax()) {
+            $design->refresh();
+            return response()->json([
+                'success' => true,
+                'message' => "Design \"{$design->name}\" updated.",
+                'design'  => [
+                    'id'                   => $design->id,
+                    'name'                 => $design->name,
+                    'sport'                => $design->sport,
+                    'type_label'           => $design->type_label,
+                    'category'             => $design->category,
+                    'category_label'       => $design->category_label,
+                    'types'                => $design->types ?? [],
+                    'component_design_ids' => $design->component_design_ids ?? [],
+                    'wholesale_price'      => $design->wholesale_price,
+                    'sort_order'           => $design->sort_order,
+                    'image_paths'          => $design->image_paths ?? [],
+                    'image_url'            => $design->image_url,
+                ],
+            ]);
+        }
+
         if ($request->filled('return_to')) {
             return redirect($request->input('return_to'))
                 ->with('success', "Design \"{$design->name}\" updated.");
         }
 
-        return redirect()->route('admin.dashboard')
+        return redirect()->back()
             ->with('success', "Design \"{$design->name}\" updated.");
     }
 
@@ -1358,7 +1391,12 @@ class AdminController extends Controller
             }
         }
 
-        return redirect()->route('admin.dashboard')
+        if ($request->filled('return_to')) {
+            return redirect($request->input('return_to'))
+                ->with('success', "Design catalog sort orders updated.");
+        }
+
+        return redirect()->back()
             ->with('success', "Design catalog sort orders updated.");
     }
 
@@ -1374,7 +1412,12 @@ class AdminController extends Controller
 
         $coach->designCatalog()->syncWithoutDetaching($request->design_ids);
 
-        return redirect()->route('admin.dashboard')
+        if ($request->filled('return_to')) {
+            return redirect($request->input('return_to'))
+                ->with('success', count($request->design_ids) . " designs successfully assigned to {$coach->first_name} {$coach->last_name}'s profile!");
+        }
+
+        return redirect()->back()
             ->with('success', count($request->design_ids) . " designs successfully assigned to {$coach->first_name} {$coach->last_name}'s profile!");
     }
 
@@ -1410,7 +1453,12 @@ class AdminController extends Controller
             $count++;
         }
 
-        return redirect()->route('admin.dashboard')
+        if ($request->filled('return_to')) {
+            return redirect($request->input('return_to'))
+                ->with('success', "{$count} " . \Illuminate\Support\Str::plural('design', $count) . " successfully deleted from catalog.");
+        }
+
+        return redirect()->back()
             ->with('success', "{$count} " . \Illuminate\Support\Str::plural('design', $count) . " successfully deleted from catalog.");
     }
 
@@ -1521,11 +1569,16 @@ class AdminController extends Controller
 
         $collection->update($validated);
 
-        return redirect()->route('admin.dashboard')
+        if ($request->filled('return_to')) {
+            return redirect($request->input('return_to'))
+                ->with('success', "Collection \"{$validated['name']}\" updated.");
+        }
+
+        return redirect()->back()
             ->with('success', "Collection \"{$validated['name']}\" updated.");
     }
 
-    public function deleteDesignCollection(\App\Models\DesignCollection $collection)
+    public function deleteDesignCollection(Request $request, \App\Models\DesignCollection $collection)
     {
         if ($collection->image_path) {
             $pathToRemove = str_replace('/storage/', '', $collection->image_path);
@@ -1535,7 +1588,12 @@ class AdminController extends Controller
         // Associated designs will have their design_collection_id set to null automatically due to nullOnDelete constraint.
         $collection->delete();
 
-        return redirect()->route('admin.dashboard')
+        if ($request->filled('return_to')) {
+            return redirect($request->input('return_to'))
+                ->with('success', "Collection removed.");
+        }
+
+        return redirect()->back()
             ->with('success', "Collection removed.");
     }
 

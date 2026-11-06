@@ -46,6 +46,134 @@ if (!isset($typeOptions)) {
     window.catalogTypeOptions = window.catalogTypeOptions || {!! json_encode($typeOptions) !!};
     window.allCollectionsList = {!! json_encode($allCollections->map(fn($col) => ['id' => $col->id, 'name' => $col->name])->values()) !!};
     window.allCoachesList = window.allCoachesList || {!! json_encode($allCoaches->map(fn($c) => ['id' => $c->id, 'label' => ($c->teamStore?->name ?? $c->organization ?? 'No Org') . ' (' . $c->first_name . ' ' . $c->last_name . ')'])->values()) !!};
+
+    window.getAdminCollectionsReturnUrl = window.getAdminCollectionsReturnUrl || function(collectionId) {
+        const u = new URL(window.location.href);
+        const searchInput = document.getElementById('collection-search-input');
+        if (searchInput && searchInput.value.trim() !== '') {
+            u.searchParams.set('collection_search', searchInput.value.trim());
+        }
+        if (collectionId) {
+            u.searchParams.set('open_collection', collectionId);
+            try { sessionStorage.setItem('admin_col_items_' + collectionId, 'true'); } catch (e) {}
+        }
+        return u.toString();
+    };
+
+    window.showAdminInlineToast = window.showAdminInlineToast || function(msg, isError = false) {
+        let toast = document.getElementById('admin-inline-save-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'admin-inline-save-toast';
+            toast.className = 'fixed bottom-6 right-6 z-[9999] px-4 py-3 rounded-xl shadow-lg font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center gap-2';
+            document.body.appendChild(toast);
+        }
+        toast.className = 'fixed bottom-6 right-6 z-[9999] px-4 py-3 rounded-xl shadow-lg font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center gap-2 ' +
+            (isError ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white');
+        toast.textContent = msg;
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+        clearTimeout(window._adminToastTimer);
+        window._adminToastTimer = setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
+        }, 3000);
+    };
+
+    window.submitInlineDesignUpdate = window.submitInlineDesignUpdate || function(event, designId, collectionItemsArray, collectionId) {
+        const form = event.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const statusEl = form.querySelector('.inline-save-status');
+        const origBtnText = submitBtn ? submitBtn.textContent : 'Save Changes';
+
+        if (collectionId) {
+            try { sessionStorage.setItem('admin_col_items_' + collectionId, 'true'); } catch (e) {}
+        }
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+        }
+        if (statusEl) {
+            statusEl.textContent = '';
+            statusEl.className = 'inline-save-status text-[10px] font-bold uppercase tracking-wider hidden';
+        }
+
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data || !data.success) {
+                let errMsg = (data && data.message) ? data.message : 'Failed to save changes.';
+                if (data && data.errors) {
+                    errMsg = Object.values(data.errors).flat().join(' ');
+                }
+                throw new Error(errMsg);
+            }
+            return data;
+        })
+        .then(data => {
+            const d = data.design;
+            if (d) {
+                const titleEl = document.getElementById('design-title-' + designId);
+                if (titleEl) titleEl.textContent = d.name;
+
+                const subEl = document.getElementById('design-subtitle-' + designId);
+                if (subEl) {
+                    subEl.textContent = (d.sport ? d.sport + ' · ' : '') + (d.type_label || '') + (d.category_label ? ' · ' + d.category_label : '');
+                }
+
+                const sortInputs = document.querySelectorAll('input[name="designs[' + designId + '][sort_order]"]');
+                sortInputs.forEach(inp => {
+                    if (d.sort_order !== undefined && d.sort_order !== null) {
+                        inp.value = d.sort_order;
+                    }
+                });
+
+                if (Array.isArray(collectionItemsArray)) {
+                    const found = collectionItemsArray.find(i => Number(i.id) === Number(designId));
+                    if (found) {
+                        found.name = d.name;
+                        found.type_label = d.type_label;
+                    }
+                }
+                if (Array.isArray(window.manageCollectionItems)) {
+                    const foundManage = window.manageCollectionItems.find(i => Number(i.id) === Number(designId));
+                    if (foundManage) {
+                        foundManage.name = d.name;
+                        foundManage.type_label = d.type_label;
+                    }
+                }
+            }
+
+            if (statusEl) {
+                statusEl.textContent = '✓ Saved!';
+                statusEl.className = 'inline-save-status text-[10px] font-bold uppercase tracking-wider text-emerald-600 inline-flex items-center gap-1';
+            }
+            window.showAdminInlineToast(data.message || 'Changes saved!');
+        })
+        .catch(err => {
+            if (statusEl) {
+                statusEl.textContent = err.message || 'Error saving';
+                statusEl.className = 'inline-save-status text-[10px] font-bold uppercase tracking-wider text-red-600 inline-flex items-center gap-1';
+            }
+            window.showAdminInlineToast(err.message || 'Error saving changes', true);
+        })
+        .finally(() => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = origBtnText;
+            }
+        });
+    };
 </script>
 
 @if($designCollections->isEmpty())
@@ -67,7 +195,20 @@ if (!isset($typeOptions)) {
 
     <div id="update-collections-sortable-list">
     @foreach($designCollections as $collection)
-    <div x-data="{ showModal: false, showItems: false }" class="border-b border-slate-100 last:border-0 bg-white">
+    <div x-data="{
+        showModal: false,
+        showItems: (function() {
+            try {
+                if (sessionStorage.getItem('admin_col_items_{{ $collection->id }}') === 'true') return true;
+            } catch (e) {}
+            return {{ (string) request('open_collection') === (string) $collection->id ? 'true' : 'false' }};
+        })(),
+        init() {
+            this.$watch('showItems', val => {
+                try { sessionStorage.setItem('admin_col_items_{{ $collection->id }}', val ? 'true' : 'false'); } catch (e) {}
+            });
+        }
+    }" class="border-b border-slate-100 last:border-0 bg-white">
         <div class="flex items-center justify-between px-4 py-3 hover:bg-slate-50">
             <div class="flex items-center gap-4 flex-1">
                 <div class="cursor-move text-slate-300 hover:text-slate-500 transition-colors px-1" title="Drag to reorder">
@@ -126,9 +267,10 @@ if (!isset($typeOptions)) {
                         </button>
                     </div>
                     <div class="p-5">
-                        <form action="{{ route('admin.design-collection.update', $collection) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                        <form action="{{ route('admin.design-collection.update', $collection) }}" method="POST" enctype="multipart/form-data" class="space-y-4" @submit="const rt = $el.querySelector('input[name=return_to]'); if (rt && window.getAdminCollectionsReturnUrl) rt.value = window.getAdminCollectionsReturnUrl({{ $collection->id }});">
                             @csrf
                             @method('PUT')
+                            <input type="hidden" name="return_to" value="{{ request()->fullUrl() }}">
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name</label>
                                 <input type="text" name="name" value="{{ $collection->name }}" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:outline-none">
@@ -158,9 +300,10 @@ if (!isset($typeOptions)) {
                                 <button type="submit" class="w-full py-2.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-700 transition-colors">Save Changes</button>
                             </div>
                         </form>
-                        <form action="{{ route('admin.design-collection.delete', $collection) }}" method="POST" class="mt-4 pt-4 border-t border-slate-100" onsubmit="return confirm('Delete this collection? Designs in this collection will NOT be deleted, but will lose their collection grouping.');">
+                        <form action="{{ route('admin.design-collection.delete', $collection) }}" method="POST" class="mt-4 pt-4 border-t border-slate-100" onsubmit="if(!confirm('Delete this collection? Designs in this collection will NOT be deleted, but will lose their collection grouping.')) return false; const rt = this.querySelector('input[name=return_to]'); if (rt && window.getAdminCollectionsReturnUrl) rt.value = window.getAdminCollectionsReturnUrl(); return true;">
                             @csrf
                             @method('DELETE')
+                            <input type="hidden" name="return_to" value="{{ request()->fullUrl() }}">
                             <button type="submit" class="w-full py-2.5 bg-white border border-red-200 text-red-600 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-red-50 transition-colors">Delete Collection</button>
                         </form>
                     </div>
@@ -222,6 +365,7 @@ if (!isset($typeOptions)) {
                 @if($collectionItems->isNotEmpty())
                 <form id="bulk-sort-form-{{ $collection->id }}" action="{{ route('admin.design.bulk-sort') }}" method="POST">
                     @csrf
+                    <input type="hidden" name="return_to" value="{{ request()->fullUrl() }}">
                 </form>
                 <div class="p-3 bg-white border-b border-slate-200 flex justify-between items-center">
                     <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Adjust sort orders below and click save</span>
@@ -239,8 +383,9 @@ if (!isset($typeOptions)) {
                         </span>
                     </div>
                     
-                    <form action="{{ route('admin.design.bulk-assign') }}" method="POST" class="flex items-center gap-1.5" @submit="if(selectedDesigns.length === 0) { event.preventDefault(); alert('Please select at least one design to assign.'); }">
+                    <form action="{{ route('admin.design.bulk-assign') }}" method="POST" class="flex items-center gap-1.5" @submit="if(selectedDesigns.length === 0) { event.preventDefault(); alert('Please select at least one design to assign.'); } else { const rt = $el.querySelector('input[name=return_to]'); if (rt && window.getAdminCollectionsReturnUrl) rt.value = window.getAdminCollectionsReturnUrl({{ $collection->id }}); }">
                         @csrf
+                        <input type="hidden" name="return_to" value="{{ request()->fullUrl() }}">
                         <template x-for="id in selectedDesigns" :key="id">
                             <input type="hidden" name="design_ids[]" :value="id">
                         </template>
@@ -279,8 +424,8 @@ if (!isset($typeOptions)) {
                                 </div>
                             @endif
                             <div class="flex-1">
-                                <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">
+                                <div id="design-title-{{ $design->id }}" class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
+                                <div id="design-subtitle-{{ $design->id }}" class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">
                                     {{ $design->sport ? $design->sport . ' · ' : '' }}{{ $design->type_label }} · {{ $design->category_label }}
                                 </div>
                                 <div class="mt-2">
@@ -294,9 +439,10 @@ if (!isset($typeOptions)) {
                                 <details class="mt-2" x-data="{ editOpen: false }" @toggle="editOpen = $el.open">
                                     <summary class="text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer hover:text-primary">Edit design</summary>
                                     <template x-if="editOpen">
-                                    <form action="{{ route('admin.design.update', $design) }}" method="POST" enctype="multipart/form-data" class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+                                    <form action="{{ route('admin.design.update', $design) }}" method="POST" enctype="multipart/form-data" class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3" @submit.prevent="window.submitInlineDesignUpdate($event, {{ $design->id }}, items, {{ $collection->id }})">
                                         @csrf
                                         @method('PUT')
+                                        <input type="hidden" name="return_to" value="{{ request()->fullUrl() }}">
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                                             <div>
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Name</label>
@@ -484,9 +630,12 @@ if (!isset($typeOptions)) {
                                                 Player Number
                                             </label>
                                         </div>
-                                        <button type="submit" class="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded hover:bg-slate-700 transition-colors">
-                                            Save Changes
-                                        </button>
+                                        <div class="flex items-center gap-3">
+                                            <button type="submit" class="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded hover:bg-slate-700 transition-colors">
+                                                Save Changes
+                                            </button>
+                                            <span class="inline-save-status text-[10px] font-bold uppercase tracking-wider hidden"></span>
+                                        </div>
                                     </form>
                                     </template>
                                 </details>
@@ -494,7 +643,7 @@ if (!isset($typeOptions)) {
                         </div>
                         <div class="flex flex-col sm:items-end gap-3 shrink-0">
                             <div class="flex items-center gap-3">
-                                <form action="{{ route('admin.design.assign-to-coach-profile', $design) }}" method="POST" class="flex items-center gap-1">
+                                <form action="{{ route('admin.design.assign-to-coach-profile', $design) }}" method="POST" class="flex items-center gap-1" @submit="try { sessionStorage.setItem('admin_col_items_{{ $collection->id }}', 'true'); } catch(e) {}">
                                     @csrf
                                     <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2 py-1 w-32 focus:border-primary focus:outline-none">
                                         <option value="">Assign to coach...</option>
@@ -504,8 +653,9 @@ if (!isset($typeOptions)) {
                                     </select>
                                     <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors" title="Assign Design to Coach">Assign</button>
                                 </form>
-                                <form action="{{ route('admin.design.delete', $design) }}" method="POST" onsubmit="return confirm('Delete this design from the catalog?')">
+                                <form action="{{ route('admin.design.delete', $design) }}" method="POST" onsubmit="if(!confirm('Delete this design from the catalog?')) return false; const rt = this.querySelector('input[name=return_to]'); if (rt && window.getAdminCollectionsReturnUrl) rt.value = window.getAdminCollectionsReturnUrl({{ $collection->id }}); return true;">
                                     @csrf @method('DELETE')
+                                    <input type="hidden" name="return_to" value="{{ request()->fullUrl() }}">
                                     <button class="text-red-400 hover:text-red-600 transition-colors p-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>

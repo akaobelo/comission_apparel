@@ -4741,8 +4741,8 @@
                                     </div>
                                 @endif
                                 <div class="flex-1">
-                                    <div class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">
+                                    <div id="design-title-{{ $design->id }}" class="text-sm font-bold text-slate-900">{{ $design->name }}</div>
+                                <div id="design-subtitle-{{ $design->id }}" class="text-[10px] font-bold uppercase tracking-wider text-primary mt-0.5">
                                     {{ $design->sport ? $design->sport . ' · ' : '' }}{{ $design->type_label }} · {{ $design->category_label }}
                                 </div>
                                 <div class="mt-2">
@@ -4756,9 +4756,10 @@
                                 <details class="mt-2" x-data="{ editOpen: false }" @toggle="editOpen = $el.open">
                                     <summary class="text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer hover:text-primary">Edit design</summary>
                                     <template x-if="editOpen">
-                                    <form action="{{ route('admin.design.update', $design) }}" method="POST" enctype="multipart/form-data" class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+                                    <form action="{{ route('admin.design.update', $design) }}" method="POST" enctype="multipart/form-data" class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3" @submit.prevent="window.submitInlineDesignUpdate($event, {{ $design->id }}, items)">
                                         @csrf
                                         @method('PUT')
+                                        <input type="hidden" name="return_to" value="{{ request()->fullUrl() }}">
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                                             <div>
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Name</label>
@@ -4917,9 +4918,12 @@
                                                 Player Number
                                             </label>
                                         </div>
-                                        <button type="submit" class="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded hover:bg-slate-700 transition-colors">
-                                            Save Changes
-                                        </button>
+                                        <div class="flex items-center gap-3">
+                                            <button type="submit" class="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded hover:bg-slate-700 transition-colors">
+                                                Save Changes
+                                            </button>
+                                            <span class="inline-save-status text-[10px] font-bold uppercase tracking-wider hidden"></span>
+                                        </div>
                                     </form>
                                     </template>
                                 </details>
@@ -5920,6 +5924,11 @@
         const form = document.getElementById('bulk-sort-form-' + collectionId);
         const listEl = document.getElementById('update-catalog-sortable-list-' + collectionId);
         if (!form || !listEl) return;
+
+        const rt = form.querySelector('input[name="return_to"]');
+        if (rt && window.getAdminCollectionsReturnUrl) {
+            rt.value = window.getAdminCollectionsReturnUrl(collectionId);
+        }
         
         // Remove old cloned inputs
         form.querySelectorAll('.cloned-sort-input').forEach(el => el.remove());
