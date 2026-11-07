@@ -1893,28 +1893,84 @@ class AdminController extends Controller
         $feePercent = (float) config('services.stripe.fee_percent', 0.029);
         $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
 
-        foreach ($store->parentOrders()->where(function($q) {
+        $unpaidOrders = $store->parentOrders()->where(function($q) {
             $q->whereNull('payment_status')
               ->orWhereIn('payment_status', ['pending', 'not_applicable']);
-        })->get() as $unpaidOrder) {
-            $subtotal = $unpaidOrder->getCalculatedSubtotal($store);
-            $taxAmount = $isTaxExempt ? 0.00 : round($subtotal * $taxRate, 2);
-            if ($subtotal > 0 && ($store->isOnlinePayment() || $unpaidOrder->isOnlineOrder())) {
-                $preFee = $subtotal + $taxAmount;
-                $grandTotal = round(($preFee + $feeFixed) / (1 - $feePercent), 2);
-                $feeAmount = round($grandTotal - $preFee, 2);
-            } else {
-                $feeAmount = 0.00;
-                $grandTotal = $subtotal + $taxAmount;
-            }
+        })->get();
 
-            $unpaidOrder->update([
-                'subtotal'       => $subtotal,
-                'tax_amount'     => $taxAmount,
-                'fee_amount'     => $feeAmount,
-                'total_paid'     => $grandTotal,
-                'payment_status' => $validated['payment_mode'] === 'online' ? 'pending' : 'not_applicable',
-            ]);
+        // Check if these orders belong to a shared Master Order Stripe checkout session
+        $hasMasterStripeSession = $unpaidOrders->isNotEmpty()
+            && $store->isInHousePayment()
+            && $unpaidOrders->every(fn($o) => !empty($o->stripe_session_id));
+
+        if ($hasMasterStripeSession) {
+            $wholesaleSubtotal = 0.0;
+            $orderWholesaleMap = [];
+            foreach ($unpaidOrders as $unpaidOrder) {
+                $orderMfg = $unpaidOrder->getEffectiveManufacturingCost($store);
+                $orderWholesaleMap[$unpaidOrder->id] = round($orderMfg, 2);
+                $wholesaleSubtotal += $orderMfg;
+            }
+            $wholesaleSubtotal = round($wholesaleSubtotal, 2);
+            $batchTaxAmount = $isTaxExempt ? 0.00 : round($wholesaleSubtotal * $taxRate, 2);
+            $preFeeTotal = $wholesaleSubtotal + $batchTaxAmount;
+            $batchGrandTotal = $preFeeTotal > 0 ? round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2) : 0.00;
+            $batchFeeAmount = max(0.00, round($batchGrandTotal - $preFeeTotal, 2));
+
+            $runningTax = 0.0;
+            $runningFee = 0.0;
+            $runningTotal = 0.0;
+            $orderCount = $unpaidOrders->count();
+            $idx = 0;
+
+            foreach ($unpaidOrders as $unpaidOrder) {
+                $idx++;
+                $subtotal = $unpaidOrder->getCalculatedSubtotal($store);
+                $orderMfg = $orderWholesaleMap[$unpaidOrder->id] ?? 0.0;
+                $ratio = $wholesaleSubtotal > 0 ? ($orderMfg / $wholesaleSubtotal) : (1 / $orderCount);
+
+                if ($idx === $orderCount) {
+                    $orderTax = round($batchTaxAmount - $runningTax, 2);
+                    $orderFee = round($batchFeeAmount - $runningFee, 2);
+                    $orderTotalPaid = round($batchGrandTotal - $runningTotal, 2);
+                } else {
+                    $orderTax = $isTaxExempt ? 0.00 : round($wholesaleSubtotal > 0 ? ($batchTaxAmount * $ratio) : 0, 2);
+                    $orderFee = round($batchFeeAmount * $ratio, 2);
+                    $orderTotalPaid = round($orderMfg + $orderTax + $orderFee, 2);
+                    $runningTax += $orderTax;
+                    $runningFee += $orderFee;
+                    $runningTotal += $orderTotalPaid;
+                }
+
+                $unpaidOrder->update([
+                    'subtotal'       => $subtotal,
+                    'tax_amount'     => $orderTax,
+                    'fee_amount'     => $orderFee,
+                    'total_paid'     => $orderTotalPaid,
+                    'payment_status' => $validated['payment_mode'] === 'online' ? 'pending' : 'not_applicable',
+                ]);
+            }
+        } else {
+            foreach ($unpaidOrders as $unpaidOrder) {
+                $subtotal = $unpaidOrder->getCalculatedSubtotal($store);
+                $taxAmount = $isTaxExempt ? 0.00 : round($subtotal * $taxRate, 2);
+                if ($subtotal > 0 && (!$store->isCheckPayment() || $unpaidOrder->isOnlineOrder())) {
+                    $preFee = $subtotal + $taxAmount;
+                    $grandTotal = round(($preFee + $feeFixed) / (1 - $feePercent), 2);
+                    $feeAmount = round($grandTotal - $preFee, 2);
+                } else {
+                    $feeAmount = 0.00;
+                    $grandTotal = $subtotal + $taxAmount;
+                }
+
+                $unpaidOrder->update([
+                    'subtotal'       => $subtotal,
+                    'tax_amount'     => $taxAmount,
+                    'fee_amount'     => $feeAmount,
+                    'total_paid'     => $grandTotal,
+                    'payment_status' => $validated['payment_mode'] === 'online' ? 'pending' : 'not_applicable',
+                ]);
+            }
         }
 
         $redirectParams = ['store' => $store];
@@ -2181,6 +2237,14 @@ class AdminController extends Controller
         if ($package->design_catalog_id) {
             DesignCatalog::where('id', $package->design_catalog_id)->update(['component_design_ids' => $mappedValue]);
             StoreItem::where('design_catalog_id', $package->design_catalog_id)->update(['component_design_ids' => $mappedValue]);
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Saved piece mapping for \"{$package->name}\".",
+                'component_design_ids' => $mappedValue ?? [],
+            ]);
         }
 
         return redirect()->route('admin.store.edit', $store)
@@ -2455,7 +2519,7 @@ class AdminController extends Controller
             $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
             $newTax = round($newSubtotal * $taxRate, 2);
 
-            if ($store->isOnlinePayment()) {
+            if ($store && !$store->isCheckPayment()) {
                 $feePercent = (float) config('services.stripe.fee_percent', 0.029);
                 $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
                 $preFee = $newSubtotal + $newTax;

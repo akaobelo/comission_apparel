@@ -963,7 +963,7 @@ class CoachController extends Controller
             $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
             $newTax = round($newSubtotal * $taxRate, 2);
 
-            if ($store && $store->isOnlinePayment()) {
+            if ($store && !$store->isCheckPayment()) {
                 $feePercent = (float) config('services.stripe.fee_percent', 0.029);
                 $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
                 $preFee = $newSubtotal + $newTax;

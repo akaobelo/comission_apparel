@@ -534,7 +534,7 @@
                         </div>
 
                         @if(count($pkgTypes) > 1)
-                        <form action="{{ route('admin.store.package.map-pieces', [$store, $package]) }}" method="POST" class="space-y-3">
+                        <form action="{{ route('admin.store.package.map-pieces', [$store, $package]) }}" method="POST" class="space-y-3" onsubmit="event.preventDefault(); window.submitPackagePieceMapping(event);">
                             @csrf
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 @foreach($pkgTypes as $tKey)
@@ -557,7 +557,8 @@
                                     </div>
                                 @endforeach
                             </div>
-                            <div class="flex justify-end pt-1">
+                            <div class="flex items-center justify-end gap-3 pt-1">
+                                <span class="inline-save-status text-[10px] font-bold uppercase tracking-wider hidden"></span>
                                 <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors shadow-sm">
                                     Save Piece Links for {{ $package->name }}
                                 </button>
@@ -959,6 +960,82 @@ function initStoreItemsSortable() {
 document.addEventListener('DOMContentLoaded', function() {
     initStoreItemsSortable();
 });
+
+window.showAdminInlineToast = window.showAdminInlineToast || function(msg, isError = false) {
+    let toast = document.getElementById('admin-inline-save-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'admin-inline-save-toast';
+        toast.className = 'fixed bottom-6 right-6 z-[9999] px-4 py-3 rounded-xl shadow-lg font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center gap-2';
+        document.body.appendChild(toast);
+    }
+    toast.className = 'fixed bottom-6 right-6 z-[9999] px-4 py-3 rounded-xl shadow-lg font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center gap-2 ' +
+        (isError ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white');
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+    clearTimeout(window._adminToastTimer);
+    window._adminToastTimer = setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+    }, 3000);
+};
+
+window.submitPackagePieceMapping = function(event) {
+    const form = event.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const statusEl = form.querySelector('.inline-save-status');
+    const origBtnText = submitBtn ? submitBtn.textContent.trim() : 'Save Piece Links';
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+    }
+    if (statusEl) {
+        statusEl.textContent = '';
+        statusEl.className = 'inline-save-status text-[10px] font-bold uppercase tracking-wider hidden';
+    }
+
+    fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(async res => {
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data || !data.success) {
+            let errMsg = (data && data.message) ? data.message : 'Failed to save piece links.';
+            if (data && data.errors) {
+                errMsg = Object.values(data.errors).flat().join(' ');
+            }
+            throw new Error(errMsg);
+        }
+        return data;
+    })
+    .then(data => {
+        if (statusEl) {
+            statusEl.textContent = '✓ Saved!';
+            statusEl.className = 'inline-save-status text-[10px] font-bold uppercase tracking-wider text-emerald-600 inline-flex items-center gap-1';
+        }
+        window.showAdminInlineToast(data.message || 'Piece links saved!');
+    })
+    .catch(err => {
+        if (statusEl) {
+            statusEl.textContent = err.message || 'Error saving';
+            statusEl.className = 'inline-save-status text-[10px] font-bold uppercase tracking-wider text-red-600 inline-flex items-center gap-1';
+        }
+        window.showAdminInlineToast(err.message || 'Error saving piece links', true);
+    })
+    .finally(() => {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = origBtnText;
+        }
+    });
+};
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>

@@ -542,6 +542,30 @@ class ParentOrder extends Model
                     $orderFees = (float) ($order->fee_amount ?? 0);
                     $orderOnlinePaid = (float) ($order->total_paid ?? 0);
                 }
+
+                // Self-heal unpaid non-check orders where fee_amount was zeroed out while total_paid remained > 0
+                if (!$order->isPaid() && $orderTotal > 0 && $orderFees <= 0 && $orderOnlinePaid > 0) {
+                    $orderStore = $store ?: $order->teamStore;
+                    if ($orderStore && !$orderStore->isCheckPayment()) {
+                        $isTaxExempt = (bool) ($orderStore->isTaxExempt() || $order->user?->is_tax_exempt);
+                        $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
+                        $feePercent = (float) config('services.stripe.fee_percent', 0.029);
+                        $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
+
+                        $orderTax = $isTaxExempt ? 0.00 : round($orderTotal * $taxRate, 2);
+                        $preFeeTotal = $orderTotal + $orderTax;
+                        $orderOnlinePaid = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
+                        $orderFees = round($orderOnlinePaid - $preFeeTotal, 2);
+
+                        if ($order->exists) {
+                            $order->update([
+                                'tax_amount' => $orderTax,
+                                'fee_amount' => $orderFees,
+                                'total_paid' => $orderOnlinePaid,
+                            ]);
+                        }
+                    }
+                }
             } else {
                 // For UNPAID / PENDING orders: dynamically recalculate from current store item prices
                 foreach ($items as $orderedItem) {
@@ -560,7 +584,7 @@ class ParentOrder extends Model
                 $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
                 $orderTax = $isTaxExempt ? 0.00 : round($orderTotal * $taxRate, 2);
 
-                if ($orderTotal > 0 && ($store?->isOnlinePayment() || $order->isOnlineOrder())) {
+                if ($orderTotal > 0 && (($store && !$store->isCheckPayment()) || $order->isOnlineOrder())) {
                     $feePercent = (float) config('services.stripe.fee_percent', 0.029);
                     $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
                     $preFeeTotal = $orderTotal + $orderTax;
