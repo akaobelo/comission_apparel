@@ -42,14 +42,19 @@
                             </div>
                             <div>
                                 <h4 class="text-base font-bold text-slate-900 mb-2">Are payments collected through the site?</h4>
-                                <ul class="list-disc pl-5 mt-1 text-sm text-justify text-slate-600">
-                                    <li>No. We do not collect payments from your customers through the platform. Instead, you maintain full control over all customer transactions and funds. When you\'re ready to place an order from your Team Store, simply submit your order and we will send you an invoice through Intuit QuickBooks. This process allows you to keep and manage your proceeds immediately, without waiting for payouts or reimbursement. We believe giving you direct control over your funds creates a simpler, more transparent experience for your organization.</li>
+                                <ul class="list-disc pl-5 mt-1 text-sm text-justify text-slate-600 space-y-2">
+                                    <li>Yes, we offer flexible payment collection options to best fit your organization\'s needs:
+                                        <ul class="list-[circle] pl-5 mt-2 space-y-1.5">
+                                            <li><strong>In-House Collection (Default):</strong> You maintain full control over customer transactions and collect payments directly from your supporters, allowing you to keep and manage your fundraising proceeds immediately without waiting for payouts. When you\'re ready to submit your master order for production, you simply pay the wholesale manufacturing balance directly through the platform via Stripe Checkout (or by check/invoice for approved accounts).</li>
+                                            <li><strong>Online Storefront Checkout:</strong> If preferred, your Team Store can be configured to collect payments directly from parents and supporters online via Stripe at the time they place their individual orders.</li>
+                                        </ul>
+                                    </li>
                                 </ul>
                             </div>
                             <div>
                                 <h4 class="text-base font-bold text-slate-900 mb-2">What forms of payment are accepted?</h4>
                                 <ul class="list-disc pl-5 mt-1 text-sm text-justify text-slate-600">
-                                    <li>We accept payments through Intuit QuickBooks “click and pay” invoices as well as bank wire transfers. These options are designed to make the payment process simple, secure, and convenient for our clients.</li>
+                                    <li>We accept major credit and debit cards directly through our secure Stripe Checkout integration on the platform, as well as checks, Intuit QuickBooks “click and pay” invoices, and bank wire transfers for approved organizations. These options are designed to make the payment process simple, secure, and convenient for our clients.</li>
                                 </ul>
                             </div>
                             <div>
@@ -83,8 +88,9 @@
                     'How do I request my team store?' => '
                         <div class="space-y-4">
                             <p><strong>STEP #1:</strong> Log into your admin portal using the user dashboard sign in button</p>
-                            <p><strong>STEP #2:</strong> Click the Store Overview” tab atop the page which will bring you to the “Request Your Team Store” form.</p>
+                            <p><strong>STEP #2:</strong> Click the “Store Overview” tab atop the page which will bring you to the “Request Your Team Store” form.</p>
                             <p><strong>STEP #3:</strong> Complete the form and click “Submit Store Request”</p>
+                            <p><strong>Managing Multiple Stores:</strong> Need separate storefronts for different sports, programs, or seasons (e.g., Football, Basketball, Track &amp; Field)? You can manage multiple stores under a single profile! Simply click the <strong>“+ Add Another Store”</strong> button at the top of your dashboard to request additional storefronts, and easily switch between them using the store selector dropdown once approved.</p>
                             <p class="text-sm italic">Note: All stores must be reviewed and approved by a member of our team, please allow 24 hours for this process.</p>
                         </div>
                     ',
