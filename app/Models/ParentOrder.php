@@ -498,34 +498,40 @@ class ParentOrder extends Model
                     $orderWholesaleTotal += ($prices['wholesale_price'] * $qty);
                 }
 
-                $sessionId = $order->stripe_session_id;
-                $batchId = $order->batch_id;
-                $sessionKey = $sessionId ?: ($order->isDirectOrder() && $batchId ? 'batch_' . $batchId : null);
+                if ($order->isPaid()) {
+                    $sessionId = $order->stripe_session_id;
+                    $batchId = $order->batch_id;
+                    $sessionKey = $sessionId ?: ($order->isDirectOrder() && $batchId ? 'batch_' . $batchId : null);
 
-                if ($sessionKey) {
-                    $sharedOrders = $ordersCollection->filter(function($o) use ($sessionId, $batchId) {
-                        return $sessionId 
-                            ? ($o->stripe_session_id === $sessionId) 
-                            : ($o->batch_id === $batchId && $o->isDirectOrder());
-                    });
+                    if ($sessionKey) {
+                        $sharedOrders = $ordersCollection->filter(function($o) use ($sessionId, $batchId) {
+                            return $sessionId 
+                                ? ($o->stripe_session_id === $sessionId) 
+                                : ($o->batch_id === $batchId && $o->isDirectOrder());
+                        });
 
-                    if ($sharedOrders->count() > 1) {
-                        $firstPaid = (float) $sharedOrders->first()->total_paid;
-                        $allIdenticalPaid = $sharedOrders->every(fn($o) => abs((float)$o->total_paid - $firstPaid) < 0.01);
-                        $sessionSubtotal = (float) $sharedOrders->sum(fn($o) => (float)($o->subtotal ?? 0));
+                        if ($sharedOrders->count() > 1) {
+                            $firstPaid = (float) $sharedOrders->first()->total_paid;
+                            $allIdenticalPaid = $sharedOrders->every(fn($o) => abs((float)$o->total_paid - $firstPaid) < 0.01);
+                            $sessionSubtotal = (float) $sharedOrders->sum(fn($o) => (float)($o->subtotal ?? 0));
 
-                        // If all orders in the shared batch/session have identical total_paid >= sessionSubtotal,
-                        // it indicates the batch-level totals were replicated on each order row.
-                        if ($allIdenticalPaid && $firstPaid >= ($sessionSubtotal - 0.01) && $firstPaid > 0) {
-                            if (!in_array($sessionKey, $seenReplicatedSessions)) {
-                                $seenReplicatedSessions[] = $sessionKey;
+                            // If all orders in the shared batch/session have identical total_paid >= sessionSubtotal,
+                            // it indicates the batch-level totals were replicated on each order row.
+                            if ($allIdenticalPaid && $firstPaid >= ($sessionSubtotal - 0.01) && $firstPaid > 0) {
+                                if (!in_array($sessionKey, $seenReplicatedSessions)) {
+                                    $seenReplicatedSessions[] = $sessionKey;
+                                    $orderTax = (float) ($order->tax_amount ?? 0);
+                                    $orderFees = (float) ($order->fee_amount ?? 0);
+                                    $orderOnlinePaid = (float) ($order->total_paid ?? 0);
+                                } else {
+                                    $orderTax = 0.0;
+                                    $orderFees = 0.0;
+                                    $orderOnlinePaid = 0.0;
+                                }
+                            } else {
                                 $orderTax = (float) ($order->tax_amount ?? 0);
                                 $orderFees = (float) ($order->fee_amount ?? 0);
                                 $orderOnlinePaid = (float) ($order->total_paid ?? 0);
-                            } else {
-                                $orderTax = 0.0;
-                                $orderFees = 0.0;
-                                $orderOnlinePaid = 0.0;
                             }
                         } else {
                             $orderTax = (float) ($order->tax_amount ?? 0);
@@ -538,33 +544,9 @@ class ParentOrder extends Model
                         $orderOnlinePaid = (float) ($order->total_paid ?? 0);
                     }
                 } else {
-                    $orderTax = (float) ($order->tax_amount ?? 0);
-                    $orderFees = (float) ($order->fee_amount ?? 0);
-                    $orderOnlinePaid = (float) ($order->total_paid ?? 0);
-                }
-
-                // Self-heal unpaid non-check orders where fee_amount was zeroed out while total_paid remained > 0
-                if (!$order->isPaid() && $orderTotal > 0 && $orderFees <= 0 && $orderOnlinePaid > 0) {
-                    $orderStore = $store ?: $order->teamStore;
-                    if ($orderStore && !$orderStore->isCheckPayment()) {
-                        $isTaxExempt = (bool) ($orderStore->isTaxExempt() || $order->user?->is_tax_exempt);
-                        $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
-                        $feePercent = (float) config('services.stripe.fee_percent', 0.029);
-                        $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
-
-                        $orderTax = $isTaxExempt ? 0.00 : round($orderTotal * $taxRate, 2);
-                        $preFeeTotal = $orderTotal + $orderTax;
-                        $orderOnlinePaid = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
-                        $orderFees = round($orderOnlinePaid - $preFeeTotal, 2);
-
-                        if ($order->exists) {
-                            $order->update([
-                                'tax_amount' => $orderTax,
-                                'fee_amount' => $orderFees,
-                                'total_paid' => $orderOnlinePaid,
-                            ]);
-                        }
-                    }
+                    $orderTax = 0.0;
+                    $orderFees = 0.0;
+                    $orderOnlinePaid = 0.0;
                 }
             } else {
                 // For UNPAID / PENDING orders: dynamically recalculate from current store item prices
@@ -580,20 +562,9 @@ class ParentOrder extends Model
                     $orderWholesaleTotal += ($wholesalePrice * $qty);
                 }
 
-                $isTaxExempt = (bool) ($store?->isTaxExempt() || $order->user?->is_tax_exempt);
-                $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
-                $orderTax = $isTaxExempt ? 0.00 : round($orderTotal * $taxRate, 2);
-
-                if ($orderTotal > 0 && (($store && !$store->isCheckPayment()) || $order->isOnlineOrder())) {
-                    $feePercent = (float) config('services.stripe.fee_percent', 0.029);
-                    $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
-                    $preFeeTotal = $orderTotal + $orderTax;
-                    $orderOnlinePaid = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
-                    $orderFees = round($orderOnlinePaid - $preFeeTotal, 2);
-                } else {
-                    $orderFees = 0.0;
-                    $orderOnlinePaid = 0.0;
-                }
+                $orderTax = 0.0;
+                $orderFees = 0.0;
+                $orderOnlinePaid = 0.0;
             }
 
             $totalSales += $orderTotal;

@@ -214,4 +214,50 @@ class PayByCheckTest extends TestCase
         $dashboardResponse->assertStatus(200);
         $dashboardResponse->assertSeeInOrder(['Sunland StingerNation', 'Milwaukee Mustangs']);
     }
+
+    public function test_unpaid_in_house_store_does_not_show_online_payment_stripe_as_paid()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $coach = User::factory()->create(['role' => 'coach']);
+
+        $store = TeamStore::create([
+            'user_id' => $coach->id,
+            'name' => 'Heats Athletics',
+            'slug' => 'heats-athletics',
+            'status' => 'approved',
+            'pricing_approved' => true,
+            'payment_mode' => 'in_house',
+        ]);
+
+        // Unpaid order where total_paid was pre-calculated during submission or incomplete checkout
+        $order = ParentOrder::create([
+            'team_store_id' => $store->id,
+            'athlete_first_name' => 'John',
+            'athlete_last_name' => 'Runner',
+            'parent_email' => 'john@example.com',
+            'gender' => 'Male',
+            'items_json' => [['name' => 'Uniform', 'qty' => 1, 'unit_price' => 148.20]],
+            'status' => 'Submitted',
+            'payment_status' => 'not_applicable',
+            'stripe_session_id' => 'cs_test_unpaid_session',
+            'subtotal' => 148.20,
+            'tax_amount' => 11.12,
+            'fee_amount' => 5.07,
+            'total_paid' => 164.39,
+        ]);
+
+        $financials = ParentOrder::calculateBatchFinancials(collect([$order]), $store);
+        $this->assertEquals(0.0, (float) $financials['total_online_paid']);
+        $this->assertEquals(0.0, (float) $financials['total_tax']);
+        $this->assertEquals(0.0, (float) $financials['total_fees']);
+
+        $response = $this->actingAs($admin)->get(route('admin.store.edit', $store));
+        $response->assertStatus(200);
+        $response->assertDontSee('Online Payment (Stripe)');
+
+        // Once the order is actually paid on Stripe, Online Payment (Stripe) should be reflected
+        $order->update(['payment_status' => 'paid', 'paid_at' => now()]);
+        $paidFinancials = ParentOrder::calculateBatchFinancials(collect([$order->fresh()]), $store);
+        $this->assertEquals(164.39, (float) $paidFinancials['total_online_paid']);
+    }
 }
