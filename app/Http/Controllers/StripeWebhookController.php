@@ -98,6 +98,19 @@ class StripeWebhookController extends Controller
 
                     if ($store) {
                         $store->update(['status' => 'submitted_to_admin']);
+                        $batchDepositSum = (float) $batchOrders->sum(fn($o) => (float) ($o->deposit_credit_applied ?? 0));
+                        $metaDeposit = (float) ($session->metadata->deposit_applied ?? 0);
+                        if ($batchDepositSum > 0 || $metaDeposit > 0) {
+                            if ($store->user) {
+                                $store->user->markDepositApplied($resolvedBatchId, $store);
+                            } else {
+                                $store->update([
+                                    'deposit_applied'          => true,
+                                    'deposit_applied_at'       => $submittedAt,
+                                    'deposit_applied_batch_id' => $resolvedBatchId,
+                                ]);
+                            }
+                        }
                         try {
                             \Illuminate\Support\Facades\Notification::send(
                                 \App\Models\User::where('role', 'admin')->get(),
@@ -136,6 +149,11 @@ class StripeWebhookController extends Controller
                         ]);
                     }
                     if ($firstOrder->user) {
+                        $batchDepositSum = (float) $batchOrders->sum(fn($o) => (float) ($o->deposit_credit_applied ?? 0));
+                        $metaDeposit = (float) ($session->metadata->deposit_applied ?? 0);
+                        if ($batchDepositSum > 0 || $metaDeposit > 0) {
+                            $firstOrder->user->markDepositApplied($batchId, $firstOrder->teamStore);
+                        }
                         try {
                             \Illuminate\Support\Facades\Notification::send(
                                 \App\Models\User::where('role', 'admin')->get(),

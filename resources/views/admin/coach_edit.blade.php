@@ -117,6 +117,69 @@
                                     </div>
                                 </label>
                             </div>
+
+                            {{-- Deposit / First-Purchase Credit Feature --}}
+                            @php
+                                $effectiveCoachDeposit = (float) ($user->deposit_amount ?? 0);
+                                $effectiveCoachApplyTo = $user->deposit_apply_to ?: 'both';
+                                $effectiveCoachApplied = (bool) $user->deposit_applied;
+                                $effectiveCoachNotes   = $user->deposit_notes;
+                                $effectiveCoachAppliedAt = $user->deposit_applied_at;
+                                $effectiveCoachBatchId = $user->deposit_applied_batch_id;
+                            @endphp
+                            <div class="md:col-span-2 p-5 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-4">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="block text-xs font-black uppercase tracking-wider text-slate-900">Upfront Deposit / Account Credit (First Purchase Discount)</span>
+                                        @if($effectiveCoachDeposit > 0 && !$effectiveCoachApplied)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                                ${{ number_format($effectiveCoachDeposit, 2) }} Credit Available
+                                            </span>
+                                        @elseif($effectiveCoachDeposit > 0 && $effectiveCoachApplied)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-slate-200 text-slate-700 border border-slate-300">
+                                                Redeemed (${{ number_format($effectiveCoachDeposit, 2) }})
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <p class="text-[11px] text-slate-600 leading-relaxed">
+                                    If this coach/program paid an upfront deposit (typically $250–$300), enter the amount below and select which order type it applies to. Sales tax (7.5%) and Sales Rep commission will still be calculated on the full order total.
+                                </p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Deposit Credit Amount ($)</label>
+                                        <div class="relative">
+                                            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm pointer-events-none">$</span>
+                                            <input type="number" step="0.01" min="0" name="deposit_amount" value="{{ old('deposit_amount', $effectiveCoachDeposit > 0 ? number_format($effectiveCoachDeposit, 2, '.', '') : '') }}" placeholder="e.g. 250.00 or 300.00" class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-4 py-2.5 text-sm font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Apply Deposit To</label>
+                                        <select name="deposit_apply_to" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm font-bold text-slate-900 focus:border-primary focus:outline-none shadow-sm">
+                                            <option value="both" {{ old('deposit_apply_to', $effectiveCoachApplyTo) === 'both' ? 'selected' : '' }}>First Purchase (Direct Order or Team Store)</option>
+                                            <option value="direct" {{ old('deposit_apply_to', $effectiveCoachApplyTo) === 'direct' ? 'selected' : '' }}>Direct Order Only</option>
+                                            <option value="store" {{ old('deposit_apply_to', $effectiveCoachApplyTo) === 'store' ? 'selected' : '' }}>Team Store Order Only</option>
+                                        </select>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Deposit Notes (Optional)</label>
+                                        <input type="text" name="deposit_notes" value="{{ old('deposit_notes', $effectiveCoachNotes) }}" placeholder="e.g. Paid $250 deposit via Stripe/Zelle on 11/10" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-xs text-slate-800 focus:border-primary focus:outline-none shadow-sm">
+                                    </div>
+                                    <div class="md:col-span-2 pt-1">
+                                        <label class="inline-flex items-center gap-2.5 cursor-pointer">
+                                            <input type="checkbox" name="deposit_applied" value="1" {{ old('deposit_applied', $effectiveCoachApplied) ? 'checked' : '' }} class="rounded text-emerald-600 focus:ring-emerald-600 w-4 h-4">
+                                            <span class="text-xs font-bold text-slate-700">
+                                                Mark Deposit as Already Redeemed / Applied
+                                                @if($effectiveCoachApplied && $effectiveCoachAppliedAt)
+                                                    <span class="text-slate-500 font-normal">(Applied {{ $effectiveCoachAppliedAt->format('M d, Y') }}{{ $effectiveCoachBatchId ? ' · Batch #' . substr($effectiveCoachBatchId, 0, 8) : '' }} — uncheck to re-enable credit)</span>
+                                                @else
+                                                    <span class="text-slate-500 font-normal">(Leave unchecked so it automatically deducts on their next qualifying purchase)</span>
+                                                @endif
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary py-3 px-8 text-sm uppercase tracking-wider font-bold">Save Changes</button>
                     </form>

@@ -493,12 +493,29 @@ class AdminController extends Controller
             'phone'        => ['required', 'string', 'max:20'],
             'sport'        => ['required', 'string', 'max:100'],
             'status'       => ['required', 'in:active,declined'],
-            'sales_rep'    => ['nullable', 'string', 'max:255'],
-            'sales_rep_id' => ['nullable', 'exists:users,id'],
-            'is_tax_exempt'=> ['nullable', 'boolean'],
+            'sales_rep'        => ['nullable', 'string', 'max:255'],
+            'sales_rep_id'     => ['nullable', 'exists:users,id'],
+            'is_tax_exempt'    => ['nullable', 'boolean'],
+            'deposit_amount'   => ['nullable', 'numeric', 'min:0'],
+            'deposit_apply_to' => ['nullable', 'in:both,direct,store'],
+            'deposit_applied'  => ['nullable', 'boolean'],
+            'deposit_notes'    => ['nullable', 'string', 'max:500'],
         ]);
 
         $validated['is_tax_exempt'] = $request->boolean('is_tax_exempt');
+
+        if ($request->has('deposit_amount')) {
+            $validated['deposit_amount'] = round((float) ($request->input('deposit_amount') ?: 0), 2);
+            $validated['deposit_apply_to'] = $request->input('deposit_apply_to', 'both');
+            $validated['deposit_applied'] = $request->boolean('deposit_applied');
+            $validated['deposit_notes'] = $request->input('deposit_notes');
+            if (!$validated['deposit_applied']) {
+                $validated['deposit_applied_at'] = null;
+                $validated['deposit_applied_batch_id'] = null;
+            } elseif (!$user->deposit_applied) {
+                $validated['deposit_applied_at'] = now();
+            }
+        }
 
         $oldRepId = $user->sales_rep_id;
 
@@ -579,6 +596,21 @@ class AdminController extends Controller
         }
 
         $user->update($validated);
+
+        if ($request->has('deposit_amount')) {
+            $latestStore = $user->teamStores()->where('is_archived', false)->latest()->first()
+                ?? $user->teamStores()->latest()->first();
+            if ($latestStore) {
+                $latestStore->update([
+                    'deposit_amount'           => $user->deposit_amount,
+                    'deposit_apply_to'         => $user->deposit_apply_to,
+                    'deposit_applied'          => $user->deposit_applied,
+                    'deposit_applied_at'       => $user->deposit_applied_at,
+                    'deposit_applied_batch_id' => $user->deposit_applied_batch_id,
+                    'deposit_notes'            => $user->deposit_notes,
+                ]);
+            }
+        }
 
         if ($request->filled('return_to')) {
             return redirect($request->input('return_to'))
@@ -1867,10 +1899,27 @@ class AdminController extends Controller
             'is_tax_exempt'    => ['boolean'],
             'payment_mode'     => ['required', 'in:in_house,online,check'],
             'shipping_address' => ['nullable', 'string', 'max:1000'],
+            'deposit_amount'   => ['nullable', 'numeric', 'min:0'],
+            'deposit_apply_to' => ['nullable', 'in:both,direct,store'],
+            'deposit_applied'  => ['nullable', 'boolean'],
+            'deposit_notes'    => ['nullable', 'string', 'max:500'],
         ]);
 
         $validated['pricing_approved'] = $request->boolean('pricing_approved');
         $validated['is_tax_exempt'] = $request->boolean('is_tax_exempt');
+
+        if ($request->has('deposit_amount')) {
+            $validated['deposit_amount'] = round((float) ($request->input('deposit_amount') ?: 0), 2);
+            $validated['deposit_apply_to'] = $request->input('deposit_apply_to', 'both');
+            $validated['deposit_applied'] = $request->boolean('deposit_applied');
+            $validated['deposit_notes'] = $request->input('deposit_notes');
+            if (!$validated['deposit_applied']) {
+                $validated['deposit_applied_at'] = null;
+                $validated['deposit_applied_batch_id'] = null;
+            } elseif (!$store->deposit_applied) {
+                $validated['deposit_applied_at'] = now();
+            }
+        }
 
         if ($request->filled('order_deadline')) {
             $deadlineTime = $request->input('order_deadline_time', '23:59');
@@ -1886,6 +1935,17 @@ class AdminController extends Controller
         unset($validated['order_deadline_time']);
 
         $store->update($validated);
+
+        if ($request->has('deposit_amount') && $store->user) {
+            $store->user->update([
+                'deposit_amount'           => $store->deposit_amount,
+                'deposit_apply_to'         => $store->deposit_apply_to,
+                'deposit_applied'          => $store->deposit_applied,
+                'deposit_applied_at'       => $store->deposit_applied_at,
+                'deposit_applied_batch_id' => $store->deposit_applied_batch_id,
+                'deposit_notes'            => $store->deposit_notes,
+            ]);
+        }
 
         // Synchronize unpaid orders with the store's tax exemption and payment mode
         $isTaxExempt = $store->isTaxExempt();
@@ -2683,6 +2743,23 @@ class AdminController extends Controller
         }
 
         $unbatchedOrders->update($updateData);
+
+        $availableDeposit = $store->getAvailableDepositFor('store');
+        if ($availableDeposit > 0) {
+            $firstBatchedOrder = $store->parentOrders()->where('batch_id', $batchId)->first();
+            if ($firstBatchedOrder) {
+                $firstBatchedOrder->update(['deposit_credit_applied' => $availableDeposit]);
+            }
+            if ($store->user) {
+                $store->user->markDepositApplied($batchId, $store);
+            } else {
+                $store->update([
+                    'deposit_applied'          => true,
+                    'deposit_applied_at'       => now(),
+                    'deposit_applied_batch_id' => $batchId,
+                ]);
+            }
+        }
 
         if ($store->status === 'approved') {
             $store->update(['status' => 'submitted_to_admin']);

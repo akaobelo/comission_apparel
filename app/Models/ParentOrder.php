@@ -33,6 +33,7 @@ class ParentOrder extends Model
         'subtotal',
         'tax_amount',
         'fee_amount',
+        'deposit_credit_applied',
         'shipping_amount',
         'shipping_method',
         'total_paid',
@@ -138,6 +139,7 @@ class ParentOrder extends Model
         'subtotal'        => 'decimal:2',
         'tax_amount'      => 'decimal:2',
         'fee_amount'      => 'decimal:2',
+        'deposit_credit_applied' => 'decimal:2',
         'shipping_amount' => 'decimal:2',
         'total_paid'      => 'decimal:2',
         'paid_at'         => 'datetime',
@@ -185,8 +187,8 @@ class ParentOrder extends Model
         if ($calculated > 0) {
             return $calculated;
         }
-        if ((float) $this->total_paid > 0) {
-            return max(0.0, (float) $this->total_paid - (float) $this->tax_amount - (float) $this->fee_amount);
+        if ((float) $this->total_paid > 0 || (float) $this->deposit_credit_applied > 0) {
+            return max(0.0, (float) $this->total_paid + (float) $this->deposit_credit_applied - (float) $this->tax_amount - (float) $this->fee_amount);
         }
         return 0.0;
     }
@@ -475,6 +477,7 @@ class ParentOrder extends Model
         $totalTax = 0;
         $totalFees = 0;
         $totalOnlinePaid = 0;
+        $totalDepositApplied = 0;
 
         $ordersCollection = collect($orders);
         $seenReplicatedSessions = [];
@@ -483,6 +486,7 @@ class ParentOrder extends Model
             $orderTotal = 0;
             $orderWholesaleTotal = 0;
             $orderItemsCount = 0;
+            $orderDeposit = (float) ($order->deposit_credit_applied ?? 0);
             $items = is_array($order->items_json) ? $order->items_json : [];
 
             if ($order->isPaid() || (float)($order->subtotal ?? 0) > 0 || $order->isDirectOrder()) {
@@ -573,21 +577,23 @@ class ParentOrder extends Model
             $totalTax += $orderTax;
             $totalFees += $orderFees;
             $totalOnlinePaid += $orderOnlinePaid;
+            $totalDepositApplied += $orderDeposit;
         }
 
         $ordersCount = count($orders);
 
         return [
-            'orders_count'        => $ordersCount,
-            'total_sales'         => $totalSales,
-            'total_wholesale'     => $totalWholesale,
-            'net_proceeds'        => $totalSales - $totalWholesale,
-            'coach_profit_owed'   => max(0, $totalSales - $totalWholesale),
-            'total_tax'           => $totalTax,
-            'total_fees'          => $totalFees,
-            'total_online_paid'   => $totalOnlinePaid,
-            'total_items_sold'    => $totalItemsSold,
-            'average_order_value' => $ordersCount > 0 ? $totalSales / $ordersCount : 0,
+            'orders_count'           => $ordersCount,
+            'total_sales'            => $totalSales,
+            'total_wholesale'        => $totalWholesale,
+            'net_proceeds'           => $totalSales - $totalWholesale,
+            'coach_profit_owed'      => max(0, $totalSales - $totalWholesale),
+            'total_tax'              => $totalTax,
+            'total_fees'             => $totalFees,
+            'total_online_paid'      => $totalOnlinePaid,
+            'deposit_credit_applied' => $totalDepositApplied,
+            'total_items_sold'       => $totalItemsSold,
+            'average_order_value'    => $ordersCount > 0 ? $totalSales / $ordersCount : 0,
         ];
     }
 
@@ -622,10 +628,11 @@ class ParentOrder extends Model
 
             $batchFinancials = self::calculateBatchFinancials($batchOrders, $store);
 
-            // Gross sales: include the entire amount collected (Online Payment Stripe total in green if paid online, or total sales)
+            // Gross sales: include the entire amount collected (Online Payment Stripe total + any upfront deposit credit applied, or total sales)
             $onlinePaid = (float)($batchFinancials['total_online_paid'] ?? 0);
+            $depositApplied = (float)($batchFinancials['deposit_credit_applied'] ?? 0);
             $totalSales = (float) $batchOrders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales($store));
-            $gross = $onlinePaid > 0 ? $onlinePaid : ($totalSales > 0 ? $totalSales : (float)($batchFinancials['total_sales'] ?? 0));
+            $gross = $onlinePaid > 0 ? ($onlinePaid + $depositApplied) : ($totalSales > 0 ? $totalSales : (float)($batchFinancials['total_sales'] ?? 0));
 
             // Manu. Cost: Total Manufacturing Cost from batch summary (or effective manufacturing cost)
             $manuCost = (float) $batchOrders->sum(fn($o) => (float)$o->manufacturing_cost);

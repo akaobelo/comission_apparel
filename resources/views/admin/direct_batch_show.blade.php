@@ -205,6 +205,9 @@
                     <div class="pt-3 mt-3 border-t border-slate-200 space-y-2.5">
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Total Sales</span><span class="font-bold text-slate-900">${{ number_format($financials['total_sales'] ?? 0, 2) }}</span></div>
                         <div class="flex justify-between text-sm"><span class="text-slate-500">Average order</span><span class="font-bold text-slate-900">${{ number_format($financials['average_order_value'] ?? 0, 2) }}</span></div>
+                        @if(($financials['deposit_credit_applied'] ?? 0) > 0)
+                            <div class="flex justify-between text-sm"><span class="text-emerald-700 font-bold">Upfront Deposit Credit Applied</span><span class="font-bold text-emerald-700">-${{ number_format($financials['deposit_credit_applied'], 2) }}</span></div>
+                        @endif
                         @if(($financials['total_online_paid'] ?? 0) > 0)
                             <div class="flex justify-between text-sm">
                                 <span class="text-slate-500">Customer Sales Tax {{ $isTaxExempt ? '(501(c)(3) Waived)' : '(7.5%)' }}</span>
@@ -238,8 +241,9 @@
                         $assignedRepId = $firstOrder->sales_rep_id ?: ($firstOrder->user?->sales_rep_id ?? null);
                         $currentRep = $assignedRepId ? $salesReps->firstWhere('id', $assignedRepId) : null;
                         $onlinePaid = (float)($financials['total_online_paid'] ?? 0);
+                        $depositApplied = (float)($financials['deposit_credit_applied'] ?? 0);
                         $totalSales = (float)($financials['total_sales'] ?? $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales()));
-                        $batchGross = $onlinePaid > 0 ? $onlinePaid : $totalSales;
+                        $batchGross = $onlinePaid > 0 ? ($onlinePaid + $depositApplied) : $totalSales;
                         $batchTax = (float)($financials['total_tax'] ?? 0);
                         $batchTotalExpense = $batchMfg + $batchTax + $batchTariff + $batchFees;
                         $batchNetMargin = max(0.0, $batchGross - $batchTotalExpense);

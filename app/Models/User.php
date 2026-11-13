@@ -36,6 +36,12 @@ class User extends Authenticatable
         'referral_slug',
         'is_tax_exempt',
         'sales_rep_assigned_at',
+        'deposit_amount',
+        'deposit_apply_to',
+        'deposit_applied',
+        'deposit_applied_at',
+        'deposit_applied_batch_id',
+        'deposit_notes',
     ];
 
     /**
@@ -61,7 +67,52 @@ class User extends Authenticatable
             'is_tax_exempt' => 'boolean',
             'commission_rate' => 'decimal:2',
             'sales_rep_assigned_at' => 'datetime',
+            'deposit_amount' => 'decimal:2',
+            'deposit_applied' => 'boolean',
+            'deposit_applied_at' => 'datetime',
         ];
+    }
+
+    public function canApplyDepositTo(string $orderType): bool
+    {
+        if ($this->deposit_applied || (float) $this->deposit_amount <= 0) {
+            return false;
+        }
+        $scope = $this->deposit_apply_to ?: 'both';
+        if ($scope === 'both') {
+            return true;
+        }
+        return $scope === $orderType;
+    }
+
+    public function getAvailableDepositFor(string $orderType, ?TeamStore $store = null): float
+    {
+        if ($store && $store->canApplyDepositTo($orderType)) {
+            return round((float) $store->deposit_amount, 2);
+        }
+        if ($this->canApplyDepositTo($orderType)) {
+            return round((float) $this->deposit_amount, 2);
+        }
+        return 0.00;
+    }
+
+    public function markDepositApplied(string $batchId, ?TeamStore $store = null): void
+    {
+        $now = now();
+        if ($store && !$store->deposit_applied && (float) $store->deposit_amount > 0) {
+            $store->update([
+                'deposit_applied'          => true,
+                'deposit_applied_at'       => $now,
+                'deposit_applied_batch_id' => $batchId,
+            ]);
+        }
+        if (!$this->deposit_applied && (float) $this->deposit_amount > 0) {
+            $this->update([
+                'deposit_applied'          => true,
+                'deposit_applied_at'       => $now,
+                'deposit_applied_batch_id' => $batchId,
+            ]);
+        }
     }
 
     public function isAdmin(): bool

@@ -705,13 +705,16 @@
                             $draftTax = $isTaxExempt ? 0.00 : round($draftSubtotal * $taxRate, 2);
                             $isCheckPayment = ($store && $store->isCheckPayment()) || $user->teamStores()->where('payment_mode', 'check')->exists();
 
+                            $availableDirectDeposit = $user->getAvailableDepositFor('direct', $store);
+                            $draftDepositCredit = ($draftSubtotal > 0) ? round(min($availableDirectDeposit, $draftSubtotal + $draftTax), 2) : 0.00;
+                            $preFeeTotal = max(0, round($draftSubtotal + $draftTax - $draftDepositCredit, 2));
+
                             if ($isCheckPayment) {
                                 $draftFee = 0.00;
-                                $draftGrandTotal = round($draftSubtotal + $draftTax, 2);
-                            } elseif ($draftSubtotal > 0) {
+                                $draftGrandTotal = $preFeeTotal;
+                            } elseif ($preFeeTotal > 0) {
                                 $feePercent = (float) config('services.stripe.fee_percent', 0.029);
                                 $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
-                                $preFeeTotal = $draftSubtotal + $draftTax;
                                 $draftGrandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
                                 $draftFee = round($draftGrandTotal - $preFeeTotal, 2);
                             } else {
@@ -729,6 +732,12 @@
                                 <span>Sales Tax {{ $isTaxExempt ? '(501(c)(3) Exempt)' : '(7.5%)' }}</span>
                                 <span class="font-bold text-slate-900">${{ number_format($draftTax, 2) }}</span>
                             </div>
+                            @if($draftDepositCredit > 0)
+                                <div class="flex justify-between text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200 font-bold">
+                                    <span>Upfront Deposit Credit Applied</span>
+                                    <span>-${{ number_format($draftDepositCredit, 2) }}</span>
+                                </div>
+                            @endif
                             @if($isCheckPayment)
                                 <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 mt-2">
                                     <div class="font-bold uppercase tracking-wider text-[11px] text-blue-900 flex items-center gap-1.5 mb-1">
@@ -996,8 +1005,11 @@
                                                 $inHouseTaxRate = $store->isTaxExempt() ? 0 : 0.075;
                                                 $inHouseTax = round($inHouseWholesale * $inHouseTaxRate, 2);
                                                 $inHouseSubtotalWithTax = $inHouseWholesale + $inHouseTax;
-                                                $inHouseTotalGross = ($inHouseSubtotalWithTax > 0) ? round(($inHouseSubtotalWithTax + 0.30) / (1 - 0.029), 2) : 0;
-                                                $inHouseCardFee = max(0, round($inHouseTotalGross - $inHouseSubtotalWithTax, 2));
+                                                $availableStoreDeposit = $store->getAvailableDepositFor('store');
+                                                $inHouseDepositCredit = ($inHouseSubtotalWithTax > 0) ? round(min($availableStoreDeposit, $inHouseSubtotalWithTax), 2) : 0.00;
+                                                $inHousePreFee = max(0, round($inHouseSubtotalWithTax - $inHouseDepositCredit, 2));
+                                                $inHouseTotalGross = ($inHousePreFee > 0) ? round(($inHousePreFee + 0.30) / (1 - 0.029), 2) : 0;
+                                                $inHouseCardFee = max(0, round($inHouseTotalGross - $inHousePreFee, 2));
                                             @endphp
                                             <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 mb-4 space-y-2.5">
                                                 <div class="flex items-center gap-2 text-xs font-bold text-amber-900">
@@ -1007,6 +1019,9 @@
                                                 <div class="bg-white/90 border border-amber-200/80 rounded-lg p-2.5 text-xs space-y-1 text-slate-700">
                                                     <div class="flex justify-between"><span>Due to TCA (Wholesale):</span><span class="font-bold text-slate-900">${{ number_format($inHouseWholesale, 2) }}</span></div>
                                                     <div class="flex justify-between"><span>Sales Tax {{ $store->isTaxExempt() ? '(501(c)(3) Waived)' : '(7.5%)' }}:</span><span class="font-bold text-slate-900">${{ number_format($inHouseTax, 2) }}</span></div>
+                                                    @if($inHouseDepositCredit > 0)
+                                                        <div class="flex justify-between text-emerald-700 font-bold"><span>Upfront Deposit Credit Applied:</span><span>-${{ number_format($inHouseDepositCredit, 2) }}</span></div>
+                                                    @endif
                                                     <div class="flex justify-between"><span>Card Processing Fee:</span><span class="font-bold text-slate-900">${{ number_format($inHouseCardFee, 2) }}</span></div>
                                                     <div class="flex justify-between pt-1 border-t border-amber-200 font-black text-secondary"><span>Total Due at Checkout:</span><span>${{ number_format($inHouseTotalGross, 2) }}</span></div>
                                                 </div>
@@ -1985,6 +2000,9 @@
                                                 <div class="pt-3 mt-3 border-t border-slate-200 space-y-2.5">
                                                     <div class="flex justify-between text-sm"><span class="text-slate-500">Total Sales</span><span class="font-bold text-slate-900">${{ number_format($financials['total_sales'] ?? 0, 2) }}</span></div>
                                                     <div class="flex justify-between text-sm"><span class="text-slate-500">Average order</span><span class="font-bold text-slate-900">${{ number_format($financials['average_order_value'] ?? 0, 2) }}</span></div>
+                                                    @if(($financials['deposit_credit_applied'] ?? 0) > 0)
+                                                        <div class="flex justify-between text-sm"><span class="text-emerald-700 font-bold">Upfront Deposit Credit Applied</span><span class="font-bold text-emerald-700">-${{ number_format($financials['deposit_credit_applied'], 2) }}</span></div>
+                                                    @endif
                                                     @if(($financials['total_online_paid'] ?? 0) > 0)
                                                         <div class="flex justify-between text-sm">
                                                             <span class="text-slate-500">Sales Tax {{ $isTaxExempt ? '(501(c)(3) Waived)' : '(7.5%)' }}</span>

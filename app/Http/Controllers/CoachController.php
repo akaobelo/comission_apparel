@@ -382,6 +382,15 @@ class CoachController extends Controller
                 'submitted_at'   => $now,
             ]);
 
+            $availableDeposit = $store->getAvailableDepositFor('store');
+            if ($availableDeposit > 0) {
+                $firstBatchedOrder = $store->parentOrders()->where('batch_id', $batchId)->first();
+                if ($firstBatchedOrder) {
+                    $firstBatchedOrder->update(['deposit_credit_applied' => $availableDeposit]);
+                }
+                $request->user()->markDepositApplied($batchId, $store);
+            }
+
             $store->update([
                 'status'           => 'submitted_to_admin',
                 'shipping_address' => $request->shipping_address,
@@ -418,6 +427,15 @@ class CoachController extends Controller
                 'batch_id'     => $batchId,
                 'submitted_at' => $now,
             ]);
+
+            $availableDeposit = $store->getAvailableDepositFor('store');
+            if ($availableDeposit > 0) {
+                $firstBatchedOrder = $store->parentOrders()->where('batch_id', $batchId)->first();
+                if ($firstBatchedOrder) {
+                    $firstBatchedOrder->update(['deposit_credit_applied' => $availableDeposit]);
+                }
+                $request->user()->markDepositApplied($batchId, $store);
+            }
 
             $store->update([
                 'status'           => 'submitted_to_admin',
@@ -546,13 +564,81 @@ class CoachController extends Controller
         $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
         $taxAmount = $isTaxExempt ? 0.00 : round($wholesaleSubtotal * $taxRate, 2);
 
+        $existingBatchDeposit = (float) $unpaidOrders->sum(fn($o) => (float) ($o->deposit_credit_applied ?? 0));
+        $availableDeposit = $store->getAvailableDepositFor('store');
+        $rawDeposit = $availableDeposit > 0 ? $availableDeposit : $existingBatchDeposit;
+        $preDepositTotal = round($wholesaleSubtotal + $taxAmount, 2);
+        $depositApplied = round(min($rawDeposit, $preDepositTotal), 2);
+
         $feePercent = (float) config('services.stripe.fee_percent', 0.029);
         $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
-        $preFeeTotal = $wholesaleSubtotal + $taxAmount;
+        $preFeeTotal = max(0.00, round($preDepositTotal - $depositApplied, 2));
+
+        $batchId = $existingBatchId ?: (string) Str::uuid();
+
+        if ($preFeeTotal <= 0 && $depositApplied > 0) {
+            $now = now();
+            $runningTax = 0.0;
+            $runningDeposit = 0.0;
+            $orderCount = count($unpaidOrders);
+            $idx = 0;
+
+            foreach ($unpaidOrders as $order) {
+                $idx++;
+                $orderMfg = $orderWholesaleMap[$order->id] ?? 0.0;
+                $ratio = $wholesaleSubtotal > 0 ? ($orderMfg / $wholesaleSubtotal) : (1 / $orderCount);
+
+                if ($idx === $orderCount) {
+                    $orderTax = round($taxAmount - $runningTax, 2);
+                    $orderDeposit = round($depositApplied - $runningDeposit, 2);
+                } else {
+                    $orderTax = $isTaxExempt ? 0.00 : round($wholesaleSubtotal > 0 ? ($taxAmount * $ratio) : 0, 2);
+                    $orderDeposit = round($depositApplied * $ratio, 2);
+                    $runningTax += $orderTax;
+                    $runningDeposit += $orderDeposit;
+                }
+
+                $order->update([
+                    'batch_id'               => $batchId,
+                    'status'                 => 'Submitted to Admin',
+                    'payment_status'         => 'paid',
+                    'sales_rep_id'           => $order->sales_rep_id ?: ($store->sales_rep_id ?? $store->user?->sales_rep_id),
+                    'manufacturing_cost'     => $orderMfg > 0 ? $orderMfg : $order->manufacturing_cost,
+                    'tax_amount'             => $orderTax,
+                    'fee_amount'             => 0.00,
+                    'deposit_credit_applied' => $orderDeposit,
+                    'total_paid'             => 0.00,
+                    'submitted_at'           => $now,
+                    'paid_at'                => $now,
+                ]);
+            }
+
+            if ($user) {
+                $user->markDepositApplied($batchId, $store);
+            } else {
+                $store->update([
+                    'deposit_applied'          => true,
+                    'deposit_applied_at'       => $now,
+                    'deposit_applied_batch_id' => $batchId,
+                ]);
+            }
+
+            $store->update(['status' => 'submitted_to_admin']);
+
+            \Illuminate\Support\Facades\Notification::send(
+                \App\Models\User::where('role', 'admin')->get(),
+                new \App\Notifications\MasterOrderSubmitted($store)
+            );
+            \App\Services\EmailNotificationService::notifyMasterOrderSubmitted($store, $batchId);
+
+            return redirect()->route('coach.dashboard')
+                ->with('success', 'Master order covered by your Deposit Credit ($' . number_format($depositApplied, 2) . ') and submitted for production!')
+                ->with('activeCoachTab', 'order_status');
+        }
+
         $grandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
         $feeAmount = round($grandTotal - $preFeeTotal, 2);
 
-        $batchId = $existingBatchId ?: (string) Str::uuid();
         $stripeSecret = config('services.stripe.secret');
 
         if ($stripeSecret) {
@@ -593,19 +679,44 @@ class CoachController extends Controller
                     'mode'                 => 'payment',
                     'client_reference_id'  => (string) $batchId,
                     'metadata'             => [
-                        'type'         => 'master_order',
-                        'batch_id'     => $batchId,
-                        'store_id'     => $store->id,
-                        'user_id'      => $user?->id,
-                        'organization' => $store->name,
-                        'subtotal'     => $wholesaleSubtotal,
-                        'tax_amount'   => $taxAmount,
-                        'fee_amount'   => $feeAmount,
-                        'grand_total'  => $grandTotal,
+                        'type'            => 'master_order',
+                        'batch_id'        => $batchId,
+                        'store_id'        => $store->id,
+                        'user_id'         => $user?->id,
+                        'organization'    => $store->name,
+                        'subtotal'        => $wholesaleSubtotal,
+                        'tax_amount'      => $taxAmount,
+                        'deposit_applied' => $depositApplied,
+                        'fee_amount'      => $feeAmount,
+                        'grand_total'     => $grandTotal,
                     ],
                     'success_url'          => route('coach.store.checkout.success', $store) . '?session_id={CHECKOUT_SESSION_ID}&batch_id=' . $batchId,
                     'cancel_url'           => route('coach.store.checkout.cancel', $store) . '?batch_id=' . $batchId,
                 ];
+
+                if ($depositApplied > 0) {
+                    try {
+                        $coupon = $stripe->coupons->create([
+                            'amount_off' => intval(round($depositApplied * 100)),
+                            'currency'   => 'usd',
+                            'duration'   => 'once',
+                            'name'       => 'Deposit / Account Credit ($' . number_format($depositApplied, 2) . ')',
+                        ]);
+                        $sessionParams['discounts'] = [['coupon' => $coupon->id]];
+                    } catch (\Exception $couponEx) {
+                        $sessionParams['line_items'] = [[
+                            'price_data' => [
+                                'currency'     => 'usd',
+                                'unit_amount'  => intval(round($grandTotal * 100)),
+                                'product_data' => [
+                                    'name'        => $store->name . ' — Master Order Balance (Less $' . number_format($depositApplied, 2) . ' Deposit)',
+                                    'description' => 'Wholesale: $' . number_format($wholesaleSubtotal, 2) . ' + Tax: $' . number_format($taxAmount, 2) . ' - Deposit Credit: $' . number_format($depositApplied, 2) . ' + Card Fee: $' . number_format($feeAmount, 2),
+                                ],
+                            ],
+                            'quantity' => 1,
+                        ]];
+                    }
+                }
 
                 if (!empty($user?->email) && filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
                     $sessionParams['customer_email'] = $user->email;
@@ -615,6 +726,7 @@ class CoachController extends Controller
 
                 $runningTax = 0.0;
                 $runningFee = 0.0;
+                $runningDeposit = 0.0;
                 $runningTotal = 0.0;
                 $orderCount = count($unpaidOrders);
                 $idx = 0;
@@ -627,22 +739,26 @@ class CoachController extends Controller
                     if ($idx === $orderCount) {
                         $orderTax = round($taxAmount - $runningTax, 2);
                         $orderFee = round($feeAmount - $runningFee, 2);
+                        $orderDeposit = round($depositApplied - $runningDeposit, 2);
                         $orderTotalPaid = round($grandTotal - $runningTotal, 2);
                     } else {
                         $orderTax = $isTaxExempt ? 0.00 : round($wholesaleSubtotal > 0 ? ($taxAmount * $ratio) : 0, 2);
                         $orderFee = round($feeAmount * $ratio, 2);
-                        $orderTotalPaid = round($orderMfg + $orderTax + $orderFee, 2);
+                        $orderDeposit = round($depositApplied * $ratio, 2);
+                        $orderTotalPaid = max(0.00, round($orderMfg + $orderTax - $orderDeposit + $orderFee, 2));
                         $runningTax += $orderTax;
                         $runningFee += $orderFee;
+                        $runningDeposit += $orderDeposit;
                         $runningTotal += $orderTotalPaid;
                     }
 
                     $order->update([
-                        'stripe_session_id'  => $session->id,
-                        'manufacturing_cost' => $orderMfg > 0 ? $orderMfg : $order->manufacturing_cost,
-                        'tax_amount'         => $orderTax,
-                        'fee_amount'         => $orderFee,
-                        'total_paid'         => $orderTotalPaid,
+                        'stripe_session_id'      => $session->id,
+                        'manufacturing_cost'     => $orderMfg > 0 ? $orderMfg : $order->manufacturing_cost,
+                        'tax_amount'             => $orderTax,
+                        'fee_amount'             => $orderFee,
+                        'deposit_credit_applied' => $orderDeposit,
+                        'total_paid'             => $orderTotalPaid,
                     ]);
                 }
 
@@ -701,6 +817,20 @@ class CoachController extends Controller
                             'submitted_at'             => $now,
                             'paid_at'                  => $now,
                         ]);
+                    }
+
+                    $batchDepositSum = (float) $orders->sum(fn($o) => (float) ($o->deposit_credit_applied ?? 0));
+                    $metaDeposit = (float) ($session->metadata->deposit_applied ?? 0);
+                    if ($batchDepositSum > 0 || $metaDeposit > 0) {
+                        if ($store->user) {
+                            $store->user->markDepositApplied($resolvedBatchId, $store);
+                        } else {
+                            $store->update([
+                                'deposit_applied'          => true,
+                                'deposit_applied_at'       => $now,
+                                'deposit_applied_batch_id' => $resolvedBatchId,
+                            ]);
+                        }
                     }
 
                     $store->update(['status' => 'submitted_to_admin']);
@@ -1353,31 +1483,55 @@ class CoachController extends Controller
         $batchId = (string) Str::uuid();
 
         // 501(c)(3) tax exemption check
-        $isTaxExempt = (bool) $user->is_tax_exempt;
+        $isTaxExempt = (bool) ($user->is_tax_exempt || ($activeStore && $activeStore->isTaxExempt()));
         $taxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
         $taxAmount = $isTaxExempt ? 0.00 : round($subtotal * $taxRate, 2);
+
+        // Deposit credit check (Sales Tax is calculated on full order subtotal per business rule)
+        $availableDeposit = $user->getAvailableDepositFor('direct', $activeStore);
+        $preDepositTotal = round($subtotal + $taxAmount, 2);
+        $depositApplied = round(min($availableDeposit, $preDepositTotal), 2);
 
         // Check if Pay by Check is active for this coach (via active store or any store owned by coach)
         $isCoachCheckPayment = ($activeStore && $activeStore->isCheckPayment()) 
             || $user->teamStores()->where('payment_mode', 'check')->exists();
 
         if ($isCoachCheckPayment) {
+            $runningDeposit = 0.0;
+            $orderCount = count($draftOrders);
+            $idx = 0;
+
             foreach ($draftOrders as $order) {
+                $idx++;
                 $orderSubtotal = (float) $order->getCalculatedSubtotal();
                 $orderTax = $isTaxExempt ? 0.00 : round($orderSubtotal * $taxRate, 2);
+                $ratio = $subtotal > 0 ? ($orderSubtotal / $subtotal) : (1 / $orderCount);
+
+                if ($idx === $orderCount) {
+                    $orderDeposit = round($depositApplied - $runningDeposit, 2);
+                } else {
+                    $orderDeposit = round($depositApplied * $ratio, 2);
+                    $runningDeposit += $orderDeposit;
+                }
+
                 $order->update([
-                    'batch_id'       => $batchId,
-                    'team_store_id'  => $order->team_store_id ?: $activeStore?->id,
-                    'order_type'     => 'direct',
-                    'sales_rep_id'   => $order->sales_rep_id ?: ($user->sales_rep_id ?? $activeStore?->sales_rep_id),
-                    'status'         => 'Submitted to Admin',
-                    'payment_status' => 'not_applicable',
-                    'submitted_at'   => now(),
-                    'subtotal'       => $orderSubtotal,
-                    'tax_amount'     => $orderTax,
-                    'fee_amount'     => 0.00,
-                    'total_paid'     => round($orderSubtotal + $orderTax, 2),
+                    'batch_id'               => $batchId,
+                    'team_store_id'          => $order->team_store_id ?: $activeStore?->id,
+                    'order_type'             => 'direct',
+                    'sales_rep_id'           => $order->sales_rep_id ?: ($user->sales_rep_id ?? $activeStore?->sales_rep_id),
+                    'status'                 => 'Submitted to Admin',
+                    'payment_status'         => 'not_applicable',
+                    'submitted_at'           => now(),
+                    'subtotal'               => $orderSubtotal,
+                    'tax_amount'             => $orderTax,
+                    'fee_amount'             => 0.00,
+                    'deposit_credit_applied' => $orderDeposit,
+                    'total_paid'             => max(0.00, round($orderSubtotal + $orderTax - $orderDeposit, 2)),
                 ]);
+            }
+
+            if ($depositApplied > 0) {
+                $user->markDepositApplied($batchId, $activeStore);
             }
 
             // Notify Admin
@@ -1401,7 +1555,64 @@ class CoachController extends Controller
 
         $feePercent = (float) config('services.stripe.fee_percent', 0.029);
         $feeFixed = (float) config('services.stripe.fee_fixed', 0.30);
-        $preFeeTotal = $subtotal + $taxAmount;
+        $preFeeTotal = max(0.00, round($preDepositTotal - $depositApplied, 2));
+
+        // If the deposit credit covers the entire order + tax, submit immediately without Stripe payment
+        if ($preFeeTotal <= 0 && $depositApplied > 0) {
+            $runningTax = 0.0;
+            $runningDeposit = 0.0;
+            $orderCount = count($draftOrders);
+            $idx = 0;
+            $now = now();
+
+            foreach ($draftOrders as $order) {
+                $idx++;
+                $orderSubtotal = (float) ($order->subtotal ?? $order->getCalculatedSubtotal());
+                $ratio = $subtotal > 0 ? ($orderSubtotal / $subtotal) : (1 / $orderCount);
+
+                if ($idx === $orderCount) {
+                    $orderTax = round($taxAmount - $runningTax, 2);
+                    $orderDeposit = round($depositApplied - $runningDeposit, 2);
+                } else {
+                    $orderTax = $isTaxExempt ? 0.00 : round($subtotal > 0 ? ($taxAmount * $ratio) : 0, 2);
+                    $orderDeposit = round($depositApplied * $ratio, 2);
+                    $runningTax += $orderTax;
+                    $runningDeposit += $orderDeposit;
+                }
+
+                $order->update([
+                    'batch_id'               => $batchId,
+                    'team_store_id'          => $order->team_store_id ?: $activeStore?->id,
+                    'order_type'             => 'direct',
+                    'sales_rep_id'           => $order->sales_rep_id ?: ($user->sales_rep_id ?? $activeStore?->sales_rep_id),
+                    'status'                 => 'Submitted to Admin',
+                    'payment_status'         => 'paid',
+                    'submitted_at'           => $now,
+                    'paid_at'                => $now,
+                    'tax_amount'             => $orderTax,
+                    'fee_amount'             => 0.00,
+                    'deposit_credit_applied' => $orderDeposit,
+                    'total_paid'             => 0.00,
+                ]);
+            }
+
+            $user->markDepositApplied($batchId, $activeStore);
+
+            $storeOrgName = $activeStore?->name ?? $user->organization ?: $user->name;
+            \Illuminate\Support\Facades\Notification::send(
+                \App\Models\User::where('role', 'admin')->get(),
+                new \App\Notifications\MasterOrderSubmitted((object) [
+                    'name' => $storeOrgName . ' Direct Order (Paid via Deposit Credit)',
+                    'user' => $user
+                ])
+            );
+            \App\Services\EmailNotificationService::notifyDirectOrderSubmitted($draftOrders, $user, $batchId);
+
+            return redirect()->route('coach.dashboard')
+                ->with('success', 'Direct orders covered by your Deposit Credit ($' . number_format($depositApplied, 2) . ') and submitted to production!')
+                ->with('activeCoachTab', 'order_status');
+        }
+
         $grandTotal = round(($preFeeTotal + $feeFixed) / (1 - $feePercent), 2);
         $feeAmount = round($grandTotal - $preFeeTotal, 2);
         $totalPaid = $grandTotal;
@@ -1488,19 +1699,44 @@ class CoachController extends Controller
                     'mode'                 => 'payment',
                     'client_reference_id'  => (string) $batchId,
                     'metadata'             => [
-                        'type'         => 'direct_order',
-                        'batch_id'     => $batchId,
-                        'user_id'      => $user->id,
-                        'store_id'     => $activeStore?->id,
-                        'organization' => $activeStore?->name ?? $user->organization ?? '',
-                        'subtotal'     => $subtotal,
-                        'tax_amount'   => $taxAmount,
-                        'fee_amount'   => $feeAmount,
-                        'grand_total'  => $grandTotal,
+                        'type'            => 'direct_order',
+                        'batch_id'        => $batchId,
+                        'user_id'         => $user->id,
+                        'store_id'        => $activeStore?->id,
+                        'organization'    => $activeStore?->name ?? $user->organization ?? '',
+                        'subtotal'        => $subtotal,
+                        'tax_amount'      => $taxAmount,
+                        'deposit_applied' => $depositApplied,
+                        'fee_amount'      => $feeAmount,
+                        'grand_total'     => $grandTotal,
                     ],
                     'success_url'          => route('coach.direct-order.checkout.success') . '?session_id={CHECKOUT_SESSION_ID}&batch_id=' . $batchId,
                     'cancel_url'           => route('coach.direct-order.checkout.cancel') . '?batch_id=' . $batchId,
                 ];
+
+                if ($depositApplied > 0) {
+                    try {
+                        $coupon = $stripe->coupons->create([
+                            'amount_off' => intval(round($depositApplied * 100)),
+                            'currency'   => 'usd',
+                            'duration'   => 'once',
+                            'name'       => 'Deposit / Account Credit ($' . number_format($depositApplied, 2) . ')',
+                        ]);
+                        $sessionParams['discounts'] = [['coupon' => $coupon->id]];
+                    } catch (\Exception $couponEx) {
+                        $sessionParams['line_items'] = [[
+                            'price_data' => [
+                                'currency'     => 'usd',
+                                'unit_amount'  => intval(round($grandTotal * 100)),
+                                'product_data' => [
+                                    'name'        => ($activeStore?->name ?? $user->organization ?: 'Direct Order') . ' — Balance (Less $' . number_format($depositApplied, 2) . ' Deposit)',
+                                    'description' => 'Subtotal: $' . number_format($subtotal, 2) . ' + Tax: $' . number_format($taxAmount, 2) . ' - Deposit Credit: $' . number_format($depositApplied, 2) . ' + Card Fee: $' . number_format($feeAmount, 2),
+                                ],
+                            ],
+                            'quantity' => 1,
+                        ]];
+                    }
+                }
 
                 if (!empty($user->email) && filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
                     $sessionParams['customer_email'] = $user->email;
@@ -1510,6 +1746,7 @@ class CoachController extends Controller
 
                 $runningTax = 0.0;
                 $runningFee = 0.0;
+                $runningDeposit = 0.0;
                 $runningTotal = 0.0;
                 $orderCount = count($draftOrders);
                 $idx = 0;
@@ -1522,21 +1759,25 @@ class CoachController extends Controller
                     if ($idx === $orderCount) {
                         $orderTax = round($taxAmount - $runningTax, 2);
                         $orderFee = round($feeAmount - $runningFee, 2);
+                        $orderDeposit = round($depositApplied - $runningDeposit, 2);
                         $orderTotalPaid = round($grandTotal - $runningTotal, 2);
                     } else {
                         $orderTax = $isTaxExempt ? 0.00 : round($subtotal > 0 ? ($taxAmount * $ratio) : 0, 2);
                         $orderFee = round($feeAmount * $ratio, 2);
-                        $orderTotalPaid = round($orderSubtotal + $orderTax + $orderFee, 2);
+                        $orderDeposit = round($depositApplied * $ratio, 2);
+                        $orderTotalPaid = max(0.00, round($orderSubtotal + $orderTax - $orderDeposit + $orderFee, 2));
                         $runningTax += $orderTax;
                         $runningFee += $orderFee;
+                        $runningDeposit += $orderDeposit;
                         $runningTotal += $orderTotalPaid;
                     }
 
                     $order->update([
-                        'stripe_session_id' => $session->id,
-                        'tax_amount'        => $orderTax,
-                        'fee_amount'        => $orderFee,
-                        'total_paid'        => $orderTotalPaid,
+                        'stripe_session_id'      => $session->id,
+                        'tax_amount'             => $orderTax,
+                        'fee_amount'             => $orderFee,
+                        'deposit_credit_applied' => $orderDeposit,
+                        'total_paid'             => $orderTotalPaid,
                     ]);
                 }
 
@@ -1547,17 +1788,34 @@ class CoachController extends Controller
             }
         } else {
             // Local dev simulation when Stripe secret is not configured
+            $runningDeposit = 0.0;
+            $orderCount = count($draftOrders);
+            $idx = 0;
             foreach ($draftOrders as $order) {
+                $idx++;
+                $orderSubtotal = (float) $order->getCalculatedSubtotal();
+                $ratio = $subtotal > 0 ? ($orderSubtotal / $subtotal) : (1 / $orderCount);
+                if ($idx === $orderCount) {
+                    $orderDeposit = round($depositApplied - $runningDeposit, 2);
+                } else {
+                    $orderDeposit = round($depositApplied * $ratio, 2);
+                    $runningDeposit += $orderDeposit;
+                }
                 $order->update([
-                    'team_store_id'  => $order->team_store_id ?: $activeStore?->id,
-                    'order_type'     => 'direct',
-                    'sales_rep_id'   => $order->sales_rep_id ?: ($user->sales_rep_id ?? $activeStore?->sales_rep_id),
-                    'status'         => 'Submitted to Admin',
-                    'payment_status' => 'paid',
-                    'submitted_at'   => now(),
-                    'paid_at'        => now(),
-                    'total_paid'     => $order->getCalculatedSubtotal(),
+                    'team_store_id'          => $order->team_store_id ?: $activeStore?->id,
+                    'order_type'             => 'direct',
+                    'sales_rep_id'           => $order->sales_rep_id ?: ($user->sales_rep_id ?? $activeStore?->sales_rep_id),
+                    'status'                 => 'Submitted to Admin',
+                    'payment_status'         => 'paid',
+                    'submitted_at'           => now(),
+                    'paid_at'                => now(),
+                    'deposit_credit_applied' => $orderDeposit,
+                    'total_paid'             => max(0.00, round($orderSubtotal - $orderDeposit, 2)),
                 ]);
+            }
+
+            if ($depositApplied > 0) {
+                $user->markDepositApplied($batchId, $activeStore);
             }
 
             // Notify Admin
@@ -1614,6 +1872,12 @@ class CoachController extends Controller
                             'submitted_at'             => now(),
                             'paid_at'                  => now(),
                         ]);
+                    }
+
+                    $batchDepositSum = (float) $orders->sum(fn($o) => (float) ($o->deposit_credit_applied ?? 0));
+                    $metaDeposit = (float) ($session->metadata->deposit_applied ?? 0);
+                    if ($batchDepositSum > 0 || $metaDeposit > 0) {
+                        $user->markDepositApplied($batchId, $firstOrder->teamStore);
                     }
 
                     if (!$alreadyNotified) {

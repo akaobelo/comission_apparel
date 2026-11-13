@@ -24,6 +24,12 @@ class TeamStore extends Model
         'is_archived',
         'shipping_address',
         'sort_order',
+        'deposit_amount',
+        'deposit_apply_to',
+        'deposit_applied',
+        'deposit_applied_at',
+        'deposit_applied_batch_id',
+        'deposit_notes',
     ];
 
     public function isOnlinePayment(): bool
@@ -86,7 +92,33 @@ class TeamStore extends Model
         'order_deadline' => 'datetime',
         'pricing_approved' => 'boolean',
         'is_tax_exempt' => 'boolean',
+        'deposit_amount' => 'decimal:2',
+        'deposit_applied' => 'boolean',
+        'deposit_applied_at' => 'datetime',
     ];
+
+    public function canApplyDepositTo(string $orderType = 'store'): bool
+    {
+        if ($this->deposit_applied || (float) $this->deposit_amount <= 0) {
+            return false;
+        }
+        $scope = $this->deposit_apply_to ?: 'both';
+        if ($scope === 'both') {
+            return true;
+        }
+        return $scope === $orderType;
+    }
+
+    public function getAvailableDepositFor(string $orderType = 'store'): float
+    {
+        if ($this->canApplyDepositTo($orderType)) {
+            return round((float) $this->deposit_amount, 2);
+        }
+        if ($this->user && $this->user->canApplyDepositTo($orderType)) {
+            return round((float) $this->user->deposit_amount, 2);
+        }
+        return 0.00;
+    }
 
     protected static function booted()
     {
