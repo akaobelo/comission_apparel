@@ -19,8 +19,8 @@
                 </button>
 
                 <!-- Modal -->
-                <div x-show="openLogoModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" x-cloak>
-                    <div @click.away="openLogoModal = false" class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-slide-up mx-4">
+                <div x-show="openLogoModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto" x-cloak>
+                    <div @click.away="openLogoModal = false" class="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 animate-slide-up mx-auto my-auto">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-black uppercase text-slate-900">Update Organization Logo</h3>
                             <button @click="openLogoModal = false" class="text-slate-400 hover:text-red-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
@@ -224,8 +224,8 @@
         </div>
 
         {{-- ════ MODAL: ADD ANOTHER STORE ════ --}}
-        <div x-show="openCreateStoreModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" x-cloak>
-            <div @click.away="openCreateStoreModal = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-slide-up">
+        <div x-show="openCreateStoreModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto" x-cloak>
+            <div @click.away="openCreateStoreModal = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-slide-up my-auto">
                 <div class="p-6 bg-slate-900 text-white flex justify-between items-center">
                     <div>
                         <span class="text-[10px] font-black uppercase tracking-widest text-secondary">New Storefront</span>
@@ -951,34 +951,34 @@
                             <button @click="openSubmitModal = true" type="button" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors">Approve/Submit</button>
 
                             <!-- Submit Confirmation Modal -->
-                            <div x-show="openSubmitModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" x-cloak>
-                                <div @click.away="openSubmitModal = false" class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-slide-up mx-4 relative">
+                            <div x-show="openSubmitModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto" x-cloak>
+                                <div @click.away="openSubmitModal = false" class="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-5 sm:p-6 animate-slide-up mx-auto my-auto relative">
                                     <button @click="openSubmitModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-red-500">
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>
 
-                                    <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     </div>
 
-                                    <h3 class="text-xl font-black uppercase tracking-tight text-slate-900 text-center mb-2">Finalize Master Order</h3>
+                                    <h3 class="text-xl font-black uppercase tracking-tight text-slate-900 text-center mb-3">Finalize Master Order</h3>
 
                                     <form action="{{ route('coach.store.submit', $store) }}" method="POST">
                                         @csrf
-                                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-sm text-slate-700 mb-6 space-y-3">
+                                        <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-sm text-slate-700 mb-4 space-y-2">
                                             <p>Please review your order for accuracy before finalizing.</p>
                                             <p><strong>Instructions:</strong> Use the <strong>Export CSV</strong> option to download and verify all items, sizes, and quantities. Submit once you have confirmed everything is 100% accurate.</p>
-                                            <p class="text-red-600 font-bold text-xs uppercase tracking-widest mt-2">The store will be closed to new orders.</p>
+                                            <p class="text-red-600 font-bold text-xs uppercase tracking-widest mt-1">The store will be closed to new orders.</p>
                                         </div>
 
-                                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-6">
-                                            <label class="block text-sm text-slate-700 mb-3 font-medium">Please enter your shipping address exactly as it should appear on the label:</label>
+                                        <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl mb-4">
+                                            <label class="block text-sm text-slate-700 mb-2 font-medium">Please enter your shipping address exactly as it should appear on the label:</label>
                                             <textarea name="shipping_address" required rows="3" class="w-full bg-slate-100 border border-slate-200 rounded-lg p-3 text-sm focus:bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-inner text-slate-900" placeholder="Street Address&#10;City, State ZIP"></textarea>
                                         </div>
 
                                         {{-- Unpaid Orders Acknowledgment or Check Payment Waived Banner --}}
                                         @if($store->isCheckPayment())
-                                            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3.5 mb-6 text-xs text-blue-900">
+                                            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3.5 mb-4 text-xs text-blue-900">
                                                 <div class="flex items-center gap-2 font-bold mb-1">
                                                     <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                     <span>Payment Method: Pay by Check</span>
@@ -999,7 +999,7 @@
                                                 $inHouseTotalGross = ($inHouseSubtotalWithTax > 0) ? round(($inHouseSubtotalWithTax + 0.30) / (1 - 0.029), 2) : 0;
                                                 $inHouseCardFee = max(0, round($inHouseTotalGross - $inHouseSubtotalWithTax, 2));
                                             @endphp
-                                            <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 mb-6 space-y-2.5">
+                                            <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 mb-4 space-y-2.5">
                                                 <div class="flex items-center gap-2 text-xs font-bold text-amber-900">
                                                     <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                                                     <span>Cash Collection — Manufacturing Payment Required</span>
@@ -1023,7 +1023,7 @@
                                                 </label>
                                             </div>
                                         @else
-                                            <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 mb-6">
+                                            <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 mb-4">
                                                 @php
                                                     $pendingPaymentCount = $store->parentOrders->whereNull('batch_id')->where('payment_status', 'pending')->count();
                                                 @endphp
@@ -1047,7 +1047,7 @@
                                             </div>
                                         @endif
 
-                                        <div class="flex gap-3">
+                                        <div class="flex gap-3 sticky bottom-0 bg-white pt-3 pb-1 border-t border-slate-100">
                                             <button @click="openSubmitModal = false; agreedUnpaid = {{ $store->isCheckPayment() ? 'true' : 'false' }}" type="button" class="flex-1 py-3 bg-white border border-slate-300 text-slate-700 font-bold uppercase text-xs tracking-wider rounded-lg hover:bg-slate-50 transition-colors">Review Again</button>
                                             <button type="submit" 
                                                     :disabled="!agreedUnpaid" 
