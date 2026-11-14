@@ -289,7 +289,11 @@
                         <div class="flex flex-wrap gap-3">
                             <button type="submit" class="btn btn-primary py-3 px-8 text-sm uppercase tracking-wider">Save Changes</button>
                             <a href="{{ route('admin.stores.export', $store) }}" class="btn btn-outline py-3 px-6 text-sm uppercase tracking-wider">Export CSV</a>
-                            <a href="{{ route('admin.stores.export-manufacturer', $store) }}" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors inline-flex items-center gap-2 shadow-sm">📊 Visual Excel (.xlsx)</a>
+                            @if($firstBatchId = $store->parentOrders->whereNotNull('batch_id')->first()?->batch_id)
+                                <a href="{{ route('admin.batch.export-manufacturer', $firstBatchId) }}" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors inline-flex items-center gap-2 shadow-sm" title="Download only the finalized production batch">📊 Batch Visual Excel (.xlsx)</a>
+                            @else
+                                <a href="{{ route('admin.stores.export-manufacturer', $store) }}" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors inline-flex items-center gap-2 shadow-sm">📊 Visual Excel (.xlsx)</a>
+                            @endif
                         </div>
                     </form>
                 </div>
@@ -696,14 +700,21 @@
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
                             Roster CSV
                         </a>
-                        @if($store->parentOrders->isNotEmpty() && $store->parentOrders->first()->batch_id)
-                        <a href="{{ route('admin.batch.export-aggregate', $store->parentOrders->first()->batch_id) }}" class="px-3 py-1.5 bg-slate-900 border border-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-800 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
-                            Aggregate CSV
-                        </a>
+                        @if($firstBatchId = $store->parentOrders->whereNotNull('batch_id')->first()?->batch_id)
+                            <a href="{{ route('admin.batch.export-aggregate', $firstBatchId) }}" class="px-3 py-1.5 bg-slate-900 border border-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-800 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+                                Aggregate CSV
+                            </a>
+                            <a href="{{ route('admin.batch.export-manufacturer', $firstBatchId) }}" class="px-3 py-1.5 bg-emerald-600 border border-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap" title="Download only the finalized production batch">
+                                📊 Batch Visual Excel
+                            </a>
+                            <a href="{{ route('admin.stores.export-manufacturer', $store->id) }}" class="px-3 py-1.5 bg-slate-100 border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-200 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap" title="Download all store orders across all runs">
+                                📊 All Store Orders (.xlsx)
+                            </a>
+                        @else
+                            <a href="{{ route('admin.stores.export-manufacturer', $store->id) }}" class="px-3 py-1.5 bg-emerald-600 border border-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+                                📊 Visual Excel (.xlsx)
+                            </a>
                         @endif
-                        <a href="{{ route('admin.stores.export-manufacturer', $store->id) }}" class="px-3 py-1.5 bg-emerald-600 border border-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
-                            📊 Visual Excel (.xlsx)
-                        </a>
                     </div>
                 </div>
                 @if($store->parentOrders->isEmpty())
