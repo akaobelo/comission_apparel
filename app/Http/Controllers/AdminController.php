@@ -467,11 +467,45 @@ class AdminController extends Controller
         ));
     }
 
+    // ─── COACH & STORE AUTHORIZATION ─────────────────────────────────────────────
+
+    /**
+     * Authorize that the current authenticated user has permission to manage the given coach.
+     * Super admins have full access; sales partners / reps can only access coaches assigned to them.
+     */
+    protected function authorizeCoachAccess(User $user): void
+    {
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            $repId = \Illuminate\Support\Facades\Auth::id();
+            if ($user->sales_rep_id !== $repId) {
+                abort(403, 'Unauthorized. This coach is not assigned to your account.');
+            }
+        }
+    }
+
+    /**
+     * Authorize that the current authenticated user has permission to manage the given store.
+     * Super admins have full access; sales partners / reps can only access stores associated with their coaches.
+     */
+    protected function authorizeStoreAccess(TeamStore $store): void
+    {
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            $repId = \Illuminate\Support\Facades\Auth::id();
+            $coach = $store->user;
+            $isAssigned = ($store->sales_rep_id === $repId) || ($coach && $coach->sales_rep_id === $repId);
+            if (!$isAssigned) {
+                abort(403, 'Unauthorized. This store is not associated with your coaches.');
+            }
+        }
+    }
+
     // ─── COACH MANAGEMENT ────────────────────────────────────────────────────────
 
     public function editCoach(User $user)
     {
         if ($user->role !== 'coach') abort(404);
+        $this->authorizeCoachAccess($user);
+
         $designCatalog = DesignCatalog::orderBy('sort_order', 'asc')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -484,6 +518,7 @@ class AdminController extends Controller
     public function updateCoach(Request $request, User $user)
     {
         if ($user->role !== 'coach') abort(404);
+        $this->authorizeCoachAccess($user);
 
         $validated = $request->validate([
             'first_name'   => ['required', 'string', 'max:255'],
@@ -515,6 +550,11 @@ class AdminController extends Controller
             } elseif (!$user->deposit_applied) {
                 $validated['deposit_applied_at'] = now();
             }
+        }
+
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            $validated['sales_rep_id'] = $user->sales_rep_id;
+            $validated['sales_rep'] = $user->sales_rep;
         }
 
         $oldRepId = $user->sales_rep_id;
@@ -617,6 +657,11 @@ class AdminController extends Controller
                 ->with('success', "Coach {$user->name}'s profile has been updated.");
         }
 
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            return redirect()->route('rep.dashboard', ['tab' => 'clients'])
+                ->with('success', "Coach {$user->name}'s profile has been updated.");
+        }
+
         return redirect()->route('admin.dashboard', ['tab' => 'coaches'])
             ->with('success', "Coach {$user->name}'s profile has been updated.");
     }
@@ -624,6 +669,7 @@ class AdminController extends Controller
     public function resetCoachPassword(Request $request, User $user)
     {
         if ($user->role !== 'coach') abort(404);
+        $this->authorizeCoachAccess($user);
 
         $validated = $request->validate([
             'password' => ['required', 'string', 'min:8', 'confirmed'],
@@ -633,7 +679,12 @@ class AdminController extends Controller
             'password' => $validated['password'],
         ]);
 
-        return redirect()->route('admin.coach.edit', $user)
+        $redirectParams = ['user' => $user];
+        if ($request->filled('return_to')) {
+            $redirectParams['return_to'] = $request->input('return_to');
+        }
+
+        return redirect()->route('admin.coach.edit', $redirectParams)
             ->with('success', "Password reset successfully for Coach {$user->name}.");
     }
 
@@ -1200,6 +1251,11 @@ class AdminController extends Controller
                 ->with('success', "Design \"{$validated['name']}\" added to catalog.");
         }
 
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            return redirect()->route('rep.dashboard', ['tab' => 'catalog'])
+                ->with('success', "Design \"{$validated['name']}\" added to catalog.");
+        }
+
         return redirect()->back()
             ->with('success', "Design \"{$validated['name']}\" added to catalog.");
     }
@@ -1225,6 +1281,11 @@ class AdminController extends Controller
 
         if ($request->filled('return_to')) {
             return redirect($request->input('return_to'))
+                ->with('success', "Design \"{$name}\" removed from catalog.");
+        }
+
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            return redirect()->route('rep.dashboard', ['tab' => 'catalog'])
                 ->with('success', "Design \"{$name}\" removed from catalog.");
         }
 
@@ -1402,6 +1463,11 @@ class AdminController extends Controller
                 ->with('success', "Design \"{$design->name}\" updated.");
         }
 
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            return redirect()->route('rep.dashboard', ['tab' => 'catalog'])
+                ->with('success', "Design \"{$design->name}\" updated.");
+        }
+
         return redirect()->back()
             ->with('success', "Design \"{$design->name}\" updated.");
     }
@@ -1449,6 +1515,11 @@ class AdminController extends Controller
                 ->with('success', count($request->design_ids) . " designs successfully assigned to {$coach->first_name} {$coach->last_name}'s profile!");
         }
 
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            return redirect()->route('rep.dashboard', ['tab' => 'catalog'])
+                ->with('success', count($request->design_ids) . " designs successfully assigned to {$coach->first_name} {$coach->last_name}'s profile!");
+        }
+
         return redirect()->back()
             ->with('success', count($request->design_ids) . " designs successfully assigned to {$coach->first_name} {$coach->last_name}'s profile!");
     }
@@ -1487,6 +1558,11 @@ class AdminController extends Controller
 
         if ($request->filled('return_to')) {
             return redirect($request->input('return_to'))
+                ->with('success', "{$count} " . \Illuminate\Support\Str::plural('design', $count) . " successfully deleted from catalog.");
+        }
+
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            return redirect()->route('rep.dashboard', ['tab' => 'catalog'])
                 ->with('success', "{$count} " . \Illuminate\Support\Str::plural('design', $count) . " successfully deleted from catalog.");
         }
 
@@ -1579,11 +1655,11 @@ class AdminController extends Controller
         }
 
         if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
-            return redirect()->route('rep.dashboard')
+            return redirect()->route('rep.dashboard', ['tab' => 'catalog'])
                 ->with('success', "Collection \"{$validated['name']}\" added.");
         }
 
-        return redirect()->route('admin.dashboard')
+        return redirect()->route('admin.dashboard', ['tab' => 'catalog'])
             ->with('success', "Collection \"{$validated['name']}\" added.");
     }
 
@@ -1616,6 +1692,11 @@ class AdminController extends Controller
                 ->with('success', "Collection \"{$validated['name']}\" updated.");
         }
 
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            return redirect()->route('rep.dashboard', ['tab' => 'catalog'])
+                ->with('success', "Collection \"{$validated['name']}\" updated.");
+        }
+
         return redirect()->back()
             ->with('success', "Collection \"{$validated['name']}\" updated.");
     }
@@ -1632,6 +1713,11 @@ class AdminController extends Controller
 
         if ($request->filled('return_to')) {
             return redirect($request->input('return_to'))
+                ->with('success', "Collection removed.");
+        }
+
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            return redirect()->route('rep.dashboard', ['tab' => 'catalog'])
                 ->with('success', "Collection removed.");
         }
 
@@ -1887,6 +1973,8 @@ class AdminController extends Controller
 
     public function editStore(TeamStore $store)
     {
+        $this->authorizeStoreAccess($store);
+
         $store->load(['user', 'items', 'parentOrders' => function($q) {
             $q->where('is_archived', false)->where('status', '!=', 'Pending Payment');
         }]);
@@ -1897,6 +1985,8 @@ class AdminController extends Controller
 
     public function updateStore(Request $request, TeamStore $store)
     {
+        $this->authorizeStoreAccess($store);
+
         $validated = $request->validate([
             'name'         => ['required', 'string', 'max:255'],
             'sport'        => ['nullable', 'string', 'max:100'],
@@ -2054,6 +2144,8 @@ class AdminController extends Controller
 
     public function updateStorePaymentMode(Request $request, TeamStore $store)
     {
+        $this->authorizeStoreAccess($store);
+
         $validated = $request->validate([
             'payment_mode' => ['required', 'in:in_house,online,check'],
         ]);
@@ -2142,6 +2234,8 @@ class AdminController extends Controller
 
     public function updateStorePricing(Request $request, TeamStore $store)
     {
+        $this->authorizeStoreAccess($store);
+
         $request->validate([
             'items' => ['required', 'array'],
             'items.*.name' => ['nullable', 'string', 'max:255'],
@@ -2227,6 +2321,8 @@ class AdminController extends Controller
 
     public function updateStoreItemsSort(Request $request, TeamStore $store)
     {
+        $this->authorizeStoreAccess($store);
+
         $request->validate([
             'items' => ['required', 'array'],
             'items.*.sort_order' => ['required', 'integer'],
@@ -2246,6 +2342,8 @@ class AdminController extends Controller
 
     public function attachPackageComponent(Request $request, TeamStore $store, StoreItem $package)
     {
+        $this->authorizeStoreAccess($store);
+
         $request->validate([
             'component_id' => 'required|exists:store_items,id'
         ]);
@@ -2270,6 +2368,8 @@ class AdminController extends Controller
 
     public function detachPackageComponent(Request $request, TeamStore $store, StoreItem $package, StoreItem $component)
     {
+        $this->authorizeStoreAccess($store);
+
         if ($package->team_store_id !== $store->id) {
             abort(403, 'Package does not belong to this store.');
         }
@@ -2282,6 +2382,8 @@ class AdminController extends Controller
 
     public function updatePackagePieceMapping(Request $request, TeamStore $store, StoreItem $package)
     {
+        $this->authorizeStoreAccess($store);
+
         if ($package->team_store_id !== $store->id) {
             abort(403, 'Package does not belong to this store.');
         }
@@ -2323,6 +2425,8 @@ class AdminController extends Controller
 
     public function updateCoverImage(Request $request, TeamStore $store)
     {
+        $this->authorizeStoreAccess($store);
+
         $request->validate([
             'cover_image' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ]);
@@ -2347,6 +2451,8 @@ class AdminController extends Controller
 
     public function updateStoreLogo(Request $request, TeamStore $store)
     {
+        $this->authorizeStoreAccess($store);
+
         $request->validate([
             'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ]);
@@ -2377,6 +2483,8 @@ class AdminController extends Controller
 
     public function addStoreItem(Request $request, TeamStore $store)
     {
+        $this->authorizeStoreAccess($store);
+
         $request->validate([
             'design_catalog_id' => ['required', 'exists:design_catalog,id'],
         ]);
@@ -2416,6 +2524,9 @@ class AdminController extends Controller
     public function removeStoreItem(Request $request, \App\Models\StoreItem $item)
     {
         $store = $item->teamStore;
+        if ($store) {
+            $this->authorizeStoreAccess($store);
+        }
         $item->delete();
         
         if ($request->wantsJson() || $request->ajax()) {
@@ -2644,6 +2755,8 @@ class AdminController extends Controller
 
     public function exportOrderCSV(TeamStore $store)
     {
+        $this->authorizeStoreAccess($store);
+
         $store->load(['items', 'parentOrders' => function($q) {
             $q->where('is_archived', false)->where('status', '!=', 'Pending Payment');
         }]);
@@ -2730,6 +2843,8 @@ class AdminController extends Controller
 
     public function finalizeStoreBatch(Request $request, TeamStore $store)
     {
+        $this->authorizeStoreAccess($store);
+
         $unbatchedOrders = $store->parentOrders()
             ->whereNull('batch_id')
             ->where('is_archived', false);
@@ -2861,6 +2976,17 @@ class AdminController extends Controller
 
     public function exportBatchAggregationCSV(Request $request, $batchId)
     {
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            $repId = \Illuminate\Support\Facades\Auth::id();
+            $hasAccess = ParentOrder::where('batch_id', $batchId)
+                ->where(function($q) use ($repId) {
+                    $q->where('sales_rep_id', $repId)
+                      ->orWhereHas('user', fn($uq) => $uq->where('sales_rep_id', $repId))
+                      ->orWhereHas('teamStore', fn($sq) => $sq->where('sales_rep_id', $repId));
+                })->exists();
+            if (!$hasAccess) abort(403, 'Unauthorized batch.');
+        }
+
         $orders = ParentOrder::with(['teamStore.items'])->where('batch_id', $batchId)->get();
 
         if ($orders->isEmpty()) abort(404);
@@ -2943,6 +3069,8 @@ class AdminController extends Controller
 
     public function exportStoreManufacturerXlsx(TeamStore $store, \App\Services\ManufacturerExcelExportService $excelService)
     {
+        $this->authorizeStoreAccess($store);
+
         $store->load([
             'items' => function ($q) {
                 $q->orderBy('sort_order', 'asc')->orderBy('id', 'asc');
@@ -2995,6 +3123,17 @@ class AdminController extends Controller
 
     public function updateBatchStatus(Request $request, $batchId)
     {
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            $repId = \Illuminate\Support\Facades\Auth::id();
+            $hasAccess = ParentOrder::where('batch_id', $batchId)
+                ->where(function($q) use ($repId) {
+                    $q->where('sales_rep_id', $repId)
+                      ->orWhereHas('user', fn($uq) => $uq->where('sales_rep_id', $repId))
+                      ->orWhereHas('teamStore', fn($sq) => $sq->where('sales_rep_id', $repId));
+                })->exists();
+            if (!$hasAccess) abort(403, 'Unauthorized batch.');
+        }
+
         $request->validate([
             'status' => 'required|string|max:255',
         ]);
@@ -3505,6 +3644,15 @@ class AdminController extends Controller
             'sales_rep_id' => $rep?->id,
             'sales_rep'    => $rep ? trim("{$rep->first_name} {$rep->last_name}") : null,
         ]);
+
+        if ($request->wantsJson() || $request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success'      => true,
+                'message'      => 'TCA Agent assigned successfully.',
+                'sales_rep_id' => $quoteRequest->sales_rep_id,
+                'sales_rep'    => $quoteRequest->sales_rep,
+            ]);
+        }
 
         return redirect()->back()->with('success', 'TCA Agent assigned successfully.');
     }

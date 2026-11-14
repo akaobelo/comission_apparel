@@ -10,10 +10,24 @@
     financialSearch: '',
     init() {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('collection_search') || urlParams.has('collection_page') || urlParams.has('unassigned_search') || urlParams.has('unassigned_page') || urlParams.has('open_collection') || urlParams.get('tab') === 'catalog') {
+        const tabParam = urlParams.get('tab');
+        if (tabParam) {
+            this.activeTab = tabParam;
+            localStorage.setItem('repActiveTab', tabParam);
+        } else if (urlParams.has('collection_search') || urlParams.has('collection_page') || urlParams.has('unassigned_search') || urlParams.has('unassigned_page') || urlParams.has('open_collection')) {
             this.activeTab = 'catalog';
+            localStorage.setItem('repActiveTab', 'catalog');
+        } else {
+            const savedTab = localStorage.getItem('repActiveTab');
+            if (savedTab) {
+                this.activeTab = savedTab;
+            }
         }
         this.$watch('activeTab', tab => {
+            localStorage.setItem('repActiveTab', tab);
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tab);
+            window.history.replaceState({}, '', url);
             if (tab === 'catalog') {
                 setTimeout(() => {
                     if (window.initCollectionsSortable) window.initCollectionsSortable();
@@ -694,6 +708,7 @@
                                     </span>
                                 </div>
                             </th>
+                            <th class="px-6 py-3.5 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="rep-coach-table-body" class="divide-y divide-slate-100">
@@ -724,10 +739,17 @@
                                         $primaryStore = $c->teamStores->first();
                                     @endphp
                                     @if($primaryStore && $primaryStore->slug)
-                                        <a href="{{ route('store.show', $primaryStore->slug) }}" target="_blank" class="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 mt-0.5" title="View Store: {{ $primaryStore->name }}">
-                                            <span>{{ $primaryStore->name }}</span>
-                                            <svg class="w-3 h-3 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                        </a>
+                                        <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                                            <a href="{{ route('store.show', $primaryStore->slug) }}" target="_blank" class="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1" title="View Store: {{ $primaryStore->name }}">
+                                                <span>{{ $primaryStore->name }}</span>
+                                                <svg class="w-3 h-3 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                            </a>
+                                            <span class="text-slate-300">·</span>
+                                            <a href="{{ route('admin.store.edit', ['store' => $primaryStore, 'return_to' => route('rep.dashboard', ['tab' => 'clients'])]) }}" class="text-[11px] font-bold text-slate-600 hover:text-slate-900 hover:underline inline-flex items-center gap-1" title="Manage {{ $primaryStore->name }}">
+                                                <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                <span>Edit Store</span>
+                                            </a>
+                                        </div>
                                     @else
                                         <span class="text-[11px] text-slate-400">No store yet</span>
                                     @endif
@@ -742,10 +764,18 @@
                                 <td class="px-6 py-4 font-bold text-slate-700">{{ $c->sport }}</td>
                                 <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $c->rep_orders_count ?? 0 }}</td>
                                 <td class="px-6 py-4 text-xs text-slate-500">{{ $c->created_at->format('M d, Y') }}</td>
+                                <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    <div class="inline-flex items-center justify-end gap-2">
+                                        <a href="{{ route('admin.coach.edit', ['user' => $c, 'return_to' => route('rep.dashboard', ['tab' => 'clients'])]) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow-2xs">
+                                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                            <span>Edit Coach</span>
+                                        </a>
+                                    </div>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                                <td colspan="7" class="px-6 py-12 text-center text-slate-500">
                                     <p class="font-bold text-base text-slate-700 mb-1">No clients assigned yet</p>
                                     <p class="text-xs text-slate-400">Share your recruitment link with coaches to onboard your first client organization.</p>
                                 </td>
@@ -865,7 +895,7 @@
                                     </span>
                                 </div>
                             </th>
-                            <th class="px-6 py-3.5 text-right">Store Productivity</th>
+                            <th class="px-6 py-3.5 text-right">Store Productivity / Actions</th>
                         </tr>
                     </thead>
                     <tbody id="rep-store-table-body" class="divide-y divide-slate-100">
@@ -927,11 +957,17 @@
                                         {{ $s->status }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-right">
-                                    <a href="{{ $s->slug ? route('store.show', $s->slug) : '#' }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-colors shadow-sm">
-                                        <span>View Store</span>
-                                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                    </a>
+                                <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    <div class="inline-flex items-center justify-end gap-2">
+                                        <a href="{{ route('admin.store.edit', ['store' => $s, 'return_to' => route('rep.dashboard', ['tab' => 'stores'])]) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded text-xs font-bold uppercase tracking-wider transition-colors shadow-2xs">
+                                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                            <span>Edit Store</span>
+                                        </a>
+                                        <a href="{{ $s->slug ? route('store.show', $s->slug) : '#' }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-colors shadow-sm">
+                                            <span>View Store</span>
+                                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

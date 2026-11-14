@@ -3,10 +3,12 @@
 @section('content')
 <div class="max-w-5xl mx-auto px-6 pb-8 pt-32 lg:pt-40">
     @php
+        $isRep = auth()->check() && auth()->user()->isSalesRep() && !auth()->user()->isAdmin();
         $returnUrl = request('return_to');
         if (!$returnUrl) {
             $referer = request()->headers->get('referer');
             if ($referer && (
+                str_contains($referer, 'rep/dashboard') ||
                 str_contains($referer, 'sales-rep') || 
                 str_contains($referer, 'sales_rep') || 
                 str_contains($referer, 'sales-reps') || 
@@ -17,7 +19,8 @@
                 str_contains($referer, 'tab=finalized_master_orders') ||
                 str_contains($referer, 'tab=archived_stores_orders') ||
                 str_contains($referer, 'tab=campaigns') ||
-                str_contains($referer, 'tab=stores')
+                str_contains($referer, 'tab=stores') ||
+                str_contains($referer, 'tab=clients')
             )) {
                 $returnUrl = $referer;
             }
@@ -36,35 +39,52 @@
             }
         }
 
-        // Default back: Active Stores if active, otherwise Coaches Database
-        $defaultBack = ($store->status === 'approved' && !$store->is_archived)
-            ? route('admin.dashboard', ['tab' => 'active_team_stores'])
-            : route('admin.dashboard', ['tab' => 'coaches']);
-        $backUrl = $returnUrl ?: $defaultBack;
-        
-        if ($backUrl && (str_contains($backUrl, 'sales-rep') || str_contains($backUrl, 'sales_rep') || str_contains($backUrl, 'sales-reps'))) {
-            $backLabel = 'Back to Sales Partner';
-        } elseif ($backUrl && (str_contains($backUrl, 'tab=active_team_stores') || str_contains($backUrl, 'active_team_stores'))) {
-            $backLabel = 'Back to Active Stores';
-        } elseif ($backUrl && str_contains($backUrl, 'tab=campaigns')) {
-            $backLabel = 'Back to Campaign Stores';
-        } elseif ($backUrl && str_contains($backUrl, 'tab=finalized_master_orders')) {
-            $backLabel = 'Back to Finalized Master Orders';
-        } elseif ($backUrl && str_contains($backUrl, 'tab=archived_stores_orders')) {
-            $backLabel = 'Back to Archived Stores';
-        } elseif ($backUrl && (str_contains($backUrl, 'tab=coaches') || str_contains($backUrl, '/admin/coach/'))) {
-            $backLabel = 'Back to Coaches';
-        } elseif ($backUrl && str_contains($backUrl, 'tab=stores')) {
-            $backLabel = 'Back to Snapshot View';
+        if ($isRep) {
+            $defaultBack = route('rep.dashboard', ['tab' => 'stores']);
+            $backUrl = $returnUrl ?: $defaultBack;
+            if ($backUrl && (str_contains($backUrl, 'tab=clients') || str_contains($backUrl, '/admin/coach/'))) {
+                $backLabel = 'Back to Assigned Coaches';
+            } else {
+                $backLabel = 'Back to Team Stores';
+            }
         } else {
-            $backLabel = ($store->status === 'approved' && !$store->is_archived) ? 'Back to Active Stores' : 'Back to Coaches';
+            // Default back: Active Stores if active, otherwise Coaches Database
+            $defaultBack = ($store->status === 'approved' && !$store->is_archived)
+                ? route('admin.dashboard', ['tab' => 'active_team_stores'])
+                : route('admin.dashboard', ['tab' => 'coaches']);
+            $backUrl = $returnUrl ?: $defaultBack;
+            
+            if ($backUrl && (str_contains($backUrl, 'sales-rep') || str_contains($backUrl, 'sales_rep') || str_contains($backUrl, 'sales-reps'))) {
+                $backLabel = 'Back to Sales Partner';
+            } elseif ($backUrl && (str_contains($backUrl, 'tab=active_team_stores') || str_contains($backUrl, 'active_team_stores'))) {
+                $backLabel = 'Back to Active Stores';
+            } elseif ($backUrl && str_contains($backUrl, 'tab=campaigns')) {
+                $backLabel = 'Back to Campaign Stores';
+            } elseif ($backUrl && str_contains($backUrl, 'tab=finalized_master_orders')) {
+                $backLabel = 'Back to Finalized Master Orders';
+            } elseif ($backUrl && str_contains($backUrl, 'tab=archived_stores_orders')) {
+                $backLabel = 'Back to Archived Stores';
+            } elseif ($backUrl && (str_contains($backUrl, 'tab=coaches') || str_contains($backUrl, '/admin/coach/'))) {
+                $backLabel = 'Back to Coaches';
+            } elseif ($backUrl && str_contains($backUrl, 'tab=stores')) {
+                $backLabel = 'Back to Snapshot View';
+            } else {
+                $backLabel = ($store->status === 'approved' && !$store->is_archived) ? 'Back to Active Stores' : 'Back to Coaches';
+            }
         }
     @endphp
     <div class="mb-4">
-        <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
-            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-            <span>Admin Control Center</span>
-        </a>
+        @if($isRep)
+            <a href="{{ route('rep.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>Sales Partner Portal</span>
+            </a>
+        @else
+            <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>Admin Control Center</span>
+            </a>
+        @endif
     </div>
 
     <div class="flex items-center gap-4 mb-8">
@@ -539,6 +559,7 @@
                 </div>
             </div>
 
+            @if(auth()->check() && auth()->user()->isAdmin())
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-6">
                     @if($store->is_archived)
@@ -554,6 +575,7 @@
                     @endif
                 </div>
             </div>
+            @endif
 
 
 

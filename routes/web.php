@@ -391,14 +391,16 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
 
     // Coach CRUD
     Route::get('/admin/coaches/export', [AdminController::class, 'exportCoaches'])->name('admin.coaches.export');
-    Route::get('/admin/coach/{user}/edit', [AdminController::class, 'editCoach'])->name('admin.coach.edit');
-    Route::post('/admin/coach/{user}/update', [AdminController::class, 'updateCoach'])->name('admin.coach.update');
-    Route::post('/admin/coach/{user}/reset-password', [AdminController::class, 'resetCoachPassword'])->name('admin.coach.reset-password');
     Route::delete('/admin/coach/{user}/delete', [AdminController::class, 'deleteCoach'])->name('admin.coach.delete');
 });
 
-// ─── Design Catalog & Collections Management (Accessible to Super Admin & Sales Reps/Agents) ───
+// ─── Design Catalog, Coaches & Store Management (Accessible to Super Admin & Sales Reps/Agents) ───
 Route::middleware(['auth', AdminOrSalesRepMiddleware::class])->group(function () {
+    // Coach Editing & Password Reset (Authorized reps can edit their assigned coaches)
+    Route::get('/admin/coach/{user}/edit', [AdminController::class, 'editCoach'])->name('admin.coach.edit');
+    Route::post('/admin/coach/{user}/update', [AdminController::class, 'updateCoach'])->name('admin.coach.update');
+    Route::post('/admin/coach/{user}/reset-password', [AdminController::class, 'resetCoachPassword'])->name('admin.coach.reset-password');
+
     // Design catalog management
     Route::post('/admin/design/bulk-sort', [AdminController::class, 'bulkSortDesigns'])->name('admin.design.bulk-sort');
     Route::post('/admin/design/bulk-assign', [AdminController::class, 'bulkAssignDesigns'])->name('admin.design.bulk-assign');
@@ -432,6 +434,25 @@ Route::middleware(['auth', AdminOrSalesRepMiddleware::class])->group(function ()
     // Assign designs to coaches
     Route::post('/admin/coach/{coach}/assign-design', [AdminController::class, 'assignDesign'])->name('admin.coach.assign-design');
     Route::delete('/admin/coach/{coach}/remove-design/{design}', [AdminController::class, 'removeDesign'])->name('admin.coach.remove-design');
+
+    // Store Editing & Management (Authorized reps can manage stores associated with their coaches)
+    Route::get('/admin/stores/{store}/edit', [AdminController::class, 'editStore'])->name('admin.store.edit');
+    Route::post('/admin/stores/{store}/update', [AdminController::class, 'updateStore'])->name('admin.store.update');
+    Route::post('/admin/stores/{store}/payment-mode', [AdminController::class, 'updateStorePaymentMode'])->name('admin.store.payment-mode');
+    Route::post('/admin/stores/{store}/pricing', [AdminController::class, 'updateStorePricing'])->name('admin.store.pricing.update');
+    Route::post('/admin/stores/{store}/items/sort', [AdminController::class, 'updateStoreItemsSort'])->name('admin.store.items.sort');
+    Route::post('/admin/stores/{store}/cover', [AdminController::class, 'updateCoverImage'])->name('admin.store.cover');
+    Route::post('/admin/stores/{store}/logo', [AdminController::class, 'updateStoreLogo'])->name('admin.store.logo');
+    Route::post('/admin/stores/{store}/item', [AdminController::class, 'addStoreItem'])->name('admin.store.item.add');
+    Route::post('/admin/stores/item/{item}/remove', [AdminController::class, 'removeStoreItem'])->name('admin.store.item.remove');
+    Route::post('/admin/stores/{store}/package/{package}/attach', [AdminController::class, 'attachPackageComponent'])->name('admin.store.package.attach');
+    Route::post('/admin/stores/{store}/package/{package}/map-pieces', [AdminController::class, 'updatePackagePieceMapping'])->name('admin.store.package.map-pieces');
+    Route::delete('/admin/stores/{store}/package/{package}/detach/{component}', [AdminController::class, 'detachPackageComponent'])->name('admin.store.package.detach');
+    Route::get('/admin/stores/{store}/export', [AdminController::class, 'exportOrderCSV'])->name('admin.stores.export');
+    Route::get('/admin/stores/{store}/export-manufacturer', [AdminController::class, 'exportStoreManufacturerXlsx'])->name('admin.stores.export-manufacturer');
+    Route::post('/admin/stores/{store}/finalize-batch', [AdminController::class, 'finalizeStoreBatch'])->name('admin.stores.finalize-batch');
+    Route::get('/admin/batch/{batch_id}/export-aggregate', [AdminController::class, 'exportBatchAggregationCSV'])->name('admin.batch.export-aggregate');
+    Route::post('/admin/batch/{batch_id}/status', [AdminController::class, 'updateBatchStatus'])->name('admin.batch.status.update');
 });
 
 // ─── Super Admin Exclusive Controls ──────────────────────────────────────────
@@ -445,32 +466,14 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/stores/{store}/archive', [AdminController::class, 'archiveStore'])->name('admin.stores.archive');
     Route::post('/admin/stores/{store}/unarchive', [AdminController::class, 'unarchiveStore'])->name('admin.stores.unarchive');
     Route::delete('/admin/stores/{store}/delete', [AdminController::class, 'deleteArchivedStore'])->name('admin.stores.delete');
-    Route::get('/admin/stores/{store}/edit', [AdminController::class, 'editStore'])->name('admin.store.edit');
     Route::get('/admin/direct-batch/{batch_id}', [AdminController::class, 'showDirectBatch'])->name('admin.direct-batch.show');
     Route::post('/admin/direct-batch/{batch_id}/store', [AdminController::class, 'updateDirectBatchStore'])->name('admin.direct-batch.store.update');
     Route::get('/admin/batch/{batch_id}/export', [AdminController::class, 'exportBatchCSV'])->name('admin.batch.export');
-    Route::get('/admin/batch/{batch_id}/export-aggregate', [AdminController::class, 'exportBatchAggregationCSV'])->name('admin.batch.export-aggregate');
-    Route::get('/admin/batch/{batch_id}/export-manufacturer', [AdminController::class, 'exportBatchManufacturerXlsx'])->name('admin.batch.export-manufacturer');
-    Route::post('/admin/batch/{batch_id}/status', [AdminController::class, 'updateBatchStatus'])->name('admin.batch.status.update');
     Route::post('/admin/batches/bulk-status', [AdminController::class, 'bulkUpdateBatchStatus'])->name('admin.batches.bulk-status');
     Route::post('/admin/direct-batch/{batch_id}/mark-addressed', [AdminController::class, 'markDirectBatchAddressed'])->name('admin.direct-batch.mark-addressed');
     Route::post('/admin/store-batch/{batch_id}/mark-addressed', [AdminController::class, 'markStoreBatchAddressed'])->name('admin.store-batch.mark-addressed');
     Route::delete('/admin/archived-orders/{batch_id}', [AdminController::class, 'deleteArchivedOrderBatch'])->name('admin.archived-orders.delete');
-    Route::post('/admin/stores/{store}/update', [AdminController::class, 'updateStore'])->name('admin.store.update');
-    Route::post('/admin/stores/{store}/payment-mode', [AdminController::class, 'updateStorePaymentMode'])->name('admin.store.payment-mode');
     Route::post('/admin/stores/bulk-payment-mode', [AdminController::class, 'bulkUpdateStorePaymentMode'])->name('admin.stores.bulk-payment-mode');
-    Route::post('/admin/stores/{store}/pricing', [AdminController::class, 'updateStorePricing'])->name('admin.store.pricing.update');
-    Route::post('/admin/stores/{store}/items/sort', [AdminController::class, 'updateStoreItemsSort'])->name('admin.store.items.sort');
-    Route::post('/admin/stores/{store}/cover', [AdminController::class, 'updateCoverImage'])->name('admin.store.cover');
-    Route::post('/admin/stores/{store}/logo', [AdminController::class, 'updateStoreLogo'])->name('admin.store.logo');
-    Route::post('/admin/stores/{store}/item', [AdminController::class, 'addStoreItem'])->name('admin.store.item.add');
-    Route::post('/admin/stores/item/{item}/remove', [AdminController::class, 'removeStoreItem'])->name('admin.store.item.remove');
-    Route::post('/admin/stores/{store}/package/{package}/attach', [AdminController::class, 'attachPackageComponent'])->name('admin.store.package.attach');
-    Route::post('/admin/stores/{store}/package/{package}/map-pieces', [AdminController::class, 'updatePackagePieceMapping'])->name('admin.store.package.map-pieces');
-    Route::delete('/admin/stores/{store}/package/{package}/detach/{component}', [AdminController::class, 'detachPackageComponent'])->name('admin.store.package.detach');
-    Route::get('/admin/stores/{store}/export', [AdminController::class, 'exportOrderCSV'])->name('admin.stores.export');
-    Route::get('/admin/stores/{store}/export-manufacturer', [AdminController::class, 'exportStoreManufacturerXlsx'])->name('admin.stores.export-manufacturer');
-    Route::post('/admin/stores/{store}/finalize-batch', [AdminController::class, 'finalizeStoreBatch'])->name('admin.stores.finalize-batch');
 
     // Order editing
     Route::get('/admin/order/{order}/edit', [AdminController::class, 'editOrder'])->name('admin.order.edit');

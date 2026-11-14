@@ -26,6 +26,6 @@ class AdminOrSalesRepMiddleware
             }
         }
 
-        return redirect('/login')->with('error', 'You do not have access to design management.');
+        return redirect('/login')->with('error', 'You do not have permission to access this area.');
     }
 }

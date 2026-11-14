@@ -4,6 +4,17 @@
 <div class="max-w-5xl mx-auto px-6 pb-8 pt-32 lg:pt-40">
     @php
         $returnUrl = request('return_to');
+        if (!$returnUrl) {
+            $referer = request()->headers->get('referer');
+            if ($referer && (
+                str_contains($referer, 'rep/dashboard') ||
+                str_contains($referer, 'sales-rep') || 
+                str_contains($referer, 'sales_rep') || 
+                str_contains($referer, 'sales-reps')
+            )) {
+                $returnUrl = $referer;
+            }
+        }
         if ($returnUrl && (str_contains($returnUrl, 'sales-reps') || str_contains($returnUrl, 'sales-rep') || str_contains($returnUrl, 'sales_rep'))) {
             if (preg_match('/sales[-_]reps?\/(\d+)/', $returnUrl, $matches)) {
                 $checkUser = \App\Models\User::find($matches[1]);
@@ -12,14 +23,28 @@
                 }
             }
         }
-        $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'coaches']);
-        $backLabel = ($returnUrl && (str_contains($returnUrl, 'sales-rep') || str_contains($returnUrl, 'sales-reps') || str_contains($returnUrl, 'sales_rep'))) ? 'Back to Sales Partner' : 'Back to Coaches';
+        $isRep = auth()->check() && auth()->user()->isSalesRep() && !auth()->user()->isAdmin();
+        if ($isRep) {
+            $defaultBack = route('rep.dashboard', ['tab' => 'clients']);
+            $backUrl = $returnUrl ?: $defaultBack;
+            $backLabel = 'Back to Assigned Coaches';
+        } else {
+            $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'coaches']);
+            $backLabel = ($returnUrl && (str_contains($returnUrl, 'sales-rep') || str_contains($returnUrl, 'sales-reps') || str_contains($returnUrl, 'sales_rep'))) ? 'Back to Sales Partner' : 'Back to Coaches';
+        }
     @endphp
     <div class="mb-4">
-        <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
-            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-            <span>Admin Control Center</span>
-        </a>
+        @if($isRep)
+            <a href="{{ route('rep.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>Sales Partner Portal</span>
+            </a>
+        @else
+            <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>Admin Control Center</span>
+            </a>
+        @endif
     </div>
 
     <div class="flex items-center gap-4 mb-8">
@@ -88,17 +113,25 @@
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Commission Apparel Partner / Rep</label>
                                 <div class="space-y-2">
-                                    <select name="sales_rep_id" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
-                                        <option value="">-- Select Registered Sales Partner --</option>
-                                        @if(isset($salesReps))
-                                            @foreach($salesReps as $rep)
-                                                <option value="{{ $rep->id }}" {{ (old('sales_rep_id', $user->sales_rep_id) == $rep->id) ? 'selected' : '' }}>
-                                                    {{ $rep->name }} ({{ number_format($rep->getEffectiveCommissionRate(), 1) }}% Tier Split)
-                                                </option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                    <input type="text" name="sales_rep" value="{{ old('sales_rep', $user->sales_rep) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-xs text-slate-700 focus:border-primary focus:outline-none shadow-sm" placeholder="Or enter custom partner name">
+                                    @if($isRep)
+                                        <div class="w-full bg-slate-100 border border-slate-300 rounded-lg px-4 py-2.5 text-sm font-bold text-slate-700">
+                                            {{ $user->sales_rep ?: auth()->user()->name }}
+                                        </div>
+                                        <input type="hidden" name="sales_rep_id" value="{{ $user->sales_rep_id ?: auth()->id() }}">
+                                        <input type="hidden" name="sales_rep" value="{{ $user->sales_rep ?: auth()->user()->name }}">
+                                    @else
+                                        <select name="sales_rep_id" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                            <option value="">-- Select Registered Sales Partner --</option>
+                                            @if(isset($salesReps))
+                                                @foreach($salesReps as $rep)
+                                                    <option value="{{ $rep->id }}" {{ (old('sales_rep_id', $user->sales_rep_id) == $rep->id) ? 'selected' : '' }}>
+                                                        {{ $rep->name }} ({{ number_format($rep->getEffectiveCommissionRate(), 1) }}% Tier Split)
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                        <input type="text" name="sales_rep" value="{{ old('sales_rep', $user->sales_rep) }}" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-xs text-slate-700 focus:border-primary focus:outline-none shadow-sm" placeholder="Or enter custom partner name">
+                                    @endif
                                 </div>
                                 @error('sales_rep')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                             </div>
@@ -193,6 +226,7 @@
                 <div class="p-6">
                     <form action="{{ route('admin.coach.reset-password', $user) }}" method="POST" class="space-y-5">
                         @csrf
+                        <input type="hidden" name="return_to" value="{{ $backUrl }}">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">New Password</label>
@@ -290,7 +324,7 @@
                         <div class="font-bold text-slate-900 text-sm">{{ $coachStore->name }}</div>
                         <div class="text-xs text-slate-500 mt-1">Status: <span class="font-bold uppercase {{ $coachStore->status === 'approved' ? 'text-green-600' : ($coachStore->status === 'pending' ? 'text-amber-600' : 'text-slate-600') }}">{{ $coachStore->status }}</span> · {{ $coachStore->items->count() }} items · {{ $coachStore->parentOrders->count() }} orders</div>
                         <div class="mt-3 flex gap-2">
-                            <a href="{{ route('admin.store.edit', ['store' => $coachStore, 'return_to' => route('admin.dashboard', ['tab' => 'coaches'])]) }}" class="btn btn-outline py-1.5 px-3 text-xs uppercase tracking-wide">Manage Store →</a>
+                            <a href="{{ route('admin.store.edit', ['store' => $coachStore, 'return_to' => request()->fullUrl()]) }}" class="btn btn-outline py-1.5 px-3 text-xs uppercase tracking-wide">Manage Store →</a>
                             <a href="{{ route('store.show', $coachStore->slug) }}" target="_blank" class="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded text-xs font-bold uppercase tracking-wide">View Public ↗</a>
                         </div>
                     </div>

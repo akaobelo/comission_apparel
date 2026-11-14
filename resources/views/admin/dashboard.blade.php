@@ -868,10 +868,13 @@
                                                             <div class="text-xs font-black text-slate-900">{{ $quoteRequest->target_delivery_date?->format('M d, Y') ?? 'Not provided' }}</div>
                                                         </div>
                                                         <div class="bg-slate-50 rounded-lg p-2 border border-slate-200">
-                                                            <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">TCA Agent</div>
-                                                            <form action="{{ route('admin.quote.assign-rep', $quoteRequest) }}" method="POST">
+                                                            <div class="flex items-center justify-between">
+                                                                <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">TCA Agent</div>
+                                                                <div class="assign-status-badge"></div>
+                                                            </div>
+                                                            <form action="{{ route('admin.quote.assign-rep', $quoteRequest) }}" method="POST" onsubmit="return false;">
                                                                 @csrf
-                                                                <select name="sales_rep_id" onchange="this.form.submit()" class="text-[11px] font-bold text-secondary bg-transparent border-0 p-0 focus:ring-0 cursor-pointer max-w-full truncate" title="Assign TCA Agent">
+                                                                <select name="sales_rep_id" onchange="window.quickAssignLeadRep(this, '{{ $quoteRequest->id }}')" class="text-[11px] font-bold text-secondary bg-transparent border-0 p-0 focus:ring-0 cursor-pointer max-w-full truncate" title="Assign TCA Agent">
                                                                     <option value="">— Unassigned —</option>
                                                                     @foreach($salesReps as $rep)
                                                                         <option value="{{ $rep->id }}" {{ ($quoteRequest->sales_rep_id == $rep->id || $quoteRequest->sales_rep === trim("{$rep->first_name} {$rep->last_name}")) ? 'selected' : '' }}>
@@ -1665,10 +1668,13 @@
                                                 <div class="text-sm font-black text-slate-900">{{ $quoteRequest->target_delivery_date?->format('M d, Y') ?? 'Not provided' }}</div>
                                             </div>
                                             <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
-                                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">TCA Agent</div>
-                                                <form action="{{ route('admin.quote.assign-rep', $quoteRequest) }}" method="POST" class="mt-0.5">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">TCA Agent</div>
+                                                    <div class="assign-status-badge"></div>
+                                                </div>
+                                                <form action="{{ route('admin.quote.assign-rep', $quoteRequest) }}" method="POST" class="mt-0.5" onsubmit="return false;">
                                                     @csrf
-                                                    <select name="sales_rep_id" onchange="this.form.submit()" class="text-xs font-black text-secondary bg-transparent border-0 p-0 focus:ring-0 cursor-pointer max-w-full truncate" title="Assign TCA Agent">
+                                                    <select name="sales_rep_id" onchange="window.quickAssignLeadRep(this, '{{ $quoteRequest->id }}')" class="text-xs font-black text-secondary bg-transparent border-0 p-0 focus:ring-0 cursor-pointer max-w-full truncate" title="Assign TCA Agent">
                                                         <option value="">— Unassigned —</option>
                                                         @foreach($salesReps as $rep)
                                                             <option value="{{ $rep->id }}" {{ ($quoteRequest->sales_rep_id == $rep->id || $quoteRequest->sales_rep === trim("{$rep->first_name} {$rep->last_name}")) ? 'selected' : '' }}>
@@ -5401,6 +5407,58 @@
         } catch (err) {
             console.error('Failed to update batch status:', err);
             selectEl.form?.submit();
+        } finally {
+            selectEl.disabled = false;
+        }
+    };
+
+    window.quickAssignLeadRep = async function(selectEl, quoteId) {
+        const newVal = selectEl.value;
+        const container = selectEl.closest('.bg-slate-50') || selectEl.parentElement;
+        const badge = container ? container.querySelector('.assign-status-badge') : null;
+
+        if (badge) {
+            badge.innerHTML = '<span class="text-slate-400 font-semibold text-[9px] animate-pulse">Saving...</span>';
+        }
+
+        selectEl.disabled = true;
+
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+            const res = await fetch(`/admin/quotes/${encodeURIComponent(quoteId)}/assign-rep`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ sales_rep_id: newVal || null })
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (badge) {
+                    badge.innerHTML = '<span class="text-emerald-600 font-black text-[9px] inline-flex items-center gap-0.5">✓ Saved</span>';
+                    setTimeout(() => {
+                        badge.innerHTML = '';
+                    }, 2500);
+                }
+            } else {
+                if (badge) {
+                    badge.innerHTML = '<span class="text-red-600 font-black text-[9px]">✕ Error</span>';
+                    setTimeout(() => {
+                        badge.innerHTML = '';
+                    }, 3000);
+                }
+            }
+        } catch (err) {
+            console.error('Failed to assign lead rep:', err);
+            if (badge) {
+                badge.innerHTML = '<span class="text-red-600 font-black text-[9px]">✕ Error</span>';
+                setTimeout(() => {
+                    badge.innerHTML = '';
+                }, 3000);
+            }
         } finally {
             selectEl.disabled = false;
         }

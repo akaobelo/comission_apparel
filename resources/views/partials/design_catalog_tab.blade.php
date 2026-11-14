@@ -11,6 +11,7 @@
                     <div class="p-5 border-b border-slate-200" x-show="expandedAddCollection" x-cloak>
                         <form action="{{ route('admin.design-collection.create') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                             @csrf
+                            <input type="hidden" name="return_to" value="{{ request()->fullUrlWithQuery(['tab' => 'catalog']) }}">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="w-full">
                                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Collection Name</label>
@@ -147,6 +148,7 @@
                                   }
                               ">
                         @csrf
+                        <input type="hidden" name="return_to" value="{{ request()->fullUrlWithQuery(['tab' => 'catalog']) }}">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
@@ -324,6 +326,7 @@
                                   }
                               ">
                         @csrf
+                        <input type="hidden" name="return_to" value="{{ request()->fullUrlWithQuery(['tab' => 'catalog']) }}">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
@@ -541,6 +544,7 @@
                         @if($unassignedDesigns->isNotEmpty())
                         <form id="bulk-sort-form" action="{{ route('admin.design.bulk-sort') }}" method="POST">
                             @csrf
+                        <input type="hidden" name="return_to" value="{{ request()->fullUrlWithQuery(['tab' => 'catalog']) }}">
                         </form>
                         <div class="p-3 bg-white border-b border-slate-200 flex justify-between items-center">
                             <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Adjust sort orders below and click save</span>
@@ -561,6 +565,7 @@
                             <div class="flex flex-wrap items-center gap-2">
                                 <form action="{{ route('admin.design.bulk-assign') }}" method="POST" class="flex items-center gap-1.5" @submit="if(selectedDesigns.length === 0) { event.preventDefault(); alert('Please select at least one design to assign.'); }">
                                     @csrf
+                        <input type="hidden" name="return_to" value="{{ request()->fullUrlWithQuery(['tab' => 'catalog']) }}">
                                     <template x-for="id in selectedDesigns" :key="id">
                                         <input type="hidden" name="design_ids[]" :value="id">
                                     </template>
@@ -575,6 +580,7 @@
 
                                 <form action="{{ route('admin.design.bulk-delete') }}" method="POST" class="flex items-center" @submit="if(selectedDesigns.length === 0) { event.preventDefault(); alert('Please select at least one design to delete.'); } else if(!confirm('Are you sure you want to permanently delete ' + selectedDesigns.length + ' selected design(s) from the catalog? This cannot be undone.')) { event.preventDefault(); }">
                                     @csrf
+                        <input type="hidden" name="return_to" value="{{ request()->fullUrlWithQuery(['tab' => 'catalog']) }}">
                                     @method('DELETE')
                                     <template x-for="id in selectedDesigns" :key="id">
                                         <input type="hidden" name="design_ids[]" :value="id">
@@ -630,8 +636,8 @@
                                     <template x-if="editOpen">
                                     <form action="{{ route('admin.design.update', $design) }}" method="POST" enctype="multipart/form-data" class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3" @submit.prevent="window.submitInlineDesignUpdate($event, {{ $design->id }}, items)">
                                         @csrf
+                                        <input type="hidden" name="return_to" value="{{ request()->fullUrlWithQuery(['tab' => 'catalog']) }}">
                                         @method('PUT')
-                                        <input type="hidden" name="return_to" value="{{ request()->fullUrl() }}">
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                                             <div>
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Name</label>
@@ -805,6 +811,7 @@
                                 <div class="flex items-center gap-3">
                                     <form action="{{ route('admin.design.assign-to-coach-profile', $design) }}" method="POST" class="flex items-center gap-1">
                                         @csrf
+                        <input type="hidden" name="return_to" value="{{ request()->fullUrlWithQuery(['tab' => 'catalog']) }}">
                                         <select name="coach_id" required class="text-xs bg-white border border-slate-300 rounded px-2 py-1 w-32 focus:border-primary focus:outline-none">
                                             <option value="">Assign to coach...</option>
                                             <template x-for="c in (window.allCoachesList || [])" :key="c.id">
@@ -814,7 +821,8 @@
                                         <button type="submit" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-secondary hover:bg-[#a11825] text-white rounded transition-colors" title="Assign Design to Coach">Assign</button>
                                     </form>
                                     <form action="{{ route('admin.design.delete', $design) }}" method="POST" onsubmit="return confirm('Delete this design from the catalog?')">
-                                        @csrf @method('DELETE')
+                                        @csrf
+                        <input type="hidden" name="return_to" value="{{ request()->fullUrlWithQuery(['tab' => 'catalog']) }}"> @method('DELETE')
                                         <button class="text-red-400 hover:text-red-600 transition-colors p-1">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                         </button>
