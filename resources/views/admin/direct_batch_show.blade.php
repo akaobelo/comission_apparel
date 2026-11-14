@@ -6,18 +6,31 @@
         $returnUrl = request('return_to');
         if (!$returnUrl) {
             $referer = request()->headers->get('referer');
-            if ($referer && (str_contains($referer, 'sales-rep') || str_contains($referer, 'sales_rep'))) {
+            if ($referer && (str_contains($referer, 'sales-rep') || str_contains($referer, 'sales_rep') || str_contains($referer, 'rep/dashboard'))) {
                 $returnUrl = $referer;
             }
         }
-        $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'orders']);
-        $backLabel = ($returnUrl && (str_contains($returnUrl, 'sales-rep') || str_contains($returnUrl, 'sales_rep'))) ? 'Back to Sales Partner' : 'Back to Dashboard';
+        $isRep = auth()->check() && auth()->user()->isSalesRep() && !auth()->user()->isAdmin();
+        if ($isRep) {
+            $backUrl = $returnUrl ?: route('rep.dashboard', ['tab' => 'ledger']);
+            $backLabel = 'Back to Sales Partner';
+        } else {
+            $backUrl = $returnUrl ?: route('admin.dashboard', ['tab' => 'orders']);
+            $backLabel = ($returnUrl && (str_contains($returnUrl, 'sales-rep') || str_contains($returnUrl, 'sales_rep'))) ? 'Back to Sales Partner' : 'Back to Dashboard';
+        }
     @endphp
     <div class="mb-4">
-        <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
-            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-            <span>Admin Control Center</span>
-        </a>
+        @if($isRep)
+            <a href="{{ route('rep.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>Sales Partner Portal</span>
+            </a>
+        @else
+            <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>Admin Control Center</span>
+            </a>
+        @endif
     </div>
 
     <div class="flex items-center gap-4 mb-8">
@@ -153,12 +166,13 @@
                     <h3 class="text-sm font-black uppercase tracking-wider text-slate-900">Batch Summary</h3>
                 </div>
                 @php
+                    $coachUser = $coach ?? $firstOrder->user ?? $store?->user;
                     $isOnlinePayment = ($firstOrder->payment_status === 'paid' || $firstOrder->stripe_session_id || ($financials['total_online_paid'] ?? 0) > 0);
                     $isCheckPayment = ($firstOrder->payment_status === 'not_applicable');
-                    $isTaxExempt = (bool) ($firstOrder->user?->is_tax_exempt);
+                    $isTaxExempt = (bool) ($coachUser?->is_tax_exempt);
                 @endphp
                 <div class="p-6 space-y-3">
-                    <div class="flex justify-between text-sm"><span class="text-slate-500">Coach</span><span class="font-bold text-slate-900 text-right">{{ $firstOrder->user->first_name ?? 'Unknown' }} {{ $firstOrder->user->last_name ?? '' }}<br><span class="text-xs font-normal text-slate-500">{{ $firstOrder->user->email ?? $firstOrder->user->organization ?? '' }}</span></span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Coach</span><span class="font-bold text-slate-900 text-right">{{ $coachUser?->first_name ? $coachUser->first_name . ' ' . ($coachUser->last_name ?? '') : 'Unknown' }}<br><span class="text-xs font-normal text-slate-500">{{ $coachUser?->email ?? $coachUser?->organization ?? '' }}</span></span></div>
                     <div class="flex justify-between text-sm items-center">
                         <span class="text-slate-500">Profile / Store</span>
                         <div class="text-right">

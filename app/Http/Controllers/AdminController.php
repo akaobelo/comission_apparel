@@ -2546,15 +2546,26 @@ class AdminController extends Controller
             ->get();
 
         if ($orders->isEmpty()) {
-            return redirect()->route('admin.dashboard')->with('error', 'Direct Order Batch not found or empty.');
+            $dest = \Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin() ? 'rep.dashboard' : 'admin.dashboard';
+            return redirect()->route($dest)->with('error', 'Direct Order Batch not found or empty.');
         }
 
         $store = $orders->first()?->teamStore;
         $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, $store);
         $firstOrder = $orders->first();
-        $coach = $firstOrder?->user;
+        $coach = $firstOrder?->user ?: $store?->user;
         $coachStores = $coach ? $coach->teamStores : collect();
         $salesReps = User::whereIn('role', ['sales_rep', 'partner', 'agent'])->get();
+
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            $repId = \Illuminate\Support\Facades\Auth::id();
+            $hasAccess = $orders->contains(function($ord) use ($repId, $store, $coach) {
+                return $ord->sales_rep_id === $repId || ($store && $store->sales_rep_id === $repId) || ($coach && $coach->sales_rep_id === $repId);
+            });
+            if (!$hasAccess) {
+                abort(403, 'Unauthorized. This order batch is not associated with your account.');
+            }
+        }
 
         // If batch orders are active/unpaid and coach has an assigned sales rep,
         // ensure active batch orders match the coach's currently assigned sales rep (never reassign archived batches)
@@ -2580,7 +2591,7 @@ class AdminController extends Controller
             }
         }
 
-        return view('admin.direct_batch_show', compact('batchId', 'orders', 'financials', 'firstOrder', 'coachStores', 'store', 'salesReps'));
+        return view('admin.direct_batch_show', compact('batchId', 'orders', 'financials', 'firstOrder', 'coachStores', 'store', 'salesReps', 'coach'));
     }
 
     public function updateDirectBatchStore(Request $request, $batchId)
@@ -2899,6 +2910,14 @@ class AdminController extends Controller
 
         if ($orders->isEmpty()) abort(404);
 
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            $repId = \Illuminate\Support\Facades\Auth::id();
+            $hasAccess = $orders->contains(function($ord) use ($repId) {
+                return $ord->sales_rep_id === $repId || ($ord->teamStore && $ord->teamStore->sales_rep_id === $repId) || ($ord->user && $ord->user->sales_rep_id === $repId) || ($ord->teamStore && $ord->teamStore->user && $ord->teamStore->user->sales_rep_id === $repId);
+            });
+            if (!$hasAccess) abort(403);
+        }
+
         $filename = "batch-order-{$batchId}.csv";
         $headers = [
             "Content-type"        => "text/csv",
@@ -2990,6 +3009,14 @@ class AdminController extends Controller
         $orders = ParentOrder::with(['teamStore.items'])->where('batch_id', $batchId)->get();
 
         if ($orders->isEmpty()) abort(404);
+
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            $repId = \Illuminate\Support\Facades\Auth::id();
+            $hasAccess = $orders->contains(function($ord) use ($repId) {
+                return $ord->sales_rep_id === $repId || ($ord->teamStore && $ord->teamStore->sales_rep_id === $repId) || ($ord->user && $ord->user->sales_rep_id === $repId) || ($ord->teamStore && $ord->teamStore->user && $ord->teamStore->user->sales_rep_id === $repId);
+            });
+            if (!$hasAccess) abort(403);
+        }
 
         $filename = "batch-aggregate-{$batchId}.csv";
         $headers = [
@@ -3105,6 +3132,14 @@ class AdminController extends Controller
 
         if ($orders->isEmpty()) {
             abort(404);
+        }
+
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            $repId = \Illuminate\Support\Facades\Auth::id();
+            $hasAccess = $orders->contains(function($ord) use ($repId) {
+                return $ord->sales_rep_id === $repId || ($ord->teamStore && $ord->teamStore->sales_rep_id === $repId) || ($ord->user && $ord->user->sales_rep_id === $repId) || ($ord->teamStore && $ord->teamStore->user && $ord->teamStore->user->sales_rep_id === $repId);
+            });
+            if (!$hasAccess) abort(403);
         }
 
         $store = $orders->first()?->teamStore;
