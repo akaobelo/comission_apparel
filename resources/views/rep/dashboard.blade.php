@@ -314,6 +314,16 @@
                                 {{ $clients->count() }}
                             </span>
                         </button>
+                        {{-- Assigned Quote Leads & Inquiries --}}
+                        <button type="button" @click="activeTab = 'inquiries'" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeTab === 'inquiries' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeTab === 'inquiries' ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                <span class="truncate">Assigned Leads & Quotes</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="activeTab === 'inquiries' ? 'bg-blue-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $assignedInquiries->count() }}
+                            </span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -456,6 +466,103 @@
                     <p class="text-[11px] text-slate-500">Need to update bank details, tax forms, or credentials? Please contact your Commission Apparel administrator.</p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- TAB: ASSIGNED INQUIRIES & LEADS -->
+    <div x-show="activeTab === 'inquiries'" class="space-y-6" style="display: none;">
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-sm font-black uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                        Assigned Leads & Quote Inquiries ({{ $assignedInquiries->count() }})
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Leads submitted from the website that are assigned to your book of business.</p>
+                </div>
+            </div>
+
+            @if($assignedInquiries->isEmpty())
+                <div class="p-12 text-center text-slate-400 text-sm">
+                    No quote inquiries or leads currently assigned to you. When new leads are routed to you by the team, they will appear here.
+                </div>
+            @else
+                <div class="divide-y divide-slate-100">
+                    @foreach($assignedInquiries as $lead)
+                    <div class="p-6 hover:bg-slate-50/60 transition-colors">
+                        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-2.5 flex-wrap">
+                                    <span class="font-black text-slate-900 text-base">{{ $lead->organization_name }}</span>
+                                    <span class="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md border border-slate-200">{{ $lead->apparel_category }}</span>
+                                    @if($lead->lead_source === 'landing_page_free_mockup')
+                                        <span class="px-2 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-black uppercase rounded-md border border-purple-200">Free Mockup Ad Lead</span>
+                                    @endif
+                                    @if($lead->status === 'new' || !$lead->status)
+                                        <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black uppercase rounded-md border border-amber-200">New Inquiry</span>
+                                    @else
+                                        <span class="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-black uppercase rounded-md border border-green-200">Addressed</span>
+                                        @if($lead->addressed_by)
+                                            <span class="text-xs text-slate-500 font-medium">by <strong class="text-slate-800">{{ $lead->addressed_by }}</strong>@if($lead->addressed_at) · {{ $lead->addressed_at->diffForHumans() }}@endif</span>
+                                        @endif
+                                    @endif
+                                </div>
+                                <div class="text-xs text-slate-600 mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+                                    <div>
+                                        <span class="font-bold text-slate-800">{{ $lead->first_name }} {{ $lead->last_name }}</span> · {{ $lead->position_title }}
+                                        @if($lead->organization_type) <span class="text-slate-500">({{ $lead->organization_type }})</span> @endif
+                                    </div>
+                                    <a href="mailto:{{ $lead->email }}" class="text-blue-600 hover:underline">✉ {{ $lead->email }}</a>
+                                    <a href="tel:{{ $lead->phone }}" class="text-slate-700 hover:text-black">📞 {{ $lead->phone }}</a>
+                                </div>
+                                <div class="mt-3.5 grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-2xl">
+                                    <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Estimated Qty</div>
+                                        <div class="text-sm font-black text-slate-900">{{ $lead->raw_quantity ?: $lead->estimated_quantity }}</div>
+                                    </div>
+                                    <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Package</div>
+                                        <div class="text-sm font-black text-primary uppercase truncate">{{ str_replace('_', ' ', $lead->package_type) }}</div>
+                                    </div>
+                                    <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Target Date</div>
+                                        <div class="text-sm font-black text-slate-900">{{ $lead->target_delivery_date?->format('M d, Y') ?? 'Not provided' }}</div>
+                                    </div>
+                                </div>
+                                @if($lead->design_vision)
+                                    <div class="mt-3.5 p-3.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 leading-relaxed max-w-3xl">
+                                        <span class="font-bold uppercase tracking-wider text-[10px] text-slate-500 block mb-1">Design Vision & Notes:</span>
+                                        {{ $lead->design_vision }}
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="flex flex-col items-end gap-2 flex-shrink-0">
+                                <span class="text-xs text-slate-400 font-medium">{{ $lead->created_at->format('M d, Y') }} ({{ $lead->created_at->diffForHumans() }})</span>
+                                <div class="flex items-center gap-2 mt-2">
+                                    @if($lead->status === 'new' || !$lead->status)
+                                    <form action="{{ route('rep.quote.mark-addressed', $lead) }}" method="POST" onsubmit="return confirm('Mark this inquiry as addressed?')">
+                                        @csrf
+                                        <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow-sm">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                            Mark Addressed
+                                        </button>
+                                    </form>
+                                    @else
+                                    <form action="{{ route('rep.quote.unmark-addressed', $lead) }}" method="POST" onsubmit="return confirm('Revert this inquiry back to New?')">
+                                        @csrf
+                                        <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 border border-amber-200 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow-sm" title="Revert to New">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a5 5 0 015 5v2m0 0l-3-3m3 3l3-3M3 10l3-3m-3 3l3 3"/></svg>
+                                            Revert to New
+                                        </button>
+                                    </form>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            @endif
         </div>
     </div>
 

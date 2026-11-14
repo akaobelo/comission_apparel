@@ -134,6 +134,14 @@ class SalesRepController extends Controller
         $archivedOrderBatches = \App\Models\ParentOrder::groupOrdersIntoBatches($archivedOrders, $user);
         $orders = $activeOrders;
 
+        $fullName = trim("{$user->first_name} {$user->last_name}");
+        $assignedInquiries = \App\Models\QuoteRequest::where('sales_rep_id', $user->id)
+            ->when(!empty($fullName), function($q) use ($fullName) {
+                $q->orWhere('sales_rep', $fullName);
+            })
+            ->latest()
+            ->get();
+
         return view('rep.dashboard', compact(
             'user',
             'clients',
@@ -152,7 +160,8 @@ class SalesRepController extends Controller
             'clearedCommission',
             'paidCommission',
             'lifetimeCommissionEarned',
-            'referralUrl'
+            'referralUrl',
+            'assignedInquiries'
         ));
     }
 
@@ -304,5 +313,47 @@ class SalesRepController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Mark an assigned quote inquiry as addressed.
+     */
+    public function markInquiryAddressed(Request $request, \App\Models\QuoteRequest $quoteRequest)
+    {
+        $user = $request->user();
+        $fullName = trim("{$user->first_name} {$user->last_name}");
+
+        if ($quoteRequest->sales_rep_id !== $user->id && $quoteRequest->sales_rep !== $fullName) {
+            abort(403, 'Unauthorized inquiry.');
+        }
+
+        $quoteRequest->update([
+            'status'       => 'addressed',
+            'addressed_by' => $fullName ?: $user->email,
+            'addressed_at' => now(),
+        ]);
+
+        return back()->with('success', 'Lead inquiry marked as addressed.');
+    }
+
+    /**
+     * Revert an assigned quote inquiry back to new.
+     */
+    public function unmarkInquiryAddressed(Request $request, \App\Models\QuoteRequest $quoteRequest)
+    {
+        $user = $request->user();
+        $fullName = trim("{$user->first_name} {$user->last_name}");
+
+        if ($quoteRequest->sales_rep_id !== $user->id && $quoteRequest->sales_rep !== $fullName) {
+            abort(403, 'Unauthorized inquiry.');
+        }
+
+        $quoteRequest->update([
+            'status'       => 'new',
+            'addressed_by' => null,
+            'addressed_at' => null,
+        ]);
+
+        return back()->with('success', 'Lead inquiry reverted to New.');
     }
 }

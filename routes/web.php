@@ -378,6 +378,8 @@ Route::middleware(['auth', SalesRepMiddleware::class])->group(function () {
     Route::post('/rep/client', [SalesRepController::class, 'createClient'])->name('rep.client.create');
     Route::get('/rep/store/{store}/export', [SalesRepController::class, 'exportStoreCSV'])->name('rep.store.export');
     Route::get('/rep/ledger/export', [SalesRepController::class, 'exportLedgerCSV'])->name('rep.ledger.export');
+    Route::post('/rep/quote/{quoteRequest}/mark-addressed', [SalesRepController::class, 'markInquiryAddressed'])->name('rep.quote.mark-addressed');
+    Route::post('/rep/quote/{quoteRequest}/unmark-addressed', [SalesRepController::class, 'unmarkInquiryAddressed'])->name('rep.quote.unmark-addressed');
 });
 
 // ─── Admin Portal ────────────────────────────────────────────────────────────
@@ -495,6 +497,8 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     // Quotes
     Route::get('/admin/quotes/export', [AdminController::class, 'exportQuotesCSV'])->name('admin.quotes.export');
     Route::post('/admin/quote/{quoteRequest}/mark-addressed', [AdminController::class, 'markQuoteAddressed'])->name('admin.quote.mark-addressed');
+    Route::post('/admin/quote/{quoteRequest}/unmark-addressed', [AdminController::class, 'unmarkQuoteAddressed'])->name('admin.quote.unmark-addressed');
+    Route::post('/admin/quote/{quoteRequest}/assign-rep', [AdminController::class, 'assignQuoteSalesRep'])->name('admin.quote.assign-rep');
     Route::delete('/admin/quote/{quoteRequest}', [AdminController::class, 'deleteQuote'])->name('admin.quote.delete');
 
     // Landing Page CMS Settings

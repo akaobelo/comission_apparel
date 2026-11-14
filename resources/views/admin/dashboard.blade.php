@@ -841,6 +841,11 @@
                                                         @if($quoteRequest->lead_source === 'landing_page_free_mockup')
                                                             <span class="px-1.5 py-0.2 bg-purple-100 text-purple-800 text-[9px] font-black uppercase rounded border border-purple-200">Free Mockup Lead</span>
                                                         @endif
+                                                        @if($quoteRequest->status === 'new' || !$quoteRequest->status)
+                                                            <span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-black uppercase rounded border border-amber-200">New</span>
+                                                        @else
+                                                            <span class="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] font-black uppercase rounded border border-green-200">Addressed</span>
+                                                        @endif
                                                     </div>
                                                     <div class="text-xs text-slate-500 mt-0.5">
                                                         {{ $quoteRequest->first_name }} {{ $quoteRequest->last_name }} · {{ $quoteRequest->position_title }}
@@ -864,29 +869,45 @@
                                                         </div>
                                                         <div class="bg-slate-50 rounded-lg p-2 border border-slate-200">
                                                             <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">TCA Agent</div>
-                                                            <div class="text-xs font-black text-secondary">{{ $quoteRequest->sales_rep ?: '—' }}</div>
+                                                            <form action="{{ route('admin.quote.assign-rep', $quoteRequest) }}" method="POST">
+                                                                @csrf
+                                                                <select name="sales_rep_id" onchange="this.form.submit()" class="text-[11px] font-bold text-secondary bg-transparent border-0 p-0 focus:ring-0 cursor-pointer max-w-full truncate" title="Assign TCA Agent">
+                                                                    <option value="">— Unassigned —</option>
+                                                                    @foreach($salesReps as $rep)
+                                                                        <option value="{{ $rep->id }}" {{ ($quoteRequest->sales_rep_id == $rep->id || $quoteRequest->sales_rep === trim("{$rep->first_name} {$rep->last_name}")) ? 'selected' : '' }}>
+                                                                            {{ $rep->first_name }} {{ $rep->last_name }}
+                                                                        </option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </form>
                                                         </div>
                                                     </div>
                                                     @if($quoteRequest->design_vision)
                                                         <p class="text-xs text-slate-600 mt-2 line-clamp-2">{{ $quoteRequest->design_vision }}</p>
                                                     @endif
                                                 </div>
-                                                <div class="text-xs text-slate-400 flex-shrink-0 flex flex-col items-end gap-1.5">
+                                                <div class="text-xs text-slate-400 flex-shrink-0 flex flex-col items-end gap-1">
                                                     <span class="text-[11px]">{{ $quoteRequest->created_at->diffForHumans() }}</span>
+                                                    @if($quoteRequest->status === 'addressed' && $quoteRequest->addressed_by)
+                                                        <span class="text-[10px] text-slate-500 font-medium">By: <strong class="text-slate-700">{{ $quoteRequest->addressed_by }}</strong></span>
+                                                    @endif
                                                     <div class="flex items-center gap-1.5 mt-1">
                                                         @if($quoteRequest->status === 'new' || !$quoteRequest->status)
                                                         <form action="{{ route('admin.quote.mark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Mark this quote as addressed?')">
                                                             @csrf
-                                                            <button type="submit" class="flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm">
+                                                            <button type="submit" class="flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm" title="Mark as Addressed">
                                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                                                Addressed
+                                                                Mark Addressed
                                                             </button>
                                                         </form>
                                                         @else
-                                                        <div class="flex items-center gap-1 px-2.5 py-1 bg-slate-50 text-slate-500 border border-slate-200 rounded-md text-[10px] font-bold uppercase tracking-wider opacity-75 cursor-default">
-                                                            <svg class="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                                            Addressed
-                                                        </div>
+                                                        <form action="{{ route('admin.quote.unmark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Revert this quote inquiry back to New?')">
+                                                            @csrf
+                                                            <button type="submit" class="flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 border border-amber-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm" title="Revert to New">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a5 5 0 015 5v2m0 0l-3-3m3 3l3-3M3 10l3-3m-3 3l3 3"/></svg>
+                                                                Revert to New
+                                                            </button>
+                                                        </form>
                                                         @endif
 
                                                         <form action="{{ route('admin.quote.delete', $quoteRequest) }}" method="POST" onsubmit="return confirm('Permanently delete this quote inquiry? This cannot be undone.')">
@@ -1617,6 +1638,9 @@
                                                 <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black uppercase rounded-md border border-amber-200">New Inquiry</span>
                                             @else
                                                 <span class="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-black uppercase rounded-md border border-green-200">Addressed</span>
+                                                @if($quoteRequest->addressed_by)
+                                                    <span class="text-xs text-slate-500 font-medium">by <strong class="text-slate-800">{{ $quoteRequest->addressed_by }}</strong>@if($quoteRequest->addressed_at) · {{ $quoteRequest->addressed_at->diffForHumans() }}@endif</span>
+                                                @endif
                                             @endif
                                         </div>
                                         <div class="text-xs text-slate-600 mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -1642,7 +1666,17 @@
                                             </div>
                                             <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
                                                 <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">TCA Agent</div>
-                                                <div class="text-sm font-black text-secondary">{{ $quoteRequest->sales_rep ?: '—' }}</div>
+                                                <form action="{{ route('admin.quote.assign-rep', $quoteRequest) }}" method="POST" class="mt-0.5">
+                                                    @csrf
+                                                    <select name="sales_rep_id" onchange="this.form.submit()" class="text-xs font-black text-secondary bg-transparent border-0 p-0 focus:ring-0 cursor-pointer max-w-full truncate" title="Assign TCA Agent">
+                                                        <option value="">— Unassigned —</option>
+                                                        @foreach($salesReps as $rep)
+                                                            <option value="{{ $rep->id }}" {{ ($quoteRequest->sales_rep_id == $rep->id || $quoteRequest->sales_rep === trim("{$rep->first_name} {$rep->last_name}")) ? 'selected' : '' }}>
+                                                                {{ $rep->first_name }} {{ $rep->last_name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </form>
                                             </div>
                                         </div>
                                         @if($quoteRequest->utm_source || $quoteRequest->utm_campaign || $quoteRequest->utm_medium)
@@ -1673,10 +1707,13 @@
                                                 </button>
                                             </form>
                                             @else
-                                            <div class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-500 border border-slate-200 rounded-lg text-xs font-bold uppercase tracking-wider opacity-75 cursor-default">
-                                                <svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                                Addressed
-                                            </div>
+                                            <form action="{{ route('admin.quote.unmark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Revert this quote inquiry back to New?')">
+                                                @csrf
+                                                <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 border border-amber-200 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow-sm" title="Revert to New">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a5 5 0 015 5v2m0 0l-3-3m3 3l3-3M3 10l3-3m-3 3l3 3"/></svg>
+                                                    Revert to New
+                                                </button>
+                                            </form>
                                             @endif
 
                                             <form action="{{ route('admin.quote.delete', $quoteRequest) }}" method="POST" onsubmit="return confirm('Permanently delete this quote inquiry? This cannot be undone.')">

@@ -3398,6 +3398,8 @@ class AdminController extends Controller
             'ID',
             'Date Submitted',
             'Status',
+            'Addressed By',
+            'Addressed At',
             'Lead Source',
             'Organization Name',
             'Organization Type',
@@ -3428,6 +3430,8 @@ class AdminController extends Controller
                 $quote->id,
                 $quote->created_at ? $quote->created_at->format('Y-m-d H:i:s') : '',
                 $status,
+                $quote->addressed_by ?? '',
+                $quote->addressed_at ? $quote->addressed_at->format('Y-m-d H:i:s') : '',
                 $source,
                 $quote->organization_name ?? '',
                 $quote->organization_type ?? '',
@@ -3460,8 +3464,39 @@ class AdminController extends Controller
 
     public function markQuoteAddressed(\App\Models\QuoteRequest $quoteRequest)
     {
-        $quoteRequest->update(['status' => 'addressed']);
+        $user = auth()->user();
+        $userName = trim(($user?->first_name ?? '') . ' ' . ($user?->last_name ?? '')) ?: ($user?->email ?? 'Admin');
+        $quoteRequest->update([
+            'status'       => 'addressed',
+            'addressed_by' => $userName,
+            'addressed_at' => now(),
+        ]);
         return redirect()->back()->with('success', 'Quote inquiry marked as addressed.');
+    }
+
+    public function unmarkQuoteAddressed(\App\Models\QuoteRequest $quoteRequest)
+    {
+        $quoteRequest->update([
+            'status'       => 'new',
+            'addressed_by' => null,
+            'addressed_at' => null,
+        ]);
+        return redirect()->back()->with('success', 'Quote inquiry reverted to New.');
+    }
+
+    public function assignQuoteSalesRep(Request $request, \App\Models\QuoteRequest $quoteRequest)
+    {
+        $request->validate([
+            'sales_rep_id' => 'nullable|exists:users,id',
+        ]);
+
+        $rep = $request->sales_rep_id ? User::find($request->sales_rep_id) : null;
+        $quoteRequest->update([
+            'sales_rep_id' => $rep?->id,
+            'sales_rep'    => $rep ? trim("{$rep->first_name} {$rep->last_name}") : null,
+        ]);
+
+        return redirect()->back()->with('success', 'TCA Agent assigned successfully.');
     }
 
     public function deleteQuote(\App\Models\QuoteRequest $quoteRequest)
