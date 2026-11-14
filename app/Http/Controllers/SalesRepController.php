@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\TeamStore;
 use App\Models\ParentOrder;
 use App\Models\DesignCatalog;
+use App\Models\DesignCollection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -142,6 +143,116 @@ class SalesRepController extends Controller
             ->latest()
             ->get();
 
+        // ─── Design Catalog & Collections Support ─────────────────────────────
+        $availableSports = config('sports.categories') ?? [];
+
+        $collectionSearch = $request->input('collection_search');
+        $collectionsQuery = DesignCollection::with(['designs' => function($q) {
+            $q->with(['coaches:id,first_name,last_name,organization'])->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc');
+        }]);
+
+        if (!empty($collectionSearch)) {
+            $collectionsQuery->where(function($q) use ($collectionSearch) {
+                $q->where('name', 'like', "%{$collectionSearch}%")
+                  ->orWhere('sports', 'like', "%{$collectionSearch}%")
+                  ->orWhereHas('designs', function($dq) use ($collectionSearch) {
+                      $dq->where('name', 'like', "%{$collectionSearch}%");
+                  });
+            });
+        }
+
+        $designCollections = $collectionsQuery->orderBy('sort_order', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10, ['*'], 'collection_page')
+            ->withQueryString();
+
+        $allCoaches = $clients;
+
+        // AJAX pagination / search for existing collections
+        if ($request->ajax() && $request->input('ajax_section') === 'collections') {
+            $allCollections = DesignCollection::select('id', 'name')->orderBy('name', 'asc')->get();
+
+            return view('admin.partials.existing_collections_list', compact(
+                'designCollections',
+                'availableSports',
+                'allCollections',
+                'allCoaches'
+            ));
+        }
+
+        // Complete list of collections for selection dropdowns
+        $allCollections = DesignCollection::select('id', 'name')
+            ->with(['designs' => function($q) {
+                $q->select('id', 'design_collection_id', 'name', 'types', 'type', 'sort_order')
+                  ->orderBy('sort_order', 'asc')
+                  ->orderBy('id', 'asc');
+            }])
+            ->orderBy('name', 'asc')
+            ->get();
+
+        $unassignedSearch = $request->input('unassigned_search');
+        $unassignedQuery = DesignCatalog::whereNull('design_collection_id')
+            ->with(['designCollection:id,name', 'coaches:id,first_name,last_name,organization']);
+
+        if (!empty($unassignedSearch)) {
+            $unassignedQuery->where(function($q) use ($unassignedSearch) {
+                $q->where('name', 'like', "%{$unassignedSearch}%")
+                  ->orWhere('sport', 'like', "%{$unassignedSearch}%")
+                  ->orWhereHas('coaches', function($q2) use ($unassignedSearch) {
+                      $q2->where('first_name', 'like', "%{$unassignedSearch}%")
+                         ->orWhere('last_name', 'like', "%{$unassignedSearch}%")
+                         ->orWhere('organization', 'like', "%{$unassignedSearch}%");
+                  });
+            });
+        }
+
+        $unassignedDesigns = $unassignedQuery->orderBy('sort_order', 'asc')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate(15, ['*'], 'unassigned_page')
+            ->withQueryString();
+
+        $typeOptions = [
+            'accessory' => 'Accessories',
+            'arm_sleeve' => 'Arm Sleeves',
+            'arm_sleeve_2' => 'Arm Sleeves #2',
+            'arm_sleeve_3' => 'Arm Sleeves #3',
+            'arm_sleeve_4' => 'Arm Sleeves #4',
+            'backpack' => 'Backpacks',
+            'headwear' => 'Headwear',
+            'hoodie' => 'Hoodies & Pullovers',
+            'jacket' => 'Jackets',
+            'leggings' => 'Leggings/Tights',
+            'pants' => 'Pants',
+            'polo' => 'Polos',
+            'shirt_short' => 'Shirts (short sleeve)',
+            'shirt_long' => 'Shirts (long sleeve)',
+            'shorts' => 'Shorts',
+            'socks' => 'Socks',
+            'uniform_top' => 'Uniform (top)',
+            'uniform_bottom' => 'Uniform (bottom)',
+            'uniform_set' => 'Uniform Set (top/bottom)',
+            'uniform_2_top' => 'Uniform #2 (top)',
+            'uniform_2_bottom' => 'Uniform #2 (bottom)',
+            'uniform_set_2' => 'Uniform #2 (Set)',
+            'uniform_3_top' => 'Uniform #3 (top)',
+            'uniform_3_bottom' => 'Uniform #3 (bottom)',
+            'uniform_set_3' => 'Uniform #3 (Set)',
+            'uniform_4_top' => 'Uniform #4 (top)',
+            'uniform_4_bottom' => 'Uniform #4 (bottom)',
+            'uniform_set_4' => 'Uniform #4 (Set)',
+            'warmup_top' => 'Warm-up (top)',
+            'warmup_bottom' => 'Warm-up (bottom)',
+            'warmup_set' => 'Warm-up (top/bottom)',
+            'warmup_2_top' => 'Warm-up #2 (top)',
+            'warmup_2_bottom' => 'Warm-up #2 (bottom)',
+            'warmup_set_2' => 'Warm-up #2 (set)',
+            'uniform_package_gold' => 'Uniform Package (Gold)',
+            'uniform_package_silver' => 'Uniform Package (Silver)',
+            'uniform_package_bronze' => 'Uniform Package (Bronze)',
+            'uniform_package_custom' => 'Uniform Package (Custom)',
+        ];
+
         return view('rep.dashboard', compact(
             'user',
             'clients',
@@ -161,7 +272,13 @@ class SalesRepController extends Controller
             'paidCommission',
             'lifetimeCommissionEarned',
             'referralUrl',
-            'assignedInquiries'
+            'assignedInquiries',
+            'availableSports',
+            'designCollections',
+            'allCollections',
+            'unassignedDesigns',
+            'allCoaches',
+            'typeOptions'
         ));
     }
 

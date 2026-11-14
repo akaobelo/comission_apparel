@@ -8,6 +8,19 @@
     storeSearch: '',
     coachSearch: '',
     financialSearch: '',
+    init() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('collection_search') || urlParams.has('collection_page') || urlParams.has('unassigned_search') || urlParams.has('unassigned_page') || urlParams.has('open_collection') || urlParams.get('tab') === 'catalog') {
+            this.activeTab = 'catalog';
+        }
+        this.$watch('activeTab', tab => {
+            if (tab === 'catalog') {
+                setTimeout(() => {
+                    if (window.initCollectionsSortable) window.initCollectionsSortable();
+                }, 50);
+            }
+        });
+    },
     coachSortCol: 'org',
     coachSortAsc: true,
     storeSortCol: 'name',
@@ -328,14 +341,14 @@
                 </div>
             </div>
 
-            {{-- Column 3: STOREFRONT DATABASE --}}
+            {{-- Column 3: STOREFRONTS & DESIGN CATALOG --}}
             <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/70">
                         <span class="w-6 h-6 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center flex-shrink-0">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                         </span>
-                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Storefront Database</span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-800">Stores & Designs</span>
                     </div>
                     <div class="space-y-1.5">
                         {{-- Team Stores & Pipeline --}}
@@ -346,6 +359,16 @@
                             </div>
                             <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="activeTab === 'stores' ? 'bg-purple-500 text-white' : 'bg-slate-200/80 text-slate-700'">
                                 {{ $stores->count() }}
+                            </span>
+                        </button>
+                        {{-- Design Catalog & Collections --}}
+                        <button type="button" @click="activeTab = 'catalog'" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeTab === 'catalog' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold border border-slate-200/80 shadow-2xs'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeTab === 'catalog' ? 'text-purple-400' : 'text-slate-400 group-hover:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+                                <span class="truncate">Design Collections</span>
+                            </div>
+                            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-full" :class="activeTab === 'catalog' ? 'bg-purple-500 text-white' : 'bg-slate-200/80 text-slate-700'">
+                                {{ $designCollections->total() }}
                             </span>
                         </button>
                     </div>
@@ -1875,6 +1898,11 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- TAB 4: DESIGN CATALOG & COLLECTIONS -->
+    <div x-show="activeTab === 'catalog'" class="space-y-6" style="display: none;">
+        @include('partials.design_catalog_tab')
     </div>
 
 </div>

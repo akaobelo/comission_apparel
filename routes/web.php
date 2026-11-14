@@ -11,6 +11,7 @@ use App\Http\Controllers\SalesRepController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\CoachMiddleware;
 use App\Http\Middleware\SalesRepMiddleware;
+use App\Http\Middleware\AdminOrSalesRepMiddleware;
 
 // ─── Public UI ──────────────────────────────────────────────────────────────
 Route::get('/', function () { 
@@ -394,18 +395,26 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::post('/admin/coach/{user}/update', [AdminController::class, 'updateCoach'])->name('admin.coach.update');
     Route::post('/admin/coach/{user}/reset-password', [AdminController::class, 'resetCoachPassword'])->name('admin.coach.reset-password');
     Route::delete('/admin/coach/{user}/delete', [AdminController::class, 'deleteCoach'])->name('admin.coach.delete');
+});
 
+// ─── Design Catalog & Collections Management (Accessible to Super Admin & Sales Reps/Agents) ───
+Route::middleware(['auth', AdminOrSalesRepMiddleware::class])->group(function () {
     // Design catalog management
     Route::post('/admin/design/bulk-sort', [AdminController::class, 'bulkSortDesigns'])->name('admin.design.bulk-sort');
     Route::post('/admin/design/bulk-assign', [AdminController::class, 'bulkAssignDesigns'])->name('admin.design.bulk-assign');
     Route::delete('/admin/design/bulk-delete', [AdminController::class, 'bulkDeleteDesigns'])->name('admin.design.bulk-delete');
     Route::post('/admin/design', [AdminController::class, 'createDesign'])->name('admin.design.create');
     Route::put('/admin/design/{design}', [AdminController::class, 'updateDesign'])->name('admin.design.update');
-    Route::get('/admin/design/{design}', function () { return redirect()->route('admin.dashboard'); });
+    Route::get('/admin/design/{design}', function () {
+        return auth()->user()->isSalesRep() && !auth()->user()->isAdmin()
+            ? redirect()->route('rep.dashboard')
+            : redirect()->route('admin.dashboard');
+    });
     Route::delete('/admin/design/{design}', [AdminController::class, 'deleteDesign'])->name('admin.design.delete');
     Route::post('/admin/design/{design}/assign-to-coach-profile', [AdminController::class, 'assignToCoachProfile'])->name('admin.design.assign-to-coach-profile');
     Route::get('/admin/design/{design}/assign-to-coach-profile', function () {
-        return redirect()->route('admin.dashboard')->with('error', 'Your session expired or you refreshed a form submission. Please try assigning the design again.');
+        $dest = auth()->user()->isSalesRep() && !auth()->user()->isAdmin() ? 'rep.dashboard' : 'admin.dashboard';
+        return redirect()->route($dest)->with('error', 'Your session expired or you refreshed a form submission. Please try assigning the design again.');
     });
 
     // Design collections management
@@ -423,6 +432,10 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     // Assign designs to coaches
     Route::post('/admin/coach/{coach}/assign-design', [AdminController::class, 'assignDesign'])->name('admin.coach.assign-design');
     Route::delete('/admin/coach/{coach}/remove-design/{design}', [AdminController::class, 'removeDesign'])->name('admin.coach.remove-design');
+});
+
+// ─── Super Admin Exclusive Controls ──────────────────────────────────────────
+Route::middleware(['auth', AdminMiddleware::class])->group(function () {
 
     // Store controls
     Route::post('/admin/stores/bulk-sort', [AdminController::class, 'updateStoresSortOrder'])->name('admin.stores.bulk-sort');

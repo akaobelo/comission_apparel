@@ -1573,6 +1573,16 @@ class AdminController extends Controller
 
         \App\Models\DesignCollection::create($validated);
 
+        if ($request->filled('return_to')) {
+            return redirect($request->input('return_to'))
+                ->with('success', "Collection \"{$validated['name']}\" added.");
+        }
+
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            return redirect()->route('rep.dashboard')
+                ->with('success', "Collection \"{$validated['name']}\" added.");
+        }
+
         return redirect()->route('admin.dashboard')
             ->with('success', "Collection \"{$validated['name']}\" added.");
     }
