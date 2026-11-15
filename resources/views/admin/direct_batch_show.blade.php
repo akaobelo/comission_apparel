@@ -257,12 +257,15 @@
                         $onlinePaid = (float)($financials['total_online_paid'] ?? 0);
                         $depositApplied = (float)($financials['deposit_credit_applied'] ?? 0);
                         $totalSales = (float)($financials['total_sales'] ?? $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales()));
-                        $batchGross = $onlinePaid > 0 ? ($onlinePaid + $depositApplied) : $totalSales;
+                        // Commission margin pool uses qualifying product sales ($totalSales), excluding customer credit card processing fees
+                        $batchGross = $totalSales > 0 ? $totalSales : ($onlinePaid > 0 ? ($onlinePaid + $depositApplied) : 0);
                         $batchTax = (float)($financials['total_tax'] ?? 0);
                         $batchTotalExpense = $batchMfg + $batchTax + $batchTariff + $batchFees;
-                        $batchNetMargin = max(0.0, $batchGross - $batchTotalExpense);
+                        $savedNetMargin = (float)$orders->sum(fn($o) => (float)$o->net_margin);
+                        $savedRepEarned = (float)$orders->sum(fn($o) => (float)$o->rep_commission_earned);
+                        $batchNetMargin = $savedNetMargin > 0 ? $savedNetMargin : max(0.0, $batchGross - $batchTotalExpense);
                         $appliedRate = (float)($firstOrder->applied_rep_commission_rate ?? $currentRep?->getEffectiveCommissionRate() ?? 50.00);
-                        $batchRepEarned = round($batchNetMargin * ($appliedRate / 100.0), 2);
+                        $batchRepEarned = $savedRepEarned > 0 ? $savedRepEarned : round($batchNetMargin * ($appliedRate / 100.0), 2);
                     @endphp
 
                     <form action="{{ route('admin.direct-batch.financials.update', $batchId) }}" method="POST" class="p-5 space-y-3.5">
@@ -276,7 +279,7 @@
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <span class="text-slate-500 font-bold text-xs font-sans">$</span>
                                 </div>
-                                <input type="number" step="0.01" min="0" name="manufacturing_cost" value="{{ old('manufacturing_cost', $hasCustomMfg ? $batchMfg : '') }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                <input type="number" step="0.01" min="0" id="batch_mfg_cost" name="manufacturing_cost" value="{{ old('manufacturing_cost', $hasCustomMfg ? $batchMfg : '') }}" oninput="recalcBatchRepEarned()" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
                             <span class="text-[10px] text-slate-400">Actual factory cost to produce items (deducted from gross to find net profit)</span>
                         </div>
@@ -287,7 +290,7 @@
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <span class="text-slate-500 font-bold text-xs font-sans">$</span>
                                 </div>
-                                <input type="number" step="0.01" min="0" name="tariff_amount" value="{{ old('tariff_amount', $batchTariff) }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                <input type="number" step="0.01" min="0" id="batch_tariff_amount" name="tariff_amount" value="{{ old('tariff_amount', $batchTariff) }}" oninput="recalcBatchRepEarned()" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
                             <span class="text-[10px] text-slate-400">Import / freight tariff allocated to batch</span>
                         </div>
@@ -298,7 +301,7 @@
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <span class="text-slate-500 font-bold text-xs font-sans">$</span>
                                 </div>
-                                <input type="number" step="0.01" min="0" name="fee_deduction" value="{{ old('fee_deduction', $batchFees) }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
+                                <input type="number" step="0.01" min="0" id="batch_fee_deduction" name="fee_deduction" value="{{ old('fee_deduction', $batchFees) }}" oninput="recalcBatchRepEarned()" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
                         </div>
 
@@ -342,7 +345,7 @@
                         <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs font-sans">
                             <div class="flex justify-between items-center text-slate-600 font-semibold">
                                 <span>Batch Net Margin:</span>
-                                <span id="batch_net_margin_val" data-value="{{ $batchNetMargin }}" class="font-bold text-slate-900 text-sm font-sans">${{ number_format($batchNetMargin, 2) }}</span>
+                                <span id="batch_net_margin_val" data-sales="{{ $batchGross }}" data-tax="{{ $batchTax }}" data-value="{{ $batchNetMargin }}" class="font-bold text-slate-900 text-sm font-sans">${{ number_format($batchNetMargin, 2) }}</span>
                             </div>
                             <div class="flex justify-between items-center text-slate-600 font-semibold border-t border-slate-200/80 pt-2">
                                 <span>Rep Payout Total:</span>
@@ -375,11 +378,24 @@ function recalcBatchRepEarned() {
     const netMarginEl = document.getElementById('batch_net_margin_val');
     const payoutEl = document.getElementById('batch_rep_payout_val');
     const rateInput = document.getElementById('batch_commission_rate');
+    const mfgInput = document.getElementById('batch_mfg_cost');
+    const tariffInput = document.getElementById('batch_tariff_amount');
+    const feeInput = document.getElementById('batch_fee_deduction');
     if (!netMarginEl || !payoutEl || !rateInput) return;
 
-    const netMargin = parseFloat(netMarginEl.dataset.value || 0);
+    const baseSales = parseFloat(netMarginEl.dataset.sales || 0);
+    const tax = parseFloat(netMarginEl.dataset.tax || 0);
+    const mfg = parseFloat(mfgInput?.value || 0);
+    const tariff = parseFloat(tariffInput?.value || 0);
+    const fee = parseFloat(feeInput?.value || 0);
     const rate = parseFloat(rateInput.value || 0);
+
+    const totalExpense = mfg + tax + tariff + fee;
+    const netMargin = Math.max(0, baseSales - totalExpense);
     const earned = Math.max(0, netMargin * (rate / 100.0));
+
+    netMarginEl.textContent = '$' + netMargin.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    netMarginEl.dataset.value = netMargin;
     payoutEl.textContent = '$' + earned.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 </script>

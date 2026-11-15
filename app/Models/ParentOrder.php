@@ -651,7 +651,8 @@ class ParentOrder extends Model
             // Net Margin: Combine Manu. Cost + Taxes + Fees to get total expense, then subtract from Gross Sales
             $totalExpense = $manuCost + $taxes + $fees;
             $savedNetMargin = (float) $batchOrders->sum(fn($o) => (float)$o->net_margin);
-            $netMargin = $savedNetMargin > 0 ? $savedNetMargin : max(0.0, $gross - $totalExpense);
+            $marginBase = $totalSales > 0 ? $totalSales : max(0.0, $gross - $taxes - (float)($batchFinancials['total_fees'] ?? 0));
+            $netMargin = $savedNetMargin > 0 ? $savedNetMargin : max(0.0, $marginBase - $totalExpense);
 
             $splitRate = (float)($first->applied_rep_commission_rate ?? ($rep ? $rep->getEffectiveCommissionRate() : 50.0));
             $actualCommission = (float) $batchOrders->sum(fn($o) => (float)$o->rep_commission_earned);
