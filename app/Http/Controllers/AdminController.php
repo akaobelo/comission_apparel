@@ -3670,11 +3670,18 @@ class AdminController extends Controller
 
     public function assignQuoteSalesRep(Request $request, \App\Models\QuoteRequest $quoteRequest)
     {
+        $salesRepId = $request->input('sales_rep_id');
+        if ($salesRepId === '' || $salesRepId === 'null') {
+            $salesRepId = null;
+        }
+
+        $request->merge(['sales_rep_id' => $salesRepId]);
+
         $request->validate([
             'sales_rep_id' => 'nullable|exists:users,id',
         ]);
 
-        $rep = $request->sales_rep_id ? User::find($request->sales_rep_id) : null;
+        $rep = $salesRepId ? User::find($salesRepId) : null;
         $quoteRequest->update([
             'sales_rep_id' => $rep?->id,
             'sales_rep'    => $rep ? trim("{$rep->first_name} {$rep->last_name}") : null,

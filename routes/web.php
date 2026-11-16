@@ -514,9 +514,13 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     // Quotes
     Route::get('/admin/quotes/export', [AdminController::class, 'exportQuotesCSV'])->name('admin.quotes.export');
     Route::post('/admin/quote/{quoteRequest}/mark-addressed', [AdminController::class, 'markQuoteAddressed'])->name('admin.quote.mark-addressed');
+    Route::post('/admin/quotes/{quoteRequest}/mark-addressed', [AdminController::class, 'markQuoteAddressed'])->name('admin.quotes.mark-addressed');
     Route::post('/admin/quote/{quoteRequest}/unmark-addressed', [AdminController::class, 'unmarkQuoteAddressed'])->name('admin.quote.unmark-addressed');
+    Route::post('/admin/quotes/{quoteRequest}/unmark-addressed', [AdminController::class, 'unmarkQuoteAddressed'])->name('admin.quotes.unmark-addressed');
     Route::post('/admin/quote/{quoteRequest}/assign-rep', [AdminController::class, 'assignQuoteSalesRep'])->name('admin.quote.assign-rep');
+    Route::post('/admin/quotes/{quoteRequest}/assign-rep', [AdminController::class, 'assignQuoteSalesRep'])->name('admin.quotes.assign-rep');
     Route::delete('/admin/quote/{quoteRequest}', [AdminController::class, 'deleteQuote'])->name('admin.quote.delete');
+    Route::delete('/admin/quotes/{quoteRequest}', [AdminController::class, 'deleteQuote'])->name('admin.quotes.delete');
 
     // Landing Page CMS Settings
     Route::post('/admin/landing-settings', [AdminController::class, 'updateLandingSettings'])->name('admin.landing.settings.update');
