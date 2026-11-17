@@ -454,12 +454,13 @@ class ParentOrder extends Model
             ];
         }
 
-        // Fallback: check if unit_price or price was stored directly on the item snapshot
-        if (isset($item['unit_price']) || isset($item['price'])) {
-            $savedPrice = (float) ($item['unit_price'] ?? $item['price'] ?? 0);
+        // Fallback: check if wholesale_price, retail_price, unit_price or price was stored directly on the item snapshot
+        if (isset($item['wholesale_price']) || isset($item['retail_price']) || isset($item['unit_price']) || isset($item['price'])) {
+            $wPrice = (float) ($item['wholesale_price'] ?? $item['unit_price'] ?? $item['price'] ?? 0);
+            $rPrice = (float) ($item['retail_price'] ?? $item['unit_price'] ?? $item['price'] ?? $wPrice);
             return [
-                'retail_price'    => $savedPrice,
-                'wholesale_price' => $savedPrice,
+                'retail_price'    => $rPrice > 0 ? $rPrice : $wPrice,
+                'wholesale_price' => $wPrice > 0 ? $wPrice : $rPrice,
             ];
         }
 
@@ -489,53 +490,64 @@ class ParentOrder extends Model
             $orderDeposit = (float) ($order->deposit_credit_applied ?? 0);
             $items = is_array($order->items_json) ? $order->items_json : [];
 
-            if ($order->isPaid() || (float)($order->subtotal ?? 0) > 0 || $order->isDirectOrder()) {
+            // Calculate wholesale total from items
+            foreach ($items as $orderedItem) {
+                $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
+                $orderItemsCount += $qty;
+                $prices = self::getItemPrices($orderedItem, $store);
+                $orderWholesaleTotal += ($prices['wholesale_price'] * $qty);
+            }
+
+            if ($order->isDirectOrder()) {
+                // Direct orders reflect manufacturer wholesale pricing
+                $orderTotal = $orderWholesaleTotal > 0 ? $orderWholesaleTotal : ((float) $order->manufacturing_cost > 0 ? (float) $order->manufacturing_cost : (float) ($order->subtotal ?? 0));
+                if ($orderWholesaleTotal <= 0 && $orderTotal > 0) {
+                    $orderWholesaleTotal = $orderTotal;
+                }
+            } elseif ($order->isPaid() || (float)($order->subtotal ?? 0) > 0) {
                 // For locked/placed orders: use the actual recorded subtotal
                 $orderTotal = (float) ($order->subtotal ?? 0);
                 if ($orderTotal <= 0) {
                     $orderTotal = (float) ($order->total_retail_price ?? 0);
                 }
+            } else {
+                // For UNPAID / PENDING orders: dynamically recalculate from current store item prices
                 foreach ($items as $orderedItem) {
                     $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
-                    $orderItemsCount += $qty;
                     $prices = self::getItemPrices($orderedItem, $store);
-                    $orderWholesaleTotal += ($prices['wholesale_price'] * $qty);
+                    $orderTotal += ((float) $prices['retail_price'] * $qty);
                 }
+            }
 
-                if ($order->isPaid()) {
-                    $sessionId = $order->stripe_session_id;
-                    $batchId = $order->batch_id;
-                    $sessionKey = $sessionId ?: ($order->isDirectOrder() && $batchId ? 'batch_' . $batchId : null);
+            if ($order->isPaid()) {
+                $sessionId = $order->stripe_session_id;
+                $batchId = $order->batch_id;
+                $sessionKey = $sessionId ?: ($order->isDirectOrder() && $batchId ? 'batch_' . $batchId : null);
 
-                    if ($sessionKey) {
-                        $sharedOrders = $ordersCollection->filter(function($o) use ($sessionId, $batchId) {
-                            return $sessionId 
-                                ? ($o->stripe_session_id === $sessionId) 
-                                : ($o->batch_id === $batchId && $o->isDirectOrder());
-                        });
+                if ($sessionKey) {
+                    $sharedOrders = $ordersCollection->filter(function($o) use ($sessionId, $batchId) {
+                        return $sessionId 
+                            ? ($o->stripe_session_id === $sessionId) 
+                            : ($o->batch_id === $batchId && $o->isDirectOrder());
+                    });
 
-                        if ($sharedOrders->count() > 1) {
-                            $firstPaid = (float) $sharedOrders->first()->total_paid;
-                            $allIdenticalPaid = $sharedOrders->every(fn($o) => abs((float)$o->total_paid - $firstPaid) < 0.01);
-                            $sessionSubtotal = (float) $sharedOrders->sum(fn($o) => (float)($o->subtotal ?? 0));
+                    if ($sharedOrders->count() > 1) {
+                        $firstPaid = (float) $sharedOrders->first()->total_paid;
+                        $allIdenticalPaid = $sharedOrders->every(fn($o) => abs((float)$o->total_paid - $firstPaid) < 0.01);
+                        $sessionSubtotal = (float) $sharedOrders->sum(fn($o) => (float)($o->subtotal ?? 0));
 
-                            // If all orders in the shared batch/session have identical total_paid >= sessionSubtotal,
-                            // it indicates the batch-level totals were replicated on each order row.
-                            if ($allIdenticalPaid && $firstPaid >= ($sessionSubtotal - 0.01) && $firstPaid > 0) {
-                                if (!in_array($sessionKey, $seenReplicatedSessions)) {
-                                    $seenReplicatedSessions[] = $sessionKey;
-                                    $orderTax = (float) ($order->tax_amount ?? 0);
-                                    $orderFees = (float) ($order->fee_amount ?? 0);
-                                    $orderOnlinePaid = (float) ($order->total_paid ?? 0);
-                                } else {
-                                    $orderTax = 0.0;
-                                    $orderFees = 0.0;
-                                    $orderOnlinePaid = 0.0;
-                                }
-                            } else {
+                        // If all orders in the shared batch/session have identical total_paid >= sessionSubtotal,
+                        // it indicates the batch-level totals were replicated on each order row.
+                        if ($allIdenticalPaid && $firstPaid >= ($sessionSubtotal - 0.01) && $firstPaid > 0) {
+                            if (!in_array($sessionKey, $seenReplicatedSessions)) {
+                                $seenReplicatedSessions[] = $sessionKey;
                                 $orderTax = (float) ($order->tax_amount ?? 0);
                                 $orderFees = (float) ($order->fee_amount ?? 0);
                                 $orderOnlinePaid = (float) ($order->total_paid ?? 0);
+                            } else {
+                                $orderTax = 0.0;
+                                $orderFees = 0.0;
+                                $orderOnlinePaid = 0.0;
                             }
                         } else {
                             $orderTax = (float) ($order->tax_amount ?? 0);
@@ -548,24 +560,19 @@ class ParentOrder extends Model
                         $orderOnlinePaid = (float) ($order->total_paid ?? 0);
                     }
                 } else {
-                    $orderTax = 0.0;
-                    $orderFees = 0.0;
-                    $orderOnlinePaid = 0.0;
+                    $orderTax = (float) ($order->tax_amount ?? 0);
+                    $orderFees = (float) ($order->fee_amount ?? 0);
+                    $orderOnlinePaid = (float) ($order->total_paid ?? 0);
+                }
+
+                // If direct order paid by coach at wholesale, ensure online paid matches wholesale charge
+                if ($order->isDirectOrder()) {
+                    $wholesaleGrand = round($orderWholesaleTotal + $orderTax + $orderFees - $orderDeposit, 2);
+                    if ($orderOnlinePaid > $wholesaleGrand && $wholesaleGrand > 0) {
+                        $orderOnlinePaid = $wholesaleGrand;
+                    }
                 }
             } else {
-                // For UNPAID / PENDING orders: dynamically recalculate from current store item prices
-                foreach ($items as $orderedItem) {
-                    $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
-                    $orderItemsCount += $qty;
-
-                    $prices = self::getItemPrices($orderedItem, $store);
-                    $retailPrice = (float) $prices['retail_price'];
-                    $wholesalePrice = (float) $prices['wholesale_price'];
-
-                    $orderTotal += ($retailPrice * $qty);
-                    $orderWholesaleTotal += ($wholesalePrice * $qty);
-                }
-
                 $orderTax = 0.0;
                 $orderFees = 0.0;
                 $orderOnlinePaid = 0.0;
@@ -582,12 +589,21 @@ class ParentOrder extends Model
 
         $ordersCount = count($orders);
 
+        $isAllDirect = $ordersCollection->every(fn($o) => $o->isDirectOrder());
+        $coachProfitOwed = $isAllDirect ? 0.00 : max(0, $totalSales - $totalWholesale);
+
+        // If batch was paid directly by coach via wholesale checkout
+        if ($totalOnlinePaid > 0 && $totalSales > $totalWholesale && $totalOnlinePaid < ($totalSales + $totalTax + $totalFees - 0.05)) {
+            $totalSales = $totalWholesale;
+            $coachProfitOwed = 0.00;
+        }
+
         return [
             'orders_count'           => $ordersCount,
             'total_sales'            => $totalSales,
             'total_wholesale'        => $totalWholesale,
             'net_proceeds'           => $totalSales - $totalWholesale,
-            'coach_profit_owed'      => max(0, $totalSales - $totalWholesale),
+            'coach_profit_owed'      => $coachProfitOwed,
             'total_tax'              => $totalTax,
             'total_fees'             => $totalFees,
             'total_online_paid'      => $totalOnlinePaid,

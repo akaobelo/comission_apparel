@@ -1303,10 +1303,13 @@
                 <form action="{{ route('coach.store.deadline', $store) }}" method="POST" class="space-y-2">
                     @csrf
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <input type="date" name="deadline" value="{{ $store->order_deadline?->format('Y-m-d') }}" class="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-900 focus:border-primary focus:outline-none shadow-sm text-sm">
+                        <input type="date" name="deadline" min="{{ date('Y-m-d') }}" value="{{ $store->order_deadline?->format('Y-m-d') }}" class="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-900 focus:border-primary focus:outline-none shadow-sm text-sm">
                         <input type="hidden" name="deadline_time" value="23:59">
                         <button type="submit" class="px-5 py-2.5 bg-secondary text-white text-sm font-bold rounded-lg hover:bg-[#a11825] transition-colors whitespace-nowrap">Set Deadline</button>
                     </div>
+                    @error('deadline')
+                        <p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>
+                    @enderror
                     <div class="text-center sm:text-left pt-1">
                         <span class="text-xs font-bold text-red-600">Note: The store will close at 11:59PM on the deadline date listed</span>
                     </div>

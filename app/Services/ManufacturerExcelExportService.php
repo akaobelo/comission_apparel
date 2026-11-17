@@ -598,18 +598,20 @@ class ManufacturerExcelExportService
                                     : (is_array($linkedDesign?->types) ? $linkedDesign->types : []);
                                 $linkedIsMulti = count($linkedTypes) > 1;
 
-                                $colLabel = ($linkedIsMulti && $tLabel !== '') ? "{$linkedName} - {$tLabel}" : $linkedName;
-                                $colKey = $linkedIsMulti ? "{$linkedIdentifier}_{$typeKey}" : $linkedIdentifier;
-                                $img = $resolveGarmentImage($linkedStoreItem, $linkedDesign, $linkedName, $typeKey, $itemGender, $linkedIsMulti);
+                                if ($this->isGarmentTypeCompatible($typeKey, $linkedTypes, $linkedName)) {
+                                    $colLabel = ($linkedIsMulti && $tLabel !== '') ? "{$linkedName} - {$tLabel}" : $linkedName;
+                                    $colKey = $linkedIsMulti ? "{$linkedIdentifier}_{$typeKey}" : $linkedIdentifier;
+                                    $img = $resolveGarmentImage($linkedStoreItem, $linkedDesign, $linkedName, $typeKey, $itemGender, $linkedIsMulti);
 
-                                return [
-                                    'col_key'     => $colKey,
-                                    'label'       => $colLabel,
-                                    'image'       => $img,
-                                    'sort_order'  => $linkedSort,
-                                    'sub_order'   => $linkedIsMulti ? ($typeSortWeight[$typeKey] ?? 50) : 0,
-                                    'linked_name' => $linkedName,
-                                ];
+                                    return [
+                                        'col_key'     => $colKey,
+                                        'label'       => $colLabel,
+                                        'image'       => $img,
+                                        'sort_order'  => $linkedSort,
+                                        'sub_order'   => $linkedIsMulti ? ($typeSortWeight[$typeKey] ?? 50) : 0,
+                                        'linked_name' => $linkedName,
+                                    ];
+                                }
                             }
                         }
 
@@ -1200,6 +1202,26 @@ class ManufacturerExcelExportService
         ];
 
         return $this->finalizeWorksheetXml($rowsXml, $colWidths, [], $addSharedString);
+    }
+
+    /**
+     * Check whether a linked piece design is compatible with the target package garment type.
+     */
+    public function isGarmentTypeCompatible(string $targetGarmentType, array $itemTypes, string $itemName): bool
+    {
+        if (empty($itemTypes)) {
+            return true;
+        }
+
+        if (in_array($targetGarmentType, $itemTypes, true)) {
+            return true;
+        }
+
+        if (count($itemTypes) === 1) {
+            return $this->matchSingleGarmentTypeScore($targetGarmentType, $itemTypes, $itemName) !== null;
+        }
+
+        return false;
     }
 
     /**

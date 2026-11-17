@@ -328,7 +328,7 @@ class CoachController extends Controller
         if ($store->user_id !== $request->user()->id) abort(403);
 
         $request->validate([
-            'deadline' => 'required|date|after:today',
+            'deadline' => 'required|date|after_or_equal:today',
             'deadline_time' => 'nullable|string',
         ]);
 
@@ -338,6 +338,10 @@ class CoachController extends Controller
         $sec = ($deadlineTime === '23:59' || $deadlineTime === '23:59:59') ? 59 : 0;
 
         $deadline = \Carbon\Carbon::parse($request->deadline, 'America/New_York')->setTime($hour, $min, $sec);
+        if ($deadline->isPast()) {
+            return back()->withErrors(['deadline' => 'The deadline must be a time in the future.'])->withInput();
+        }
+
         $store->update(['order_deadline' => $deadline]);
         return redirect()->route('coach.dashboard')
             ->with('success', 'Order deadline updated.');
@@ -807,8 +811,11 @@ class CoachController extends Controller
                     $alreadyNotified = ($firstOrder->status === 'Submitted to Admin' && $firstOrder->isPaid());
                     $now = now();
 
+                    $sessionTotalPaid = round(($session->amount_total ?? 0) / 100, 2);
+                    $totalMfg = (float) $orders->sum(fn($o) => (float)$o->manufacturing_cost);
+
                     foreach ($orders as $order) {
-                        $order->update([
+                        $orderData = [
                             'batch_id'                 => $order->batch_id ?: $resolvedBatchId,
                             'status'                   => 'Submitted to Admin',
                             'payment_status'           => 'paid',
@@ -816,7 +823,15 @@ class CoachController extends Controller
                             'stripe_payment_intent_id' => $session->payment_intent,
                             'submitted_at'             => $now,
                             'paid_at'                  => $now,
-                        ]);
+                        ];
+
+                        if ($sessionTotalPaid > 0) {
+                            $orderMfg = (float) $order->manufacturing_cost;
+                            $ratio = $totalMfg > 0 ? ($orderMfg / $totalMfg) : (1 / count($orders));
+                            $orderData['total_paid'] = count($orders) === 1 ? $sessionTotalPaid : round($sessionTotalPaid * $ratio, 2);
+                        }
+
+                        $order->update($orderData);
                     }
 
                     $batchDepositSum = (float) $orders->sum(fn($o) => (float) ($o->deposit_credit_applied ?? 0));
@@ -1107,7 +1122,7 @@ class CoachController extends Controller
             $updateData['subtotal'] = $newSubtotal;
             $updateData['tax_amount'] = $newTax;
             $updateData['fee_amount'] = $newFee;
-            $updateData['total_paid'] = $newTotal;
+            $updateData['total_paid'] = $order->isPaid() ? $order->total_paid : 0.00;
             $updateData['total_retail_price'] = $newSubtotal;
         }
 

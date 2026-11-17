@@ -91,26 +91,26 @@
                 </div>
                 <div class="divide-y divide-slate-100">
                     @forelse($orders as $order)
-                        <div class="p-6 hover:bg-slate-50 transition-colors group">
-                            <div class="flex flex-wrap md:flex-nowrap justify-between gap-4">
-                                <div class="w-full md:w-auto">
+                        <div class="p-6 hover:bg-slate-50/80 transition-colors group">
+                            <div class="flex flex-col md:flex-row justify-between gap-4 items-start">
+                                <div class="w-full md:w-44 flex-shrink-0">
                                     <div class="font-bold text-slate-900">{{ $order->athlete_first_name }} {{ $order->athlete_last_name }}</div>
-                                    <div class="text-xs text-slate-500 mt-1 flex gap-3">
+                                    <div class="text-xs text-slate-500 mt-1 flex gap-2 flex-wrap">
                                         @if($order->gender)<span class="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-medium">{{ $order->gender }}</span>@endif
                                     </div>
                                     @if($order->is_edited)
-                                        <div class="mt-2 text-[10px] font-bold uppercase tracking-wider text-orange-600 bg-orange-50 px-2 py-1 rounded inline-block">
+                                        <div class="mt-2 text-[10px] font-bold uppercase tracking-wider text-orange-600 bg-orange-50 px-2 py-1 rounded inline-block border border-orange-200">
                                             Edited by {{ $order->edited_by }}
                                         </div>
                                     @endif
                                 </div>
 
-                                <div class="w-full md:w-auto space-y-2 flex-grow">
+                                <div class="w-full flex-grow space-y-2 min-w-0">
                                     @foreach(is_array($order->items_json) ? $order->items_json : [] as $item)
-                                        <div class="text-sm flex justify-between bg-white border border-slate-100 p-2 rounded items-center">
-                                            <div>
+                                        <div class="text-sm flex flex-col sm:flex-row justify-between bg-white border border-slate-200/80 p-3 rounded-lg gap-2 items-start sm:items-center">
+                                            <div class="min-w-0">
                                                 <div class="flex items-center gap-1.5 flex-wrap">
-                                                    <span class="text-slate-700 font-medium truncate max-w-[200px]">{{ $item['name'] ?? 'Item' }}</span>
+                                                    <span class="text-slate-800 font-bold">{{ $item['name'] ?? 'Item' }}</span>
                                                     @if(!empty($item['gender']))
                                                         <span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
                                                             {{ $item['gender'] }}
@@ -118,24 +118,28 @@
                                                     @endif
                                                 </div>
                                                 @if(!empty($item['components']) && is_array($item['components']))
-                                                    <div class="text-[11px] text-slate-500 mt-0.5">
+                                                    <div class="text-[11px] text-slate-500 mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
                                                         @foreach($item['components'] as $comp)
                                                             <span>{{ $comp['name'] ?? '' }}: <strong>{{ $comp['size'] ?? '' }}</strong></span>@if(!$loop->last), @endif
                                                         @endforeach
                                                     </div>
                                                 @endif
                                             </div>
-                                            <div class="text-slate-500 text-right whitespace-nowrap">
+                                            <div class="text-slate-600 text-left sm:text-right flex flex-wrap items-center justify-start sm:justify-end gap-1.5 flex-shrink-0">
                                                 @if(!empty($item['sizes']))
                                                     @foreach($item['sizes'] as $sizeType => $size)
-                                                        <span class="mr-2 border-r border-slate-200 pr-2 last:border-0 last:mr-0 last:pr-0">
-                                                            {{ $sizeType === 'default' ? '' : \App\Models\DesignCatalog::formatTypeLabel($sizeType).':' }} <strong>{{ $size }}</strong>
+                                                        <span class="bg-slate-50 border border-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded">
+                                                            <span class="text-slate-400 text-[10px] uppercase font-bold">{{ $sizeType === 'default' ? 'Size' : \App\Models\DesignCatalog::formatTypeLabel($sizeType) }}:</span>
+                                                            <strong class="text-slate-900">{{ $size }}</strong>
                                                         </span>
                                                     @endforeach
                                                 @elseif(!empty($item['size']))
-                                                    <strong>{{ $item['size'] }}</strong>
+                                                    <span class="bg-slate-50 border border-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded">
+                                                        <span class="text-slate-400 text-[10px] uppercase font-bold">Size:</span>
+                                                        <strong class="text-slate-900">{{ $item['size'] }}</strong>
+                                                    </span>
                                                 @endif
-                                                <span class="ml-2 bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-700">Qty: {{ $item['qty'] ?? 1 }}</span>
+                                                <span class="bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded font-black border border-slate-200">Qty: {{ $item['qty'] ?? 1 }}</span>
                                             </div>
                                         </div>
                                     @endforeach
@@ -146,7 +150,7 @@
                                     @endif
                                 </div>
 
-                                <div class="w-full md:w-auto flex md:flex-col gap-2 items-end justify-start">
+                                <div class="flex-shrink-0 pt-1">
                                     <a href="{{ route('admin.order.edit', $order) }}" class="btn btn-outline py-2 px-4 text-xs">Edit</a>
                                 </div>
                             </div>

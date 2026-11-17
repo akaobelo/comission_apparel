@@ -637,8 +637,12 @@
                                             <option value="">-- Auto-detect / Use Package Image --</option>
                                             @foreach($candidateDesignsForStore as $candDesign)
                                                 @if($candDesign->id !== $package->design_catalog_id)
-                                                    <option value="{{ $candDesign->id }}" {{ (string) $selectedCompDesignId === (string) $candDesign->id ? 'selected' : '' }}>
-                                                        {{ $candDesign->name }} ({{ $candDesign->type_label }})
+                                                    @php
+                                                        $candTypes = is_array($candDesign->types) ? $candDesign->types : ($candDesign->type ? [$candDesign->type] : []);
+                                                        $isMatchingType = in_array((string)$tKey, $candTypes, true);
+                                                    @endphp
+                                                    <option value="{{ $candDesign->id }}" {{ (string) $selectedCompDesignId === (string) $candDesign->id ? 'selected' : '' }} class="{{ $isMatchingType ? 'font-bold text-slate-900 bg-blue-50' : 'text-slate-600' }}">
+                                                        {{ $isMatchingType ? '★ ' : '' }}{{ $candDesign->name }} ({{ $candDesign->type_label }})
                                                     </option>
                                                 @endif
                                             @endforeach

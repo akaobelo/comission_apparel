@@ -258,7 +258,7 @@ class StoreController extends Controller
             'fee_amount'          => $feeAmount,
             'shipping_amount'     => 0.00,
             'shipping_method'     => 'coach_batch',
-            'total_paid'          => $grandTotal,
+            'total_paid'          => 0.00,
             'total_retail_price'  => $subtotal,
         ]);
 
