@@ -492,6 +492,9 @@ class ParentOrder extends Model
     {
         $totalSales = 0;
         $totalWholesale = 0;
+        $paidSales = 0;
+        $paidWholesale = 0;
+        $unpaidWholesale = 0;
         $totalItemsSold = 0;
         $totalTax = 0;
         $totalFees = 0;
@@ -538,6 +541,9 @@ class ParentOrder extends Model
             }
 
             if ($order->isPaid()) {
+                $paidSales += $orderTotal;
+                $paidWholesale += $orderWholesaleTotal;
+
                 $sessionId = $order->stripe_session_id;
                 $batchId = $order->batch_id;
                 $sessionKey = $sessionId ?: ($order->isDirectOrder() && $batchId ? 'batch_' . $batchId : null);
@@ -591,6 +597,7 @@ class ParentOrder extends Model
                     }
                 }
             } else {
+                $unpaidWholesale += $orderWholesaleTotal;
                 $orderTax = 0.0;
                 $orderFees = 0.0;
                 $orderOnlinePaid = 0.0;
@@ -610,10 +617,13 @@ class ParentOrder extends Model
         $isAllDirect = $ordersCollection->every(fn($o) => $o->isDirectOrder());
         $coachProfitOwed = $isAllDirect ? 0.00 : max(0, $totalSales - $totalWholesale);
 
-        // If batch was paid directly by coach via wholesale checkout
-        if ($totalOnlinePaid > 0 && $totalSales > $totalWholesale && $totalOnlinePaid < ($totalSales + $totalTax + $totalFees - 0.05)) {
+        // If paid orders in the batch were paid directly by coach via wholesale checkout
+        if ($totalOnlinePaid > 0 && $paidSales > $paidWholesale && $totalOnlinePaid < ($paidSales + $totalTax + $totalFees - 0.05)) {
             $totalSales = $totalWholesale;
             $coachProfitOwed = 0.00;
+        } elseif ($totalOnlinePaid > 0 && $unpaidWholesale > 0 && !$isAllDirect) {
+            // Mixed batch: online Stripe orders plus waived/check orders whose cost is deducted from earned store profit
+            $coachProfitOwed = max(0.00, ($paidSales - $paidWholesale) - $unpaidWholesale);
         }
 
         return [

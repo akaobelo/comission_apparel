@@ -690,7 +690,19 @@
                         @endif
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        @php $unbatchedCount = $store->parentOrders->whereNull('batch_id')->count(); @endphp
+                        @php
+                            $unbatchedCount = $store->parentOrders->whereNull('batch_id')->count();
+                            $archivedStoreOrdersCount = \App\Models\ParentOrder::where('team_store_id', $store->id)->where('is_archived', true)->count();
+                        @endphp
+                        @if(auth()->check() && auth()->user()->isAdmin() && $archivedStoreOrdersCount > 0)
+                        <form action="{{ route('admin.order-batches.unarchive', 'store_' . $store->id) }}" method="POST" onsubmit="return confirm('Unarchive {{ $archivedStoreOrdersCount }} archived order(s) back into {{ addslashes($store->name) }}?')" class="inline-block m-0">
+                            @csrf
+                            <button type="submit" class="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-[11px] font-bold uppercase tracking-wide rounded-lg hover:shadow transition-all flex items-center gap-1.5 shadow-sm">
+                                <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                Unarchive Orders ({{ $archivedStoreOrdersCount }})
+                            </button>
+                        </form>
+                        @endif
                         @if($unbatchedCount > 0)
                         <form action="{{ route('admin.stores.finalize-batch', $store) }}" method="POST" onsubmit="return confirm('Finalize {{ $unbatchedCount }} open order(s) for {{ addslashes($store->name) }} into a master production batch?')" class="inline-block m-0">
                             @csrf

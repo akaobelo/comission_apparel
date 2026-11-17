@@ -940,7 +940,18 @@ class AdminController extends Controller
 
     public function unarchiveOrderBatch($batchId)
     {
-        ParentOrder::where('batch_id', $batchId)->update(['is_archived' => false]);
+        if (str_starts_with((string) $batchId, 'store_')) {
+            $storeId = (int) substr((string) $batchId, 6);
+            ParentOrder::where('team_store_id', $storeId)
+                ->where('is_archived', true)
+                ->update(['is_archived' => false]);
+        } else {
+            $cleanBatchId = str_starts_with((string) $batchId, 'batch_')
+                ? substr((string) $batchId, 6)
+                : $batchId;
+            ParentOrder::where('batch_id', $cleanBatchId)->update(['is_archived' => false]);
+        }
+
         return back()->with('success', 'Order batch restored successfully.');
     }
 

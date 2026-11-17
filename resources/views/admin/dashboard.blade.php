@@ -1139,6 +1139,10 @@
                                     <div class="text-[10px] text-slate-400 mt-0.5">Batch ID: {{ $batchId }}</div>
                                 </div>
                                 <div class="flex items-center gap-1.5 flex-shrink-0">
+                                    <form action="{{ route('admin.order-batches.unarchive', $batchId) }}" method="POST" onsubmit="return confirm('Restore this order batch back to active production?')" class="inline-block m-0">
+                                        @csrf
+                                        <button type="submit" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">Unarchive</button>
+                                    </form>
                                     @if($isDirect)
                                         <a href="{{ route('admin.direct-batch.show', $batchId) }}" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-[11px] font-bold rounded hover:bg-slate-200 transition-colors">View Batch</a>
                                     @elseif($store)
@@ -2489,6 +2493,10 @@
                                             </div>
 
                                             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-shrink-0">
+                                                <form action="{{ route('admin.order-batches.unarchive', $batchId) }}" method="POST" onsubmit="return confirm('Restore this order batch back to active production?')" class="inline-block m-0">
+                                                    @csrf
+                                                    <button type="submit" class="w-full px-3.5 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-sm whitespace-nowrap">Unarchive Batch</button>
+                                                </form>
                                                 @if($isDirect)
                                                     <div class="flex flex-col gap-2 min-w-[140px]">
                                                         <a href="{{ route('admin.direct-batch.show', $batchId) }}" class="px-3.5 py-1.5 bg-primary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-primary/90 transition-colors text-center shadow-sm">View Batch</a>

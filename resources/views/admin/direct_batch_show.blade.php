@@ -76,6 +76,14 @@
                     <div class="flex items-center gap-4">
                         <div class="text-xs font-bold text-slate-500">{{ $orders->count() }} Orders</div>
                         <div class="flex flex-wrap gap-2">
+                            @if(auth()->check() && auth()->user()->isAdmin() && $orders->isNotEmpty() && $firstOrder->is_archived)
+                                <form action="{{ route('admin.order-batches.unarchive', $batchId) }}" method="POST" onsubmit="return confirm('Restore this archived order batch back to active production?')" class="inline-block m-0">
+                                    @csrf
+                                    <button type="submit" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-[11px] font-bold uppercase tracking-wide rounded transition-colors flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+                                        Unarchive Batch
+                                    </button>
+                                </form>
+                            @endif
                             <a href="{{ route('admin.batch.export', $batchId) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
                                 Roster CSV
