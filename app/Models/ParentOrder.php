@@ -155,6 +155,24 @@ class ParentOrder extends Model
         'paid_to_rep_at'     => 'datetime',
     ];
 
+    public function getTotalPaidAttribute($value)
+    {
+        $paid = (float) ($value ?? 0);
+        if ($this->isPaid()) {
+            $wholesale = (float) ($this->manufacturing_cost > 0 ? $this->manufacturing_cost : $this->getEffectiveManufacturingCost());
+            $tax = (float) ($this->tax_amount ?? 0);
+            $fee = (float) ($this->fee_amount ?? 0);
+            $deposit = (float) ($this->deposit_credit_applied ?? 0);
+            $wholesaleGrand = round($wholesale + $tax + $fee - $deposit, 2);
+
+            // If direct order or if coach was charged wholesale, display actual amount paid rather than phantom retail
+            if (($this->isDirectOrder() || (float)$this->manufacturing_cost > 0) && $paid > $wholesaleGrand && $wholesaleGrand > 0) {
+                return $wholesaleGrand;
+            }
+        }
+        return $paid;
+    }
+
     public function getSubmissionDateAttribute()
     {
         return $this->submitted_at ?? $this->paid_at ?? $this->created_at;
