@@ -101,7 +101,7 @@
                 active_team_stores: 'Active Stores',
                 finalized_master_orders: 'Finalized Masters Orders',
                 finalized_direct_orders: 'Finalized Direct Orders',
-                archived_stores_orders: 'Achieved Stores & Orders',
+                archived_stores_orders: 'Archived Stores & Orders',
                 coaches: 'Coaches Database',
                 sales_agents: 'Agents Homepage Tab',
                 sales_reps: 'Agents & Business Partners',
@@ -248,11 +248,11 @@
                             <span class="w-1.5 h-1.5 rounded-full" :class="activeAdminTab === 'finalized_direct_orders' ? 'bg-emerald-400' : 'bg-transparent'"></span>
                         </button>
 
-                        {{-- Achieved Stores & Orders --}}
+                        {{-- Archived Stores & Orders --}}
                         <button type="button" @click="setTab('archived_stores_orders')" class="w-full group flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left" :class="activeAdminTab === 'archived_stores_orders' ? 'bg-slate-900 text-white font-black shadow-sm ring-1 ring-slate-900' : 'bg-white hover:bg-red-50/40 text-red-600 hover:text-red-700 font-bold border border-slate-200/80 hover:border-red-200 shadow-2xs'">
                             <div class="flex items-center gap-2 min-w-0">
                                 <svg class="w-3.5 h-3.5 flex-shrink-0" :class="activeAdminTab === 'archived_stores_orders' ? 'text-emerald-400' : 'text-slate-400 group-hover:text-red-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                <span class="truncate">Achieved Stores & Orders</span>
+                                <span class="truncate">Archived Stores & Orders</span>
                             </div>
                             <span class="w-1.5 h-1.5 rounded-full" :class="activeAdminTab === 'archived_stores_orders' ? 'bg-emerald-400' : 'bg-transparent'"></span>
                         </button>
