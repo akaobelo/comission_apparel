@@ -29,4 +29,11 @@
         <img src="{{ asset('images/Coach Dashboard.png') }}" alt="Our Coach Dashboard" class="absolute w-full max-w-none h-auto left-0 -top-[9%] md:-top-[12%] lg:-top-[15%]">
     </div>
 </div>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+        event: 'lead_conversion',
+        form_type: 'quote_request'
+    });
+</script>
 @endsection
