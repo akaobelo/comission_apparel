@@ -115,9 +115,14 @@ class AdminController extends Controller
             ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(COALESCE(submitted_at, paid_at, created_at)) as latest_batch_date'), \Illuminate\Support\Facades\DB::raw('MAX(id) as latest_order_id'))
             ->groupBy('batch_id');
 
+        $finalizedStorePerPage = (int) $request->input('finalized_store_per_page', 50);
+        if ($finalizedStorePerPage <= 0 || $finalizedStorePerPage > 200) {
+            $finalizedStorePerPage = 50;
+        }
+
         $finalizedStoreBatchIds = $finalizedStoreBatchQuery->orderByDesc('latest_batch_date')
             ->orderByDesc('latest_order_id')
-            ->paginate(10, ['*'], 'finalized_store_page')
+            ->paginate($finalizedStorePerPage, ['*'], 'finalized_store_page')
             ->withQueryString();
 
         $finalizedStoreBatches = ParentOrder::whereIn('batch_id', $finalizedStoreBatchIds->pluck('batch_id'))

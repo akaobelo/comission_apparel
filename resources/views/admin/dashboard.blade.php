@@ -1755,12 +1755,13 @@
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-6 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
                             <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 flex items-center gap-2">
                                 <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
                                 Finalized Master Orders
                             </h2>
                             <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-slate-200 text-slate-800">{{ isset($finalizedStoreBatchesPaginator) ? $finalizedStoreBatchesPaginator->total() : $finalizedStoreBatches->count() }} Batches</span>
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200 text-slate-700">50 per page</span>
                         </div>
                         <p class="text-xs text-slate-500 mt-1">Aggregate totals per team store that have reached end of registration in full-page management view.</p>
                     </div>
