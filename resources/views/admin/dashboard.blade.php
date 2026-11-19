@@ -874,7 +874,7 @@
                                                             </div>
                                                             <form action="{{ route('admin.quote.assign-rep', $quoteRequest) }}" method="POST" onsubmit="return false;">
                                                                 @csrf
-                                                                <select name="sales_rep_id" data-prev="{{ $quoteRequest->sales_rep_id ?? '' }}" onfocus="if (this.dataset.prev === undefined) this.dataset.prev = this.value;" onchange="window.quickAssignLeadRep(this, '{{ $quoteRequest->id }}')" class="text-[11px] font-bold text-secondary bg-transparent border-0 p-0 focus:ring-0 cursor-pointer max-w-full truncate" title="Assign TCA Agent">
+                                                                <select name="sales_rep_id" data-prev="{{ $quoteRequest->sales_rep_id ?? '' }}" onfocus="if (this.dataset.prev === undefined) this.dataset.prev = this.value;" onchange="window.quickAssignLeadRep(this, '{{ $quoteRequest->id }}')" class="w-full text-base md:text-[11px] font-bold text-secondary bg-transparent border-0 py-1 md:py-0 px-0 focus:ring-0 cursor-pointer touch-manipulation" title="Assign TCA Agent">
                                                                     <option value="">— Unassigned —</option>
                                                                     @foreach($salesReps as $rep)
                                                                         <option value="{{ $rep->id }}" {{ ($quoteRequest->sales_rep_id == $rep->id || $quoteRequest->sales_rep === trim("{$rep->first_name} {$rep->last_name}")) ? 'selected' : '' }}>
@@ -1678,7 +1678,7 @@
                                                 </div>
                                                 <form action="{{ route('admin.quote.assign-rep', $quoteRequest) }}" method="POST" class="mt-0.5" onsubmit="return false;">
                                                     @csrf
-                                                    <select name="sales_rep_id" data-prev="{{ $quoteRequest->sales_rep_id ?? '' }}" onfocus="if (this.dataset.prev === undefined) this.dataset.prev = this.value;" onchange="window.quickAssignLeadRep(this, '{{ $quoteRequest->id }}')" class="text-xs font-black text-secondary bg-transparent border-0 p-0 focus:ring-0 cursor-pointer max-w-full truncate" title="Assign TCA Agent">
+                                                    <select name="sales_rep_id" data-prev="{{ $quoteRequest->sales_rep_id ?? '' }}" onfocus="if (this.dataset.prev === undefined) this.dataset.prev = this.value;" onchange="window.quickAssignLeadRep(this, '{{ $quoteRequest->id }}')" class="w-full text-base md:text-xs font-black text-secondary bg-transparent border-0 py-1.5 md:py-0 px-0 focus:ring-0 cursor-pointer touch-manipulation" title="Assign TCA Agent">
                                                         <option value="">— Unassigned —</option>
                                                         @foreach($salesReps as $rep)
                                                             <option value="{{ $rep->id }}" {{ ($quoteRequest->sales_rep_id == $rep->id || $quoteRequest->sales_rep === trim("{$rep->first_name} {$rep->last_name}")) ? 'selected' : '' }}>
@@ -5441,6 +5441,7 @@
 
             const res = await fetch(url, {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
@@ -5449,6 +5450,14 @@
                 },
                 body: JSON.stringify({ sales_rep_id: newVal || null })
             });
+
+            if (res.status === 419 || res.status === 401) {
+                if (badge) {
+                    badge.innerHTML = '<span class="text-amber-600 font-black text-[9px]">Session expired — refreshing...</span>';
+                }
+                setTimeout(() => window.location.reload(), 800);
+                return;
+            }
 
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.success) {
