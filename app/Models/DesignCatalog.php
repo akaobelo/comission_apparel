@@ -164,6 +164,18 @@ class DesignCatalog extends Model
                 $expanded = array_merge($expanded, ['uniform_top', 'uniform_bottom', 'warmup_top', 'warmup_bottom', 'arm_sleeve', 'backpack']);
             } elseif ($t === 'uniform_package_bronze') {
                 $expanded = array_merge($expanded, ['uniform_top', 'uniform_bottom', 'arm_sleeve', 'backpack']);
+            } elseif ($t === 'uniform_set') {
+                $expanded = array_merge($expanded, ['uniform_top', 'uniform_bottom']);
+            } elseif ($t === 'uniform_set_2') {
+                $expanded = array_merge($expanded, ['uniform_2_top', 'uniform_2_bottom']);
+            } elseif ($t === 'uniform_set_3') {
+                $expanded = array_merge($expanded, ['uniform_3_top', 'uniform_3_bottom']);
+            } elseif ($t === 'uniform_set_4') {
+                $expanded = array_merge($expanded, ['uniform_4_top', 'uniform_4_bottom']);
+            } elseif ($t === 'warmup_set') {
+                $expanded = array_merge($expanded, ['warmup_top', 'warmup_bottom']);
+            } elseif ($t === 'warmup_set_2') {
+                $expanded = array_merge($expanded, ['warmup_2_top', 'warmup_2_bottom']);
             } else {
                 $expanded[] = $t;
             }
