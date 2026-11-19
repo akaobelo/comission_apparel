@@ -286,11 +286,20 @@
                                 </div>
                             </div>
                         </div>
+                        @php
+                            $scopedBatchId = (!empty($selectedBatchId) && $selectedBatchId !== 'unbatched')
+                                ? $selectedBatchId
+                                : ($storeBatches->first()?->batch_id ?? $store->parentOrders->whereNotNull('batch_id')->first()?->batch_id);
+                        @endphp
                         <div class="flex flex-wrap gap-3">
                             <button type="submit" class="btn btn-primary py-3 px-8 text-sm uppercase tracking-wider">Save Changes</button>
-                            <a href="{{ route('admin.stores.export', $store) }}" class="btn btn-outline py-3 px-6 text-sm uppercase tracking-wider">Export CSV</a>
-                            @if($firstBatchId = $store->parentOrders->whereNotNull('batch_id')->first()?->batch_id)
-                                <a href="{{ route('admin.batch.export-manufacturer', $firstBatchId) }}" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors inline-flex items-center gap-2 shadow-sm" title="Download only the finalized production batch">📊 Batch Visual Excel (.xlsx)</a>
+                            @if(!empty($selectedBatchId) && $selectedBatchId !== 'unbatched')
+                                <a href="{{ route('admin.batch.export', $selectedBatchId) }}" class="btn btn-outline py-3 px-6 text-sm uppercase tracking-wider" title="Export CSV for this batch only">Export Batch CSV</a>
+                            @else
+                                <a href="{{ route('admin.stores.export', $store) }}" class="btn btn-outline py-3 px-6 text-sm uppercase tracking-wider">Export CSV</a>
+                            @endif
+                            @if($scopedBatchId)
+                                <a href="{{ route('admin.batch.export-manufacturer', $scopedBatchId) }}" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors inline-flex items-center gap-2 shadow-sm" title="Download only the selected finalized production batch">📊 Batch Visual Excel (.xlsx)</a>
                             @else
                                 <a href="{{ route('admin.stores.export-manufacturer', $store) }}" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors inline-flex items-center gap-2 shadow-sm">📊 Visual Excel (.xlsx)</a>
                             @endif
@@ -665,35 +674,77 @@
             @endif
 
             {{-- Order roster for this store --}}
+            @php
+                $allOrdersCollection = $allStoreOrders ?? $store->parentOrders;
+                $unbatchedCount = $allOrdersCollection->whereNull('batch_id')->count();
+                $archivedStoreOrdersCount = \App\Models\ParentOrder::where('team_store_id', $store->id)->where('is_archived', true)->count();
+                $activeBatchId = (!empty($selectedBatchId) && $selectedBatchId !== 'unbatched')
+                    ? $selectedBatchId
+                    : ($store->parentOrders->whereNotNull('batch_id')->first()?->batch_id);
+                $showBatchSwitcher = (isset($storeBatches) && $storeBatches->count() > 1)
+                    || (isset($storeBatches) && $storeBatches->count() >= 1 && $unbatchedCount > 0)
+                    || !empty($selectedBatchId);
+                $returnToParam = request()->query('return_to');
+            @endphp
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                @if($showBatchSwitcher)
+                <div class="px-5 py-3 bg-indigo-50/70 border-b border-indigo-100 flex flex-wrap items-center gap-2">
+                    <span class="text-[10px] font-black uppercase tracking-wider text-indigo-900 mr-1">Order Run / Batch:</span>
+                    <a href="{{ route('admin.store.edit', array_filter(['store' => $store, 'return_to' => $returnToParam])) }}"
+                       class="px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors border {{ empty($selectedBatchId) ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100' }}">
+                        All Runs ({{ $allOrdersCollection->count() }})
+                    </a>
+                    @foreach($storeBatches as $bIdx => $bInfo)
+                        @php
+                            $isCurrentBatch = ($selectedBatchId === $bInfo->batch_id);
+                            $bDateLabel = $bInfo->submitted_at ? $bInfo->submitted_at->format('M d, Y') : 'Batch #' . substr($bInfo->batch_id, 0, 6);
+                        @endphp
+                        <a href="{{ route('admin.store.edit', array_filter(['store' => $store, 'batch_id' => $bInfo->batch_id, 'return_to' => $returnToParam])) }}"
+                           class="px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors border {{ $isCurrentBatch ? 'bg-secondary text-white border-secondary shadow-sm' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100' }}"
+                           title="Batch {{ $bInfo->batch_id }} ({{ $bInfo->status }})">
+                            {{ $bDateLabel }} · {{ $bInfo->count }} athlete{{ $bInfo->count === 1 ? '' : 's' }} ({{ $bInfo->items_count }} items)
+                        </a>
+                    @endforeach
+                    @if($unbatchedCount > 0)
+                        <a href="{{ route('admin.store.edit', array_filter(['store' => $store, 'batch_id' => 'unbatched', 'return_to' => $returnToParam])) }}"
+                           class="px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors border {{ $selectedBatchId === 'unbatched' ? 'bg-amber-600 text-white border-amber-600 shadow-sm' : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100' }}">
+                            Open / Unbatched ({{ $unbatchedCount }})
+                        </a>
+                    @endif
+                </div>
+                @endif
                 <div class="p-5 border-b border-slate-200 bg-slate-50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Placed Orders ({{ $store->parentOrders->count() }} athletes)</h2>
-                        @if($store->parentOrders->isNotEmpty())
-                            @php $firstOrder = $store->parentOrders->first(); @endphp
-                            @if($firstOrder->batch_id)
+                        <h2 class="text-base font-black uppercase tracking-tight text-slate-900">
+                            @if(!empty($activeBatch))
+                                Batch Orders ({{ $store->parentOrders->count() }} of {{ $allOrdersCollection->count() }} athletes)
+                            @elseif($selectedBatchId === 'unbatched')
+                                Open / Unbatched Orders ({{ $store->parentOrders->count() }} athletes)
+                            @else
+                                Placed Orders ({{ $store->parentOrders->count() }} athletes)
+                            @endif
+                        </h2>
+                        @if($store->parentOrders->isNotEmpty() && $activeBatchId)
+                            @php
+                                $trackerOrder = $store->parentOrders->firstWhere('batch_id', $activeBatchId) ?? $store->parentOrders->first();
+                            @endphp
                             <div class="flex items-center gap-2 mt-2">
                                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Timeline Tracker:</span>
-                                <form action="{{ route('admin.batch.status.update', $firstOrder->batch_id) }}" method="POST" class="flex gap-2">
+                                <form action="{{ route('admin.batch.status.update', $activeBatchId) }}" method="POST" class="flex gap-2">
                                     @csrf
                                     <select name="status" class="bg-white border border-slate-300 rounded px-2 py-1 text-[11px] font-bold text-slate-700 focus:border-primary focus:outline-none shadow-sm" onchange="this.form.submit()">
-                                        <option value="Submitted to Admin" {{ $firstOrder->status === 'Submitted to Admin' ? 'selected' : '' }}>Submitted to Admin</option>
-                                        <option value="Processing" {{ $firstOrder->status === 'Processing' ? 'selected' : '' }}>Processing</option>
-                                        <option value="In Production" {{ $firstOrder->status === 'In Production' ? 'selected' : '' }}>In Production</option>
-                                        <option value="Shipped" {{ $firstOrder->status === 'Shipped' ? 'selected' : '' }}>Shipped</option>
-                                        <option value="Delivered" {{ $firstOrder->status === 'Delivered' ? 'selected' : '' }}>Delivered</option>
-                                        <option value="Completed" {{ $firstOrder->status === 'Completed' ? 'selected' : '' }}>Completed</option>
+                                        <option value="Submitted to Admin" {{ $trackerOrder->status === 'Submitted to Admin' ? 'selected' : '' }}>Submitted to Admin</option>
+                                        <option value="Processing" {{ $trackerOrder->status === 'Processing' ? 'selected' : '' }}>Processing</option>
+                                        <option value="In Production" {{ $trackerOrder->status === 'In Production' ? 'selected' : '' }}>In Production</option>
+                                        <option value="Shipped" {{ $trackerOrder->status === 'Shipped' ? 'selected' : '' }}>Shipped</option>
+                                        <option value="Delivered" {{ $trackerOrder->status === 'Delivered' ? 'selected' : '' }}>Delivered</option>
+                                        <option value="Completed" {{ $trackerOrder->status === 'Completed' ? 'selected' : '' }}>Completed</option>
                                     </select>
                                 </form>
                             </div>
                         @endif
-                        @endif
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        @php
-                            $unbatchedCount = $store->parentOrders->whereNull('batch_id')->count();
-                            $archivedStoreOrdersCount = \App\Models\ParentOrder::where('team_store_id', $store->id)->where('is_archived', true)->count();
-                        @endphp
                         @if(auth()->check() && auth()->user()->isAdmin() && $archivedStoreOrdersCount > 0)
                         <form action="{{ route('admin.order-batches.unarchive', 'store_' . $store->id) }}" method="POST" onsubmit="return confirm('Unarchive {{ $archivedStoreOrdersCount }} archived order(s) back into {{ addslashes($store->name) }}?')" class="inline-block m-0">
                             @csrf
@@ -712,15 +763,22 @@
                             </button>
                         </form>
                         @endif
-                        <a href="{{ route('admin.stores.export', $store->id) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-                            Roster CSV
-                        </a>
-                        @if($firstBatchId = $store->parentOrders->whereNotNull('batch_id')->first()?->batch_id)
-                            <a href="{{ route('admin.batch.export-aggregate', $firstBatchId) }}" class="px-3 py-1.5 bg-slate-900 border border-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-800 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+                        @if(!empty($selectedBatchId) && $selectedBatchId !== 'unbatched')
+                            <a href="{{ route('admin.batch.export', $selectedBatchId) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap" title="Download roster CSV for this batch only">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                                Batch Roster CSV
+                            </a>
+                        @else
+                            <a href="{{ route('admin.stores.export', $store->id) }}" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                                Roster CSV
+                            </a>
+                        @endif
+                        @if($activeBatchId)
+                            <a href="{{ route('admin.batch.export-aggregate', $activeBatchId) }}" class="px-3 py-1.5 bg-slate-900 border border-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-800 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
                                 Aggregate CSV
                             </a>
-                            <a href="{{ route('admin.batch.export-manufacturer', $firstBatchId) }}" class="px-3 py-1.5 bg-emerald-600 border border-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap" title="Download only the finalized production batch">
+                            <a href="{{ route('admin.batch.export-manufacturer', $activeBatchId) }}" class="px-3 py-1.5 bg-emerald-600 border border-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide rounded hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap" title="Download only the selected finalized production batch">
                                 📊 Batch Visual Excel
                             </a>
                             <a href="{{ route('admin.stores.export-manufacturer', $store->id) }}" class="px-3 py-1.5 bg-slate-100 border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded hover:bg-slate-200 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap" title="Download all store orders across all runs">
@@ -799,7 +857,24 @@
         {{-- Right: Quick stats --}}
         <div class="space-y-5">
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
-                <h3 class="text-sm font-black uppercase tracking-tight text-slate-900 mb-4">Store Summary</h3>
+                <div class="flex items-center justify-between gap-2 mb-4">
+                    <h3 class="text-sm font-black uppercase tracking-tight text-slate-900">
+                        {{ !empty($activeBatch) ? 'Batch Summary' : ($selectedBatchId === 'unbatched' ? 'Open Orders Summary' : 'Store Summary') }}
+                    </h3>
+                    @if(!empty($selectedBatchId))
+                        <a href="{{ route('admin.store.edit', array_filter(['store' => $store, 'return_to' => request()->query('return_to')])) }}" class="text-[10px] font-bold uppercase tracking-wider text-indigo-600 hover:underline">All Runs</a>
+                    @endif
+                </div>
+                @if(!empty($activeBatch))
+                    <div class="mb-3 px-2.5 py-1.5 rounded-lg bg-indigo-50 border border-indigo-100 text-[11px] font-bold text-indigo-900 flex items-center justify-between gap-2">
+                        <span>Filtered to Batch ({{ $activeBatch->submitted_at ? $activeBatch->submitted_at->format('M d, Y') : substr($activeBatch->batch_id, 0, 8) }})</span>
+                        <span class="text-indigo-600">{{ $store->parentOrders->count() }}/{{ ($allStoreOrders ?? $store->parentOrders)->count() }}</span>
+                    </div>
+                @elseif($selectedBatchId === 'unbatched')
+                    <div class="mb-3 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-[11px] font-bold text-amber-900">
+                        Filtered to Open / Unbatched Orders
+                    </div>
+                @endif
                 <div class="space-y-3">
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Store Status</span><span class="font-bold text-primary uppercase">{{ str_replace('_', ' ', $store->status) }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Pricing Status</span>

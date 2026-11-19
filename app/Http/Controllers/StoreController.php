@@ -445,9 +445,14 @@ class StoreController extends Controller
             }
         } else {
             // Local dev simulation when Stripe secret key is not populated
+            $simulatedTotalPaid = (float) $order->getRawOriginal('total_paid') > 0
+                ? (float) $order->getRawOriginal('total_paid')
+                : round((float) $order->subtotal + (float) $order->tax_amount + (float) $order->fee_amount, 2);
+
             $order->update([
                 'payment_status' => 'paid',
                 'status'         => 'Submitted',
+                'total_paid'     => $simulatedTotalPaid,
                 'submitted_at'   => $order->submitted_at ?? now(),
                 'paid_at'        => now(),
             ]);
@@ -476,37 +481,49 @@ class StoreController extends Controller
         $sessionId = $request->query('session_id');
         $stripeSecret = config('services.stripe.secret');
 
-        if ($sessionId && $stripeSecret && !$order->isPaid()) {
+        if ($sessionId && $stripeSecret && (!$order->isPaid() || ((float) $order->getRawOriginal('total_paid') <= 0 && (float) $order->deposit_credit_applied <= 0))) {
             try {
                 $stripe = new \Stripe\StripeClient($stripeSecret);
                 $session = $stripe->checkout->sessions->retrieve($sessionId);
 
                 if ($session->payment_status === 'paid') {
-                    $updateFields = [
-                        'payment_status'          => 'paid',
-                        'status'                  => 'Submitted',
-                        'stripe_payment_intent_id'=> $session->payment_intent,
-                        'submitted_at'            => $order->submitted_at ?? now(),
-                        'paid_at'                 => now(),
-                    ];
+                    $wasAlreadyPaid = $order->isPaid();
+                    $sessionAmountPaid = isset($session->amount_total) && $session->amount_total > 0
+                        ? round($session->amount_total / 100, 2)
+                        : round((float) $order->subtotal + (float) $order->tax_amount + (float) $order->fee_amount, 2);
 
-                    $checkoutEmail = $session->customer_details->email ?? null;
-                    if (empty($order->parent_email) && !empty($checkoutEmail)) {
-                        $updateFields['parent_email'] = $checkoutEmail;
+                    if ($wasAlreadyPaid) {
+                        if ($sessionAmountPaid > 0 && (float) $order->getRawOriginal('total_paid') <= 0) {
+                            $order->update(['total_paid' => $sessionAmountPaid]);
+                        }
+                    } else {
+                        $updateFields = [
+                            'payment_status'          => 'paid',
+                            'status'                  => 'Submitted',
+                            'stripe_payment_intent_id'=> $session->payment_intent,
+                            'total_paid'              => $sessionAmountPaid,
+                            'submitted_at'            => $order->submitted_at ?? now(),
+                            'paid_at'                 => now(),
+                        ];
+
+                        $checkoutEmail = $session->customer_details->email ?? null;
+                        if (empty($order->parent_email) && !empty($checkoutEmail)) {
+                            $updateFields['parent_email'] = $checkoutEmail;
+                        }
+
+                        $order->update($updateFields);
+
+                        $parentEmail = trim($order->parent_email);
+                        $parentPhone = preg_replace('/[^0-9]/', '', (string)$order->parent_phone);
+                        $store->rosters()->where(function($query) use ($parentEmail, $parentPhone) {
+                            if ($parentEmail) $query->where('parent_email', $parentEmail);
+                            if ($parentPhone) $query->orWhere('parent_phone', $parentPhone);
+                        })->update(['has_ordered' => true]);
+
+                        $fullName = $order->athlete_name;
+                        $store->user->notify(new \App\Notifications\ParentOrderPlaced($fullName, $store->name));
+                        \App\Services\EmailNotificationService::notifyParentOrderSubmitted($order);
                     }
-
-                    $order->update($updateFields);
-
-                    $parentEmail = trim($order->parent_email);
-                    $parentPhone = preg_replace('/[^0-9]/', '', (string)$order->parent_phone);
-                    $store->rosters()->where(function($query) use ($parentEmail, $parentPhone) {
-                        if ($parentEmail) $query->where('parent_email', $parentEmail);
-                        if ($parentPhone) $query->orWhere('parent_phone', $parentPhone);
-                    })->update(['has_ordered' => true]);
-
-                    $fullName = $order->athlete_name;
-                    $store->user->notify(new \App\Notifications\ParentOrderPlaced($fullName, $store->name));
-                    \App\Services\EmailNotificationService::notifyParentOrderSubmitted($order);
                 }
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Error verifying Stripe session on return: ' . $e->getMessage());

@@ -1987,16 +1987,68 @@ class AdminController extends Controller
         return back()->with('success', "Archived store \"{$storeName}\" has been deleted.");
     }
 
-    public function editStore(TeamStore $store)
+    public function editStore(Request $request, TeamStore $store)
     {
         $this->authorizeStoreAccess($store);
 
         $store->load(['user', 'items', 'parentOrders' => function($q) {
-            $q->where('is_archived', false)->where('status', '!=', 'Pending Payment');
+            $q->where('is_archived', false)->where('status', '!=', 'Pending Payment')->orderByDesc('created_at');
         }]);
-        $financials = \App\Models\ParentOrder::calculateBatchFinancials($store->parentOrders, $store);
+
+        $allStoreOrders = $store->parentOrders;
+
+        $storeBatches = $allStoreOrders
+            ->whereNotNull('batch_id')
+            ->groupBy('batch_id')
+            ->map(function ($orders, $batchId) {
+                $submittedAt = $orders->max(fn($o) => $o->submitted_at ?? $o->paid_at ?? $o->created_at);
+                $itemsCount = $orders->sum(fn($o) => collect(is_array($o->items_json) ? $o->items_json : [])->sum(fn($i) => $i['qty'] ?? 1));
+                return (object) [
+                    'batch_id'     => $batchId,
+                    'count'        => $orders->count(),
+                    'items_count'  => $itemsCount,
+                    'submitted_at' => $submittedAt,
+                    'status'       => $orders->first()?->status ?? 'Submitted to Admin',
+                ];
+            })
+            ->sortByDesc(fn($b) => $b->submitted_at ? $b->submitted_at->timestamp : 0)
+            ->values();
+
+        $selectedBatchId = $request->query('batch_id');
+        $activeBatch = null;
+
+        if ($selectedBatchId === 'unbatched') {
+            $displayedOrders = $allStoreOrders->whereNull('batch_id')->values();
+            if ($displayedOrders->isEmpty()) {
+                $selectedBatchId = null;
+                $displayedOrders = $allStoreOrders;
+            }
+        } elseif (!empty($selectedBatchId)) {
+            $displayedOrders = $allStoreOrders->where('batch_id', $selectedBatchId)->values();
+            if ($displayedOrders->isEmpty()) {
+                $selectedBatchId = null;
+                $displayedOrders = $allStoreOrders;
+            } else {
+                $activeBatch = $storeBatches->firstWhere('batch_id', $selectedBatchId);
+            }
+        } else {
+            $displayedOrders = $allStoreOrders;
+        }
+
+        $store->setRelation('parentOrders', $displayedOrders);
+
+        $financials = \App\Models\ParentOrder::calculateBatchFinancials($displayedOrders, $store);
         $allDesigns = \App\Models\DesignCatalog::orderBy('sort_order', 'asc')->get();
-        return view('admin.store_edit', compact('store', 'financials', 'allDesigns'));
+
+        return view('admin.store_edit', compact(
+            'store',
+            'financials',
+            'allDesigns',
+            'allStoreOrders',
+            'storeBatches',
+            'selectedBatchId',
+            'activeBatch'
+        ));
     }
 
     public function updateStore(Request $request, TeamStore $store)

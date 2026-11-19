@@ -192,8 +192,17 @@ class StripeWebhookController extends Controller
             return;
         }
 
+        $sessionAmountPaid = isset($session->amount_total) && $session->amount_total > 0
+            ? round($session->amount_total / 100, 2)
+            : round((float) $order->subtotal + (float) $order->tax_amount + (float) $order->fee_amount, 2);
+
         if ($order->isPaid()) {
-            Log::info("Order #{$order->id} is already marked as paid.");
+            if ((float) $order->getRawOriginal('total_paid') <= 0 && (float) $order->deposit_credit_applied <= 0 && $sessionAmountPaid > 0) {
+                $order->update(['total_paid' => $sessionAmountPaid]);
+                Log::info("Order #{$order->id} was already paid; backfilled total_paid={$sessionAmountPaid} from Stripe webhook.");
+            } else {
+                Log::info("Order #{$order->id} is already marked as paid.");
+            }
             return;
         }
 
@@ -201,6 +210,7 @@ class StripeWebhookController extends Controller
             'payment_status'          => 'paid',
             'status'                  => 'Submitted',
             'stripe_payment_intent_id'=> $paymentIntentId ?? $order->stripe_payment_intent_id,
+            'total_paid'              => $sessionAmountPaid,
             'submitted_at'            => $order->submitted_at ?? now(),
             'paid_at'                 => now(),
         ]);

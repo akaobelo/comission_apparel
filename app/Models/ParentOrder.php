@@ -159,10 +159,21 @@ class ParentOrder extends Model
     {
         $paid = (float) ($value ?? 0);
         if ($this->isPaid()) {
+            $deposit = (float) ($this->deposit_credit_applied ?? 0);
+
+            // Fallback for paid online orders whose total_paid was left at 0.00 (no deposit credit applied)
+            if ($paid <= 0 && $deposit <= 0) {
+                $subtotal = (float) ($this->subtotal > 0 ? $this->subtotal : $this->total_retail_price);
+                if ($subtotal > 0) {
+                    $tax = (float) ($this->tax_amount ?? 0);
+                    $fee = (float) ($this->fee_amount ?? 0);
+                    return round($subtotal + $tax + $fee, 2);
+                }
+            }
+
             $wholesale = (float) ($this->manufacturing_cost > 0 ? $this->manufacturing_cost : $this->getEffectiveManufacturingCost());
             $tax = (float) ($this->tax_amount ?? 0);
             $fee = (float) ($this->fee_amount ?? 0);
-            $deposit = (float) ($this->deposit_credit_applied ?? 0);
             $wholesaleGrand = round($wholesale + $tax + $fee - $deposit, 2);
 
             // If direct order or if coach was charged wholesale, display actual amount paid rather than phantom retail

@@ -738,7 +738,7 @@
                                             </div>
                                             <div class="flex flex-col gap-1.5 flex-shrink-0 w-full md:w-auto">
                                                 @if($store)
-                                                    <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'finalized_master_orders'])]) }}" class="px-3 py-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review Store</a>
+                                                    <a href="{{ route('admin.store.edit', ['store' => $store, 'batch_id' => $batchId, 'return_to' => route('admin.dashboard', ['tab' => 'finalized_master_orders'])]) }}" class="px-3 py-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center">Review Store</a>
                                                     <div class="flex gap-1.5">
                                                         <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-50 transition-colors text-center">Roster</a>
                                                         <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-2.5 py-1 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate</a>
@@ -1850,7 +1850,7 @@
 
                                         <div class="flex flex-col gap-2 min-w-[150px]">
                                             @if($store)
-                                                <a href="{{ route('admin.store.edit', ['store' => $store, 'return_to' => route('admin.dashboard', ['tab' => 'finalized_master_orders'])]) }}" class="px-3.5 py-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center shadow-sm">Review Store</a>
+                                                <a href="{{ route('admin.store.edit', ['store' => $store, 'batch_id' => $batchId, 'return_to' => route('admin.dashboard', ['tab' => 'finalized_master_orders'])]) }}" class="px-3.5 py-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-[#a11825] transition-colors text-center shadow-sm">Review Store</a>
                                                 <div class="flex gap-1.5">
                                                     <a href="{{ route('admin.batch.export', $batchId) }}" class="w-full px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-50 transition-colors text-center">Roster</a>
                                                     <a href="{{ route('admin.batch.export-aggregate', $batchId) }}" class="w-full px-2.5 py-1 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wide rounded-md hover:bg-slate-800 transition-colors text-center shadow-sm">Aggregate</a>
