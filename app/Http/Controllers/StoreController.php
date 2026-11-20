@@ -169,16 +169,21 @@ class StoreController extends Controller
                 $unitQty  = $group['qty'];
 
                 $unitPrice = (float) ($storeItem->retail_price ?? 0);
+                $wholesaleUnitPrice = (float) ($storeItem->wholesale_price ?? 0);
+                if ($wholesaleUnitPrice <= 0) {
+                    $wholesaleUnitPrice = $unitPrice;
+                }
                 $lockedGender = $storeItem->detectedGenderRestriction();
                 $entry = [
-                    'id'          => $itemId,
-                    'name'        => $storeItem->name,
-                    'types'       => $types,
-                    'qty'         => $unitQty,
-                    'gender'      => $lockedGender ?? ($unitData['gender'] ?? trim($request->gender ?? 'Mens / Boys')),
-                    'unit_price'  => $unitPrice,
-                    'line_total'  => round($unitPrice * $unitQty, 2),
-                    'sizes'       => [],
+                    'id'              => $itemId,
+                    'name'            => $storeItem->name,
+                    'types'           => $types,
+                    'qty'             => $unitQty,
+                    'gender'          => $lockedGender ?? ($unitData['gender'] ?? trim($request->gender ?? 'Mens / Boys')),
+                    'unit_price'      => $unitPrice,
+                    'wholesale_price' => $wholesaleUnitPrice,
+                    'line_total'      => round($unitPrice * $unitQty, 2),
+                    'sizes'           => [],
                 ];
 
                 if ($storeItem->isPackage() && isset($unitData['components'])) {
@@ -321,8 +326,10 @@ class StoreController extends Controller
         foreach ($itemsJson as $itemEntry) {
             $itemPrices = \App\Models\ParentOrder::getItemPrices($itemEntry, $store);
             $unitPrice = (float) $itemPrices['retail_price'];
+            $wholesaleUnitPrice = (float) ($itemPrices['wholesale_price'] > 0 ? $itemPrices['wholesale_price'] : $unitPrice);
             $qty = max(1, intval($itemEntry['qty'] ?? 1));
             $itemEntry['unit_price'] = $unitPrice;
+            $itemEntry['wholesale_price'] = $wholesaleUnitPrice;
             $itemEntry['line_total'] = round($unitPrice * $qty, 2);
             $subtotal += $itemEntry['line_total'];
             $refreshedItemsJson[] = $itemEntry;

@@ -298,4 +298,79 @@ class OnlinePaymentTotalPaidAndBatchScopeTest extends TestCase
         $this->assertEquals(0.00, $financials['coach_profit_owed']);
         $this->assertEquals(111.02, $financials['total_online_paid']);
     }
+
+    public function test_paid_online_order_honors_higher_recorded_wholesale_and_checkout_snapshot_without_letting_lower_factory_cost_reduce_due_to_tca(): void
+    {
+        $coach = User::factory()->create(['role' => 'coach']);
+        $store = TeamStore::create([
+            'user_id'          => $coach->id,
+            'name'             => 'Hampton Basketball Wholesale Guard',
+            'slug'             => 'hampton-wholesale-guard',
+            'status'           => 'approved',
+            'pricing_approved' => true,
+            'payment_mode'     => 'online',
+            'is_tax_exempt'    => false,
+        ]);
+
+        // Store item wholesale_price was lowered after order placement (from $2,150 total down to $1,745)
+        $item = StoreItem::create([
+            'team_store_id'   => $store->id,
+            'name'            => 'Team Package',
+            'wholesale_price' => 1745.00,
+            'retail_price'    => 2385.00,
+        ]);
+
+        $hamptonOrder = ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'athlete_first_name' => 'Hampton',
+            'athlete_last_name'  => 'Player',
+            'items_json'         => [['id' => $item->id, 'name' => 'Team Package', 'qty' => 1, 'unit_price' => 2385.00]],
+            'status'             => 'Submitted to Admin',
+            'payment_status'     => 'paid',
+            'subtotal'           => 2385.00,
+            'total_retail_price' => 2385.00,
+            'manufacturing_cost' => 2150.00,
+            'tax_amount'         => 178.88,
+            'fee_amount'         => 82.12,
+            'total_paid'         => 2646.00,
+        ]);
+
+        $hamptonFin = ParentOrder::calculateBatchFinancials(collect([$hamptonOrder]), $store);
+        $this->assertEquals(2385.00, $hamptonFin['total_sales']);
+        $this->assertEquals(2150.00, $hamptonFin['total_wholesale']);
+        $this->assertEquals(235.00, $hamptonFin['coach_profit_owed']);
+        $this->assertEquals(2646.00, $hamptonFin['total_online_paid']);
+
+        // When admin enters a LOWER factory cost ($65 vs $100 wholesale), Due to TCA must stay $100
+        $jersey = StoreItem::create([
+            'team_store_id'   => $store->id,
+            'name'            => 'Jersey',
+            'wholesale_price' => 100.00,
+            'retail_price'    => 130.00,
+        ]);
+
+        $factoryCostOrder = ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'athlete_first_name' => 'Factory',
+            'athlete_last_name'  => 'Test',
+            'items_json'         => [['id' => $jersey->id, 'name' => 'Jersey', 'qty' => 1, 'unit_price' => 130.00, 'wholesale_price' => 100.00]],
+            'status'             => 'Submitted to Admin',
+            'payment_status'     => 'paid',
+            'subtotal'           => 130.00,
+            'total_retail_price' => 130.00,
+            'manufacturing_cost' => 65.00,
+            'tax_amount'         => 9.75,
+            'fee_amount'         => 4.49,
+            'total_paid'         => 144.24,
+        ]);
+
+        // Even if store item wholesale_price is later edited down to $50, checkout snapshot ($100) stays locked
+        $jersey->update(['wholesale_price' => 50.00]);
+        $store->load('items');
+
+        $factoryFin = ParentOrder::calculateBatchFinancials(collect([$factoryCostOrder]), $store);
+        $this->assertEquals(130.00, $factoryFin['total_sales']);
+        $this->assertEquals(100.00, $factoryFin['total_wholesale']);
+        $this->assertEquals(30.00, $factoryFin['coach_profit_owed']);
+    }
 }

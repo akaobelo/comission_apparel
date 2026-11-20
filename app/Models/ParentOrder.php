@@ -444,10 +444,10 @@ class ParentOrder extends Model
                 });
             }
 
-            // 5. Fallback by store_item.id or design_catalog_id alone (e.g. if the item was renamed after order placement)
+            // 5. Fallback by store_item.id alone (e.g. if the item was renamed after order placement).
+            // Do not blindly match a store_item.id against another item's design_catalog_id when names differ.
             if (!$storeItem && $itemId) {
-                $storeItem = $store->items->firstWhere('id', $itemId)
-                    ?: $store->items->firstWhere('design_catalog_id', $itemId);
+                $storeItem = $store->items->firstWhere('id', $itemId);
             }
 
             if ($storeItem) {
@@ -528,12 +528,16 @@ class ParentOrder extends Model
             $orderDeposit = (float) ($order->deposit_credit_applied ?? 0);
             $items = is_array($order->items_json) ? $order->items_json : [];
 
-            // Calculate wholesale total from items
+            // Calculate wholesale total from items (preferring locked checkout snapshot when present on paid orders)
             foreach ($items as $orderedItem) {
                 $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
                 $orderItemsCount += $qty;
-                $prices = self::getItemPrices($orderedItem, $store);
-                $orderWholesaleTotal += ($prices['wholesale_price'] * $qty);
+                if ($order->isPaid() && isset($orderedItem['wholesale_price']) && (float) $orderedItem['wholesale_price'] > 0) {
+                    $orderWholesaleTotal += ((float) $orderedItem['wholesale_price'] * $qty);
+                } else {
+                    $prices = self::getItemPrices($orderedItem, $store);
+                    $orderWholesaleTotal += ($prices['wholesale_price'] * $qty);
+                }
             }
 
             if ($order->isDirectOrder()) {
@@ -547,6 +551,16 @@ class ParentOrder extends Model
                 $orderTotal = (float) ($order->subtotal ?? 0);
                 if ($orderTotal <= 0) {
                     $orderTotal = (float) ($order->total_retail_price ?? 0);
+                }
+
+                // If a paid master order has a recorded wholesale/manufacturing cost higher than the
+                // recalculated item wholesale (e.g., if a store item's wholesale price was later lowered
+                // or removed after the order was placed) and it does not exceed the retail subtotal,
+                // honor the recorded cost. Lower manual factory costs entered for rep commissions
+                // remain untouched because they are < $orderWholesaleTotal.
+                $recordedMfg = (float) ($order->manufacturing_cost ?? 0);
+                if ($order->isPaid() && $recordedMfg > $orderWholesaleTotal && ($orderTotal <= 0 || $recordedMfg <= $orderTotal)) {
+                    $orderWholesaleTotal = $recordedMfg;
                 }
             } else {
                 // For UNPAID / PENDING orders: dynamically recalculate from current store item prices
