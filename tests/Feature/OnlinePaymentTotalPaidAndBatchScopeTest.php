@@ -204,4 +204,98 @@ class OnlinePaymentTotalPaidAndBatchScopeTest extends TestCase
         $allResponse->assertSee('Second RunAthlete');
         $allResponse->assertSee('$309.58');
     }
+
+    public function test_online_store_with_stamped_manufacturing_cost_preserves_retail_total_paid_and_coach_profit(): void
+    {
+        $coach = User::factory()->create(['role' => 'coach']);
+        $store = TeamStore::create([
+            'user_id'          => $coach->id,
+            'name'             => 'Hampton Basketball',
+            'slug'             => 'hampton-basketball-regression',
+            'status'           => 'approved',
+            'pricing_approved' => true,
+            'payment_mode'     => 'online',
+            'is_tax_exempt'    => false,
+        ]);
+
+        $item = StoreItem::create([
+            'team_store_id'   => $store->id,
+            'name'            => 'Basketball Jersey',
+            'wholesale_price' => 50.00,
+            'retail_price'    => 65.00,
+        ]);
+
+        // Parent paid retail ($130) + 7.5% tax ($9.75) + Stripe fee ($4.49) = $144.24,
+        // and calculateAndApplyCommission() later stamped manufacturing_cost = $100.00.
+        $order = ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'athlete_first_name' => 'Jordan',
+            'athlete_last_name'  => 'Smith',
+            'items_json'         => [['id' => $item->id, 'name' => 'Basketball Jersey', 'qty' => 2, 'unit_price' => 65.00]],
+            'status'             => 'Submitted to Admin',
+            'payment_status'     => 'paid',
+            'subtotal'           => 130.00,
+            'total_retail_price' => 130.00,
+            'manufacturing_cost' => 100.00,
+            'tax_amount'         => 9.75,
+            'fee_amount'         => 4.49,
+            'total_paid'         => 144.24,
+            'stripe_session_id'  => 'cs_test_hampton_1',
+        ]);
+
+        // Must NOT clamp parent-paid online order down to wholesale ($114.24)
+        $this->assertEquals(144.24, (float) $order->total_paid);
+
+        $financials = ParentOrder::calculateBatchFinancials(collect([$order]), $store);
+        $this->assertEquals(130.00, $financials['total_sales']);
+        $this->assertEquals(100.00, $financials['total_wholesale']);
+        $this->assertEquals(30.00, $financials['coach_profit_owed']);
+        $this->assertEquals(144.24, $financials['total_online_paid']);
+    }
+
+    public function test_in_house_coach_wholesale_master_order_still_clamps_to_wholesale_and_zero_profit(): void
+    {
+        $coach = User::factory()->create(['role' => 'coach']);
+        $store = TeamStore::create([
+            'user_id'          => $coach->id,
+            'name'             => 'Cash Collection Club',
+            'slug'             => 'cash-collection-wholesale-check',
+            'status'           => 'approved',
+            'pricing_approved' => true,
+            'payment_mode'     => 'in_house',
+            'is_tax_exempt'    => false,
+        ]);
+
+        $item = StoreItem::create([
+            'team_store_id'   => $store->id,
+            'name'            => 'Basketball Jersey',
+            'wholesale_price' => 50.00,
+            'retail_price'    => 65.00,
+        ]);
+
+        $order = ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'athlete_first_name' => 'Alex',
+            'athlete_last_name'  => 'Taylor',
+            'items_json'         => [['id' => $item->id, 'name' => 'Basketball Jersey', 'qty' => 2, 'unit_price' => 65.00]],
+            'status'             => 'Submitted to Admin',
+            'payment_status'     => 'paid',
+            'subtotal'           => 130.00,
+            'total_retail_price' => 130.00,
+            'manufacturing_cost' => 100.00,
+            'tax_amount'         => 7.50,
+            'fee_amount'         => 3.52,
+            'total_paid'         => 144.24, // phantom retail stored on an in-house wholesale order
+            'stripe_session_id'  => 'cs_test_inhouse_1',
+        ]);
+
+        // In-house master order paid by coach at wholesale still clamps to wholesale ($100 + $7.50 + $3.52 = $111.02)
+        $this->assertEquals(111.02, (float) $order->total_paid);
+
+        $financials = ParentOrder::calculateBatchFinancials(collect([$order]), $store);
+        $this->assertEquals(100.00, $financials['total_sales']);
+        $this->assertEquals(100.00, $financials['total_wholesale']);
+        $this->assertEquals(0.00, $financials['coach_profit_owed']);
+        $this->assertEquals(111.02, $financials['total_online_paid']);
+    }
 }

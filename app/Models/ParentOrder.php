@@ -176,8 +176,14 @@ class ParentOrder extends Model
             $fee = (float) ($this->fee_amount ?? 0);
             $wholesaleGrand = round($wholesale + $tax + $fee - $deposit, 2);
 
-            // If direct order or if coach was charged wholesale, display actual amount paid rather than phantom retail
-            if (($this->isDirectOrder() || (float)$this->manufacturing_cost > 0) && $paid > $wholesaleGrand && $wholesaleGrand > 0) {
+            // Only clamp to wholesale for direct orders or in-house (cash collection) master orders paid by the coach at wholesale.
+            // Never clamp parent-paid online (Stripe) store orders just because manufacturing_cost was populated for commissions.
+            $isInHouseMasterOrder = !$this->isDirectOrder()
+                && $this->teamStore
+                && $this->teamStore->isInHousePayment()
+                && (float) $this->manufacturing_cost > 0;
+
+            if (($this->isDirectOrder() || $isInHouseMasterOrder) && $paid > $wholesaleGrand && $wholesaleGrand > 0) {
                 return $wholesaleGrand;
             }
         }
@@ -628,8 +634,12 @@ class ParentOrder extends Model
         $isAllDirect = $ordersCollection->every(fn($o) => $o->isDirectOrder());
         $coachProfitOwed = $isAllDirect ? 0.00 : max(0, $totalSales - $totalWholesale);
 
-        // If paid orders in the batch were paid directly by coach via wholesale checkout
-        if ($totalOnlinePaid > 0 && $paidSales > $paidWholesale && $totalOnlinePaid < ($paidSales + $totalTax + $totalFees - 0.05)) {
+        $resolvedStore = $store ?: $ordersCollection->first()?->teamStore;
+        $isCoachWholesaleStore = $isAllDirect || ($resolvedStore && $resolvedStore->isInHousePayment());
+
+        // Only treat as coach wholesale checkout for direct or in-house (cash collection) master orders,
+        // never for parent-paid online (Stripe) stores.
+        if ($isCoachWholesaleStore && $totalOnlinePaid > 0 && $paidSales > $paidWholesale && ($totalOnlinePaid + $totalDepositApplied) < ($paidSales + $totalTax + $totalFees - 0.05)) {
             $totalSales = $totalWholesale;
             $coachProfitOwed = 0.00;
         } elseif ($totalOnlinePaid > 0 && $unpaidWholesale > 0 && !$isAllDirect) {
