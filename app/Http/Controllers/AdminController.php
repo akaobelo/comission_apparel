@@ -312,7 +312,7 @@ class AdminController extends Controller
         }
 
         try {
-            $quoteRequests = $quoteRequestsQuery->latest()->paginate(10, ['*'], 'quote_page')->withQueryString();
+            $quoteRequests = $quoteRequestsQuery->latest()->paginate(50, ['*'], 'quote_page')->withQueryString();
             $quoteRequestsTotal = \App\Models\QuoteRequest::count();
             $newQuoteRequestsCount = \App\Models\QuoteRequest::where('status', 'new')->count();
         } catch (\Throwable $e) {

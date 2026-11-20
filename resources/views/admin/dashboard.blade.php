@@ -1599,6 +1599,7 @@
                                 Quote Inquiries
                             </h2>
                             <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-100 text-blue-800 border border-blue-200">{{ $quoteRequestsTotal }} Total</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">50 per page</span>
                             <span data-new-quotes-badge class="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-600 text-white animate-pulse {{ $newQuoteRequestsCount > 0 ? '' : 'hidden' }}">{{ $newQuoteRequestsCount }} New</span>
                             <a href="{{ route('admin.quotes.export', request()->only('quote_search')) }}" class="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm whitespace-nowrap inline-flex items-center gap-1.5" title="Export Inquiries to CSV">
                                 <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
