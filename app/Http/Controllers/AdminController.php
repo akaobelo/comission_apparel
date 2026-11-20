@@ -3750,21 +3750,48 @@ class AdminController extends Controller
         ]);
 
         $rep = $salesRepId ? User::find($salesRepId) : null;
-        $quoteRequest->update([
+        $updateData = [
             'sales_rep_id' => $rep?->id,
             'sales_rep'    => $rep ? trim("{$rep->first_name} {$rep->last_name}") : null,
-        ]);
+        ];
+
+        $wasMarkedAddressed = false;
+        if ($rep && $quoteRequest->status !== 'addressed') {
+            $user = auth()->user();
+            $userName = trim(($user?->first_name ?? '') . ' ' . ($user?->last_name ?? '')) ?: ($user?->email ?? 'Admin');
+            $updateData['status'] = 'addressed';
+            $updateData['addressed_by'] = $userName;
+            $updateData['addressed_at'] = now();
+            $wasMarkedAddressed = true;
+        }
+
+        $quoteRequest->update($updateData);
+        $quoteRequest->refresh();
+
+        $newQuoteRequestsCount = \App\Models\QuoteRequest::where('status', 'new')->count();
 
         if ($request->wantsJson() || $request->ajax() || $request->expectsJson()) {
             return response()->json([
-                'success'      => true,
-                'message'      => 'TCA Agent assigned successfully.',
-                'sales_rep_id' => $quoteRequest->sales_rep_id,
-                'sales_rep'    => $quoteRequest->sales_rep,
+                'success'                  => true,
+                'message'                  => $wasMarkedAddressed
+                    ? 'TCA Agent assigned and inquiry marked as addressed.'
+                    : 'TCA Agent assigned successfully.',
+                'sales_rep_id'             => $quoteRequest->sales_rep_id,
+                'sales_rep'                => $quoteRequest->sales_rep,
+                'status'                   => $quoteRequest->status,
+                'addressed_by'             => $quoteRequest->addressed_by,
+                'addressed_at_human'       => $quoteRequest->addressed_at ? $quoteRequest->addressed_at->diffForHumans() : null,
+                'was_marked_addressed'     => $wasMarkedAddressed,
+                'new_quote_requests_count' => $newQuoteRequestsCount,
             ]);
         }
 
-        return redirect()->back()->with('success', 'TCA Agent assigned successfully.');
+        return redirect()->back()->with(
+            'success',
+            $wasMarkedAddressed
+                ? 'TCA Agent assigned and inquiry marked as addressed.'
+                : 'TCA Agent assigned successfully.'
+        );
     }
 
     public function deleteQuote(\App\Models\QuoteRequest $quoteRequest)

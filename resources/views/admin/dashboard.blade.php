@@ -162,7 +162,7 @@
         </div>
         <div @click="setTab('quote_inquiries')" class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-l-4 border-l-blue-500 cursor-pointer hover:shadow-md transition-shadow">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Quote Inquiries</p>
-            <div class="text-3xl font-black text-blue-600">{{ $newQuoteRequestsCount }}</div>
+            <div class="text-3xl font-black text-blue-600" data-new-quotes-count>{{ $newQuoteRequestsCount }}</div>
         </div>
     </div>
 
@@ -832,7 +832,7 @@
                             @else
                                 <div class="divide-y divide-slate-100 flex-1 overflow-y-auto">
                                     @foreach($quoteRequests as $quoteRequest)
-                                        <div class="p-4">
+                                        <div class="p-4" data-quote-card="{{ $quoteRequest->id }}" data-quote-view="compact">
                                             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                                                 <div class="min-w-0">
                                                     <div class="font-bold text-slate-900 text-sm flex items-center gap-2 flex-wrap">
@@ -841,11 +841,13 @@
                                                         @if($quoteRequest->lead_source === 'landing_page_free_mockup')
                                                             <span class="px-1.5 py-0.2 bg-purple-100 text-purple-800 text-[9px] font-black uppercase rounded border border-purple-200">Free Mockup Lead</span>
                                                         @endif
-                                                        @if($quoteRequest->status === 'new' || !$quoteRequest->status)
-                                                            <span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-black uppercase rounded border border-amber-200">New</span>
-                                                        @else
-                                                            <span class="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] font-black uppercase rounded border border-green-200">Addressed</span>
-                                                        @endif
+                                                        <span data-quote-status-slot class="inline-flex items-center gap-1.5">
+                                                            @if($quoteRequest->status === 'new' || !$quoteRequest->status)
+                                                                <span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-black uppercase rounded border border-amber-200">New</span>
+                                                            @else
+                                                                <span class="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] font-black uppercase rounded border border-green-200">Addressed</span>
+                                                            @endif
+                                                        </span>
                                                     </div>
                                                     <div class="text-xs text-slate-500 mt-0.5">
                                                         {{ $quoteRequest->first_name }} {{ $quoteRequest->last_name }} · {{ $quoteRequest->position_title }}
@@ -891,27 +893,22 @@
                                                 </div>
                                                 <div class="text-xs text-slate-400 flex-shrink-0 flex flex-col items-end gap-1">
                                                     <span class="text-[11px]">{{ $quoteRequest->created_at->diffForHumans() }}</span>
-                                                    @if($quoteRequest->status === 'addressed' && $quoteRequest->addressed_by)
-                                                        <span class="text-[10px] text-slate-500 font-medium">By: <strong class="text-slate-700">{{ $quoteRequest->addressed_by }}</strong></span>
-                                                    @endif
+                                                    <span data-quote-addressed-by-slot class="{{ ($quoteRequest->status === 'addressed' && $quoteRequest->addressed_by) ? '' : 'hidden' }} text-[10px] text-slate-500 font-medium">By: <strong class="text-slate-700" data-quote-addressed-by-name>{{ $quoteRequest->addressed_by }}</strong></span>
                                                     <div class="flex items-center gap-1.5 mt-1">
-                                                        @if($quoteRequest->status === 'new' || !$quoteRequest->status)
-                                                        <form action="{{ route('admin.quote.mark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Mark this quote as addressed?')">
+                                                        <form data-quote-mark-form action="{{ route('admin.quote.mark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Mark this quote as addressed?')" class="{{ ($quoteRequest->status === 'new' || !$quoteRequest->status) ? '' : 'hidden' }}">
                                                             @csrf
                                                             <button type="submit" class="flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm" title="Mark as Addressed">
                                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                                                 Mark Addressed
                                                             </button>
                                                         </form>
-                                                        @else
-                                                        <form action="{{ route('admin.quote.unmark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Revert this quote inquiry back to New?')">
+                                                        <form data-quote-unmark-form action="{{ route('admin.quote.unmark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Revert this quote inquiry back to New?')" class="{{ ($quoteRequest->status === 'new' || !$quoteRequest->status) ? 'hidden' : '' }}">
                                                             @csrf
                                                             <button type="submit" class="flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 border border-amber-200 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm" title="Revert to New">
                                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a5 5 0 015 5v2m0 0l-3-3m3 3l3-3M3 10l3-3m-3 3l3 3"/></svg>
                                                                 Revert to New
                                                             </button>
                                                         </form>
-                                                        @endif
 
                                                         <form action="{{ route('admin.quote.delete', $quoteRequest) }}" method="POST" onsubmit="return confirm('Permanently delete this quote inquiry? This cannot be undone.')">
                                                             @csrf
@@ -1602,9 +1599,7 @@
                                 Quote Inquiries
                             </h2>
                             <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-100 text-blue-800 border border-blue-200">{{ $quoteRequestsTotal }} Total</span>
-                            @if($newQuoteRequestsCount > 0)
-                                <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-600 text-white animate-pulse">{{ $newQuoteRequestsCount }} New</span>
-                            @endif
+                            <span data-new-quotes-badge class="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-600 text-white animate-pulse {{ $newQuoteRequestsCount > 0 ? '' : 'hidden' }}">{{ $newQuoteRequestsCount }} New</span>
                             <a href="{{ route('admin.quotes.export', request()->only('quote_search')) }}" class="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-colors shadow-sm whitespace-nowrap inline-flex items-center gap-1.5" title="Export Inquiries to CSV">
                                 <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                 Export CSV
@@ -1632,7 +1627,7 @@
                     @else
                         <div class="divide-y divide-slate-100">
                             @foreach($quoteRequests as $quoteRequest)
-                            <div class="p-6 hover:bg-slate-50/60 transition-colors">
+                            <div class="p-6 hover:bg-slate-50/60 transition-colors" data-quote-card="{{ $quoteRequest->id }}" data-quote-view="full">
                                 <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
                                     <div class="min-w-0 flex-1">
                                         <div class="flex items-center gap-2.5 flex-wrap">
@@ -1641,14 +1636,16 @@
                                             @if($quoteRequest->lead_source === 'landing_page_free_mockup')
                                                 <span class="px-2 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-black uppercase rounded-md border border-purple-200">Free Mockup Ad Lead</span>
                                             @endif
-                                            @if($quoteRequest->status === 'new' || !$quoteRequest->status)
-                                                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black uppercase rounded-md border border-amber-200">New Inquiry</span>
-                                            @else
-                                                <span class="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-black uppercase rounded-md border border-green-200">Addressed</span>
-                                                @if($quoteRequest->addressed_by)
-                                                    <span class="text-xs text-slate-500 font-medium">by <strong class="text-slate-800">{{ $quoteRequest->addressed_by }}</strong>@if($quoteRequest->addressed_at) · {{ $quoteRequest->addressed_at->diffForHumans() }}@endif</span>
+                                            <span data-quote-status-slot class="inline-flex items-center gap-2 flex-wrap">
+                                                @if($quoteRequest->status === 'new' || !$quoteRequest->status)
+                                                    <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black uppercase rounded-md border border-amber-200">New Inquiry</span>
+                                                @else
+                                                    <span class="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-black uppercase rounded-md border border-green-200">Addressed</span>
+                                                    @if($quoteRequest->addressed_by)
+                                                        <span class="text-xs text-slate-500 font-medium">by <strong class="text-slate-800">{{ $quoteRequest->addressed_by }}</strong>@if($quoteRequest->addressed_at) · {{ $quoteRequest->addressed_at->diffForHumans() }}@endif</span>
+                                                    @endif
                                                 @endif
-                                            @endif
+                                            </span>
                                         </div>
                                         <div class="text-xs text-slate-600 mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
                                             <div>
@@ -1708,23 +1705,20 @@
                                     <div class="flex flex-col items-end gap-2 flex-shrink-0">
                                         <span class="text-xs text-slate-400 font-medium">{{ $quoteRequest->created_at->format('M d, Y') }} ({{ $quoteRequest->created_at->diffForHumans() }})</span>
                                         <div class="flex items-center gap-2 mt-2">
-                                            @if($quoteRequest->status === 'new' || !$quoteRequest->status)
-                                            <form action="{{ route('admin.quote.mark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Mark this quote as addressed?')">
+                                            <form data-quote-mark-form action="{{ route('admin.quote.mark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Mark this quote as addressed?')" class="{{ ($quoteRequest->status === 'new' || !$quoteRequest->status) ? '' : 'hidden' }}">
                                                 @csrf
                                                 <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border border-green-200 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow-sm">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                                     Mark Addressed
                                                 </button>
                                             </form>
-                                            @else
-                                            <form action="{{ route('admin.quote.unmark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Revert this quote inquiry back to New?')">
+                                            <form data-quote-unmark-form action="{{ route('admin.quote.unmark-addressed', $quoteRequest) }}" method="POST" onsubmit="return confirm('Revert this quote inquiry back to New?')" class="{{ ($quoteRequest->status === 'new' || !$quoteRequest->status) ? 'hidden' : '' }}">
                                                 @csrf
                                                 <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 border border-amber-200 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow-sm" title="Revert to New">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a5 5 0 015 5v2m0 0l-3-3m3 3l3-3M3 10l3-3m-3 3l3 3"/></svg>
                                                     Revert to New
                                                 </button>
                                             </form>
-                                            @endif
 
                                             <form action="{{ route('admin.quote.delete', $quoteRequest) }}" method="POST" onsubmit="return confirm('Permanently delete this quote inquiry? This cannot be undone.')">
                                                 @csrf
@@ -5462,8 +5456,70 @@
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.success) {
                 selectEl.dataset.prev = newVal;
+
+                // Sync any duplicate cards for this quote (Overview + Inquiries tab)
+                document.querySelectorAll(`[data-quote-card="${CSS.escape(String(quoteId))}"]`).forEach((card) => {
+                    const cardSelect = card.querySelector('select[name="sales_rep_id"]');
+                    if (cardSelect && cardSelect !== selectEl) {
+                        cardSelect.value = newVal;
+                        cardSelect.dataset.prev = newVal;
+                    }
+
+                    if (data.status === 'addressed') {
+                        const isCompact = card.dataset.quoteView === 'compact';
+                        const statusSlot = card.querySelector('[data-quote-status-slot]');
+                        if (statusSlot) {
+                            statusSlot.textContent = '';
+                            const pill = document.createElement('span');
+                            pill.className = isCompact
+                                ? 'px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] font-black uppercase rounded border border-green-200'
+                                : 'px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-black uppercase rounded-md border border-green-200';
+                            pill.textContent = 'Addressed';
+                            statusSlot.appendChild(pill);
+
+                            if (!isCompact && data.addressed_by) {
+                                const meta = document.createElement('span');
+                                meta.className = 'text-xs text-slate-500 font-medium';
+                                meta.append('by ');
+                                const strong = document.createElement('strong');
+                                strong.className = 'text-slate-800';
+                                strong.textContent = data.addressed_by;
+                                meta.appendChild(strong);
+                                if (data.addressed_at_human) {
+                                    meta.append(` · ${data.addressed_at_human}`);
+                                }
+                                statusSlot.appendChild(meta);
+                            }
+                        }
+
+                        const addressedBySlot = card.querySelector('[data-quote-addressed-by-slot]');
+                        const addressedByName = card.querySelector('[data-quote-addressed-by-name]');
+                        if (addressedBySlot && data.addressed_by) {
+                            if (addressedByName) addressedByName.textContent = data.addressed_by;
+                            addressedBySlot.classList.remove('hidden');
+                        }
+
+                        const markForm = card.querySelector('[data-quote-mark-form]');
+                        const unmarkForm = card.querySelector('[data-quote-unmark-form]');
+                        if (markForm) markForm.classList.add('hidden');
+                        if (unmarkForm) unmarkForm.classList.remove('hidden');
+                    }
+                });
+
+                if (typeof data.new_quote_requests_count === 'number') {
+                    document.querySelectorAll('[data-new-quotes-count]').forEach((el) => {
+                        el.textContent = String(data.new_quote_requests_count);
+                    });
+                    document.querySelectorAll('[data-new-quotes-badge]').forEach((el) => {
+                        el.textContent = `${data.new_quote_requests_count} New`;
+                        el.classList.toggle('hidden', data.new_quote_requests_count <= 0);
+                    });
+                }
+
                 if (badge) {
-                    badge.innerHTML = '<span class="text-emerald-600 font-black text-[9px] inline-flex items-center gap-0.5">✓ Saved</span>';
+                    badge.innerHTML = data.was_marked_addressed
+                        ? '<span class="text-emerald-600 font-black text-[9px] inline-flex items-center gap-0.5">✓ Saved & Addressed</span>'
+                        : '<span class="text-emerald-600 font-black text-[9px] inline-flex items-center gap-0.5">✓ Saved</span>';
                     setTimeout(() => {
                         badge.innerHTML = '';
                     }, 2500);
