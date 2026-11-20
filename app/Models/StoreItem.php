@@ -61,6 +61,53 @@ class StoreItem extends Model
         return false;
     }
 
+    /**
+     * Detect whether an item name clearly restricts it to a single gender cut.
+     * Returns 'Mens / Boys', 'Womens / Girls', or null (Unisex / both allowed).
+     */
+    public static function detectGenderRestrictionFromName(?string $name): ?string
+    {
+        $clean = trim((string) $name);
+        if ($clean === '') {
+            return null;
+        }
+
+        $isFemale = (bool) preg_match('/\b(female|females|women|womens|women\'s|woman|girl|girls|girl\'s|ladies|lady|racerback)\b/i', $clean);
+        $isMale = (bool) preg_match('/\b(male|males|men|mens|men\'s|man|boy|boys|boy\'s)\b/i', $clean);
+
+        if ($isFemale && !$isMale) {
+            return 'Womens / Girls';
+        }
+        if ($isMale && !$isFemale) {
+            return 'Mens / Boys';
+        }
+
+        return null;
+    }
+
+    /**
+     * Return 'Mens / Boys', 'Womens / Girls', or null if this store item allows both cuts.
+     */
+    public function detectedGenderRestriction(): ?string
+    {
+        return self::detectGenderRestrictionFromName($this->name);
+    }
+
+    /**
+     * Normalize any gender string into 'Female', 'Male', or 'Unisex'.
+     */
+    public static function normalizeGenderBucket(?string $gender): string
+    {
+        $g = strtolower(trim((string) $gender));
+        if (str_contains($g, 'fem') || str_contains($g, 'wom') || str_contains($g, 'girl') || str_contains($g, 'lady') || str_contains($g, 'ladies')) {
+            return 'Female';
+        }
+        if (str_contains($g, 'male') || str_contains($g, 'men') || str_contains($g, 'boy')) {
+            return 'Male';
+        }
+        return 'Unisex';
+    }
+
     public function getWholesalePriceAttribute($value)
     {
         if (($value === null || (float) $value <= 0) && $this->design_catalog_id) {

@@ -169,12 +169,13 @@ class StoreController extends Controller
                 $unitQty  = $group['qty'];
 
                 $unitPrice = (float) ($storeItem->retail_price ?? 0);
+                $lockedGender = $storeItem->detectedGenderRestriction();
                 $entry = [
                     'id'          => $itemId,
                     'name'        => $storeItem->name,
                     'types'       => $types,
                     'qty'         => $unitQty,
-                    'gender'      => $unitData['gender'] ?? trim($request->gender ?? 'Mens / Boys'),
+                    'gender'      => $lockedGender ?? ($unitData['gender'] ?? trim($request->gender ?? 'Mens / Boys')),
                     'unit_price'  => $unitPrice,
                     'line_total'  => round($unitPrice * $unitQty, 2),
                     'sizes'       => [],
@@ -601,9 +602,10 @@ class StoreController extends Controller
             if (isset($submittedItems[$idx])) {
                 $subItem = $submittedItems[$idx];
 
-                // Update gender if submitted
+                // Update gender if submitted (respecting gender-locked items like Male/Female packages)
                 if (!empty($subItem['gender'])) {
-                    $item['gender'] = trim($subItem['gender']);
+                    $lockedGender = StoreItem::detectGenderRestrictionFromName($item['name'] ?? null);
+                    $item['gender'] = $lockedGender ?? trim($subItem['gender']);
                 }
 
                 // Update standalone item sizes

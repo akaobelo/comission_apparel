@@ -583,9 +583,16 @@ class ManufacturerExcelExportService
                         $typeSortWeight
                     ): array {
                         $tLabel = ($typeKey === 'default' || is_numeric($typeKey)) ? '' : DesignCatalog::formatTypeLabel($typeKey);
+                        $genderBucket = $this->normalizeGenderLabel($itemGender);
+                        $genderOverrideKey = $genderBucket === 'Female'
+                            ? "{$typeKey}__female"
+                            : ($genderBucket === 'Male' ? "{$typeKey}__male" : null);
 
-                        if (!empty($componentDesignIds[$typeKey])) {
-                            $linkedDesignId = (int) $componentDesignIds[$typeKey];
+                        $linkedDesignId = ($genderOverrideKey && !empty($componentDesignIds[$genderOverrideKey]))
+                            ? (int) $componentDesignIds[$genderOverrideKey]
+                            : (!empty($componentDesignIds[$typeKey]) ? (int) $componentDesignIds[$typeKey] : null);
+
+                        if (!empty($linkedDesignId)) {
                             $linkedStoreItem = $storeItems->firstWhere('design_catalog_id', $linkedDesignId);
                             $linkedDesign = $designsById->get($linkedDesignId) ?? $linkedStoreItem?->designCatalog;
 
@@ -1495,6 +1502,19 @@ class ManufacturerExcelExportService
         }
 
         return $bestImg;
+    }
+
+    /**
+     * Return the exact flat-lay image path that the Excel exporter will pick for a design/item
+     * (used by the Admin UI live preview so admins see the exact image before exporting).
+     */
+    public static function resolvePreviewFlatLayImage(array $paths): ?string
+    {
+        $filtered = array_values(array_filter($paths));
+        if (empty($filtered)) {
+            return null;
+        }
+        return end($filtered) ?: null;
     }
 
     /**

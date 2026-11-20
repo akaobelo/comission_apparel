@@ -608,13 +608,58 @@
                 if ($candidateDesignsForStore->isEmpty()) {
                     $candidateDesignsForStore = $allDesigns;
                 }
+
+                // Precompute exact Excel flat-lay preview URL + photo count for each candidate design
+                $designPreviewMeta = [];
+                foreach ($candidateDesignsForStore as $cd) {
+                    $cdPaths = is_array($cd->image_paths) && !empty($cd->image_paths)
+                        ? array_values(array_filter($cd->image_paths))
+                        : ($cd->image_url ? [$cd->image_url] : []);
+                    $flatLay = \App\Services\ManufacturerExcelExportService::resolvePreviewFlatLayImage($cdPaths);
+                    $flatLayUrl = null;
+                    if ($flatLay) {
+                        $flatLayUrl = \Illuminate\Support\Str::startsWith($flatLay, ['http://', 'https://', '/'])
+                            ? $flatLay
+                            : asset($flatLay);
+                    }
+                    $designPreviewMeta[$cd->id] = [
+                        'url' => $flatLayUrl,
+                        'photo_count' => count($cdPaths),
+                        'name' => $cd->name,
+                    ];
+                }
+
+                // Precompute active order counts per package by gender bucket for Production Safety Check
+                $activeOrdersForSafety = ($allStoreOrders ?? $store->parentOrders)
+                    ->filter(fn($o) => !$o->is_archived && $o->status !== 'Pending Payment');
+                $packageOrderStats = [];
+                foreach ($packages as $pkg) {
+                    $packageOrderStats[$pkg->id] = ['total' => 0, 'Male' => 0, 'Female' => 0, 'Unisex' => 0];
+                }
+                foreach ($activeOrdersForSafety as $ord) {
+                    if (!is_array($ord->items_json)) continue;
+                    foreach ($ord->items_json as $oItem) {
+                        $matchedPkg = null;
+                        if (!empty($oItem['id'])) {
+                            $matchedPkg = $packages->firstWhere('id', (int) $oItem['id']);
+                        }
+                        if (!$matchedPkg && !empty($oItem['name'])) {
+                            $matchedPkg = $packages->first(fn($p) => strcasecmp(trim((string) $p->name), trim((string) $oItem['name'])) === 0);
+                        }
+                        if ($matchedPkg) {
+                            $bucket = \App\Models\StoreItem::normalizeGenderBucket($oItem['gender'] ?? $ord->gender ?? '');
+                            $packageOrderStats[$matchedPkg->id]['total']++;
+                            $packageOrderStats[$matchedPkg->id][$bucket]++;
+                        }
+                    }
+                }
             @endphp
             @if($packages->isNotEmpty())
-            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div id="package-piece-mapping-section" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                     <div>
                         <h2 class="text-base font-black uppercase tracking-tight text-slate-900">Package & Multi-Piece Mapping</h2>
-                        <p class="text-xs text-slate-500 mt-1">Select the exact item for each piece inside a Package or Set so the Visual Excel (.xlsx) export pulls that item's photo and combines its quantities.</p>
+                        <p class="text-xs text-slate-500 mt-1">Select the exact item for each piece inside a Package or Set. The thumbnail on the left shows the exact photo the Visual Excel (.xlsx) export will embed.</p>
                     </div>
                 </div>
                 <div class="p-5 space-y-6">
@@ -624,12 +669,64 @@
                         $savedMap = is_array($package->component_design_ids) && !empty($package->component_design_ids)
                             ? $package->component_design_ids
                             : (is_array($package->designCatalog?->component_design_ids) ? $package->designCatalog->component_design_ids : []);
+                        $pkgGenderLock = $package->detectedGenderRestriction();
+                        $pkgStats = $packageOrderStats[$package->id] ?? ['total' => 0, 'Male' => 0, 'Female' => 0, 'Unisex' => 0];
+                        $mismatchBucket = null;
+                        $mismatchCount = 0;
+                        $suggestedTargetPkg = null;
+                        if ($pkgGenderLock === 'Mens / Boys' && $pkgStats['Female'] > 0) {
+                            $mismatchBucket = 'Female';
+                            $mismatchCount = $pkgStats['Female'];
+                            $suggestedTargetPkg = $packages->first(fn($p) => $p->id !== $package->id && $p->detectedGenderRestriction() === 'Womens / Girls');
+                        } elseif ($pkgGenderLock === 'Womens / Girls' && $pkgStats['Male'] > 0) {
+                            $mismatchBucket = 'Male';
+                            $mismatchCount = $pkgStats['Male'];
+                            $suggestedTargetPkg = $packages->first(fn($p) => $p->id !== $package->id && $p->detectedGenderRestriction() === 'Mens / Boys');
+                        }
+                        $hasGenderOverrides = false;
+                        foreach ($pkgTypes as $ptCheck) {
+                            if (!empty($savedMap[$ptCheck . '__female']) || !empty($savedMap[$ptCheck . '__male'])) {
+                                $hasGenderOverrides = true;
+                                break;
+                            }
+                        }
                     @endphp
-                    <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="font-bold text-slate-900">{{ $package->name }}</div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">{{ count($pkgTypes) }} Pieces</span>
+                    <div class="border {{ $mismatchCount > 0 ? 'border-amber-400 ring-1 ring-amber-200' : 'border-slate-200' }} rounded-lg p-4 bg-slate-50">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div class="font-bold text-slate-900">{{ $package->name }}</div>
+                                @if($pkgGenderLock)
+                                    <span class="text-[10px] font-bold uppercase tracking-wider {{ $pkgGenderLock === 'Womens / Girls' ? 'text-pink-700 bg-pink-50 border-pink-200' : 'text-indigo-700 bg-indigo-50 border-indigo-200' }} border px-2 py-0.5 rounded">
+                                        Checkout Locked: {{ $pkgGenderLock === 'Womens / Girls' ? 'Female Only' : 'Male Only' }}
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <span class="text-[10px] font-bold uppercase tracking-wider {{ $pkgStats['total'] === 0 ? 'text-slate-500 bg-slate-100 border-slate-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200' }} border px-2 py-0.5 rounded">
+                                    {{ $pkgStats['total'] }} {{ $pkgStats['total'] === 1 ? 'Order' : 'Orders' }}@if($pkgStats['total'] > 0) ({{ $pkgStats['Male'] }}M · {{ $pkgStats['Female'] }}F{{ $pkgStats['Unisex'] > 0 ? ' · ' . $pkgStats['Unisex'] . 'U' : '' }})@endif
+                                </span>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">{{ count($pkgTypes) }} Pieces</span>
+                            </div>
                         </div>
+
+                        @if($mismatchCount > 0)
+                        <div class="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="text-xs text-amber-900 leading-relaxed">
+                                <span class="font-black uppercase tracking-wider text-amber-800">⚠️ Production Safety Warning:</span>
+                                <strong>{{ $mismatchCount }} {{ $mismatchBucket }} {{ $mismatchCount === 1 ? 'order is' : 'orders are' }}</strong> currently attached to <strong>{{ $package->name }}</strong>. Visual Excel will use this package's piece links for those {{ $mismatchBucket }} orders until they are moved.
+                            </div>
+                            @if($suggestedTargetPkg)
+                            <form action="{{ route('admin.store.package.reassign-gender-orders', [$store, $package]) }}" method="POST" class="shrink-0" onsubmit="return confirm('Move {{ $mismatchCount }} {{ $mismatchBucket }} order(s) from {{ addslashes($package->name) }} to {{ addslashes($suggestedTargetPkg->name) }}?');">
+                                @csrf
+                                <input type="hidden" name="target_package_id" value="{{ $suggestedTargetPkg->id }}">
+                                <input type="hidden" name="gender_bucket" value="{{ $mismatchBucket }}">
+                                <button type="submit" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold uppercase tracking-wider rounded-md shadow-xs transition-colors whitespace-nowrap">
+                                    Move {{ $mismatchCount }} {{ $mismatchBucket }} {{ $mismatchCount === 1 ? 'Order' : 'Orders' }} → {{ $suggestedTargetPkg->name }}
+                                </button>
+                            </form>
+                            @endif
+                        </div>
+                        @endif
 
                         @if(count($pkgTypes) > 1)
                         <form action="{{ route('admin.store.package.map-pieces', [$store, $package]) }}" method="POST" class="space-y-3" onsubmit="event.preventDefault(); window.submitPackagePieceMapping(event);">
@@ -639,26 +736,99 @@
                                     @php
                                         $tLabel = \App\Models\DesignCatalog::formatTypeLabel((string) $tKey);
                                         $selectedCompDesignId = $savedMap[$tKey] ?? '';
+                                        $selMeta = $selectedCompDesignId ? ($designPreviewMeta[$selectedCompDesignId] ?? null) : null;
                                     @endphp
-                                    <div class="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
-                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1">{{ $tLabel }}</label>
-                                        <select name="component_design_ids[{{ $tKey }}]" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none">
-                                            <option value="">-- Auto-detect / Use Package Image --</option>
-                                            @foreach($candidateDesignsForStore as $candDesign)
-                                                @if($candDesign->id !== $package->design_catalog_id)
-                                                    @php
-                                                        $candTypes = is_array($candDesign->types) ? $candDesign->types : ($candDesign->type ? [$candDesign->type] : []);
-                                                        $isMatchingType = in_array((string)$tKey, $candTypes, true);
-                                                    @endphp
-                                                    <option value="{{ $candDesign->id }}" {{ (string) $selectedCompDesignId === (string) $candDesign->id ? 'selected' : '' }} class="{{ $isMatchingType ? 'font-bold text-slate-900 bg-blue-50' : 'text-slate-600' }}">
-                                                        {{ $isMatchingType ? '★ ' : '' }}{{ $candDesign->name }} ({{ $candDesign->type_label }})
-                                                    </option>
-                                                @endif
-                                            @endforeach
-                                        </select>
+                                    <div class="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs flex items-start gap-2.5">
+                                        <div class="w-12 h-12 shrink-0 rounded border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden">
+                                            <img data-piece-preview-img
+                                                 src="{{ $selMeta['url'] ?? '' }}"
+                                                 alt="{{ $tLabel }} Excel mockup"
+                                                 class="w-full h-full object-contain {{ !empty($selMeta['url']) ? '' : 'hidden' }}">
+                                            <span data-piece-preview-empty class="text-[9px] font-bold uppercase text-slate-400 text-center px-1 {{ !empty($selMeta['url']) ? 'hidden' : '' }}">Auto</span>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1">{{ $tLabel }}</label>
+                                            <select name="component_design_ids[{{ $tKey }}]"
+                                                    onchange="window.updatePieceLinkPreview(this)"
+                                                    class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                                <option value="">-- Auto-detect / Use Package Image --</option>
+                                                @foreach($candidateDesignsForStore as $candDesign)
+                                                    @if($candDesign->id !== $package->design_catalog_id)
+                                                        @php
+                                                            $candTypes = is_array($candDesign->types) ? $candDesign->types : ($candDesign->type ? [$candDesign->type] : []);
+                                                            $isMatchingType = in_array((string)$tKey, $candTypes, true);
+                                                        @endphp
+                                                        <option value="{{ $candDesign->id }}" {{ (string) $selectedCompDesignId === (string) $candDesign->id ? 'selected' : '' }} class="{{ $isMatchingType ? 'font-bold text-slate-900 bg-blue-50' : 'text-slate-600' }}">
+                                                            {{ $isMatchingType ? '★ ' : '' }}{{ $candDesign->name }} ({{ $candDesign->type_label }})
+                                                        </option>
+                                                    @endif
+                                                @endforeach
+                                            </select>
+                                            <div data-piece-photo-note class="mt-1 text-[10px] font-semibold text-amber-700 {{ ($selMeta && ($selMeta['photo_count'] ?? 0) > 1) ? '' : 'hidden' }}">
+                                                {{ ($selMeta && ($selMeta['photo_count'] ?? 0) > 1) ? ($selMeta['photo_count'] . ' photos on catalog item — Excel uses last photo shown on left') : '' }}
+                                            </div>
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
+
+                            @if(!$pkgGenderLock)
+                            <details class="bg-white border border-slate-200 rounded-lg p-3" {{ $hasGenderOverrides ? 'open' : '' }}>
+                                <summary class="cursor-pointer text-xs font-bold uppercase tracking-wider text-slate-700 select-none">
+                                    Optional: Separate Female / Male Piece Overrides (for Shared Unisex Packages)
+                                </summary>
+                                <p class="text-[11px] text-slate-500 mt-1 mb-3">Leave blank to use the default piece above. Set a Female or Male override (e.g., Racerback Top for Female, Tank Top for Male) when both genders order this same package.</p>
+                                <div class="space-y-3">
+                                    @foreach(['female' => 'Female / Girls Overrides', 'male' => 'Male / Boys Overrides'] as $gSuffix => $gHeading)
+                                    <div>
+                                        <div class="text-[10px] font-black uppercase tracking-wider {{ $gSuffix === 'female' ? 'text-pink-700' : 'text-indigo-700' }} mb-1.5">{{ $gHeading }}</div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                            @foreach($pkgTypes as $tKey)
+                                                @php
+                                                    $overrideKey = $tKey . '__' . $gSuffix;
+                                                    $tLabel = \App\Models\DesignCatalog::formatTypeLabel((string) $tKey);
+                                                    $selOverrideId = $savedMap[$overrideKey] ?? '';
+                                                    $selOverrideMeta = $selOverrideId ? ($designPreviewMeta[$selOverrideId] ?? null) : null;
+                                                @endphp
+                                                <div class="bg-slate-50 p-2 rounded border border-slate-200 flex items-start gap-2">
+                                                    <div class="w-10 h-10 shrink-0 rounded border border-slate-200 bg-white flex items-center justify-center overflow-hidden">
+                                                        <img data-piece-preview-img
+                                                             src="{{ $selOverrideMeta['url'] ?? '' }}"
+                                                             alt="{{ $tLabel }} {{ $gSuffix }} mockup"
+                                                             class="w-full h-full object-contain {{ !empty($selOverrideMeta['url']) ? '' : 'hidden' }}">
+                                                        <span data-piece-preview-empty class="text-[8px] font-bold uppercase text-slate-400 text-center px-0.5 {{ !empty($selOverrideMeta['url']) ? 'hidden' : '' }}">Default</span>
+                                                    </div>
+                                                    <div class="min-w-0 flex-1">
+                                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">{{ $tLabel }}</label>
+                                                        <select name="component_design_ids[{{ $overrideKey }}]"
+                                                                onchange="window.updatePieceLinkPreview(this)"
+                                                                class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs text-slate-900 focus:border-primary focus:outline-none">
+                                                            <option value="">-- Same as default above --</option>
+                                                            @foreach($candidateDesignsForStore as $candDesign)
+                                                                @if($candDesign->id !== $package->design_catalog_id)
+                                                                    @php
+                                                                        $candTypes = is_array($candDesign->types) ? $candDesign->types : ($candDesign->type ? [$candDesign->type] : []);
+                                                                        $isMatchingType = in_array((string)$tKey, $candTypes, true);
+                                                                    @endphp
+                                                                    <option value="{{ $candDesign->id }}" {{ (string) $selOverrideId === (string) $candDesign->id ? 'selected' : '' }}>
+                                                                        {{ $isMatchingType ? '★ ' : '' }}{{ $candDesign->name }} ({{ $candDesign->type_label }})
+                                                                    </option>
+                                                                @endif
+                                                            @endforeach
+                                                        </select>
+                                                        <div data-piece-photo-note class="mt-0.5 text-[10px] font-semibold text-amber-700 {{ ($selOverrideMeta && ($selOverrideMeta['photo_count'] ?? 0) > 1) ? '' : 'hidden' }}">
+                                                            {{ ($selOverrideMeta && ($selOverrideMeta['photo_count'] ?? 0) > 1) ? ($selOverrideMeta['photo_count'] . ' photos — Excel uses last') : '' }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </details>
+                            @endif
+
                             <div class="flex items-center justify-end gap-3 pt-1">
                                 <span class="inline-save-status text-[10px] font-bold uppercase tracking-wider hidden"></span>
                                 <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors shadow-sm">
@@ -671,6 +841,33 @@
                     @endforeach
                 </div>
             </div>
+            <script>
+                window._pieceDesignPreviewMeta = @json($designPreviewMeta);
+                window.updatePieceLinkPreview = function(selectEl) {
+                    const card = selectEl.closest('div.flex');
+                    if (!card) return;
+                    const img = card.querySelector('[data-piece-preview-img]');
+                    const empty = card.querySelector('[data-piece-preview-empty]');
+                    const note = card.querySelector('[data-piece-photo-note]');
+                    const meta = (window._pieceDesignPreviewMeta || {})[selectEl.value];
+                    if (meta && meta.url) {
+                        if (img) { img.src = meta.url; img.classList.remove('hidden'); }
+                        if (empty) { empty.classList.add('hidden'); }
+                    } else {
+                        if (img) { img.src = ''; img.classList.add('hidden'); }
+                        if (empty) { empty.classList.remove('hidden'); }
+                    }
+                    if (note) {
+                        if (meta && meta.photo_count > 1) {
+                            note.textContent = meta.photo_count + ' photos on catalog item — Excel uses last photo shown on left';
+                            note.classList.remove('hidden');
+                        } else {
+                            note.textContent = '';
+                            note.classList.add('hidden');
+                        }
+                    }
+                };
+            </script>
             @endif
 
             {{-- Order roster for this store --}}

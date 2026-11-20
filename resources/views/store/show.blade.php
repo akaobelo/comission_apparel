@@ -221,8 +221,9 @@
                       taxRate: {{ $store->isTaxExempt() ? 0 : 0.075 }},
                       unitGenders: {
                           @foreach($store->items as $item)
+                              @php $defaultLockedGender = $item->detectedGenderRestriction() ?? ''; @endphp
                               @for($u = 0; $u < 10; $u++)
-                                  '{{ $item->id }}_{{ $u }}': '{{ old("items.{$item->id}.units.{$u}.gender", "") }}',
+                                  '{{ $item->id }}_{{ $u }}': '{{ $defaultLockedGender !== "" ? $defaultLockedGender : old("items.{$item->id}.units.{$u}.gender", "") }}',
                               @endfor
                           @endforeach
                       },
@@ -710,8 +711,14 @@
                                                     <span class="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">Required</span>
                                                 </div>
 
+                                                @php $lockedGender = $item->detectedGenderRestriction(); @endphp
                                                 <div class="mb-2">
-                                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Gender / Cut Pattern <span class="text-red-500">*</span></label>
+                                                    <div class="flex items-center justify-between mb-1">
+                                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600">Gender / Cut Pattern <span class="text-red-500">*</span></label>
+                                                        @if($lockedGender)
+                                                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">Locked to {{ $lockedGender === 'Womens / Girls' ? "Women's / Girl's" : "Men's / Boy's" }}</span>
+                                                        @endif
+                                                    </div>
                                                     <select id="item-{{ $item->id }}-unit-{{ $u - 1 }}-gender"
                                                             name="items[{{ $item->id }}][units][{{ $u - 1 }}][gender]"
                                                             x-model="unitGenders['{{ $item->id }}_{{ $u - 1 }}']"
@@ -720,9 +727,15 @@
                                                             autocomplete="off"
                                                             class="w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none font-medium shadow-sm transition-colors"
                                                             :class="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50/30' : 'border-slate-300 focus:border-primary'">
-                                                        <option value="" disabled selected>Select Cut / Pattern...</option>
-                                                        <option value="Mens / Boys">Men's / Boy's Cut</option>
-                                                        <option value="Womens / Girls">Women's / Girl's Cut</option>
+                                                        @if($lockedGender === 'Mens / Boys')
+                                                            <option value="Mens / Boys" selected>Men's / Boy's Cut</option>
+                                                        @elseif($lockedGender === 'Womens / Girls')
+                                                            <option value="Womens / Girls" selected>Women's / Girl's Cut</option>
+                                                        @else
+                                                            <option value="" disabled selected>Select Cut / Pattern...</option>
+                                                            <option value="Mens / Boys">Men's / Boy's Cut</option>
+                                                            <option value="Womens / Girls">Women's / Girl's Cut</option>
+                                                        @endif
                                                     </select>
                                                     <p x-show="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}']" x-cloak class="text-red-500 text-xs mt-1 font-bold flex items-center gap-1">
                                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -776,8 +789,14 @@
                                                     <span class="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">Required</span>
                                                 </div>
 
+                                                @php $lockedGender = $item->detectedGenderRestriction(); @endphp
                                                 <div class="mb-2">
-                                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Gender / Cut Pattern <span class="text-red-500">*</span></label>
+                                                    <div class="flex items-center justify-between mb-1">
+                                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600">Gender / Cut Pattern <span class="text-red-500">*</span></label>
+                                                        @if($lockedGender)
+                                                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">Locked to {{ $lockedGender === 'Womens / Girls' ? "Women's / Girl's" : "Men's / Boy's" }}</span>
+                                                        @endif
+                                                    </div>
                                                     <select id="item-{{ $item->id }}-unit-{{ $u - 1 }}-gender"
                                                             name="items[{{ $item->id }}][units][{{ $u - 1 }}][gender]"
                                                             x-model="unitGenders['{{ $item->id }}_{{ $u - 1 }}']"
@@ -786,9 +805,15 @@
                                                             autocomplete="off"
                                                             class="w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none font-medium shadow-sm transition-colors"
                                                             :class="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}'] ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50/30' : 'border-slate-300 focus:border-primary'">
-                                                        <option value="" disabled selected>Select Cut / Pattern...</option>
-                                                        <option value="Mens / Boys">Men's / Boy's Cut</option>
-                                                        <option value="Womens / Girls">Women's / Girl's Cut</option>
+                                                        @if($lockedGender === 'Mens / Boys')
+                                                            <option value="Mens / Boys" selected>Men's / Boy's Cut</option>
+                                                        @elseif($lockedGender === 'Womens / Girls')
+                                                            <option value="Womens / Girls" selected>Women's / Girl's Cut</option>
+                                                        @else
+                                                            <option value="" disabled selected>Select Cut / Pattern...</option>
+                                                            <option value="Mens / Boys">Men's / Boy's Cut</option>
+                                                            <option value="Womens / Girls">Women's / Girl's Cut</option>
+                                                        @endif
                                                     </select>
                                                     <p x-show="unitGenderErrors['{{ $item->id }}_{{ $u - 1 }}']" x-cloak class="text-red-500 text-xs mt-1 font-bold flex items-center gap-1">
                                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>

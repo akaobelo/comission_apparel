@@ -2462,11 +2462,17 @@ class AdminController extends Controller
         ]);
 
         $pkgTypes = is_array($package->types) ? $package->types : ($package->type ? [$package->type] : []);
+        $allowedKeys = [];
+        foreach ($pkgTypes as $pt) {
+            $allowedKeys[] = (string) $pt;
+            $allowedKeys[] = $pt . '__male';
+            $allowedKeys[] = $pt . '__female';
+        }
         $cleanComponentIds = [];
         if (is_array($request->input('component_design_ids'))) {
             foreach ($request->input('component_design_ids') as $tKey => $compId) {
-                if (in_array($tKey, $pkgTypes, true) && !empty($compId) && (int) $compId !== (int) $package->design_catalog_id) {
-                    $cleanComponentIds[$tKey] = (int) $compId;
+                if (in_array((string) $tKey, $allowedKeys, true) && !empty($compId) && (int) $compId !== (int) $package->design_catalog_id) {
+                    $cleanComponentIds[(string) $tKey] = (int) $compId;
                 }
             }
         }
@@ -2489,6 +2495,93 @@ class AdminController extends Controller
 
         return redirect()->route('admin.store.edit', $store)
             ->with('success', "Saved piece mapping for \"{$package->name}\".");
+    }
+
+    public function reassignPackageGenderOrders(Request $request, TeamStore $store, StoreItem $package)
+    {
+        $this->authorizeStoreAccess($store);
+
+        if ($package->team_store_id !== $store->id) {
+            abort(403, 'Package does not belong to this store.');
+        }
+
+        $validated = $request->validate([
+            'target_package_id' => ['required', 'integer', 'exists:store_items,id'],
+            'gender_bucket'     => ['required', 'in:Male,Female'],
+        ]);
+
+        $targetPackage = StoreItem::where('team_store_id', $store->id)
+            ->findOrFail((int) $validated['target_package_id']);
+
+        if ($targetPackage->id === $package->id) {
+            return redirect()->route('admin.store.edit', $store)
+                ->with('error', 'Target package must be different from the source package.');
+        }
+
+        $targetBucket = $validated['gender_bucket'];
+        $targetTypes = is_array($targetPackage->types) && !empty($targetPackage->types)
+            ? $targetPackage->types
+            : ($targetPackage->type ? [$targetPackage->type] : []);
+
+        $orders = ParentOrder::where('team_store_id', $store->id)
+            ->where('is_archived', false)
+            ->where('status', '!=', 'Pending Payment')
+            ->get();
+
+        $updatedOrderCount = 0;
+        $updatedItemCount = 0;
+
+        foreach ($orders as $order) {
+            if (!is_array($order->items_json) || empty($order->items_json)) {
+                continue;
+            }
+
+            $items = $order->items_json;
+            $changed = false;
+
+            foreach ($items as $idx => $it) {
+                $matchesSource = (isset($it['id']) && (int) $it['id'] === (int) $package->id)
+                    || (!empty($it['name']) && strcasecmp(trim((string) $it['name']), trim((string) $package->name)) === 0);
+
+                if (!$matchesSource) {
+                    continue;
+                }
+
+                $itemGender = $it['gender'] ?? $order->gender ?? '';
+                if (StoreItem::normalizeGenderBucket($itemGender) !== $targetBucket) {
+                    continue;
+                }
+
+                $items[$idx]['id'] = $targetPackage->id;
+                $items[$idx]['name'] = $targetPackage->name;
+                if (!empty($targetTypes)) {
+                    $items[$idx]['types'] = $targetTypes;
+                }
+                $changed = true;
+                $updatedItemCount++;
+            }
+
+            if ($changed) {
+                $order->update(['items_json' => $items]);
+                $updatedOrderCount++;
+            }
+        }
+
+        $msg = $updatedOrderCount > 0
+            ? "Moved {$updatedOrderCount} {$targetBucket} order(s) ({$updatedItemCount} item(s)) from \"{$package->name}\" to \"{$targetPackage->name}\"."
+            : "No active {$targetBucket} orders were found on \"{$package->name}\".";
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $msg,
+                'updated_orders' => $updatedOrderCount,
+                'updated_items'  => $updatedItemCount,
+            ]);
+        }
+
+        return redirect()->route('admin.store.edit', $store)
+            ->with('success', $msg);
     }
 
     public function updateCoverImage(Request $request, TeamStore $store)
