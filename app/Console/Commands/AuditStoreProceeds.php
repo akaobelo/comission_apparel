@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 class AuditStoreProceeds extends Command
 {
-    protected $signature = 'stores:audit-proceeds {names?* : Store name search terms (e.g. "Enloe" "Independence" "Track Masterz")} {--all : Audit all stores with orders} {--include-archived : Include archived orders in the audit}';
+    protected $signature = 'stores:audit-proceeds {names?* : Store name search terms (e.g. "Enloe" "Independence" "Track Masterz")} {--all : Audit all stores with orders} {--include-archived : Include archived orders in the audit} {--unpaid : List every unpaid / non-Stripe order with athlete name and totals}';
 
     protected $description = 'Read-only financial audit of store sales, wholesale (Due to TCA), recorded manufacturing_cost, and Store Profit Owed';
 
@@ -168,6 +168,55 @@ class AuditStoreProceeds extends Command
                 $this->warn('FLAGS DETECTED (' . count($flags) . '):');
                 foreach ($flags as $flag) {
                     $this->line('  - ' . $flag);
+                }
+            }
+
+            if ($this->option('unpaid')) {
+                $unpaidRows = [];
+                $unpaidSubTotal = 0.0;
+                $unpaidWhTotal = 0.0;
+
+                foreach ($orders as $order) {
+                    if ($order->isPaid()) {
+                        continue;
+                    }
+                    $items = is_array($order->items_json) ? $order->items_json : [];
+                    $itemSummary = collect($items)->map(fn($it) => (($it['qty'] ?? 1) . 'x ' . ($it['name'] ?? 'Item')))->implode(', ');
+                    $orderWh = 0.0;
+                    foreach ($items as $it) {
+                        $qty = max(1, (int) ($it['qty'] ?? 1));
+                        $orderWh += (ParentOrder::getItemPrices($it, $store)['wholesale_price'] * $qty);
+                    }
+                    $sub = (float) ($order->subtotal > 0 ? $order->subtotal : $order->total_retail_price);
+                    $unpaidSubTotal += $sub;
+                    $unpaidWhTotal += $orderWh;
+
+                    $unpaidRows[] = [
+                        '#' . $order->id,
+                        trim($order->athlete_name),
+                        $order->parent_email ?? '—',
+                        $order->status,
+                        $order->payment_status ?? '—',
+                        '$' . number_format($sub, 2),
+                        '$' . number_format($orderWh, 2),
+                        $order->created_at?->format('M d, Y') ?? '—',
+                        $itemSummary,
+                    ];
+                }
+
+                if (empty($unpaidRows)) {
+                    $this->info('UNPAID ORDERS: None — all orders in this store are marked paid.');
+                } else {
+                    $this->warn(sprintf(
+                        'UNPAID / NON-STRIPE ORDERS (%d) — Retail: $%.2f | Wholesale: $%.2f:',
+                        count($unpaidRows),
+                        $unpaidSubTotal,
+                        $unpaidWhTotal
+                    ));
+                    $this->table(
+                        ['Order', 'Athlete', 'Parent Email', 'Status', 'Payment', 'Retail', 'Wholesale', 'Date', 'Items'],
+                        $unpaidRows
+                    );
                 }
             }
         }
