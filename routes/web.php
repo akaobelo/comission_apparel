@@ -306,7 +306,7 @@ Route::post('/stripe/webhook', [\App\Http\Controllers\StripeWebhookController::c
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-Route::post('/register', [AuthController::class, 'register']);
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,10');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // ─── Internal Password Reset ─────────────────────────────────────────────────

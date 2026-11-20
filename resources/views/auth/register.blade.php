@@ -21,6 +21,12 @@
 
             <form action="{{ route('register') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                 @csrf
+                {{-- Anti-bot honeypot & form timing token (invisible to human users) --}}
+                <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;height:0;overflow:hidden;">
+                    <label for="website">Website</label>
+                    <input type="text" id="website" name="website" value="" tabindex="-1" autocomplete="off">
+                </div>
+                <input type="hidden" name="form_loaded_at" value="{{ encrypt((string) now()->timestamp) }}">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     <div>
