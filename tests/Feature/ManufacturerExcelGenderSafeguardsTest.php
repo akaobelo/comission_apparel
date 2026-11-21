@@ -518,4 +518,139 @@ class ManufacturerExcelGenderSafeguardsTest extends TestCase
         $this->assertNotContains('PAP Uni #1 Top (Racerback)', $maleHeaders);
         $this->assertNotContains('PAP Uni #1 Bottom (Female)', $maleHeaders);
     }
+
+    public function test_uniform_3_and_4_top_and_bottom_piece_linking_recommendations_and_excel_export(): void
+    {
+        $service = app(ManufacturerExcelExportService::class);
+
+        // 1. Normalization & compatibility for Uniform #2, #3, #4 (Top & Bottom)
+        foreach (['uniform_2_top', 'uniform_3_top', 'uniform_4_top'] as $topSlot) {
+            $this->assertSame('uniform_top', ManufacturerExcelExportService::normalizeBaseGarmentType($topSlot));
+            $this->assertTrue($service->isGarmentTypeCompatible($topSlot, ['uniform_top'], 'Jersey Top'));
+            $this->assertTrue($service->isGarmentTypeCompatible($topSlot, [$topSlot], 'Jersey Top'));
+            $this->assertFalse($service->isGarmentTypeCompatible($topSlot, ['uniform_bottom'], 'Jersey Bottom'));
+        }
+
+        foreach (['uniform_2_bottom', 'uniform_3_bottom', 'uniform_4_bottom'] as $bottomSlot) {
+            $this->assertSame('uniform_bottom', ManufacturerExcelExportService::normalizeBaseGarmentType($bottomSlot));
+            $this->assertTrue($service->isGarmentTypeCompatible($bottomSlot, ['uniform_bottom'], 'Jersey Shorts'));
+            $this->assertTrue($service->isGarmentTypeCompatible($bottomSlot, [$bottomSlot], 'Jersey Shorts'));
+            $this->assertFalse($service->isGarmentTypeCompatible($bottomSlot, ['uniform_top'], 'Jersey Top'));
+        }
+
+        // 2. Admin store edit shows ★ recommendations and Visual Excel exports linked Uniform #3 & #4 pieces
+        $admin = User::factory()->create(['role' => 'admin']);
+        $coach = User::factory()->create(['role' => 'coach']);
+
+        $store = TeamStore::create([
+            'user_id'            => $coach->id,
+            'name'               => 'Multi-Uniform Club',
+            'slug'               => 'multi-uniform-club-' . uniqid(),
+            'status'             => 'active',
+            'payment_mode'       => 'coach_pays',
+            'fulfillment_method' => 'bulk',
+        ]);
+
+        $uni3Top = DesignCatalog::create([
+            'name'            => 'Club Uni #3 Top',
+            'category'        => 'individual',
+            'type'            => 'uniform_top',
+            'types'           => ['uniform_top'],
+            'wholesale_price' => 35.00,
+        ]);
+        $uni3Bottom = DesignCatalog::create([
+            'name'            => 'Club Uni #3 Bottom',
+            'category'        => 'individual',
+            'type'            => 'uniform_bottom',
+            'types'           => ['uniform_bottom'],
+            'wholesale_price' => 30.00,
+        ]);
+        $uni4Top = DesignCatalog::create([
+            'name'            => 'Club Uni #4 Top',
+            'category'        => 'individual',
+            'type'            => 'uniform_4_top',
+            'types'           => ['uniform_4_top'],
+            'wholesale_price' => 35.00,
+        ]);
+        $uni4Bottom = DesignCatalog::create([
+            'name'            => 'Club Uni #4 Bottom',
+            'category'        => 'individual',
+            'type'            => 'uniform_4_bottom',
+            'types'           => ['uniform_4_bottom'],
+            'wholesale_price' => 30.00,
+        ]);
+
+        foreach ([$uni3Top, $uni3Bottom, $uni4Top, $uni4Bottom] as $d) {
+            StoreItem::create([
+                'team_store_id'     => $store->id,
+                'design_catalog_id' => $d->id,
+                'name'              => $d->name,
+                'types'             => $d->types,
+                'retail_price'      => 40.00,
+            ]);
+        }
+
+        $pkg = StoreItem::create([
+            'team_store_id'        => $store->id,
+            'name'                 => 'Club Full Uniform Package',
+            'types'                => ['uniform_3_top', 'uniform_3_bottom', 'uniform_4_top', 'uniform_4_bottom'],
+            'component_design_ids' => [
+                'uniform_3_top'    => $uni3Top->id,
+                'uniform_3_bottom' => $uni3Bottom->id,
+                'uniform_4_top'    => $uni4Top->id,
+                'uniform_4_bottom' => $uni4Bottom->id,
+            ],
+            'retail_price'         => 160.00,
+        ]);
+
+        // Verify ★ recommendations render on Admin Store Edit page for Uniform #3 & #4 slots
+        $editResponse = $this->actingAs($admin)->get(route('admin.store.edit', $store));
+        $editResponse->assertOk();
+        $editResponse->assertSee('Uniform #3 (top)');
+        $editResponse->assertSee('Uniform #3 (bottom)');
+        $editResponse->assertSee('Uniform #4 (top)');
+        $editResponse->assertSee('Uniform #4 (bottom)');
+        $editResponse->assertSee('★ Club Uni #3 Top');
+        $editResponse->assertSee('★ Club Uni #3 Bottom');
+        $editResponse->assertSee('★ Club Uni #4 Top');
+        $editResponse->assertSee('★ Club Uni #4 Bottom');
+
+        // Verify Visual Excel resolves all four linked pieces into their own columns
+        $order = ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'athlete_first_name' => 'Alex',
+            'athlete_last_name'  => 'Runner',
+            'parent_email'       => 'alex@example.com',
+            'parent_phone'       => '5550003333',
+            'gender'             => 'Mens / Boys',
+            'status'             => 'Submitted',
+            'payment_status'     => 'not_applicable',
+            'items_json'         => [[
+                'id'     => $pkg->id,
+                'name'   => $pkg->name,
+                'types'  => ['uniform_3_top', 'uniform_3_bottom', 'uniform_4_top', 'uniform_4_bottom'],
+                'qty'    => 1,
+                'gender' => 'Mens / Boys',
+                'sizes'  => [
+                    'uniform_3_top'    => 'AM',
+                    'uniform_3_bottom' => 'AM',
+                    'uniform_4_top'    => 'AL',
+                    'uniform_4_bottom' => 'AL',
+                ],
+            ]],
+        ]);
+
+        $xlsxPath = $service->generateXlsx(collect([$order]), $store->fresh(), 'Multi-Uniform Export');
+        $rows = $this->extractSheet1Rows($xlsxPath);
+        @unlink($xlsxPath);
+
+        $headerRows = array_values(array_filter($rows, fn($r) => ($r[0] ?? '') === 'Order Type'));
+        $this->assertCount(1, $headerRows);
+
+        $headers = $headerRows[0];
+        $this->assertContains('Club Uni #3 Top', $headers);
+        $this->assertContains('Club Uni #3 Bottom', $headers);
+        $this->assertContains('Club Uni #4 Top', $headers);
+        $this->assertContains('Club Uni #4 Bottom', $headers);
+    }
 }
