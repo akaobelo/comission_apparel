@@ -541,6 +541,22 @@
                     </div>
                     </div>
                 </div>
+
+                {{-- Quick Jump to Existing Orders / Payment --}}
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-6 overflow-hidden" id="edit-or-pay-shortcut">
+                    <button type="button"
+                            @click="$dispatch('open-placed-orders'); const el = document.getElementById('placed-orders-section'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }"
+                            class="w-full flex items-center justify-between gap-4 p-4 md:p-4 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left group">
+                        <div>
+                            <h2 class="text-xl font-black uppercase tracking-tight text-slate-900 group-hover:text-primary transition-colors">Click here to Edit an order or Make a Payment</h2>
+                            <p class="text-xs font-bold text-slate-500 mt-1">This will allow you to edit your existing orders or finalize payment prior to store closing.</p>
+                        </div>
+                        <div class="flex items-center gap-3 flex-shrink-0">
+                            <span class="hidden sm:inline-block text-[10px] font-bold uppercase tracking-widest text-secondary bg-secondary/10 px-3 py-1 rounded-full border border-secondary/20">View Orders</span>
+                            <svg class="w-6 h-6 text-slate-400 group-hover:text-primary group-hover:translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                        </div>
+                    </button>
+                </div>
                 @endif
 
                 {{-- Store Items Grid --}}
@@ -1040,6 +1056,7 @@
                         </div>
                     </div>
                 </div>
+
                 @endif
 
                 <!-- Duplicate Order Confirmation Modal -->
@@ -1233,7 +1250,7 @@
         }
         </script>
 
-        <div id="placed-orders-section" x-data="{ rosterOpen: true, search: '' }" @open-order-edit.window="rosterOpen = true; search = ''" class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-24 overflow-hidden">
+        <div id="placed-orders-section" x-data="{ rosterOpen: true, search: '' }" @open-order-edit.window="rosterOpen = true; search = ''" @open-placed-orders.window="rosterOpen = true" class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-24 overflow-hidden">
             <button type="button" @click="rosterOpen = !rosterOpen" class="w-full flex items-center justify-between p-4 md:p-6 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="rosterOpen ? 'border-slate-100 bg-slate-50/50' : ''">
                 <div>
                     <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Placed Orders</h2>
