@@ -1885,7 +1885,9 @@ class AdminController extends Controller
                   ->orWhere('payment_status', 'not_applicable');
             })->update(['payment_status' => 'pending']);
         } else {
-            $store->parentOrders()->where('payment_status', 'pending')
+            $store->parentOrders()
+                  ->where('payment_status', 'pending')
+                  ->where('status', '!=', 'Pending Payment')
                   ->update([
                       'payment_status' => 'not_applicable',
                       'status'         => 'Submitted',
@@ -2195,7 +2197,7 @@ class AdminController extends Controller
                     'subtotal'       => $subtotal,
                     'tax_amount'     => $taxAmount,
                     'fee_amount'     => $feeAmount,
-                    'total_paid'     => $grandTotal,
+                    'total_paid'     => $validated['payment_mode'] === 'online' ? 0.00 : $grandTotal,
                     'payment_status' => $validated['payment_mode'] === 'online' ? 'pending' : 'not_applicable',
                 ]);
             }
@@ -2226,7 +2228,9 @@ class AdminController extends Controller
                   ->orWhere('payment_status', 'not_applicable');
             })->update(['payment_status' => 'pending']);
         } else {
-            $store->parentOrders()->where('payment_status', 'pending')
+            $store->parentOrders()
+                  ->where('payment_status', 'pending')
+                  ->where('status', '!=', 'Pending Payment')
                   ->update([
                       'payment_status' => 'not_applicable',
                       'status'         => 'Submitted',
@@ -2271,7 +2275,9 @@ class AdminController extends Controller
                       ->orWhere('payment_status', 'not_applicable');
                 })->update(['payment_status' => 'pending']);
             } else {
-                $store->parentOrders()->where('payment_status', 'pending')
+                $store->parentOrders()
+                      ->where('payment_status', 'pending')
+                      ->where('status', '!=', 'Pending Payment')
                       ->update([
                           'payment_status' => 'not_applicable',
                           'status'         => 'Submitted',
@@ -2547,7 +2553,9 @@ class AdminController extends Controller
                     continue;
                 }
 
-                $itemGender = $it['gender'] ?? $order->gender ?? '';
+                $itemGender = isset($it['gender']) && trim((string) $it['gender']) !== ''
+                    ? $it['gender']
+                    : ($order->gender ?? '');
                 if (StoreItem::normalizeGenderBucket($itemGender) !== $targetBucket) {
                     continue;
                 }
@@ -2556,6 +2564,35 @@ class AdminController extends Controller
                 $items[$idx]['name'] = $targetPackage->name;
                 if (!empty($targetTypes)) {
                     $items[$idx]['types'] = $targetTypes;
+
+                    // Remap piece size keys when source & target packages use different numbered slots
+                    // (e.g. uniform_top -> uniform_2_top, uniform_bottom -> uniform_2_bottom)
+                    if (!empty($items[$idx]['sizes']) && is_array($items[$idx]['sizes'])) {
+                        $remappedSizes = [];
+                        $usedTargetKeys = [];
+                        foreach ($items[$idx]['sizes'] as $sizeKey => $sizeVal) {
+                            $sizeKeyStr = (string) $sizeKey;
+                            if (in_array($sizeKeyStr, $targetTypes, true)) {
+                                $remappedSizes[$sizeKeyStr] = $sizeVal;
+                                $usedTargetKeys[$sizeKeyStr] = true;
+                            } else {
+                                $baseSource = \App\Services\ManufacturerExcelExportService::normalizeBaseGarmentType($sizeKeyStr);
+                                $matchedTargetKey = null;
+                                foreach ($targetTypes as $tType) {
+                                    $tTypeStr = (string) $tType;
+                                    if (!isset($usedTargetKeys[$tTypeStr])
+                                        && \App\Services\ManufacturerExcelExportService::normalizeBaseGarmentType($tTypeStr) === $baseSource) {
+                                        $matchedTargetKey = $tTypeStr;
+                                        break;
+                                    }
+                                }
+                                $finalKey = $matchedTargetKey ?? $sizeKeyStr;
+                                $remappedSizes[$finalKey] = $sizeVal;
+                                $usedTargetKeys[$finalKey] = true;
+                            }
+                        }
+                        $items[$idx]['sizes'] = $remappedSizes;
+                    }
                 }
                 $changed = true;
                 $updatedItemCount++;
@@ -2947,7 +2984,7 @@ class AdminController extends Controller
             'Store Name', 'Order ID', 'Submission Date',
             'Athlete First Name', 'Athlete Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity'
+            'Item Name', 'Item Type(s)', 'Size(s)', 'Quantity', 'Payment Status'
         ];
 
         $callback = function() use ($store, $orders, $columns) {
@@ -3003,6 +3040,7 @@ class AdminController extends Controller
                             $typesStr,
                             $sizesStr,
                             $qty,
+                            $order->isPaid() ? 'Paid' : 'Unpaid',
                         ]);
                     }
                 }
@@ -3013,18 +3051,60 @@ class AdminController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    public function syncStoreStripePayments(Request $request, TeamStore $store)
+    {
+        $this->authorizeStoreAccess($store);
+
+        if (empty(config('services.stripe.secret'))) {
+            return back()->with('error', 'Stripe API key is not configured.');
+        }
+
+        $summary = app(\App\Services\StripePaymentSyncService::class)->syncStorePendingOrders($store);
+
+        if ($summary['checked'] === 0) {
+            return back()->with('info', "No unpaid orders with Stripe checkout sessions found for \"{$store->name}\".");
+        }
+
+        $msg = "Checked {$summary['checked']} unpaid order(s) against Stripe for \"{$store->name}\": "
+            . "{$summary['marked_paid']} marked Paid, {$summary['still_unpaid']} still unpaid";
+        if ($summary['errors'] > 0) {
+            $msg .= ", {$summary['errors']} error(s) (see logs)";
+        }
+        $msg .= '.';
+
+        return back()->with($summary['marked_paid'] > 0 ? 'success' : 'info', $msg);
+    }
+
     public function finalizeStoreBatch(Request $request, TeamStore $store)
     {
         $this->authorizeStoreAccess($store);
 
-        $unbatchedOrders = $store->parentOrders()
-            ->whereNull('batch_id')
-            ->where('is_archived', false);
+        if ($store->isOnlinePayment()) {
+            // Reconcile any Stripe-paid orders whose webhook/redirect was missed before finalizing
+            try {
+                app(\App\Services\StripePaymentSyncService::class)->syncStorePendingOrders($store);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Pre-finalize Stripe sync failed for store #{$store->id}: " . $e->getMessage());
+            }
+
+            $unbatchedOrders = $store->parentOrders()
+                ->whereNull('batch_id')
+                ->where('is_archived', false)
+                ->where('payment_status', 'paid');
+        } else {
+            $unbatchedOrders = $store->parentOrders()
+                ->whereNull('batch_id')
+                ->where('is_archived', false)
+                ->where('status', '!=', 'Pending Payment');
+        }
 
         $count = $unbatchedOrders->count();
 
         if ($count === 0) {
-            return back()->with('error', "No open or unbatched orders to finalize for store \"{$store->name}\".");
+            $emptyMessage = $store->isOnlinePayment()
+                ? "No confirmed paid open orders to finalize for store \"{$store->name}\"."
+                : "No open or unbatched orders to finalize for store \"{$store->name}\".";
+            return back()->with('error', $emptyMessage);
         }
 
         $batchId = (string) \Illuminate\Support\Str::uuid();
@@ -3091,7 +3171,7 @@ class AdminController extends Controller
         $columns = [
             'First Name', 'Last Name', 'Email', 'Phone', 'Shipping Address', 'Gender', 
             'Jersey Name', 'Jersey Number', 'Backpack Name',
-            'Item', 'Types', 'Sizes', 'Qty'
+            'Item', 'Types', 'Sizes', 'Qty', 'Payment Status'
         ];
 
         $callback = function() use ($orders, $columns) {
@@ -3144,6 +3224,7 @@ class AdminController extends Controller
                             $typesStr,
                             $sizesStr,
                             $qty,
+                            $order->isPaid() ? 'Paid' : 'Unpaid',
                         ]);
                     }
                 }

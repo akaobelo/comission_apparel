@@ -647,7 +647,10 @@
                             $matchedPkg = $packages->first(fn($p) => strcasecmp(trim((string) $p->name), trim((string) $oItem['name'])) === 0);
                         }
                         if ($matchedPkg) {
-                            $bucket = \App\Models\StoreItem::normalizeGenderBucket($oItem['gender'] ?? $ord->gender ?? '');
+                            $rawGender = isset($oItem['gender']) && trim((string) $oItem['gender']) !== ''
+                                ? $oItem['gender']
+                                : ($ord->gender ?? '');
+                            $bucket = \App\Models\StoreItem::normalizeGenderBucket($rawGender);
                             $packageOrderStats[$matchedPkg->id]['total']++;
                             $packageOrderStats[$matchedPkg->id][$bucket]++;
                         }
@@ -756,7 +759,9 @@
                                                     @if($candDesign->id !== $package->design_catalog_id)
                                                         @php
                                                             $candTypes = is_array($candDesign->types) ? $candDesign->types : ($candDesign->type ? [$candDesign->type] : []);
-                                                            $isMatchingType = in_array((string)$tKey, $candTypes, true);
+                                                            $baseTKey = \App\Services\ManufacturerExcelExportService::normalizeBaseGarmentType((string) $tKey);
+                                                            $candBaseTypes = array_map(fn($ct) => \App\Services\ManufacturerExcelExportService::normalizeBaseGarmentType((string) $ct), $candTypes);
+                                                            $isMatchingType = in_array((string) $tKey, $candTypes, true) || in_array($baseTKey, $candBaseTypes, true);
                                                         @endphp
                                                         <option value="{{ $candDesign->id }}" {{ (string) $selectedCompDesignId === (string) $candDesign->id ? 'selected' : '' }} class="{{ $isMatchingType ? 'font-bold text-slate-900 bg-blue-50' : 'text-slate-600' }}">
                                                             {{ $isMatchingType ? '★ ' : '' }}{{ $candDesign->name }} ({{ $candDesign->type_label }})
@@ -808,7 +813,9 @@
                                                                 @if($candDesign->id !== $package->design_catalog_id)
                                                                     @php
                                                                         $candTypes = is_array($candDesign->types) ? $candDesign->types : ($candDesign->type ? [$candDesign->type] : []);
-                                                                        $isMatchingType = in_array((string)$tKey, $candTypes, true);
+                                                                        $baseTKey = \App\Services\ManufacturerExcelExportService::normalizeBaseGarmentType((string) $tKey);
+                                                                        $candBaseTypes = array_map(fn($ct) => \App\Services\ManufacturerExcelExportService::normalizeBaseGarmentType((string) $ct), $candTypes);
+                                                                        $isMatchingType = in_array((string) $tKey, $candTypes, true) || in_array($baseTKey, $candBaseTypes, true);
                                                                     @endphp
                                                                     <option value="{{ $candDesign->id }}" {{ (string) $selOverrideId === (string) $candDesign->id ? 'selected' : '' }}>
                                                                         {{ $isMatchingType ? '★ ' : '' }}{{ $candDesign->name }} ({{ $candDesign->type_label }})
@@ -873,7 +880,18 @@
             {{-- Order roster for this store --}}
             @php
                 $allOrdersCollection = $allStoreOrders ?? $store->parentOrders;
-                $unbatchedCount = $allOrdersCollection->whereNull('batch_id')->count();
+                $unbatchedCount = $store->isOnlinePayment()
+                    ? $allOrdersCollection->whereNull('batch_id')->where('payment_status', 'paid')->count()
+                    : $allOrdersCollection->whereNull('batch_id')->count();
+                $unpaidStripeCandidatesCount = \App\Models\ParentOrder::where('team_store_id', $store->id)
+                    ->where('is_archived', false)
+                    ->where(function ($q) {
+                        $q->whereNull('payment_status')->orWhere('payment_status', '!=', 'paid');
+                    })
+                    ->where(function ($q) {
+                        $q->whereNotNull('stripe_session_id')->orWhereNotNull('stripe_payment_intent_id');
+                    })
+                    ->count();
                 $archivedStoreOrdersCount = \App\Models\ParentOrder::where('team_store_id', $store->id)->where('is_archived', true)->count();
                 $activeBatchId = (!empty($selectedBatchId) && $selectedBatchId !== 'unbatched')
                     ? $selectedBatchId
@@ -948,6 +966,15 @@
                             <button type="submit" class="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-[11px] font-bold uppercase tracking-wide rounded-lg hover:shadow transition-all flex items-center gap-1.5 shadow-sm">
                                 <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                 Unarchive Orders ({{ $archivedStoreOrdersCount }})
+                            </button>
+                        </form>
+                        @endif
+                        @if($store->isOnlinePayment() || $unpaidStripeCandidatesCount > 0)
+                        <form action="{{ route('admin.stores.sync-stripe', $store) }}" method="POST" class="inline-block m-0">
+                            @csrf
+                            <button type="submit" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold uppercase tracking-wide rounded-lg hover:shadow transition-all flex items-center gap-1.5 shadow-sm" title="Verify all unpaid/pending orders directly against Stripe and mark confirmed payments as Paid">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                Sync Stripe Payments{{ $unpaidStripeCandidatesCount > 0 ? ' (' . $unpaidStripeCandidatesCount . ')' : '' }}
                             </button>
                         </form>
                         @endif

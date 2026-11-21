@@ -295,6 +295,7 @@ Route::get('/store/{slug}/order', function ($slug) {
 Route::post('/store/{slug}/order/{order}/pay', [StoreController::class, 'payOrder'])->name('store.order.pay');
 Route::post('/store/{slug}/order/{order}/verify-pin', [StoreController::class, 'verifyOrderPin'])->name('store.order.verify-pin');
 Route::post('/store/{slug}/order/{order}/update-sizes', [StoreController::class, 'updateOrderSizes'])->name('store.order.update-sizes');
+Route::post('/store/{slug}/check-duplicate-email', [StoreController::class, 'checkDuplicateEmail'])->name('store.check-duplicate-email');
 Route::get('/store/{slug}/order/success/{order}', [StoreController::class, 'checkoutSuccess'])->name('store.checkout.success');
 Route::get('/store/{slug}/order/cancel/{order}', [StoreController::class, 'checkoutCancel'])->name('store.checkout.cancel');
 Route::get('/store/{slug}/order/receipt/{order}', [StoreController::class, 'orderReceipt'])->name('store.order.receipt');
@@ -452,6 +453,7 @@ Route::middleware(['auth', AdminOrSalesRepMiddleware::class])->group(function ()
     Route::get('/admin/stores/{store}/export', [AdminController::class, 'exportOrderCSV'])->name('admin.stores.export');
     Route::get('/admin/stores/{store}/export-manufacturer', [AdminController::class, 'exportStoreManufacturerXlsx'])->name('admin.stores.export-manufacturer');
     Route::post('/admin/stores/{store}/finalize-batch', [AdminController::class, 'finalizeStoreBatch'])->name('admin.stores.finalize-batch');
+    Route::post('/admin/stores/{store}/sync-stripe', [AdminController::class, 'syncStoreStripePayments'])->name('admin.stores.sync-stripe');
     Route::get('/admin/direct-batch/{batch_id}', [AdminController::class, 'showDirectBatch'])->name('admin.direct-batch.show');
     Route::get('/admin/batch/{batch_id}/export', [AdminController::class, 'exportBatchCSV'])->name('admin.batch.export');
     Route::get('/admin/batch/{batch_id}/export-aggregate', [AdminController::class, 'exportBatchAggregationCSV'])->name('admin.batch.export-aggregate');

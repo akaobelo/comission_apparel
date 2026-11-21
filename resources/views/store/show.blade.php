@@ -202,6 +202,8 @@
         @if($closedReason !== 'no_items')
             {{-- ═══ NEW ORDER FORM GRID (OR ITEMS VIEW) ═══ --}}
             <form action="{{ route('store.order.submit', $store->slug) }}" method="POST" autocomplete="off"
+                  x-ref="storeOrderForm"
+                  @submit="handleFormSubmit($event)"
                   class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 md:p-6 relative overflow-hidden"
                   @invalid.capture="if ($event.target.closest('#athlete-info-section')) { athleteInfoOpen = true; setTimeout(() => document.getElementById('athlete-info-section').scrollIntoView({behavior: 'smooth', block: 'start'}), 100); }"
                   x-data="{
@@ -216,6 +218,12 @@
                       touchStartX: 0,
                       touchEndX: 0,
                       policyAgreed: false,
+                      parentEmail: @js(old('parent_email', '')),
+                      duplicateOrders: [],
+                      duplicateCheckedEmail: '',
+                      duplicateChecking: false,
+                      duplicateModalOpen: false,
+                      duplicateConfirmed: false,
                       isOnline: {{ $store->isOnlinePayment() ? 'true' : 'false' }},
                       isTaxExempt: {{ $store->isTaxExempt() ? 'true' : 'false' }},
                       taxRate: {{ $store->isTaxExempt() ? 0 : 0.075 }},
@@ -310,6 +318,64 @@
                           this.slideOpen = false;
                           document.body.style.overflow = 'auto';
                           setTimeout(() => { this.activeItemId = null; }, 300);
+                      },
+                      async checkDuplicateEmail() {
+                          const normalized = (this.parentEmail || '').trim().toLowerCase();
+                          if (!normalized || !normalized.includes('@') || !normalized.includes('.')) {
+                              this.duplicateOrders = [];
+                              this.duplicateCheckedEmail = '';
+                              this.duplicateConfirmed = false;
+                              return;
+                          }
+                          if (normalized === this.duplicateCheckedEmail) {
+                              return;
+                          }
+                          this.duplicateChecking = true;
+                          this.duplicateConfirmed = false;
+                          try {
+                              const res = await fetch('{{ route('store.check-duplicate-email', $store->slug) }}', {
+                                  method: 'POST',
+                                  headers: {
+                                      'Content-Type': 'application/json',
+                                      'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                      'Accept': 'application/json'
+                                  },
+                                  body: JSON.stringify({ email: normalized })
+                              });
+                              if (res.ok) {
+                                  const data = await res.json();
+                                  this.duplicateOrders = Array.isArray(data.orders) ? data.orders : [];
+                                  this.duplicateCheckedEmail = normalized;
+                              }
+                          } catch (e) {
+                              // Non-blocking fallback
+                          } finally {
+                              this.duplicateChecking = false;
+                          }
+                      },
+                      openExistingOrderToEdit(orderId) {
+                          this.duplicateModalOpen = false;
+                          document.body.style.overflow = 'auto';
+                          const rosterEl = document.getElementById('placed-orders-section');
+                          if (rosterEl) {
+                              rosterEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                          setTimeout(() => {
+                              window.dispatchEvent(new CustomEvent('open-order-edit', { detail: { orderId: orderId } }));
+                          }, 250);
+                      },
+                      handleFormSubmit(event) {
+                          if (this.duplicateOrders.length > 0 && !this.duplicateConfirmed) {
+                              event.preventDefault();
+                              this.duplicateModalOpen = true;
+                          }
+                      },
+                      confirmDuplicateAndSubmit() {
+                          this.duplicateConfirmed = true;
+                          this.duplicateModalOpen = false;
+                          this.$nextTick(() => {
+                              this.$refs.storeOrderForm.submit();
+                          });
                       }
                   }">
                 @csrf
@@ -395,7 +461,7 @@
                         </div>
                         <div class="md:col-span-1">
                             <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Parent / Contact Email <span class="text-red-500">*</span></label>
-                            <input type="email" name="parent_email" required placeholder="your.email@example.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
+                            <input type="email" name="parent_email" required x-model="parentEmail" @blur="checkDuplicateEmail()" @input.debounce.600ms="checkDuplicateEmail()" placeholder="your.email@example.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
                             <p class="text-[10px] text-slate-500 mt-1 font-medium">We'll use this to send you a copy of your order.</p>
                             @error('parent_email')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                         </div>
@@ -404,6 +470,40 @@
                             <input type="tel" name="parent_phone" required placeholder="e.g. 555-123-4567" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">
                             <p class="text-[10px] text-slate-500 mt-1 font-medium">For text reminders if you haven't ordered.</p>
                             @error('parent_phone')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                        </div>
+
+                        {{-- Duplicate Email Detection Banner --}}
+                        <div class="md:col-span-2" x-show="duplicateOrders.length > 0" x-cloak x-transition>
+                            <div class="p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl shadow-sm">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-black uppercase tracking-wider text-amber-950">Existing Order Found Under This Email</p>
+                                        <p class="text-xs text-amber-900 mt-1 leading-relaxed">
+                                            If you are trying to <strong>change sizes or update details</strong> (for example after trying on a sizing kit), please <strong>edit your existing order</strong> using your 4-digit PIN instead of creating a duplicate order.
+                                        </p>
+                                        <div class="mt-3 space-y-2">
+                                            <template x-for="dup in duplicateOrders" :key="dup.id">
+                                                <div class="flex flex-wrap items-center justify-between gap-2 bg-white border border-amber-200 rounded-xl px-3 py-2">
+                                                    <div class="text-xs">
+                                                        <span class="font-black text-slate-900" x-text="dup.athlete_name"></span>
+                                                        <span class="text-slate-500 font-semibold ml-1" x-text="'(' + dup.items_count + ' item' + (dup.items_count === 1 ? '' : 's') + (dup.created_at ? ' · ' + dup.created_at : '') + ')'"></span>
+                                                        <span x-show="dup.is_paid" class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">Paid</span>
+                                                    </div>
+                                                    <button type="button" @click="openExistingOrderToEdit(dup.id)" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-black uppercase tracking-wider rounded-lg shadow-sm transition-colors">
+                                                        Edit This Order →
+                                                    </button>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <p class="text-[11px] text-amber-800 mt-2.5 font-medium">
+                                            Ordering for a <strong>different athlete/sibling</strong> or purchasing <strong>brand-new additional items</strong>? You may continue placing a new order below.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="md:col-span-2">
@@ -942,6 +1042,52 @@
                 </div>
                 @endif
 
+                <!-- Duplicate Order Confirmation Modal -->
+                <div x-show="duplicateModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div @click.away="duplicateModalOpen = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+                        <div class="p-5 bg-amber-50 border-b border-amber-200 flex items-start justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <div class="w-9 h-9 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-black uppercase tracking-tight text-slate-900">Already Placed an Order?</h3>
+                                    <p class="text-xs text-amber-900 font-medium mt-0.5">We found an existing order in this store under <strong x-text="parentEmail"></strong>.</p>
+                                </div>
+                            </div>
+                            <button type="button" @click="duplicateModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        <div class="p-5 space-y-4">
+                            <p class="text-xs text-slate-700 leading-relaxed">
+                                If you only need to <strong>change sizes or update details</strong> (for example after trying on a sizing kit), please <strong>edit your existing order</strong> instead of submitting a brand-new order.
+                            </p>
+                            <div class="space-y-2">
+                                <template x-for="dup in duplicateOrders" :key="dup.id">
+                                    <div class="flex items-center justify-between gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                        <div class="text-xs">
+                                            <div class="font-black text-slate-900" x-text="dup.athlete_name"></div>
+                                            <div class="text-[11px] text-slate-500" x-text="dup.items_count + ' item' + (dup.items_count === 1 ? '' : 's') + (dup.created_at ? ' · Placed ' + dup.created_at : '')"></div>
+                                        </div>
+                                        <button type="button" @click="openExistingOrderToEdit(dup.id)" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-sm transition-colors">
+                                            Edit Existing Order
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2">
+                                <button type="button" @click="duplicateModalOpen = false" class="w-full sm:w-auto px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900">
+                                    Cancel
+                                </button>
+                                <button type="button" @click="confirmDuplicateAndSubmit()" class="w-full sm:w-auto px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-sm transition-colors">
+                                    No, Place a Separate New Order
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Image Preview Modal -->
                 <div x-show="previewOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
                      @touchstart.window="if(previewOpen) touchStartX = $event.changedTouches[0].screenX"
@@ -1087,7 +1233,7 @@
         }
         </script>
 
-        <div x-data="{ rosterOpen: true, search: '' }" class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-24 overflow-hidden">
+        <div id="placed-orders-section" x-data="{ rosterOpen: true, search: '' }" @open-order-edit.window="rosterOpen = true; search = ''" class="bg-white border border-slate-200 rounded-2xl shadow-sm mb-24 overflow-hidden">
             <button type="button" @click="rosterOpen = !rosterOpen" class="w-full flex items-center justify-between p-4 md:p-6 bg-white hover:bg-slate-50 transition-colors focus:outline-none text-left border-b border-transparent" :class="rosterOpen ? 'border-slate-100 bg-slate-50/50' : ''">
                 <div>
                     <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Placed Orders</h2>
@@ -1154,6 +1300,7 @@
                         ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}
                         </script>
                         <div x-data="orderItemManager('order-data-{{ $order->id }}')"
+                             @open-order-edit.window="if ($event.detail && Number($event.detail.orderId) === {{ $order->id }}) { viewModal = true; editMode = false; pinPrompt = {{ !empty($order->edit_pin) && !$isClosed ? 'true' : 'false' }}; pinError = ''; }"
                              x-show="search === '' || name.includes(search.toLowerCase())"
                              class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between shadow-sm hover:border-primary/40 transition-colors">
                             <div class="flex items-center gap-3">

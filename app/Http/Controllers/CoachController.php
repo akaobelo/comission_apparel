@@ -413,6 +413,13 @@ class CoachController extends Controller
 
         // 2. Online Credit Card Payment (Parents pay via Stripe at individual checkout)
         if ($store->isOnlinePayment()) {
+            // Reconcile any Stripe-paid orders whose webhook/redirect was missed before finalizing
+            try {
+                app(\App\Services\StripePaymentSyncService::class)->syncStorePendingOrders($store);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Pre-submit Stripe sync failed for store #{$store->id}: " . $e->getMessage());
+            }
+
             $unbatchedOrders = $store->parentOrders()
                 ->whereNull('batch_id')
                 ->where('is_archived', false)

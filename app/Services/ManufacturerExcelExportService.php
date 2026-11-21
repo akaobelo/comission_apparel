@@ -488,7 +488,10 @@ class ManufacturerExcelExportService
             foreach ($order->items_json as $item) {
                 $itemQty = max(1, (int) ($item['qty'] ?? 1));
                 $itemName = trim((string) ($item['name'] ?? 'Unknown Item'));
-                $itemGender = trim((string) ($item['gender'] ?? $order->gender ?? 'Unisex'));
+                $rawItemGender = isset($item['gender']) && trim((string) $item['gender']) !== ''
+                    ? $item['gender']
+                    : ($order->gender ?? 'Unisex');
+                $itemGender = trim((string) $rawItemGender);
                 if ($athleteRow['gender'] === '' && $itemGender !== '') {
                     $athleteRow['gender'] = $itemGender;
                 }
@@ -584,13 +587,43 @@ class ManufacturerExcelExportService
                     ): array {
                         $tLabel = ($typeKey === 'default' || is_numeric($typeKey)) ? '' : DesignCatalog::formatTypeLabel($typeKey);
                         $genderBucket = $this->normalizeGenderLabel($itemGender);
-                        $genderOverrideKey = $genderBucket === 'Female'
-                            ? "{$typeKey}__female"
-                            : ($genderBucket === 'Male' ? "{$typeKey}__male" : null);
+                        $genderSuffix = $genderBucket === 'Female'
+                            ? '__female'
+                            : ($genderBucket === 'Male' ? '__male' : null);
+                        $genderOverrideKey = $genderSuffix ? "{$typeKey}{$genderSuffix}" : null;
 
                         $linkedDesignId = ($genderOverrideKey && !empty($componentDesignIds[$genderOverrideKey]))
                             ? (int) $componentDesignIds[$genderOverrideKey]
                             : (!empty($componentDesignIds[$typeKey]) ? (int) $componentDesignIds[$typeKey] : null);
+
+                        // Fallback for numbered garment slots (e.g. order has 'uniform_top' while package maps 'uniform_2_top')
+                        if (empty($linkedDesignId) && !empty($componentDesignIds)) {
+                            $baseType = self::normalizeBaseGarmentType($typeKey);
+                            if ($genderSuffix) {
+                                foreach ($componentDesignIds as $mapKey => $mapVal) {
+                                    if (empty($mapVal) || !str_ends_with((string) $mapKey, $genderSuffix)) {
+                                        continue;
+                                    }
+                                    $stripped = substr((string) $mapKey, 0, -strlen($genderSuffix));
+                                    if (self::normalizeBaseGarmentType($stripped) === $baseType) {
+                                        $linkedDesignId = (int) $mapVal;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (empty($linkedDesignId)) {
+                                foreach ($componentDesignIds as $mapKey => $mapVal) {
+                                    $mapKeyStr = (string) $mapKey;
+                                    if (empty($mapVal) || str_contains($mapKeyStr, '__')) {
+                                        continue;
+                                    }
+                                    if (self::normalizeBaseGarmentType($mapKeyStr) === $baseType) {
+                                        $linkedDesignId = (int) $mapVal;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
 
                         if (!empty($linkedDesignId)) {
                             $linkedStoreItem = $storeItems->firstWhere('design_catalog_id', $linkedDesignId);
@@ -747,6 +780,7 @@ class ManufacturerExcelExportService
                     'types'          => implode(', ', array_map(fn($t) => DesignCatalog::formatTypeLabel((string) $t), $item['types'] ?? [$item['type'] ?? ''])),
                     'sizes'          => implode(' | ', $sizesSummary),
                     'qty'            => $itemQty,
+                    'payment_status' => $order->isPaid() ? 'Paid' : 'Unpaid',
                 ];
             }
 
@@ -1032,14 +1066,14 @@ class ManufacturerExcelExportService
             [0, $bannerText, 's', 9],
         ]);
 
-        // Helper to emit the Tall Product Mockup Image Row (height 135pt = ~180px) at any 1-based row number
-        $emitMockupImageRow = function (int $rowNum) use (&$rowsXml, &$drawings, $colKeys, $fixedCount, $colMediaMap, $mediaFiles): void {
+        // Helper to emit the Tall Product Mockup Image Row (height 135pt = ~180px) for a specific section's columns
+        $emitMockupImageRow = function (int $rowNum, array $sectionColKeys) use (&$rowsXml, &$drawings, $fixedCount, $colMediaMap, $mediaFiles): void {
             $imageRowCells = [
                 [0, 'PRODUCT MOCKUPS', 's', 11],
                 [1, '', 's', 11],
                 [2, '', 's', 11],
             ];
-            foreach ($colKeys as $idx => $cKey) {
+            foreach ($sectionColKeys as $idx => $cKey) {
                 $colIdx = $fixedCount + $idx;
                 $imageRowCells[] = [$colIdx, '', 's', 11];
                 if (isset($colMediaMap[$cKey])) {
@@ -1058,13 +1092,16 @@ class ManufacturerExcelExportService
             $rowsXml[] = $this->buildRowXml($rowNum, 135, $imageRowCells);
         };
 
-        // Row 2: Tall Product Mockup Image Row at top of sheet
-        $emitMockupImageRow(2);
+        $currentRow = 2;
+        $maxProductCols = 0;
 
-        $currentRow = 3;
-
-        // Render each Gender section with its own Product Mockups + Dark Navy Header Bar (#1E3A5F)
+        // Render each Gender section with ONLY the columns actually ordered by that gender
+        // so Female-only items never appear in the Male section and Male-only items never appear in the Female section.
         if (empty($aggRows)) {
+            $emitMockupImageRow($currentRow, $colKeys);
+            $currentRow++;
+            $maxProductCols = count($colKeys);
+
             $headerCells = [
                 [0, 'Order Type', 's', 2],
                 [1, 'Gender', 's', 2],
@@ -1075,23 +1112,51 @@ class ManufacturerExcelExportService
             }
             $rowsXml[] = $this->buildRowXml($currentRow, 32, $headerCells);
             $currentRow++;
+
+            $totalCells = [
+                [0, 'TOTAL QUANTITY', 's', 10],
+                [1, '', 's', 10],
+                [2, $totalUnits, 'n', 10],
+            ];
+            foreach ($colKeys as $idx => $cKey) {
+                $totalCells[] = [$fixedCount + $idx, (int) $columns[$cKey]['total_qty'], 'n', 10];
+            }
+            $rowsXml[] = $this->buildRowXml($currentRow, 26, $totalCells);
         } else {
             $sectionIdx = 0;
+            $sectionCount = count($aggRows);
+
             foreach ($aggRows as $genderLabel => $gRows) {
-                // Repeat the Product Mockup Images row at the dividing line before Male (and any subsequent gender section)
+                // Blank visual separator row between gender sections
                 if ($sectionIdx > 0) {
-                    $emitMockupImageRow($currentRow);
                     $currentRow++;
                 }
                 $sectionIdx++;
 
-                // Dark Navy Section Header Row
+                // Collect ONLY columns that have orders in this gender section (preserving canonical column sort order)
+                $presentInSection = [];
+                $sectionColTotals = [];
+                $sectionTotalUnits = 0;
+                foreach ($gRows as $gRow) {
+                    $ck = $gRow['col_key'];
+                    $presentInSection[$ck] = true;
+                    $sectionColTotals[$ck] = ($sectionColTotals[$ck] ?? 0) + (int) $gRow['qty'];
+                    $sectionTotalUnits += (int) $gRow['qty'];
+                }
+                $sectionColKeys = array_values(array_filter($colKeys, fn($ck) => isset($presentInSection[$ck])));
+                $maxProductCols = max($maxProductCols, count($sectionColKeys));
+
+                // Product Mockup Images row for THIS gender section only
+                $emitMockupImageRow($currentRow, $sectionColKeys);
+                $currentRow++;
+
+                // Dark Navy Section Header Row for THIS gender section only
                 $headerCells = [
                     [0, 'Order Type', 's', 2],
                     [1, 'Gender', 's', 2],
                     [2, 'Qty', 's', 2],
                 ];
-                foreach ($colKeys as $idx => $cKey) {
+                foreach ($sectionColKeys as $idx => $cKey) {
                     $headerCells[] = [$fixedCount + $idx, $columns[$cKey]['label'], 's', 2];
                 }
                 $rowsXml[] = $this->buildRowXml($currentRow, 32, $headerCells);
@@ -1104,7 +1169,7 @@ class ManufacturerExcelExportService
                         [2, (int) $gRow['qty'], 'n', 3],
                     ];
 
-                    foreach ($colKeys as $idx => $cKey) {
+                    foreach ($sectionColKeys as $idx => $cKey) {
                         $colIdx = $fixedCount + $idx;
                         if ($cKey === $gRow['col_key']) {
                             // White cell showing the Size under the active product image column!
@@ -1118,26 +1183,39 @@ class ManufacturerExcelExportService
                     $rowsXml[] = $this->buildRowXml($currentRow, 21, $cells);
                     $currentRow++;
                 }
+
+                // Per-gender total row aligned to this section's columns
+                $sectionTotalLabel = $sectionCount > 1
+                    ? strtoupper($genderLabel) . ' TOTAL'
+                    : 'TOTAL QUANTITY';
+                $sectionTotalCells = [
+                    [0, $sectionTotalLabel, 's', 10],
+                    [1, $sectionCount > 1 ? $genderLabel : '', 's', 10],
+                    [2, $sectionTotalUnits, 'n', 10],
+                ];
+                foreach ($sectionColKeys as $idx => $cKey) {
+                    $sectionTotalCells[] = [$fixedCount + $idx, (int) ($sectionColTotals[$cKey] ?? 0), 'n', 10];
+                }
+                $rowsXml[] = $this->buildRowXml($currentRow, 25, $sectionTotalCells);
+                $currentRow++;
+            }
+
+            if ($sectionCount > 1) {
+                $currentRow++;
+                $rowsXml[] = $this->buildRowXml($currentRow, 26, [
+                    [0, 'TOTAL QUANTITY', 's', 10],
+                    [1, 'All Genders', 's', 10],
+                    [2, $totalUnits, 'n', 10],
+                ]);
             }
         }
-
-        // Total Quantity Row at the bottom
-        $totalCells = [
-            [0, 'TOTAL QUANTITY', 's', 10],
-            [1, '', 's', 10],
-            [2, $totalUnits, 'n', 10],
-        ];
-        foreach ($colKeys as $idx => $cKey) {
-            $totalCells[] = [$fixedCount + $idx, (int) $columns[$cKey]['total_qty'], 'n', 10];
-        }
-        $rowsXml[] = $this->buildRowXml($currentRow, 26, $totalCells);
 
         $colWidths = [
             1 => 16, // Order Type
             2 => 14, // Gender
             3 => 10, // Qty
         ];
-        foreach ($colKeys as $idx => $cKey) {
+        for ($idx = 0; $idx < $maxProductCols; $idx++) {
             $colWidths[$fixedCount + $idx + 1] = 21;
         }
 
@@ -1165,6 +1243,7 @@ class ManufacturerExcelExportService
             'Garment Type(s)',
             'Size(s)',
             'Quantity',
+            'Payment Status',
         ];
 
         $rowsXml = [];
@@ -1176,6 +1255,7 @@ class ManufacturerExcelExportService
 
         $rowNum = 2;
         foreach ($flatRoster as $r) {
+            $paymentStatus = $r['payment_status'] ?? 'Unpaid';
             $rowsXml[] = $this->buildRowXml($rowNum, 20, [
                 [0, (int) $r['order_id'], 'n', 7],
                 [1, $r['date'], 's', 7],
@@ -1189,6 +1269,7 @@ class ManufacturerExcelExportService
                 [9, $r['types'], 's', 5],
                 [10, $r['sizes'], 's', 6],
                 [11, (int) $r['qty'], 'n', 3],
+                [12, $paymentStatus, 's', $paymentStatus === 'Paid' ? 8 : 7],
             ]);
             $rowNum++;
         }
@@ -1206,9 +1287,33 @@ class ManufacturerExcelExportService
             10 => 24,
             11 => 28,
             12 => 11,
+            13 => 16,
         ];
 
         return $this->finalizeWorksheetXml($rowsXml, $colWidths, [], $addSharedString);
+    }
+
+    /**
+     * Normalize numbered garment piece slots (e.g. uniform_2_top -> uniform_top, warmup_2_bottom -> warmup_bottom, arm_sleeve_2 -> arm_sleeve).
+     */
+    public static function normalizeBaseGarmentType(string $type): string
+    {
+        if (preg_match('/^uniform_\d+_(top|bottom)$/', $type, $m)) {
+            return 'uniform_' . $m[1];
+        }
+        if (preg_match('/^warmup_\d+_(top|bottom)$/', $type, $m)) {
+            return 'warmup_' . $m[1];
+        }
+        if (preg_match('/^arm_sleeve_\d+$/', $type)) {
+            return 'arm_sleeve';
+        }
+        if (preg_match('/^uniform_set_\d+$/', $type)) {
+            return 'uniform_set';
+        }
+        if (preg_match('/^warmup_set_\d+$/', $type)) {
+            return 'warmup_set';
+        }
+        return $type;
     }
 
     /**
@@ -1224,8 +1329,14 @@ class ManufacturerExcelExportService
             return true;
         }
 
+        $baseTarget = self::normalizeBaseGarmentType($targetGarmentType);
+        $baseItemTypes = array_map(fn($t) => self::normalizeBaseGarmentType((string) $t), $itemTypes);
+        if (in_array($baseTarget, $baseItemTypes, true)) {
+            return true;
+        }
+
         if (count($itemTypes) === 1) {
-            return $this->matchSingleGarmentTypeScore($targetGarmentType, $itemTypes, $itemName) !== null;
+            return $this->matchSingleGarmentTypeScore($baseTarget, [$baseItemTypes[0]], $itemName) !== null;
         }
 
         return false;
@@ -1243,7 +1354,8 @@ class ManufacturerExcelExportService
             return null;
         }
 
-        $actualType = (string) $itemTypes[0];
+        $targetGarmentType = self::normalizeBaseGarmentType($targetGarmentType);
+        $actualType = self::normalizeBaseGarmentType((string) $itemTypes[0]);
         $nameLower = strtolower(trim($itemName));
         $nameSaysWarmup = str_contains($nameLower, 'warm-up') || str_contains($nameLower, 'warmup') || str_contains($nameLower, 'warm up');
         $nameSaysTop = str_contains($nameLower, 'top') || str_contains($nameLower, 'jacket') || str_contains($nameLower, 'hoodie') || str_contains($nameLower, 'zip') || str_contains($nameLower, 'pullover');
@@ -1377,13 +1489,15 @@ class ManufacturerExcelExportService
         // 3. If this is a multi-piece Package (e.g. "Legacy Uni Package #1") and no 1-piece Warm-up or Uniform exists,
         // fall back to a dedicated 2-piece Set in the store/collection (e.g. "Legacy Warm-up #1 (Set)")
         // so the column shows the Warm-up Set or Uniform Set image instead of the 5-piece full Package collage!
+        $baseGarmentType = self::normalizeBaseGarmentType($garmentType);
         if (empty($candidates) && $isPackage) {
             foreach ($storeItems as $si) {
                 if (strcasecmp(trim((string) $si->name), trim($parentItemName)) === 0) {
                     continue;
                 }
                 $types = is_array($si->types) ? $si->types : ($si->type ? [$si->type] : []);
-                if (count($types) === 2 && in_array($garmentType, $types, true)) {
+                $baseTypes = array_map(fn($t) => self::normalizeBaseGarmentType((string) $t), $types);
+                if (count($types) === 2 && in_array($baseGarmentType, $baseTypes, true)) {
                     $paths = !empty($si->image_paths) ? $si->image_paths : ($si->image_url ? [$si->image_url] : ($si->designCatalog?->image_paths ?? []));
                     $img = $this->pickFlatLayImage($paths);
                     if ($img) {
@@ -1402,7 +1516,8 @@ class ManufacturerExcelExportService
                     continue;
                 }
                 $types = is_array($d->types) ? $d->types : ($d->type ? [$d->type] : []);
-                if (count($types) === 2 && in_array($garmentType, $types, true)) {
+                $baseTypes = array_map(fn($t) => self::normalizeBaseGarmentType((string) $t), $types);
+                if (count($types) === 2 && in_array($baseGarmentType, $baseTypes, true)) {
                     $paths = !empty($d->image_paths) ? $d->image_paths : ($d->image_url ? [$d->image_url] : []);
                     $img = $this->pickFlatLayImage($paths);
                     if ($img) {
@@ -1457,7 +1572,7 @@ class ManufacturerExcelExportService
 
             // If the parent is a numbered Uniform Set (not a Package, e.g. "Legacy Uni #6 Set" or "Legacy Uni #1 Set"),
             // do NOT pull a single garment from a different uniform number (#1 vs #6)!
-            if (!$isPackage && $parentNum !== null && in_array($garmentType, ['uniform_top', 'uniform_bottom'], true)) {
+            if (!$isPackage && $parentNum !== null && in_array($baseGarmentType, ['uniform_top', 'uniform_bottom'], true)) {
                 if ($candNum !== $parentNum) {
                     continue;
                 }

@@ -337,4 +337,185 @@ class ManufacturerExcelGenderSafeguardsTest extends TestCase
         $this->assertContains('Club Top (Tank)', $strings);
         $this->assertContains('Club Bottom', $strings);
     }
+
+    protected function extractSheet1Rows(string $xlsxPath): array
+    {
+        $zip = new \ZipArchive();
+        $this->assertTrue($zip->open($xlsxPath) === true);
+        $sharedXml = $zip->getFromName('xl/sharedStrings.xml');
+        $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+
+        $this->assertNotFalse($sharedXml);
+        $this->assertNotFalse($sheetXml);
+
+        $sxShared = simplexml_load_string($sharedXml);
+        $shared = [];
+        foreach ($sxShared->si as $si) {
+            $shared[] = (string) $si->t;
+        }
+
+        $sxSheet = simplexml_load_string($sheetXml);
+        $rows = [];
+        foreach ($sxSheet->sheetData->row as $row) {
+            $rowValues = [];
+            foreach ($row->c as $cell) {
+                $type = (string) ($cell['t'] ?? '');
+                $val = (string) ($cell->v ?? '');
+                if ($type === 's' && $val !== '' && isset($shared[(int) $val])) {
+                    $rowValues[] = $shared[(int) $val];
+                } else {
+                    $rowValues[] = $val;
+                }
+            }
+            $rows[] = $rowValues;
+        }
+
+        return $rows;
+    }
+
+    public function test_staircase_sheet_isolates_female_and_male_columns_and_handles_numbered_uniform_slots()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $coach = User::factory()->create(['role' => 'coach']);
+        $store = TeamStore::create([
+            'user_id'          => $coach->id,
+            'name'             => 'PAP Sports Split',
+            'slug'             => 'pap-sports-split',
+            'status'           => 'approved',
+            'pricing_approved' => true,
+            'is_archived'      => false,
+            'payment_mode'     => 'check',
+        ]);
+
+        $warmupTop = DesignCatalog::create([
+            'name'            => 'PAP Warm-up Top',
+            'types'           => ['warmup_top'],
+            'wholesale_price' => 35.00,
+        ]);
+        $tankTop = DesignCatalog::create([
+            'name'            => 'PAP Uni #1 Top (Tank)',
+            'types'           => ['uniform_top'],
+            'wholesale_price' => 30.00,
+        ]);
+        $maleBottom = DesignCatalog::create([
+            'name'            => 'PAP Uni #1 Bottom',
+            'types'           => ['uniform_bottom'],
+            'wholesale_price' => 30.00,
+        ]);
+        $racerbackTop = DesignCatalog::create([
+            'name'            => 'PAP Uni #1 Top (Racerback)',
+            'types'           => ['uniform_top'],
+            'wholesale_price' => 30.00,
+        ]);
+        $femaleBottom = DesignCatalog::create([
+            'name'            => 'PAP Uni #1 Bottom (Female)',
+            'types'           => ['uniform_bottom'],
+            'wholesale_price' => 30.00,
+        ]);
+
+        $malePkg = StoreItem::create([
+            'team_store_id'        => $store->id,
+            'name'                 => 'PAP Uni Package #1 (Male)',
+            'types'                => ['uniform_top', 'uniform_bottom', 'warmup_top'],
+            'component_design_ids' => [
+                'uniform_top'    => $tankTop->id,
+                'uniform_bottom' => $maleBottom->id,
+                'warmup_top'     => $warmupTop->id,
+            ],
+            'retail_price'         => 140.00,
+        ]);
+
+        // Female package uses uniform_2_top / uniform_2_bottom slots (exact PAP Sports setup)
+        $femalePkg = StoreItem::create([
+            'team_store_id'        => $store->id,
+            'name'                 => 'PAP Package #1 Female',
+            'types'                => ['uniform_2_top', 'uniform_2_bottom', 'warmup_top'],
+            'component_design_ids' => [
+                'uniform_2_top'    => $racerbackTop->id,
+                'uniform_2_bottom' => $femaleBottom->id,
+                'warmup_top'       => $warmupTop->id,
+            ],
+            'retail_price'         => 140.00,
+        ]);
+
+        $femaleOrder = ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'athlete_first_name' => 'Maya',
+            'athlete_last_name'  => 'Sprinter',
+            'parent_email'       => 'maya2@example.com',
+            'parent_phone'       => '5550001111',
+            'gender'             => 'Womens / Girls',
+            'status'             => 'Submitted',
+            'payment_status'     => 'not_applicable',
+            'items_json'         => [[
+                'id'     => $malePkg->id,
+                'name'   => $malePkg->name,
+                'types'  => ['uniform_top', 'uniform_bottom', 'warmup_top'],
+                'qty'    => 1,
+                'gender' => 'Womens / Girls',
+                'sizes'  => ['uniform_top' => 'AS', 'uniform_bottom' => 'AS', 'warmup_top' => 'AS'],
+            ]],
+        ]);
+
+        $maleOrder = ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'athlete_first_name' => 'Marcus',
+            'athlete_last_name'  => 'Sprinter',
+            'parent_email'       => 'marcus2@example.com',
+            'parent_phone'       => '5550002222',
+            'gender'             => 'Mens / Boys',
+            'status'             => 'Submitted',
+            'payment_status'     => 'not_applicable',
+            'items_json'         => [[
+                'id'     => $malePkg->id,
+                'name'   => $malePkg->name,
+                'types'  => ['uniform_top', 'uniform_bottom', 'warmup_top'],
+                'qty'    => 1,
+                'gender' => 'Mens / Boys',
+                'sizes'  => ['uniform_top' => 'AM', 'uniform_bottom' => 'AM', 'warmup_top' => 'AM'],
+            ]],
+        ]);
+
+        // Reassign Female order from Male package (uniform_top/bottom) to Female package (uniform_2_top/bottom)
+        $this->actingAs($admin)->post(
+            route('admin.store.package.reassign-gender-orders', [$store, $malePkg]),
+            [
+                'target_package_id' => $femalePkg->id,
+                'gender_bucket'     => 'Female',
+            ]
+        )->assertRedirect(route('admin.store.edit', $store));
+
+        $femaleOrder->refresh();
+        $this->assertSame($femalePkg->id, $femaleOrder->items_json[0]['id']);
+        $this->assertArrayHasKey('uniform_2_top', $femaleOrder->items_json[0]['sizes']);
+        $this->assertArrayHasKey('uniform_2_bottom', $femaleOrder->items_json[0]['sizes']);
+        $this->assertSame('AS', $femaleOrder->items_json[0]['sizes']['uniform_2_top']);
+
+        // Generate Visual Excel and inspect each gender section's header row independently
+        $service = app(ManufacturerExcelExportService::class);
+        $xlsxPath = $service->generateXlsx(collect([$femaleOrder, $maleOrder]), $store->fresh(), 'PAP Sports Split');
+        $rows = $this->extractSheet1Rows($xlsxPath);
+        @unlink($xlsxPath);
+
+        $headerRows = array_values(array_filter($rows, fn($r) => ($r[0] ?? '') === 'Order Type'));
+        $this->assertCount(2, $headerRows, 'Expected separate Female and Male section headers.');
+
+        $femaleHeaders = $headerRows[0];
+        $maleHeaders = $headerRows[1];
+
+        // Female section must ONLY have Female + shared items (NO Male Tank or Male Bottom)
+        $this->assertContains('PAP Uni #1 Top (Racerback)', $femaleHeaders);
+        $this->assertContains('PAP Uni #1 Bottom (Female)', $femaleHeaders);
+        $this->assertContains('PAP Warm-up Top', $femaleHeaders);
+        $this->assertNotContains('PAP Uni #1 Top (Tank)', $femaleHeaders);
+        $this->assertNotContains('PAP Uni #1 Bottom', $femaleHeaders);
+
+        // Male section must ONLY have Male + shared items (NO Female Racerback or Female Bottom)
+        $this->assertContains('PAP Uni #1 Top (Tank)', $maleHeaders);
+        $this->assertContains('PAP Uni #1 Bottom', $maleHeaders);
+        $this->assertContains('PAP Warm-up Top', $maleHeaders);
+        $this->assertNotContains('PAP Uni #1 Top (Racerback)', $maleHeaders);
+        $this->assertNotContains('PAP Uni #1 Bottom (Female)', $maleHeaders);
+    }
 }

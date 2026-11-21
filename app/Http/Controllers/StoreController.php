@@ -432,6 +432,14 @@ class StoreController extends Controller
                         'athlete_name' => $fullName,
                         'parent_email' => $parentEmail,
                     ],
+                    'payment_intent_data'  => [
+                        'metadata' => [
+                            'order_id'     => $order->id,
+                            'store_id'     => $store->id,
+                            'athlete_name' => $fullName,
+                            'parent_email' => $parentEmail,
+                        ],
+                    ],
                     'success_url'          => route('store.checkout.success', ['slug' => $store->slug, 'order' => $order->id]) . '?session_id={CHECKOUT_SESSION_ID}',
                     'cancel_url'           => route('store.checkout.cancel', ['slug' => $store->slug, 'order' => $order->id]),
                 ];
@@ -544,6 +552,12 @@ class StoreController extends Controller
     public function checkoutCancel(Request $request, $slug, $orderId)
     {
         $store = TeamStore::where('slug', $slug)->firstOrFail();
+        $order = ParentOrder::where('id', $orderId)->where('team_store_id', $store->id)->first();
+
+        if ($order && !$order->isPaid() && $order->status === 'Pending Payment' && empty($order->batch_id)) {
+            $order->delete();
+        }
+
         return redirect()->route('store.show', $store->slug)
             ->with('error', 'Online payment was not completed. Your order has not been placed. You can return and complete checkout whenever you are ready.');
     }
@@ -554,6 +568,43 @@ class StoreController extends Controller
         $order = ParentOrder::where('id', $orderId)->where('team_store_id', $store->id)->firstOrFail();
 
         return view('store.receipt', compact('store', 'order'));
+    }
+
+    public function checkDuplicateEmail(Request $request, $slug)
+    {
+        $store = TeamStore::where('slug', $slug)->firstOrFail();
+        $email = strtolower(trim((string) $request->input('email', '')));
+
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return response()->json(['exists' => false, 'orders' => []]);
+        }
+
+        $matchingOrders = $store->parentOrders()
+            ->whereNull('batch_id')
+            ->where('is_archived', false)
+            ->where('status', '!=', 'Pending Payment')
+            ->whereRaw('LOWER(TRIM(parent_email)) = ?', [$email])
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function (ParentOrder $order) {
+                $itemsCount = collect(is_array($order->items_json) ? $order->items_json : [])
+                    ->sum(fn($i) => max(1, (int) ($i['qty'] ?? 1)));
+
+                return [
+                    'id'           => $order->id,
+                    'athlete_name' => $order->athlete_name,
+                    'items_count'  => $itemsCount,
+                    'is_paid'      => $order->isPaid(),
+                    'has_pin'      => !empty($order->edit_pin),
+                    'created_at'   => $order->created_at ? $order->created_at->format('M d, Y') : '',
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'exists' => $matchingOrders->isNotEmpty(),
+            'orders' => $matchingOrders,
+        ]);
     }
 
     public function verifyOrderPin(Request $request, $slug, $orderId)

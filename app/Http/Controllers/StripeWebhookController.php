@@ -43,8 +43,14 @@ class StripeWebhookController extends Controller
 
         switch ($eventType) {
             case 'checkout.session.completed':
+            case 'checkout.session.async_payment_succeeded':
                 $session = is_object($event) ? $event->data->object : (object) $event['data']['object'];
                 $this->handleCheckoutSessionCompleted($session);
+                break;
+
+            case 'payment_intent.succeeded':
+                $paymentIntent = is_object($event) ? $event->data->object : (object) $event['data']['object'];
+                $this->handlePaymentIntentSucceeded($paymentIntent);
                 break;
 
             case 'payment_intent.payment_failed':
@@ -206,9 +212,14 @@ class StripeWebhookController extends Controller
             return;
         }
 
+        $newStatus = $order->status;
+        if (in_array($order->status, ['Pending Payment', 'Payment Failed', 'Draft', null, ''], true)) {
+            $newStatus = !empty($order->batch_id) ? 'Submitted to Admin' : 'Submitted';
+        }
+
         $order->update([
             'payment_status'          => 'paid',
-            'status'                  => 'Submitted',
+            'status'                  => $newStatus,
             'stripe_payment_intent_id'=> $paymentIntentId ?? $order->stripe_payment_intent_id,
             'total_paid'              => $sessionAmountPaid,
             'submitted_at'            => $order->submitted_at ?? now(),
@@ -243,6 +254,43 @@ class StripeWebhookController extends Controller
         }
 
         Log::info("Order #{$order->id} marked as paid successfully via Stripe webhook.");
+    }
+
+    protected function handlePaymentIntentSucceeded($paymentIntent)
+    {
+        $paymentIntentId = $paymentIntent->id ?? null;
+        $orderId = $paymentIntent->metadata->order_id ?? null;
+
+        $order = null;
+        if ($orderId) {
+            $order = ParentOrder::find($orderId);
+        }
+        if (!$order && $paymentIntentId) {
+            $order = ParentOrder::where('stripe_payment_intent_id', $paymentIntentId)->first();
+        }
+
+        if (!$order) {
+            return;
+        }
+
+        $amountPaid = isset($paymentIntent->amount_received) && $paymentIntent->amount_received > 0
+            ? round($paymentIntent->amount_received / 100, 2)
+            : (isset($paymentIntent->amount) && $paymentIntent->amount > 0 ? round($paymentIntent->amount / 100, 2) : null);
+
+        if ($order->isPaid()) {
+            if ((float) $order->getRawOriginal('total_paid') <= 0 && (float) $order->deposit_credit_applied <= 0 && $amountPaid > 0) {
+                $order->update(['total_paid' => $amountPaid]);
+            }
+            return;
+        }
+
+        app(\App\Services\StripePaymentSyncService::class)->markOrderPaid(
+            $order,
+            $amountPaid,
+            $paymentIntentId
+        );
+
+        Log::info("Order #{$order->id} marked as paid via payment_intent.succeeded fallback.");
     }
 
     protected function handlePaymentFailed($paymentIntent)
