@@ -459,6 +459,10 @@ Route::middleware(['auth', AdminOrSalesRepMiddleware::class])->group(function ()
     Route::get('/admin/batch/{batch_id}/export-aggregate', [AdminController::class, 'exportBatchAggregationCSV'])->name('admin.batch.export-aggregate');
     Route::get('/admin/batch/{batch_id}/export-manufacturer', [AdminController::class, 'exportBatchManufacturerXlsx'])->name('admin.batch.export-manufacturer');
     Route::post('/admin/batch/{batch_id}/status', [AdminController::class, 'updateBatchStatus'])->name('admin.batch.status.update');
+
+    // Order editing (Authorized reps can edit orders belonging to their assigned coaches/stores)
+    Route::get('/admin/order/{order}/edit', [AdminController::class, 'editOrder'])->name('admin.order.edit');
+    Route::post('/admin/order/{order}/update', [AdminController::class, 'updateOrder'])->name('admin.order.update');
 });
 
 // ─── Super Admin Exclusive Controls ──────────────────────────────────────────
@@ -479,9 +483,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     Route::delete('/admin/archived-orders/{batch_id}', [AdminController::class, 'deleteArchivedOrderBatch'])->name('admin.archived-orders.delete');
     Route::post('/admin/stores/bulk-payment-mode', [AdminController::class, 'bulkUpdateStorePaymentMode'])->name('admin.stores.bulk-payment-mode');
 
-    // Order editing
-    Route::get('/admin/order/{order}/edit', [AdminController::class, 'editOrder'])->name('admin.order.edit');
-    Route::post('/admin/order/{order}/update', [AdminController::class, 'updateOrder'])->name('admin.order.update');
+    // Order deletion (Super Admin only)
     Route::delete('/admin/order/{order}/delete', [AdminController::class, 'deleteOrder'])->name('admin.order.delete');
 
     // Landing Page Collections

@@ -3,21 +3,30 @@
 @section('content')
 <div class="max-w-3xl mx-auto px-6 pb-8 pt-32 lg:pt-40">
     @php
+        $isRep = auth()->check() && auth()->user()->isSalesRep() && !auth()->user()->isAdmin();
         $returnUrl = request('return_to');
         if (!$returnUrl) {
             $referer = request()->headers->get('referer');
-            if ($referer && str_contains($referer, 'sales-rep')) {
+            if ($referer && (str_contains($referer, 'sales-rep') || str_contains($referer, 'rep/dashboard'))) {
                 $returnUrl = $referer;
             }
         }
-        $cancelUrl = $returnUrl ?: (!$order->isDirectOrder() && $order->teamStore ? route('admin.store.edit', $order->teamStore) : ($order->batch_id ? route('admin.direct-batch.show', $order->batch_id) : route('admin.dashboard', ['tab' => 'orders'])));
+        $fallbackDashboard = $isRep ? route('rep.dashboard') : route('admin.dashboard', ['tab' => 'orders']);
+        $cancelUrl = $returnUrl ?: (!$order->isDirectOrder() && $order->teamStore ? route('admin.store.edit', $order->teamStore) : ($order->batch_id ? route('admin.direct-batch.show', $order->batch_id) : $fallbackDashboard));
         $backLabel = ($returnUrl && str_contains($returnUrl, 'sales-rep')) ? 'Back to Sales Partner' : (!$order->isDirectOrder() && $order->teamStore ? 'Back to Store' : 'Back to Batch');
     @endphp
     <div class="mb-4">
-        <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
-            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-            <span>Admin Control Center</span>
-        </a>
+        @if($isRep)
+            <a href="{{ route('rep.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>Sales Partner Portal</span>
+            </a>
+        @else
+            <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:shadow cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>Admin Control Center</span>
+            </a>
+        @endif
     </div>
 
     <div class="flex items-center gap-4 mb-8">
@@ -58,6 +67,9 @@
         <div class="p-6">
             <form action="{{ route('admin.order.update', $order) }}" method="POST" class="space-y-6">
                 @csrf
+                @if($returnUrl)
+                    <input type="hidden" name="return_to" value="{{ $returnUrl }}">
+                @endif
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-5 border-b border-slate-200 pb-6 mb-6">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">First Name</label>
@@ -167,6 +179,7 @@
                 </div>
             </form>
 
+            @if(auth()->check() && auth()->user()->isAdmin())
             <!-- Super Admin Financials, Tariffs & Rep Commission Controls -->
             <div class="mt-10 pt-8 border-t-2 border-slate-200">
                 <div class="flex items-center justify-between mb-4">
@@ -295,6 +308,7 @@
                     </button>
                 </form>
             </div>
+            @endif
         </div>
     </div>
 </div>

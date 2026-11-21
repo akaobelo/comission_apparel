@@ -510,5 +510,109 @@ class SalesRepPlatformTest extends TestCase
         // Active Qualifying Sales must show $980.00
         $viewResponse->assertSee('$980.00');
     }
+
+    /**
+     * Test sales rep can edit and update orders belonging to their assigned coaches/stores,
+     * cannot edit orders belonging to other reps, and does not see admin-only controls.
+     */
+    public function test_sales_rep_can_edit_and_update_assigned_orders_without_login_redirect()
+    {
+        $rep = User::factory()->create(['role' => 'sales_rep', 'status' => 'active']);
+        $otherRep = User::factory()->create(['role' => 'sales_rep', 'status' => 'active']);
+
+        $coach = User::factory()->create([
+            'role'         => 'coach',
+            'status'       => 'active',
+            'sales_rep_id' => $rep->id,
+        ]);
+
+        $otherCoach = User::factory()->create([
+            'role'         => 'coach',
+            'status'       => 'active',
+            'sales_rep_id' => $otherRep->id,
+        ]);
+
+        $store = TeamStore::create([
+            'user_id'      => $coach->id,
+            'sales_rep_id' => $rep->id,
+            'name'         => 'Rep Assigned Store',
+            'slug'         => 'rep-assigned-store',
+            'status'       => 'approved',
+        ]);
+
+        $assignedOrder = ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'user_id'            => $coach->id,
+            'sales_rep_id'       => $rep->id,
+            'athlete_first_name' => 'Jordan',
+            'athlete_last_name'  => 'Brooks',
+            'gender'             => 'Mens / Boys',
+            'status'             => 'Processing',
+            'order_type'         => 'master',
+            'items_json'         => [
+                [
+                    'id'     => 1,
+                    'name'   => 'Singlet',
+                    'types'  => ['singlet'],
+                    'sizes'  => ['singlet' => 'M'],
+                    'qty'    => 1,
+                    'gender' => 'Mens / Boys',
+                ],
+            ],
+        ]);
+
+        $unassignedOrder = ParentOrder::create([
+            'user_id'            => $otherCoach->id,
+            'sales_rep_id'       => $otherRep->id,
+            'athlete_first_name' => 'Other',
+            'athlete_last_name'  => 'Athlete',
+            'status'             => 'Processing',
+            'order_type'         => 'direct',
+            'items_json'         => [],
+        ]);
+
+        // Sales rep can open edit page for their assigned order (not redirected to /login)
+        $editResponse = $this->actingAs($rep)->get(route('admin.order.edit', $assignedOrder));
+        $editResponse->assertOk();
+        $editResponse->assertSee('Order Editor');
+        $editResponse->assertSee('Sales Partner Portal');
+        $editResponse->assertDontSee('Update Financials & Tariffs');
+        $editResponse->assertDontSee('Delete Order');
+
+        // Sales rep can save updates to their assigned order
+        $updateResponse = $this->actingAs($rep)->post(route('admin.order.update', $assignedOrder), [
+            'athlete_first_name' => 'Jordan',
+            'athlete_last_name'  => 'Brooks-Updated',
+            'gender'             => 'Mens / Boys',
+            'jersey_number'      => '24',
+            'items'              => [
+                [
+                    'id'     => 1,
+                    'name'   => 'Singlet',
+                    'types'  => ['singlet'],
+                    'sizes'  => ['singlet' => 'L'],
+                    'qty'    => 1,
+                    'gender' => 'Mens / Boys',
+                ],
+            ],
+        ]);
+        $updateResponse->assertRedirect(route('admin.order.edit', $assignedOrder));
+
+        $assignedOrder->refresh();
+        $this->assertEquals('Brooks-Updated', $assignedOrder->athlete_last_name);
+        $this->assertEquals('24', $assignedOrder->jersey_number);
+        $this->assertEquals('sales_rep', $assignedOrder->edited_by);
+        $this->assertEquals('L', $assignedOrder->items_json[0]['sizes']['singlet']);
+
+        // Sales rep is blocked (403) from editing orders not belonging to them
+        $this->actingAs($rep)
+            ->get(route('admin.order.edit', $unassignedOrder))
+            ->assertForbidden();
+
+        // Sales rep still cannot delete orders (Super Admin only)
+        $this->actingAs($rep)
+            ->delete(route('admin.order.delete', $assignedOrder))
+            ->assertRedirect('/login');
+    }
 }
 

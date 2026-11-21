@@ -481,8 +481,8 @@ class AdminController extends Controller
     protected function authorizeCoachAccess(User $user): void
     {
         if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
-            $repId = \Illuminate\Support\Facades\Auth::id();
-            if ($user->sales_rep_id !== $repId) {
+            $repId = (int) \Illuminate\Support\Facades\Auth::id();
+            if ((int) $user->sales_rep_id !== $repId) {
                 abort(403, 'Unauthorized. This coach is not assigned to your account.');
             }
         }
@@ -495,11 +495,31 @@ class AdminController extends Controller
     protected function authorizeStoreAccess(TeamStore $store): void
     {
         if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
-            $repId = \Illuminate\Support\Facades\Auth::id();
+            $repId = (int) \Illuminate\Support\Facades\Auth::id();
             $coach = $store->user;
-            $isAssigned = ($store->sales_rep_id === $repId) || ($coach && $coach->sales_rep_id === $repId);
+            $isAssigned = ((int) $store->sales_rep_id === $repId) || ($coach && (int) $coach->sales_rep_id === $repId);
             if (!$isAssigned) {
                 abort(403, 'Unauthorized. This store is not associated with your coaches.');
+            }
+        }
+    }
+
+    /**
+     * Authorize that the current authenticated user has permission to manage the given order.
+     * Super admins have full access; sales partners / reps can only access orders associated with their account, stores, or coaches.
+     */
+    protected function authorizeOrderAccess(ParentOrder $order): void
+    {
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            $repId = (int) \Illuminate\Support\Facades\Auth::id();
+            $order->loadMissing(['teamStore.user', 'user']);
+            $store = $order->teamStore;
+            $coach = $order->user ?: $store?->user;
+            $isAssigned = ((int) $order->sales_rep_id === $repId)
+                || ($store && (int) $store->sales_rep_id === $repId)
+                || ($coach && (int) $coach->sales_rep_id === $repId);
+            if (!$isAssigned) {
+                abort(403, 'Unauthorized. This order is not associated with your account.');
             }
         }
     }
@@ -2846,6 +2866,7 @@ class AdminController extends Controller
 
     public function editOrder(ParentOrder $order)
     {
+        $this->authorizeOrderAccess($order);
         $order->load(['teamStore.user', 'salesRep']);
         $sizeChart = DesignCatalog::sizeChart();
         $salesReps = User::whereIn('role', ['sales_rep', 'partner', 'agent'])->get();
@@ -2854,6 +2875,7 @@ class AdminController extends Controller
 
     public function updateOrder(Request $request, ParentOrder $order)
     {
+        $this->authorizeOrderAccess($order);
         $request->validate([
             'athlete_first_name'  => ['required', 'string', 'max:255'],
             'athlete_last_name'   => ['required', 'string', 'max:255'],
@@ -2883,6 +2905,7 @@ class AdminController extends Controller
             $itemsJson[] = $entry;
         }
 
+        $isRep = \Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin();
         $updateData = [
             'athlete_first_name'  => $request->athlete_first_name,
             'athlete_last_name'   => $request->athlete_last_name,
@@ -2894,7 +2917,7 @@ class AdminController extends Controller
             'special_notes'       => $request->special_notes,
             'items_json'          => $itemsJson,
             'is_edited'           => true,
-            'edited_by'           => 'admin',
+            'edited_by'           => $isRep ? 'sales_rep' : 'admin',
         ];
 
         if ($order->team_store_id && !$order->isPaid()) {
@@ -2929,7 +2952,12 @@ class AdminController extends Controller
 
         $order->update($updateData);
 
-        return redirect()->route('admin.order.edit', $order)
+        $redirectParams = ['order' => $order];
+        if ($request->filled('return_to')) {
+            $redirectParams['return_to'] = $request->input('return_to');
+        }
+
+        return redirect()->route('admin.order.edit', $redirectParams)
             ->with('success', 'Order updated successfully.');
     }
 

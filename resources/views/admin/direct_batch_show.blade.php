@@ -159,7 +159,7 @@
                                 </div>
 
                                 <div class="flex-shrink-0 pt-1">
-                                    <a href="{{ route('admin.order.edit', $order) }}" class="btn btn-outline py-2 px-4 text-xs">Edit</a>
+                                    <a href="{{ route('admin.order.edit', ['order' => $order, 'return_to' => request()->fullUrl()]) }}" class="btn btn-outline py-2 px-4 text-xs">Edit</a>
                                 </div>
                             </div>
                         </div>
@@ -188,7 +188,7 @@
                     <div class="flex justify-between text-sm items-center">
                         <span class="text-slate-500">Profile / Store</span>
                         <div class="text-right">
-                            @if(isset($coachStores) && $coachStores->isNotEmpty())
+                            @if(!$isRep && isset($coachStores) && $coachStores->isNotEmpty())
                                 <form action="{{ route('admin.direct-batch.store.update', $batchId) }}" method="POST">
                                     @csrf
                                     <select name="team_store_id" onchange="if(confirm('Reassign this batch to ' + this.options[this.selectedIndex].text + '?')) { this.form.submit(); } else { this.value = '{{ $store?->id }}'; }" class="text-xs font-bold text-slate-800 bg-slate-50 border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-primary max-w-[210px] truncate shadow-sm">
@@ -249,6 +249,7 @@
                     </div>
                 </div>
 
+                @if(auth()->check() && auth()->user()->isAdmin())
                 <!-- Batch Tariffs & Partner Commission Allocation -->
                 <div class="mt-6 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                     <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
@@ -370,6 +371,7 @@
                         </button>
                     </form>
                 </div>
+                @endif
             </div>
         </div>
     </div>
