@@ -126,6 +126,8 @@ class AdminController extends Controller
             ->withQueryString();
 
         $finalizedStoreBatches = ParentOrder::whereIn('batch_id', $finalizedStoreBatchIds->pluck('batch_id'))
+            ->where('is_archived', false)
+            ->where('status', '!=', 'Pending Payment')
             ->with(['user', 'teamStore', 'teamStore.items'])
             ->get()
             ->groupBy('batch_id');
@@ -215,6 +217,8 @@ class AdminController extends Controller
             ->withQueryString();
 
         $finalizedDirectOrderBatches = ParentOrder::whereIn('batch_id', $finalizedDirectBatchIds->pluck('batch_id'))
+            ->where('is_archived', false)
+            ->where('status', '!=', 'Pending Payment')
             ->with(['user', 'teamStore'])
             ->get()
             ->groupBy('batch_id');
@@ -280,6 +284,7 @@ class AdminController extends Controller
         $archivedBatchIds = $archivedBatchQuery->orderByDesc('latest_archive_date')->paginate(10, ['*'], 'archive_batch_page')->withQueryString();
 
         $archivedOrderBatches = ParentOrder::whereIn('batch_id', $archivedBatchIds->pluck('batch_id'))
+            ->where('is_archived', true)
             ->with(['user', 'teamStore'])
             ->latest('updated_at')
             ->get()
@@ -2760,8 +2765,19 @@ class AdminController extends Controller
     public function showDirectBatch($batchId)
     {
         $orders = ParentOrder::where('batch_id', $batchId)
+            ->where('is_archived', false)
+            ->where('status', '!=', 'Pending Payment')
             ->with(['user', 'teamStore'])
             ->get();
+
+        $viewingArchivedBatch = false;
+        if ($orders->isEmpty()) {
+            $orders = ParentOrder::where('batch_id', $batchId)
+                ->where('is_archived', true)
+                ->with(['user', 'teamStore'])
+                ->get();
+            $viewingArchivedBatch = true;
+        }
 
         if ($orders->isEmpty()) {
             $dest = \Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSalesRep() && !\Illuminate\Support\Facades\Auth::user()->isAdmin() ? 'rep.dashboard' : 'admin.dashboard';
@@ -2802,7 +2818,11 @@ class AdminController extends Controller
                             $ord->save();
                         }
                     }
-                    $orders = ParentOrder::where('batch_id', $batchId)->with(['user', 'teamStore'])->get();
+                    $orders = ParentOrder::where('batch_id', $batchId)
+                        ->where('is_archived', $viewingArchivedBatch)
+                        ->when(!$viewingArchivedBatch, fn($q) => $q->where('status', '!=', 'Pending Payment'))
+                        ->with(['user', 'teamStore'])
+                        ->get();
                     $firstOrder = $orders->first();
                     $financials = \App\Models\ParentOrder::calculateBatchFinancials($orders, $store);
                 }
@@ -3175,7 +3195,19 @@ class AdminController extends Controller
 
     public function exportBatchCSV(Request $request, $batchId)
     {
-        $orders = ParentOrder::with(['teamStore.items'])->where('batch_id', $batchId)->get();
+        $orders = ParentOrder::with(['teamStore.items'])
+            ->where('batch_id', $batchId)
+            ->where('is_archived', false)
+            ->where('status', '!=', 'Pending Payment')
+            ->get();
+
+        if ($orders->isEmpty()) {
+            $orders = ParentOrder::with(['teamStore.items'])
+                ->where('batch_id', $batchId)
+                ->where('is_archived', true)
+                ->where('status', '!=', 'Pending Payment')
+                ->get();
+        }
 
         if ($orders->isEmpty()) abort(404);
 
@@ -3276,7 +3308,19 @@ class AdminController extends Controller
             if (!$hasAccess) abort(403, 'Unauthorized batch.');
         }
 
-        $orders = ParentOrder::with(['teamStore.items'])->where('batch_id', $batchId)->get();
+        $orders = ParentOrder::with(['teamStore.items'])
+            ->where('batch_id', $batchId)
+            ->where('is_archived', false)
+            ->where('status', '!=', 'Pending Payment')
+            ->get();
+
+        if ($orders->isEmpty()) {
+            $orders = ParentOrder::with(['teamStore.items'])
+                ->where('batch_id', $batchId)
+                ->where('is_archived', true)
+                ->where('status', '!=', 'Pending Payment')
+                ->get();
+        }
 
         if ($orders->isEmpty()) abort(404);
 
@@ -3391,14 +3435,28 @@ class AdminController extends Controller
 
     public function exportBatchManufacturerXlsx(Request $request, $batchId, \App\Services\ManufacturerExcelExportService $excelService)
     {
-        $orders = ParentOrder::with([
+        $batchRelations = [
             'teamStore.items' => function ($q) {
                 $q->orderBy('sort_order', 'asc')->orderBy('id', 'asc');
             },
             'teamStore.items.designCatalog',
             'teamStore.items.components.designCatalog',
             'user'
-        ])->where('batch_id', $batchId)->get();
+        ];
+
+        $orders = ParentOrder::with($batchRelations)
+            ->where('batch_id', $batchId)
+            ->where('is_archived', false)
+            ->where('status', '!=', 'Pending Payment')
+            ->get();
+
+        if ($orders->isEmpty()) {
+            $orders = ParentOrder::with($batchRelations)
+                ->where('batch_id', $batchId)
+                ->where('is_archived', true)
+                ->where('status', '!=', 'Pending Payment')
+                ->get();
+        }
 
         if ($orders->isEmpty()) {
             abort(404);

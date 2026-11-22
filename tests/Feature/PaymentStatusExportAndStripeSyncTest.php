@@ -341,4 +341,104 @@ class PaymentStatusExportAndStripeSyncTest extends TestCase
             'email' => 'newparent@example.com',
         ])->assertOk()->assertJson(['exists' => false, 'orders' => []]);
     }
+
+    public function test_batch_exports_and_dashboard_exclude_archived_unpaid_orders_in_active_batch(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $coach = User::factory()->create(['role' => 'coach']);
+
+        $store = TeamStore::create([
+            'user_id'          => $coach->id,
+            'name'             => 'KJ Speed Archived Filter Test',
+            'slug'             => 'kj-speed-archived-filter',
+            'status'           => 'approved',
+            'pricing_approved' => true,
+            'payment_mode'     => 'online',
+        ]);
+
+        $item = StoreItem::create([
+            'team_store_id'   => $store->id,
+            'name'            => 'KJ Uni set (Tank)',
+            'wholesale_price' => 70.00,
+            'retail_price'    => 70.00,
+            'types'           => ['uniform_top', 'uniform_bottom'],
+        ]);
+
+        $batchId = 'batch-kj-archived-test-001';
+
+        ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'batch_id'           => $batchId,
+            'athlete_first_name' => 'Paid',
+            'athlete_last_name'  => 'Athlete',
+            'parent_email'       => 'paid@example.com',
+            'gender'             => 'Female',
+            'items_json'         => [[
+                'id'         => $item->id,
+                'name'       => 'KJ Uni set (Tank)',
+                'types'      => ['uniform_top', 'uniform_bottom'],
+                'sizes'      => ['uniform_top' => 'WM', 'uniform_bottom' => 'WM'],
+                'qty'        => 1,
+                'unit_price' => 70.00,
+            ]],
+            'status'             => 'Submitted to Admin',
+            'payment_status'     => 'paid',
+            'subtotal'           => 70.00,
+            'total_paid'         => 77.70,
+            'is_archived'        => false,
+        ]);
+
+        ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'batch_id'           => $batchId,
+            'athlete_first_name' => 'ArchivedUnpaid',
+            'athlete_last_name'  => 'Ghost',
+            'parent_email'       => 'ghost@example.com',
+            'gender'             => 'Female',
+            'items_json'         => [[
+                'id'         => $item->id,
+                'name'       => 'KJ Uni set (Tank)',
+                'types'      => ['uniform_top', 'uniform_bottom'],
+                'sizes'      => ['uniform_top' => 'WL', 'uniform_bottom' => 'WL'],
+                'qty'        => 1,
+                'unit_price' => 70.00,
+            ]],
+            'status'             => 'Submitted to Admin',
+            'payment_status'     => 'pending',
+            'subtotal'           => 70.00,
+            'total_paid'         => 0.00,
+            'is_archived'        => true,
+        ]);
+
+        // 1. Batch Roster CSV excludes archived unpaid order
+        $csvResponse = $this->actingAs($admin)->get(route('admin.batch.export', $batchId));
+        $csvResponse->assertOk();
+        $csv = $csvResponse->streamedContent();
+        $this->assertStringContainsString('Paid', $csv);
+        $this->assertStringNotContainsString('ArchivedUnpaid', $csv);
+
+        // 2. Batch Aggregate CSV excludes archived unpaid order (only qty 1 for WM, no WL)
+        $aggResponse = $this->actingAs($admin)->get(route('admin.batch.export-aggregate', $batchId));
+        $aggResponse->assertOk();
+        $aggCsv = $aggResponse->streamedContent();
+        $this->assertStringContainsString('WM', $aggCsv);
+        $this->assertStringNotContainsString('WL', $aggCsv);
+
+        // 3. Batch Visual Excel (.xlsx) excludes archived unpaid order
+        $xlsxResponse = $this->actingAs($admin)->get(route('admin.batch.export-manufacturer', $batchId));
+        $xlsxResponse->assertOk();
+        $file = $xlsxResponse->getFile();
+
+        $zip = new \ZipArchive();
+        $this->assertTrue($zip->open($file->getPathname()) === true);
+        $sharedStringsXml = $zip->getFromName('xl/sharedStrings.xml');
+        $zip->close();
+
+        $this->assertNotFalse($sharedStringsXml);
+        $this->assertStringContainsString('>Paid<', $sharedStringsXml);
+        $this->assertStringContainsString('>Athlete<', $sharedStringsXml);
+        $this->assertStringNotContainsString('ArchivedUnpaid', $sharedStringsXml);
+        $this->assertStringNotContainsString('Ghost', $sharedStringsXml);
+        $this->assertStringNotContainsString('>WL<', $sharedStringsXml);
+    }
 }

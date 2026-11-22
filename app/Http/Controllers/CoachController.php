@@ -1935,12 +1935,17 @@ class CoachController extends Controller
     {
         $user = $request->user();
         $storeIds = $user->teamStores()->pluck('id');
-        $orders = \App\Models\ParentOrder::where('batch_id', $batchId)
+        $baseQuery = fn() => \App\Models\ParentOrder::where('batch_id', $batchId)
+            ->where('status', '!=', 'Pending Payment')
             ->where(function ($q) use ($user, $storeIds) {
                 $q->where('user_id', $user->id)
                   ->orWhereIn('team_store_id', $storeIds);
-            })
-            ->get();
+            });
+
+        $orders = $baseQuery()->where('is_archived', false)->get();
+        if ($orders->isEmpty()) {
+            $orders = $baseQuery()->where('is_archived', true)->get();
+        }
 
         if ($orders->isEmpty()) abort(404);
 
@@ -2023,7 +2028,7 @@ class CoachController extends Controller
     {
         $user = $request->user();
         $storeIds = $user->teamStores()->pluck('id');
-        $orders = \App\Models\ParentOrder::with([
+        $baseQuery = fn() => \App\Models\ParentOrder::with([
             'teamStore.items' => function ($q) {
                 $q->orderBy('sort_order', 'asc')->orderBy('id', 'asc');
             },
@@ -2032,11 +2037,16 @@ class CoachController extends Controller
             'user',
         ])
             ->where('batch_id', $batchId)
+            ->where('status', '!=', 'Pending Payment')
             ->where(function ($q) use ($user, $storeIds) {
                 $q->where('user_id', $user->id)
                   ->orWhereIn('team_store_id', $storeIds);
-            })
-            ->get();
+            });
+
+        $orders = $baseQuery()->where('is_archived', false)->get();
+        if ($orders->isEmpty()) {
+            $orders = $baseQuery()->where('is_archived', true)->get();
+        }
 
         if ($orders->isEmpty()) abort(404);
 
