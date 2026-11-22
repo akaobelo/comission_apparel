@@ -3173,20 +3173,24 @@ class AdminController extends Controller
 
         $unbatchedOrders->update($updateData);
 
-        $availableDeposit = $store->getAvailableDepositFor('store');
-        if ($availableDeposit > 0) {
-            $firstBatchedOrder = $store->parentOrders()->where('batch_id', $batchId)->first();
-            if ($firstBatchedOrder) {
-                $firstBatchedOrder->update(['deposit_credit_applied' => $availableDeposit]);
-            }
-            if ($store->user) {
-                $store->user->markDepositApplied($batchId, $store);
-            } else {
-                $store->update([
-                    'deposit_applied'          => true,
-                    'deposit_applied_at'       => now(),
-                    'deposit_applied_batch_id' => $batchId,
-                ]);
+        // Never consume a coach's upfront deposit on parent-paid Online (Stripe) stores:
+        // parents pay individually at checkout, so the coach's deposit stays available for their Direct Order.
+        if (!$store->isOnlinePayment()) {
+            $availableDeposit = $store->getAvailableDepositFor('store');
+            if ($availableDeposit > 0) {
+                $firstBatchedOrder = $store->parentOrders()->where('batch_id', $batchId)->first();
+                if ($firstBatchedOrder) {
+                    $firstBatchedOrder->update(['deposit_credit_applied' => $availableDeposit]);
+                }
+                if ($store->user) {
+                    $store->user->markDepositApplied($batchId, $store);
+                } else {
+                    $store->update([
+                        'deposit_applied'          => true,
+                        'deposit_applied_at'       => now(),
+                        'deposit_applied_batch_id' => $batchId,
+                    ]);
+                }
             }
         }
 

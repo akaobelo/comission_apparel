@@ -439,14 +439,8 @@ class CoachController extends Controller
                 'submitted_at' => $now,
             ]);
 
-            $availableDeposit = $store->getAvailableDepositFor('store');
-            if ($availableDeposit > 0) {
-                $firstBatchedOrder = $store->parentOrders()->where('batch_id', $batchId)->first();
-                if ($firstBatchedOrder) {
-                    $firstBatchedOrder->update(['deposit_credit_applied' => $availableDeposit]);
-                }
-                $request->user()->markDepositApplied($batchId, $store);
-            }
+            // Do NOT consume the coach's upfront deposit on parent-paid Online (Stripe) stores:
+            // parents already paid full price individually, so the deposit stays available for the coach's Direct Order.
 
             $store->update([
                 'status'           => 'submitted_to_admin',
