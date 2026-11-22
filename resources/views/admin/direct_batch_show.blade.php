@@ -287,7 +287,7 @@
                             <input type="hidden" name="return_to" value="{{ $returnUrl }}">
                         @endif
                         <div>
-                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Total Manufacturing Cost ($)</label>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Factory Production Cost ($)</label>
                             <div class="relative rounded-lg shadow-sm">
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <span class="text-slate-500 font-bold text-xs font-sans">$</span>

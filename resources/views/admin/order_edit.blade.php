@@ -199,14 +199,14 @@
                     @csrf
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
-                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Manufacturing Base ($)</label>
+                            <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Factory Production Cost ($)</label>
                             <div class="relative rounded-lg shadow-sm">
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <span class="text-slate-500 font-bold text-xs font-sans">$</span>
                                 </div>
                                 <input type="number" step="0.01" min="0" name="manufacturing_cost" value="{{ old('manufacturing_cost', $order->manufacturing_cost) }}" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-sans font-bold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
-                            <span class="text-[10px] text-slate-400">Wholesale cost</span>
+                            <span class="text-[10px] text-slate-400">Actual factory cost</span>
                         </div>
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-600 mb-1">Tariff Amount ($)</label>
