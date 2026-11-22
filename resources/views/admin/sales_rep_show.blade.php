@@ -1264,6 +1264,15 @@
                                         </span>
                                     </div>
                                 </th>
+                                <th class="px-6 py-3.5 text-center cursor-pointer select-none group hover:bg-slate-200/70 hover:text-slate-900 transition-colors" @click="sortBatchTable('status')" title="Sort by Payout Status">
+                                    <div class="inline-flex items-center justify-center gap-1.5">
+                                        <span>Status</span>
+                                        <span class="text-[10px]" :class="batchSortCol === 'status' ? 'text-primary font-black' : 'text-slate-300 group-hover:text-slate-500'">
+                                            <span x-show="batchSortCol === 'status'" x-text="batchSortAsc ? '▲' : '▼'"></span>
+                                            <span x-show="batchSortCol !== 'status'">⇅</span>
+                                        </span>
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="admin-batch-table-body" class="divide-y divide-slate-100">
@@ -1275,10 +1284,11 @@
                                     data-name="{{ strtolower($batch->store_name) }}"
                                     data-coach="{{ strtolower($batch->coach_name . ' ' . $batch->organization) }}"
                                     data-orders="{{ $batch->order_count }}"
-                                    data-type="{{ strtolower($batch->is_direct ? 'finalized direct orders' : 'finalized master orders') }}"
+                                    data-type="{{ strtolower($batch->order_type) }}"
                                     data-payment="{{ strtolower($batch->payment_method) }}"
                                     data-commission="{{ (float)$batch->commission }}"
-                                    x-show="!financialSearch || '{{ strtolower(addslashes($batch->store_name . ' ' . $batch->coach_name . ' ' . $batch->organization . ' ' . $batch->payment_method . ' ' . ($batch->is_direct ? 'direct' : 'master') . ' ' . $batch->slug . ' ' . $batch->batch_id)) }}'.includes(financialSearch.toLowerCase().trim())"
+                                    data-status="{{ strtolower($batch->status) }}"
+                                    x-show="!financialSearch || '{{ strtolower(addslashes($batch->store_name . ' ' . $batch->coach_name . ' ' . $batch->organization . ' ' . $batch->payment_method . ' ' . $batch->order_type . ' ' . $batch->status . ' ' . $batch->slug . ' ' . $batch->batch_id)) }}'.includes(financialSearch.toLowerCase().trim())"
                                 >
                                     {{-- Sort # --}}
                                     <td class="px-4 py-4 text-center">
@@ -1319,11 +1329,15 @@
                                     <td class="px-6 py-4">
                                         @if($batch->is_direct)
                                             <span class="inline-flex items-center px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md bg-purple-50 text-purple-700 border border-purple-200 shadow-2xs">
-                                                FINALIZED DIRECT ORDERS
+                                                {{ $batch->order_type }}
                                             </span>
-                                        @else
+                                        @elseif(!empty($batch->is_submitted))
                                             <span class="inline-flex items-center px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
                                                 FINALIZED MASTER ORDERS
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs">
+                                                OPEN STORE (ONGOING)
                                             </span>
                                         @endif
                                     </td>
@@ -1354,10 +1368,18 @@
                                             Gross: ${{ number_format($batch->gross, 2) }}
                                         </div>
                                     </td>
+
+                                    {{-- Payout Status --}}
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full border
+                                            {{ $batch->status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($batch->status === 'cleared' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200') }}">
+                                            {{ $batch->status }}
+                                        </span>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-12 text-center text-slate-500 font-sans">
+                                    <td colspan="8" class="px-6 py-12 text-center text-slate-500 font-sans">
                                         No order batches recorded for this sales partner yet.
                                     </td>
                                 </tr>

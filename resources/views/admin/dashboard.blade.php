@@ -679,6 +679,18 @@
                         </div>
                     </div>
                     <div x-show="expanded" x-collapse>
+                        <form method="GET" action="{{ route('admin.dashboard') }}"
+                              hx-get="{{ route('admin.dashboard') }}"
+                              hx-target="#finalized-master-orders-results"
+                              hx-select="#finalized-master-orders-results"
+                              hx-swap="outerHTML"
+                              hx-trigger="input from:input[name='finalized_master_search'] delay:300ms, submit"
+                              class="px-4 py-2.5 bg-slate-50/70 border-b border-slate-200 flex items-center gap-2">
+                            <input type="text" name="finalized_master_search" value="{{ request('finalized_master_search') }}" placeholder="Search store, coach, org, status, or batch..." class="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                            @if(request('finalized_master_search'))
+                                <a href="{{ route('admin.dashboard') }}" class="text-xs font-bold text-slate-500 hover:text-slate-800 px-2">Clear</a>
+                            @endif
+                        </form>
                         <div class="h-[380px] flex flex-col bg-white">
                             <div id="finalized-master-orders-results" class="flex-1 min-h-0 flex flex-col">
                             @if($finalizedStoreBatches->isEmpty())
@@ -948,6 +960,18 @@
                         </div>
                     </div>
                     <div x-show="expanded" x-collapse>
+                        <form method="GET" action="{{ route('admin.dashboard') }}"
+                              hx-get="{{ route('admin.dashboard') }}"
+                              hx-target="#finalized-direct-orders-results"
+                              hx-select="#finalized-direct-orders-results"
+                              hx-swap="outerHTML"
+                              hx-trigger="input from:input[name='finalized_direct_search'] delay:300ms, submit"
+                              class="px-4 py-2.5 bg-slate-50/70 border-b border-slate-200 flex items-center gap-2">
+                            <input type="text" name="finalized_direct_search" value="{{ request('finalized_direct_search') }}" placeholder="Search coach, org, store, status, or batch..." class="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:border-purple-600 focus:ring-1 focus:ring-purple-600 outline-none">
+                            @if(request('finalized_direct_search'))
+                                <a href="{{ route('admin.dashboard') }}" class="text-xs font-bold text-slate-500 hover:text-slate-800 px-2">Clear</a>
+                            @endif
+                        </form>
                         <div class="h-[380px] flex flex-col bg-white">
                             <div id="finalized-direct-orders-results" class="flex-1 min-h-0 flex flex-col">
                             @if($finalizedDirectOrderBatches->isEmpty())
@@ -1760,6 +1784,21 @@
                         </div>
                         <p class="text-xs text-slate-500 mt-1">Aggregate totals per team store that have reached end of registration in full-page management view.</p>
                     </div>
+                    <form method="GET" action="{{ route('admin.dashboard') }}"
+                          hx-get="{{ route('admin.dashboard') }}"
+                          hx-target="#finalized-master-orders-full-results"
+                          hx-select="#finalized-master-orders-full-results"
+                          hx-swap="outerHTML"
+                          hx-trigger="input from:input[name='finalized_master_search'] delay:300ms, submit"
+                          class="flex items-center gap-2 w-full md:w-80">
+                        <div class="relative flex-1">
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            <input type="text" name="finalized_master_search" value="{{ request('finalized_master_search') }}" placeholder="Search store, coach, org, status..." class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary outline-none shadow-2xs">
+                        </div>
+                        @if(request('finalized_master_search'))
+                            <a href="{{ route('admin.dashboard') }}" class="px-2.5 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-300 rounded-lg">Clear</a>
+                        @endif
+                    </form>
                 </div>
                 <div id="finalized-master-orders-full-results">
                     @if($finalizedStoreBatches->isEmpty())
@@ -2070,7 +2109,22 @@
                         </div>
                         <p class="text-xs text-slate-500 mt-1">Direct order batches submitted by coaches without a storefront in full-page management view.</p>
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+                        <form method="GET" action="{{ route('admin.dashboard') }}"
+                              hx-get="{{ route('admin.dashboard') }}"
+                              hx-target="#finalized-direct-orders-full-results"
+                              hx-select="#finalized-direct-orders-full-results"
+                              hx-swap="outerHTML"
+                              hx-trigger="input from:input[name='finalized_direct_search'] delay:300ms, submit"
+                              class="flex items-center gap-2 w-full sm:w-80">
+                            <div class="relative flex-1">
+                                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                <input type="text" name="finalized_direct_search" value="{{ request('finalized_direct_search') }}" placeholder="Search coach, org, store, status..." class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-900 focus:border-purple-600 focus:ring-1 focus:ring-purple-600 outline-none shadow-2xs">
+                            </div>
+                            @if(request('finalized_direct_search'))
+                                <a href="{{ route('admin.dashboard') }}" class="px-2.5 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-300 rounded-lg">Clear</a>
+                            @endif
+                        </form>
                         <template x-if="modifiedCount > 0">
                             <button type="button" 
                                     @click="saveAllModifiedStatuses()" 

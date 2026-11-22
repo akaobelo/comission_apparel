@@ -89,9 +89,17 @@ class SalesRepController extends Controller
         };
 
         if ($startDate) {
-            $orders = $orders->filter(function($o) use ($startDate) {
-                $orderDate = $o->created_at ?: $o->paid_at;
-                return $orderDate && $orderDate->gte($startDate);
+            // Filter finalized batches by their batch submission date so a batch is never sliced in half
+            // when individual parent orders were placed across different weeks/months.
+            $batchDates = $orders->whereNotNull('batch_id')
+                ->groupBy('batch_id')
+                ->map(fn($group) => $group->max(fn($o) => $o->submitted_at ?? $o->paid_at ?? $o->created_at));
+
+            $orders = $orders->filter(function($o) use ($startDate, $batchDates) {
+                $effectiveDate = !empty($o->batch_id)
+                    ? ($batchDates[$o->batch_id] ?? $o->submitted_at ?? $o->paid_at ?? $o->created_at)
+                    : ($o->created_at ?: $o->paid_at);
+                return $effectiveDate && $effectiveDate->gte($startDate);
             });
         }
 

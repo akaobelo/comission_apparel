@@ -68,8 +68,18 @@
                 </div>
 
                 <div x-data="orderItemsEditor()">
+                    @if($order->isPaid())
+                        <div class="mb-4 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+                            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            <div>
+                                <span class="font-bold uppercase tracking-wide">Paid Order — Sizing &amp; Details Only:</span>
+                                Items and quantities are locked after payment. You can still update sizes, gender/cut, jersey info, or notes here. To add additional items, please submit a new order.
+                            </div>
+                        </div>
+                    @endif
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-200">
                         <h3 class="text-sm font-black uppercase tracking-wider text-slate-700">Order Items</h3>
+                        @if(!$order->isPaid())
                         <div class="relative flex items-center">
                             <select x-model="newItemId" class="bg-white border border-slate-300 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-600 focus:border-primary focus:outline-none shadow-sm appearance-none pr-8">
                                 <option value="">+ Add Store Item</option>
@@ -82,14 +92,17 @@
                             </div>
                             <button type="button" @click="addItem()" class="ml-2 px-3 py-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm hover:bg-[#a11825] transition-colors">Add</button>
                         </div>
+                        @endif
                     </div>
 
                     <div class="space-y-4">
                         <template x-for="(item, idx) in items" :key="idx">
                             <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl relative">
+                                @if(!$order->isPaid())
                                 <button type="button" @click="removeItem(idx)" class="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Remove item">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                 </button>
+                                @endif
                                 
                                 <div class="flex items-start gap-4 flex-wrap pr-8">
                                     <template x-if="item.image_path">
@@ -150,7 +163,12 @@
                                         </div>
                                         <div>
                                             <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Qty</label>
-                                            <input type="number" :name="`items[${idx}][qty]`" x-model="item.qty" min="1" max="50" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm w-16">
+                                            @if($order->isPaid())
+                                                <input type="hidden" :name="`items[${idx}][qty]`" :value="item.qty">
+                                                <input type="number" :value="item.qty" disabled class="bg-slate-100 border border-slate-200 rounded px-3 py-2 text-sm text-slate-500 w-16 cursor-not-allowed" title="Quantity is locked after payment">
+                                            @else
+                                                <input type="number" :name="`items[${idx}][qty]`" x-model="item.qty" min="1" max="50" class="bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none shadow-sm w-16">
+                                            @endif
                                         </div>
                                     </div>
                                 </div>

@@ -441,4 +441,75 @@ class PaymentStatusExportAndStripeSyncTest extends TestCase
         $this->assertStringNotContainsString('Ghost', $sharedStringsXml);
         $this->assertStringNotContainsString('>WL<', $sharedStringsXml);
     }
+
+    public function test_coach_cannot_add_items_or_increase_qty_on_paid_order_but_can_update_sizes(): void
+    {
+        $coach = User::factory()->create(['role' => 'coach']);
+        $store = TeamStore::create([
+            'user_id'          => $coach->id,
+            'name'             => 'OLL Paid Lock Test',
+            'slug'             => 'oll-paid-lock-test',
+            'status'           => 'approved',
+            'pricing_approved' => true,
+            'payment_mode'     => 'online',
+        ]);
+
+        $order = ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'athlete_first_name' => 'Kennedi',
+            'athlete_last_name'  => 'Smith',
+            'parent_email'       => 'coach@example.com',
+            'gender'             => 'Womens / Girls',
+            'items_json'         => [[
+                'id'              => 1451,
+                'name'            => 'OLL Uni Set (Racerback)',
+                'types'           => ['uniform_top', 'uniform_bottom'],
+                'sizes'           => ['uniform_top' => 'AS', 'uniform_bottom' => 'AS'],
+                'qty'             => 1,
+                'gender'          => 'Womens / Girls',
+                'unit_price'      => 70.00,
+                'wholesale_price' => 70.00,
+            ]],
+            'status'             => 'Submitted',
+            'payment_status'     => 'paid',
+            'subtotal'           => 70.00,
+            'wholesale_cost'     => 70.00,
+            'total_paid'         => 77.70,
+        ]);
+
+        // Coach tries to change size AS -> AM, bump qty 1 -> 3, AND sneak in an unpaid extra hoodie
+        $response = $this->actingAs($coach)->post(route('coach.order.update', $order), [
+            'athlete_first_name' => 'Kennedi',
+            'athlete_last_name'  => 'Smith',
+            'gender'             => 'Womens / Girls',
+            'items'              => [
+                [
+                    'id'     => 1451,
+                    'name'   => 'OLL Uni Set (Racerback)',
+                    'types'  => ['uniform_top', 'uniform_bottom'],
+                    'sizes'  => ['uniform_top' => 'AM', 'uniform_bottom' => 'AM'],
+                    'qty'    => 3,
+                    'gender' => 'Womens / Girls',
+                ],
+                [
+                    'id'     => 1461,
+                    'name'   => 'OLL Hoodie #1',
+                    'types'  => ['hoodie'],
+                    'sizes'  => ['hoodie' => 'AL'],
+                    'qty'    => 2,
+                    'gender' => 'Mens / Boys',
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $order->refresh();
+
+        // Only the original 1 item remains, qty is still 1, price snapshots preserved, and size updated to AM
+        $this->assertCount(1, $order->items_json);
+        $this->assertSame(1, (int) $order->items_json[0]['qty']);
+        $this->assertSame('AM', $order->items_json[0]['sizes']['uniform_top']);
+        $this->assertSame('AM', $order->items_json[0]['sizes']['uniform_bottom']);
+        $this->assertEquals(70.00, (float) $order->items_json[0]['wholesale_price']);
+    }
 }

@@ -1067,20 +1067,52 @@ class CoachController extends Controller
             'items'               => ['required', 'array'],
         ]);
 
-        $itemsJson = [];
-        foreach ($request->items as $idx => $item) {
-            $entry = [
-                'id'           => $item['id'] ?? $idx,
-                'name'         => $item['name'] ?? 'Unknown',
-                'types'        => $item['types'] ?? [],
-                'sizes'        => $item['sizes'] ?? [],
-                'qty'          => $item['qty'] ?? 1,
-                'gender'       => $item['gender'] ?? 'Unisex',
-            ];
-            if (!empty($item['components']) && is_array($item['components'])) {
-                $entry['components'] = $item['components'];
+        if ($order->isPaid()) {
+            // Paid orders are strictly locked to sizing/gender/detail edits only:
+            // preserve existing items, quantities, and price snapshots so unpaid items cannot be added post-payment.
+            $existingItems = is_array($order->items_json) ? $order->items_json : [];
+            $submittedItems = is_array($request->items) ? array_values($request->items) : [];
+            $itemsJson = [];
+
+            foreach ($existingItems as $idx => $origItem) {
+                $updated = $origItem;
+                if (isset($submittedItems[$idx]) && is_array($submittedItems[$idx])) {
+                    $sub = $submittedItems[$idx];
+                    if (isset($sub['sizes']) && is_array($sub['sizes'])) {
+                        $updated['sizes'] = $sub['sizes'];
+                    }
+                    if (!empty($sub['gender'])) {
+                        $lockedGender = \App\Models\StoreItem::detectGenderRestrictionFromName($origItem['name'] ?? null);
+                        $updated['gender'] = $lockedGender ?? $sub['gender'];
+                    }
+                    if (!empty($origItem['components']) && is_array($origItem['components']) && !empty($sub['components']) && is_array($sub['components'])) {
+                        foreach ($origItem['components'] as $cIdx => $origComp) {
+                            if (isset($sub['components'][$cIdx]['sizes']) && is_array($sub['components'][$cIdx]['sizes'])) {
+                                $updated['components'][$cIdx]['sizes'] = $sub['components'][$cIdx]['sizes'];
+                            } elseif (!empty($sub['components'][$cIdx]['size'])) {
+                                $updated['components'][$cIdx]['size'] = $sub['components'][$cIdx]['size'];
+                            }
+                        }
+                    }
+                }
+                $itemsJson[] = $updated;
             }
-            $itemsJson[] = $entry;
+        } else {
+            $itemsJson = [];
+            foreach ($request->items as $idx => $item) {
+                $entry = [
+                    'id'           => $item['id'] ?? $idx,
+                    'name'         => $item['name'] ?? 'Unknown',
+                    'types'        => $item['types'] ?? [],
+                    'sizes'        => $item['sizes'] ?? [],
+                    'qty'          => $item['qty'] ?? 1,
+                    'gender'       => $item['gender'] ?? 'Unisex',
+                ];
+                if (!empty($item['components']) && is_array($item['components'])) {
+                    $entry['components'] = $item['components'];
+                }
+                $itemsJson[] = $entry;
+            }
         }
 
         $updateData = [

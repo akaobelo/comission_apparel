@@ -111,7 +111,35 @@ class AdminController extends Controller
             ->where('order_type', '!=', 'direct')
             ->whereNotNull('batch_id')
             ->where('status', '!=', 'Pending')
-            ->where('is_archived', false)
+            ->where('is_archived', false);
+
+        if ($request->filled('finalized_master_search')) {
+            $search = trim((string) $request->finalized_master_search);
+            $finalizedStoreBatchQuery->where(function ($q) use ($search) {
+                $q->where('batch_id', 'like', "%{$search}%")
+                  ->orWhere('status', 'like', "%{$search}%")
+                  ->orWhere('athlete_first_name', 'like', "%{$search}%")
+                  ->orWhere('athlete_last_name', 'like', "%{$search}%")
+                  ->orWhereHas('teamStore', function ($sq) use ($search) {
+                      $sq->where('name', 'like', "%{$search}%")
+                         ->orWhere('slug', 'like', "%{$search}%")
+                         ->orWhereHas('user', function ($uq) use ($search) {
+                             $uq->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('organization', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                         });
+                  })
+                  ->orWhereHas('user', function ($uq) use ($search) {
+                      $uq->where('first_name', 'like', "%{$search}%")
+                         ->orWhere('last_name', 'like', "%{$search}%")
+                         ->orWhere('organization', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $finalizedStoreBatchQuery
             ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(COALESCE(submitted_at, paid_at, created_at)) as latest_batch_date'), \Illuminate\Support\Facades\DB::raw('MAX(id) as latest_order_id'))
             ->groupBy('batch_id');
 
@@ -202,7 +230,29 @@ class AdminController extends Controller
             })
             ->whereNotNull('batch_id')
             ->whereNotIn('status', ['Pending', 'Draft'])
-            ->where('is_archived', false)
+            ->where('is_archived', false);
+
+        if ($request->filled('finalized_direct_search')) {
+            $search = trim((string) $request->finalized_direct_search);
+            $finalizedDirectBatchQuery->where(function ($q) use ($search) {
+                $q->where('batch_id', 'like', "%{$search}%")
+                  ->orWhere('status', 'like', "%{$search}%")
+                  ->orWhere('athlete_first_name', 'like', "%{$search}%")
+                  ->orWhere('athlete_last_name', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($uq) use ($search) {
+                      $uq->where('first_name', 'like', "%{$search}%")
+                         ->orWhere('last_name', 'like', "%{$search}%")
+                         ->orWhere('organization', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('teamStore', function ($sq) use ($search) {
+                      $sq->where('name', 'like', "%{$search}%")
+                         ->orWhere('slug', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $finalizedDirectBatchQuery
             ->select('batch_id', \Illuminate\Support\Facades\DB::raw('MAX(COALESCE(submitted_at, paid_at, created_at)) as latest_batch_date'), \Illuminate\Support\Facades\DB::raw('MAX(id) as latest_order_id'))
             ->groupBy('batch_id');
 
@@ -901,9 +951,17 @@ class AdminController extends Controller
         };
 
         if ($startDate) {
-            $orders = $orders->filter(function($o) use ($startDate) {
-                $orderDate = $o->created_at ?: $o->paid_at;
-                return $orderDate && $orderDate->gte($startDate);
+            // Filter finalized batches by their batch submission date so a batch is never sliced in half
+            // when individual parent orders were placed across different weeks/months.
+            $batchDates = $orders->whereNotNull('batch_id')
+                ->groupBy('batch_id')
+                ->map(fn($group) => $group->max(fn($o) => $o->submitted_at ?? $o->paid_at ?? $o->created_at));
+
+            $orders = $orders->filter(function($o) use ($startDate, $batchDates) {
+                $effectiveDate = !empty($o->batch_id)
+                    ? ($batchDates[$o->batch_id] ?? $o->submitted_at ?? $o->paid_at ?? $o->created_at)
+                    : ($o->created_at ?: $o->paid_at);
+                return $effectiveDate && $effectiveDate->gte($startDate);
             });
         }
 

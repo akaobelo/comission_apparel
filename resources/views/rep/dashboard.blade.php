@@ -1308,11 +1308,15 @@
                                     <td class="px-4 py-4 font-sans">
                                         @if($batch->is_direct)
                                             <span class="inline-flex items-center px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border bg-purple-50 text-purple-700 border-purple-200">
-                                                FINALIZED DIRECT ORDERS
+                                                {{ $batch->order_type }}
                                             </span>
-                                        @else
+                                        @elseif(!empty($batch->is_submitted))
                                             <span class="inline-flex items-center px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border bg-blue-50 text-blue-700 border-blue-200">
                                                 FINALIZED MASTER ORDERS
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border bg-amber-50 text-amber-800 border-amber-300">
+                                                OPEN STORE (ONGOING)
                                             </span>
                                         @endif
                                     </td>

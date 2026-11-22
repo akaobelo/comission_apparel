@@ -343,7 +343,7 @@ class ParentOrder extends Model
                     $q->orWhereIn('team_store_id', $storeIds);
                 }
             })
-            ->where('status', '!=', 'Draft')
+            ->whereNotIn('status', ['Draft', 'Pending Payment', 'Payment Failed', 'Cancelled'])
             ->with(['teamStore', 'user', 'teamStore.items'])
             ->latest()
             ->get();
@@ -791,9 +791,15 @@ class ParentOrder extends Model
             $hasCleared = $batchOrders->contains(fn($o) => $o->commission_status === 'cleared');
             $status = $allPaid ? 'paid' : ($hasCleared ? 'cleared' : 'pending');
 
+            $isSubmitted = !empty($first->batch_id);
+            $orderTypeLabel = $isDirect
+                ? ($isSubmitted ? 'FINALIZED DIRECT ORDERS' : 'OPEN DIRECT ORDERS')
+                : ($isSubmitted ? 'FINALIZED MASTER ORDERS' : 'OPEN STORE (ONGOING)');
+
             $batches->push((object)[
                 'key'              => $key,
                 'batch_id'         => $first->batch_id,
+                'is_submitted'     => $isSubmitted,
                 'store_id'         => $first->team_store_id,
                 'store'            => $store,
                 'store_name'       => $storeName,
@@ -801,8 +807,8 @@ class ParentOrder extends Model
                 'coach_name'       => $coachName,
                 'organization'     => $organization,
                 'is_direct'        => $isDirect,
-                'order_type'       => $isDirect ? 'FINALIZED DIRECT ORDERS' : 'FINALIZED MASTER ORDERS',
-                'order_type_badge' => $isDirect ? 'direct' : 'master',
+                'order_type'       => $orderTypeLabel,
+                'order_type_badge' => $isDirect ? 'direct' : ($isSubmitted ? 'master' : 'open'),
                 'payment_method'   => $paymentMode,
                 'order_count'      => $batchOrders->count(),
                 'gross'            => $gross,
