@@ -46,6 +46,7 @@ class ParentOrder extends Model
         'batch_id',
         'order_type',
         'is_archived',
+        'wholesale_cost',
         'manufacturing_cost',
         'tariff_amount',
         'fee_deduction',
@@ -145,6 +146,7 @@ class ParentOrder extends Model
         'paid_at'         => 'datetime',
         'submitted_at'    => 'datetime',
         'is_archived' => 'boolean',
+        'wholesale_cost'     => 'decimal:2',
         'manufacturing_cost' => 'decimal:2',
         'tariff_amount'      => 'decimal:2',
         'fee_deduction'      => 'decimal:2',
@@ -171,17 +173,17 @@ class ParentOrder extends Model
                 }
             }
 
-            $wholesale = (float) ($this->manufacturing_cost > 0 ? $this->manufacturing_cost : $this->getEffectiveManufacturingCost());
+            $wholesale = $this->getEffectiveWholesaleCost();
             $tax = (float) ($this->tax_amount ?? 0);
             $fee = (float) ($this->fee_amount ?? 0);
             $wholesaleGrand = round($wholesale + $tax + $fee - $deposit, 2);
 
             // Only clamp to wholesale for direct orders or in-house (cash collection) master orders paid by the coach at wholesale.
-            // Never clamp parent-paid online (Stripe) store orders just because manufacturing_cost was populated for commissions.
+            // Never clamp parent-paid online (Stripe) store orders.
             $isInHouseMasterOrder = !$this->isDirectOrder()
                 && $this->teamStore
                 && $this->teamStore->isInHousePayment()
-                && (float) $this->manufacturing_cost > 0;
+                && $wholesale > 0;
 
             if (($this->isDirectOrder() || $isInHouseMasterOrder) && $paid > $wholesaleGrand && $wholesaleGrand > 0) {
                 return $wholesaleGrand;
@@ -228,20 +230,36 @@ class ParentOrder extends Model
         return 0.0;
     }
 
-    public function getEffectiveManufacturingCost($store = null): float
+    /**
+     * Store wholesale cost (Due to TCA) — completely separate from actual factory manufacturing_cost.
+     */
+    public function getEffectiveWholesaleCost($store = null): float
     {
-        if ((float) $this->manufacturing_cost > 0) {
-            return (float) $this->manufacturing_cost;
+        if ((float) ($this->wholesale_cost ?? 0) > 0) {
+            return (float) $this->wholesale_cost;
         }
         $store = $store ?: $this->teamStore;
         $items = is_array($this->items_json) ? $this->items_json : [];
         $totalWholesale = 0.0;
         foreach ($items as $item) {
             $qty = max(1, (int) ($item['qty'] ?? 1));
-            $prices = self::getItemPrices($item, $store);
-            $totalWholesale += ($prices['wholesale_price'] * $qty);
+            if ($this->isPaid() && isset($item['wholesale_price']) && (float) $item['wholesale_price'] > 0) {
+                $totalWholesale += ((float) $item['wholesale_price'] * $qty);
+            } else {
+                $prices = self::getItemPrices($item, $store);
+                $totalWholesale += ($prices['wholesale_price'] * $qty);
+            }
         }
         return (float) $totalWholesale;
+    }
+
+    /**
+     * Actual factory manufacturing cost (COGS) entered manually by Admin for partner commission split.
+     * Never falls back to store wholesale price (Due to TCA).
+     */
+    public function getEffectiveManufacturingCost($store = null): float
+    {
+        return max(0.0, (float) ($this->manufacturing_cost ?? 0));
     }
 
     /**
@@ -250,8 +268,12 @@ class ParentOrder extends Model
      * Qualifying Sales = Subtotal / Total Paid (excluding taxes)
      * Net Margin = max(0, Qualifying Sales - (Manufacturing Cost + Tariff + Fee Deductions + Fundraising))
      * Rep Payout = Net Margin * (Rep Commission Rate / 100)
+     *
+     * Note: Never auto-fills manufacturing_cost with store wholesale (Due to TCA).
+     * Until an admin manually enters actual factory manufacturing cost (or saves the financials form),
+     * manufacturing_cost stays 0 and net_margin / rep_commission_earned remain 0.00.
      */
-    public function calculateAndApplyCommission(?float $rateOverride = null): void
+    public function calculateAndApplyCommission(?float $rateOverride = null, bool $explicitManualSave = false): void
     {
         $sales = $this->getEffectiveQualifyingSales();
         $mfg = $this->getEffectiveManufacturingCost();
@@ -265,12 +287,6 @@ class ParentOrder extends Model
         if ($this->total_retail_price <= 0 && $sales > 0) {
             $this->total_retail_price = round($sales, 2);
         }
-        if ($this->manufacturing_cost <= 0 && $mfg > 0) {
-            $this->manufacturing_cost = round($mfg, 2);
-        }
-
-        $netMargin = max(0.0, $sales - ($mfg + $tariff + $fee + $fundraising));
-        $this->net_margin = round($netMargin, 2);
 
         $rate = $rateOverride;
         if ($rate === null) {
@@ -284,6 +300,15 @@ class ParentOrder extends Model
         }
 
         $this->applied_rep_commission_rate = round($rate, 2);
+
+        if (!$explicitManualSave && $mfg <= 0 && $tariff <= 0 && $fee <= 0 && $fundraising <= 0) {
+            $this->net_margin = 0.00;
+            $this->rep_commission_earned = 0.00;
+            return;
+        }
+
+        $netMargin = max(0.0, $sales - ($mfg + $tariff + $fee + $fundraising));
+        $this->net_margin = round($netMargin, 2);
         $this->rep_commission_earned = round($netMargin * ($rate / 100.0), 2);
     }
 
@@ -540,9 +565,15 @@ class ParentOrder extends Model
                 }
             }
 
+            // Honor explicitly locked wholesale_cost (Due to TCA) when recorded on the order.
+            // Never read manufacturing_cost (actual factory COGS) for Due to TCA or Store Profit Owed.
+            if ((float) ($order->wholesale_cost ?? 0) > 0) {
+                $orderWholesaleTotal = (float) $order->wholesale_cost;
+            }
+
             if ($order->isDirectOrder()) {
-                // Direct orders reflect manufacturer wholesale pricing
-                $orderTotal = $orderWholesaleTotal > 0 ? $orderWholesaleTotal : ((float) $order->manufacturing_cost > 0 ? (float) $order->manufacturing_cost : (float) ($order->subtotal ?? 0));
+                // Direct orders reflect store/catalog wholesale pricing
+                $orderTotal = $orderWholesaleTotal > 0 ? $orderWholesaleTotal : (float) ($order->subtotal ?? 0);
                 if ($orderWholesaleTotal <= 0 && $orderTotal > 0) {
                     $orderWholesaleTotal = $orderTotal;
                 }
@@ -551,16 +582,6 @@ class ParentOrder extends Model
                 $orderTotal = (float) ($order->subtotal ?? 0);
                 if ($orderTotal <= 0) {
                     $orderTotal = (float) ($order->total_retail_price ?? 0);
-                }
-
-                // If a paid master order has a recorded wholesale/manufacturing cost higher than the
-                // recalculated item wholesale (e.g., if a store item's wholesale price was later lowered
-                // or removed after the order was placed) and it does not exceed the retail subtotal,
-                // honor the recorded cost. Lower manual factory costs entered for rep commissions
-                // remain untouched because they are < $orderWholesaleTotal.
-                $recordedMfg = (float) ($order->manufacturing_cost ?? 0);
-                if ($order->isPaid() && $recordedMfg > $orderWholesaleTotal && ($orderTotal <= 0 || $recordedMfg <= $orderTotal)) {
-                    $orderWholesaleTotal = $recordedMfg;
                 }
             } else {
                 // For UNPAID / PENDING orders: dynamically recalculate from current store item prices

@@ -299,11 +299,14 @@ class OnlinePaymentTotalPaidAndBatchScopeTest extends TestCase
         $this->assertEquals(111.02, $financials['total_online_paid']);
     }
 
-    public function test_paid_online_order_honors_higher_recorded_wholesale_and_checkout_snapshot_without_letting_lower_factory_cost_reduce_due_to_tca(): void
+    public function test_paid_online_order_keeps_wholesale_cost_separate_from_factory_manufacturing_cost(): void
     {
-        $coach = User::factory()->create(['role' => 'coach']);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $rep = User::factory()->create(['role' => 'sales_rep', 'commission_rate' => 50.00]);
+        $coach = User::factory()->create(['role' => 'coach', 'sales_rep_id' => $rep->id]);
         $store = TeamStore::create([
             'user_id'          => $coach->id,
+            'sales_rep_id'     => $rep->id,
             'name'             => 'Hampton Basketball Wholesale Guard',
             'slug'             => 'hampton-wholesale-guard',
             'status'           => 'approved',
@@ -312,7 +315,7 @@ class OnlinePaymentTotalPaidAndBatchScopeTest extends TestCase
             'is_tax_exempt'    => false,
         ]);
 
-        // Store item wholesale_price was lowered after order placement (from $2,150 total down to $1,745)
+        // Store item wholesale_price was lowered after order placement (from $2,135 total down to $1,745)
         $item = StoreItem::create([
             'team_store_id'   => $store->id,
             'name'            => 'Team Package',
@@ -320,28 +323,63 @@ class OnlinePaymentTotalPaidAndBatchScopeTest extends TestCase
             'retail_price'    => 2385.00,
         ]);
 
+        $batchId = 'hampton-separation-batch-1';
+
         $hamptonOrder = ParentOrder::create([
             'team_store_id'      => $store->id,
+            'sales_rep_id'       => $rep->id,
+            'batch_id'           => $batchId,
             'athlete_first_name' => 'Hampton',
             'athlete_last_name'  => 'Player',
             'items_json'         => [['id' => $item->id, 'name' => 'Team Package', 'qty' => 1, 'unit_price' => 2385.00]],
             'status'             => 'Submitted to Admin',
             'payment_status'     => 'paid',
             'subtotal'           => 2385.00,
+            'wholesale_cost'     => 2135.00,
             'total_retail_price' => 2385.00,
-            'manufacturing_cost' => 2150.00,
+            'manufacturing_cost' => 0.00,
             'tax_amount'         => 178.88,
             'fee_amount'         => 82.12,
             'total_paid'         => 2646.00,
         ]);
 
+        // 1. Opening Sales Rep page must NOT auto-plug Due to TCA ($2,135) into manufacturing_cost
+        $this->actingAs($admin)->get(route('admin.sales-rep.show', $rep))->assertOk();
+        $hamptonOrder->refresh();
+        $this->assertEquals(0.00, (float) $hamptonOrder->manufacturing_cost);
+        $this->assertEquals(0.00, (float) $hamptonOrder->net_margin);
+        $this->assertEquals(0.00, (float) $hamptonOrder->rep_commission_earned);
+
+        // 2. Due to TCA ($2,135) and Store Profit Owed ($250) honor locked wholesale_cost
         $hamptonFin = ParentOrder::calculateBatchFinancials(collect([$hamptonOrder]), $store);
         $this->assertEquals(2385.00, $hamptonFin['total_sales']);
-        $this->assertEquals(2150.00, $hamptonFin['total_wholesale']);
-        $this->assertEquals(235.00, $hamptonFin['coach_profit_owed']);
+        $this->assertEquals(2135.00, $hamptonFin['total_wholesale']);
+        $this->assertEquals(250.00, $hamptonFin['coach_profit_owed']);
         $this->assertEquals(2646.00, $hamptonFin['total_online_paid']);
 
-        // When admin enters a LOWER factory cost ($65 vs $100 wholesale), Due to TCA must stay $100
+        // 3. When admin enters actual factory manufacturing_cost ($1,100) in Partner Split,
+        //    Due to TCA ($2,135) and Store Profit Owed ($250) must NOT change!
+        $this->actingAs($admin)->post(route('admin.direct-batch.financials.update', $batchId), [
+            'manufacturing_cost'          => 1100.00,
+            'tariff_amount'               => 100.00,
+            'fee_deduction'               => 0.00,
+            'sales_rep_id'                => $rep->id,
+            'applied_rep_commission_rate' => 50.00,
+            'commission_status'           => 'pending',
+        ])->assertRedirect();
+
+        $hamptonOrder->refresh();
+        $this->assertEquals(1100.00, (float) $hamptonOrder->manufacturing_cost);
+        $this->assertEquals(2135.00, (float) $hamptonOrder->wholesale_cost);
+        $this->assertEquals(1185.00, (float) $hamptonOrder->net_margin);
+        $this->assertEquals(592.50, (float) $hamptonOrder->rep_commission_earned);
+
+        $afterFin = ParentOrder::calculateBatchFinancials(collect([$hamptonOrder]), $store);
+        $this->assertEquals(2385.00, $afterFin['total_sales']);
+        $this->assertEquals(2135.00, $afterFin['total_wholesale']);
+        $this->assertEquals(250.00, $afterFin['coach_profit_owed']);
+
+        // 4. Checkout item wholesale_price snapshot also stays locked even if store item wholesale_price is edited later
         $jersey = StoreItem::create([
             'team_store_id'   => $store->id,
             'name'            => 'Jersey',
@@ -364,7 +402,6 @@ class OnlinePaymentTotalPaidAndBatchScopeTest extends TestCase
             'total_paid'         => 144.24,
         ]);
 
-        // Even if store item wholesale_price is later edited down to $50, checkout snapshot ($100) stays locked
         $jersey->update(['wholesale_price' => 50.00]);
         $store->load('items');
 

@@ -878,7 +878,7 @@ class AdminController extends Controller
                 $ord->sales_rep_id = $user->id;
                 $dirty = true;
             }
-            if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0 || (float)$ord->subtotal == 0 || (float)$ord->manufacturing_cost == 0) {
+            if ($ord->applied_rep_commission_rate === null || (float)$ord->subtotal == 0) {
                 $ord->calculateAndApplyCommission($repRate);
                 $dirty = true;
             }
@@ -1076,7 +1076,7 @@ class AdminController extends Controller
 
         foreach ($ordersToPreserve as $ord) {
             $dirty = false;
-            if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0 || (float)$ord->subtotal == 0 || (float)$ord->manufacturing_cost == 0) {
+            if ($ord->applied_rep_commission_rate === null || (float)$ord->subtotal == 0) {
                 $ord->calculateAndApplyCommission($repRate);
                 $dirty = true;
             }
@@ -1138,7 +1138,7 @@ class AdminController extends Controller
             $rateOverride = $newRep ? $newRep->getEffectiveCommissionRate() : null;
         }
 
-        $order->calculateAndApplyCommission($rateOverride);
+        $order->calculateAndApplyCommission($rateOverride, true);
         $order->save();
 
         return redirect()->back()->with('success', "Order #{$order->id} financials, tariffs, and rep commission updated.");
@@ -1156,7 +1156,10 @@ class AdminController extends Controller
             'financial_notes'             => ['nullable', 'string'],
         ]);
 
-        $orders = ParentOrder::where('batch_id', $batchId)->where('status', '!=', 'Draft')->get();
+        $orders = ParentOrder::where('batch_id', $batchId)
+            ->where('is_archived', false)
+            ->where('status', '!=', 'Draft')
+            ->get();
         if ($orders->isEmpty()) {
             return redirect()->back()->with('error', 'No orders found in this batch.');
         }
@@ -1219,7 +1222,7 @@ class AdminController extends Controller
             if ($order->commission_status === 'paid' && !$order->paid_to_rep_at) {
                 $order->paid_to_rep_at = now();
             }
-            $order->calculateAndApplyCommission($rateOverride);
+            $order->calculateAndApplyCommission($rateOverride, true);
             $order->save();
         }
 

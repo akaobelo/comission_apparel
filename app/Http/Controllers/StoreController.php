@@ -224,6 +224,9 @@ class StoreController extends Controller
         }
 
         $subtotal = collect($itemsJson)->sum('line_total');
+        $wholesaleCost = round(collect($itemsJson)->sum(function ($item) {
+            return (float) ($item['wholesale_price'] ?? 0) * max(1, (int) ($item['qty'] ?? 1));
+        }), 2);
         $fullName = trim($request->athlete_first_name . ' ' . $request->athlete_last_name);
 
         $isTaxExempt = (bool) ($store->isTaxExempt());
@@ -260,6 +263,7 @@ class StoreController extends Controller
             'payment_status'      => $store->isOnlinePayment() ? 'pending' : 'not_applicable',
             'submitted_at'        => $store->isOnlinePayment() ? null : now(),
             'subtotal'            => $subtotal,
+            'wholesale_cost'      => $wholesaleCost > 0 ? $wholesaleCost : null,
             'tax_amount'          => $taxAmount,
             'fee_amount'          => $feeAmount,
             'shipping_amount'     => 0.00,

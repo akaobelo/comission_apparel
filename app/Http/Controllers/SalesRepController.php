@@ -66,7 +66,7 @@ class SalesRepController extends Controller
                 $ord->sales_rep_id = $user->id;
                 $dirty = true;
             }
-            if ($ord->applied_rep_commission_rate === null || (float)$ord->net_margin == 0 || (float)$ord->subtotal == 0 || (float)$ord->manufacturing_cost == 0) {
+            if ($ord->applied_rep_commission_rate === null || (float)$ord->subtotal == 0) {
                 $ord->calculateAndApplyCommission($repRate);
                 $dirty = true;
             }

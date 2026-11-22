@@ -614,7 +614,7 @@ class CoachController extends Controller
                     'status'                 => 'Submitted to Admin',
                     'payment_status'         => 'paid',
                     'sales_rep_id'           => $order->sales_rep_id ?: ($store->sales_rep_id ?? $store->user?->sales_rep_id),
-                    'manufacturing_cost'     => $orderMfg > 0 ? $orderMfg : $order->manufacturing_cost,
+                    'wholesale_cost'         => $orderMfg > 0 ? $orderMfg : $order->wholesale_cost,
                     'tax_amount'             => $orderTax,
                     'fee_amount'             => 0.00,
                     'deposit_credit_applied' => $orderDeposit,
@@ -765,7 +765,7 @@ class CoachController extends Controller
 
                     $order->update([
                         'stripe_session_id'      => $session->id,
-                        'manufacturing_cost'     => $orderMfg > 0 ? $orderMfg : $order->manufacturing_cost,
+                        'wholesale_cost'         => $orderMfg > 0 ? $orderMfg : $order->wholesale_cost,
                         'tax_amount'             => $orderTax,
                         'fee_amount'             => $orderFee,
                         'deposit_credit_applied' => $orderDeposit,
@@ -819,7 +819,7 @@ class CoachController extends Controller
                     $now = now();
 
                     $sessionTotalPaid = round(($session->amount_total ?? 0) / 100, 2);
-                    $totalMfg = (float) $orders->sum(fn($o) => (float)$o->manufacturing_cost);
+                    $totalWholesale = (float) $orders->sum(fn($o) => $o->getEffectiveWholesaleCost($store));
 
                     foreach ($orders as $order) {
                         $orderData = [
@@ -833,8 +833,8 @@ class CoachController extends Controller
                         ];
 
                         if ($sessionTotalPaid > 0) {
-                            $orderMfg = (float) $order->manufacturing_cost;
-                            $ratio = $totalMfg > 0 ? ($orderMfg / $totalMfg) : (1 / count($orders));
+                            $orderWholesale = $order->getEffectiveWholesaleCost($store);
+                            $ratio = $totalWholesale > 0 ? ($orderWholesale / $totalWholesale) : (1 / count($orders));
                             $orderData['total_paid'] = count($orders) === 1 ? $sessionTotalPaid : round($sessionTotalPaid * $ratio, 2);
                         }
 
