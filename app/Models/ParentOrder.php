@@ -276,6 +276,10 @@ class ParentOrder extends Model
     public function calculateAndApplyCommission(?float $rateOverride = null, bool $explicitManualSave = false): void
     {
         $sales = $this->getEffectiveQualifyingSales();
+        $dueToTca = $this->getEffectiveWholesaleCost();
+        // Commissionable revenue base is Due to TCA (pre-tax wholesale owed to TCA, excluding coach store profit).
+        // Falls back to qualifying sales for direct orders without item-level wholesale pricing.
+        $commissionBase = $dueToTca > 0 ? $dueToTca : $sales;
         $mfg = $this->getEffectiveManufacturingCost();
         $tariff = (float) $this->tariff_amount;
         $fee = (float) $this->fee_deduction;
@@ -307,7 +311,7 @@ class ParentOrder extends Model
             return;
         }
 
-        $netMargin = max(0.0, $sales - ($mfg + $tariff + $fee + $fundraising));
+        $netMargin = max(0.0, $commissionBase - ($mfg + $tariff + $fee + $fundraising));
         $this->net_margin = round($netMargin, 2);
         $this->rep_commission_earned = round($netMargin * ($rate / 100.0), 2);
     }

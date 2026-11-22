@@ -1165,7 +1165,7 @@ class AdminController extends Controller
         }
 
         $count = $orders->count();
-        $totalGross = (float) $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales());
+        $totalGross = (float) $orders->sum(fn($o) => ($w = $o->getEffectiveWholesaleCost()) > 0 ? $w : (float)$o->getEffectiveQualifyingSales());
         $totalMfg = (float) ($validated['manufacturing_cost'] ?? 0);
         $totalTariff = (float) ($validated['tariff_amount'] ?? 0);
         $totalFee = (float) ($validated['fee_deduction'] ?? 0);
@@ -1195,7 +1195,8 @@ class AdminController extends Controller
             $isLast = ($idx === $count);
 
             if ($totalGross > 0) {
-                $grossRatio = (float) $order->getEffectiveQualifyingSales() / $totalGross;
+                $orderBase = ($w = $order->getEffectiveWholesaleCost()) > 0 ? $w : (float) $order->getEffectiveQualifyingSales();
+                $grossRatio = $orderBase / $totalGross;
             } else {
                 $grossRatio = 1.0 / $count;
             }

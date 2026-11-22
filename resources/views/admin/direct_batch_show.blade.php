@@ -267,18 +267,21 @@
                         $batchFees = $orders->sum(fn($o) => (float)$o->fee_deduction);
                         $assignedRepId = $firstOrder->sales_rep_id ?: ($firstOrder->user?->sales_rep_id ?? null);
                         $currentRep = $assignedRepId ? $salesReps->firstWhere('id', $assignedRepId) : null;
-                        $onlinePaid = (float)($financials['total_online_paid'] ?? 0);
-                        $depositApplied = (float)($financials['deposit_credit_applied'] ?? 0);
+                        $dueToTca = (float)($financials['total_wholesale'] ?? 0);
                         $totalSales = (float)($financials['total_sales'] ?? $orders->sum(fn($o) => (float)$o->getEffectiveQualifyingSales()));
-                        // Commission margin pool uses qualifying product sales ($totalSales), excluding customer credit card processing fees
-                        $batchGross = $totalSales > 0 ? $totalSales : ($onlinePaid > 0 ? ($onlinePaid + $depositApplied) : 0);
-                        $batchTax = (float)($financials['total_tax'] ?? 0);
-                        $batchTotalExpense = $batchMfg + $batchTax + $batchTariff + $batchFees;
+                        // Commission margin pool is based on Due to TCA (pre-tax wholesale owed to TCA, excluding customer tax, Stripe fees, and coach store profit)
+                        $batchCommissionBase = $dueToTca > 0 ? $dueToTca : $totalSales;
+                        $batchTotalExpense = $batchMfg + $batchTariff + $batchFees;
                         $savedNetMargin = (float)$orders->sum(fn($o) => (float)$o->net_margin);
                         $savedRepEarned = (float)$orders->sum(fn($o) => (float)$o->rep_commission_earned);
-                        $batchNetMargin = $savedNetMargin > 0 ? $savedNetMargin : max(0.0, $batchGross - $batchTotalExpense);
+                        $hasEnteredCosts = $hasCustomMfg || $batchTariff > 0 || $batchFees > 0;
+                        $batchNetMargin = $savedNetMargin > 0
+                            ? $savedNetMargin
+                            : ($hasEnteredCosts ? max(0.0, $batchCommissionBase - $batchTotalExpense) : 0.0);
                         $appliedRate = (float)($firstOrder->applied_rep_commission_rate ?? $currentRep?->getEffectiveCommissionRate() ?? 50.00);
-                        $batchRepEarned = $savedRepEarned > 0 ? $savedRepEarned : round($batchNetMargin * ($appliedRate / 100.0), 2);
+                        $batchRepEarned = $savedRepEarned > 0
+                            ? $savedRepEarned
+                            : ($hasEnteredCosts ? round($batchNetMargin * ($appliedRate / 100.0), 2) : 0.0);
                     @endphp
 
                     <form action="{{ route('admin.direct-batch.financials.update', $batchId) }}" method="POST" class="p-5 space-y-3.5">
@@ -356,9 +359,13 @@
                         </div>
 
                         <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs font-sans">
+                            <div class="flex justify-between items-center text-slate-500 text-[11px]">
+                                <span>Due to TCA (Base):</span>
+                                <span class="font-bold text-slate-700">${{ number_format($batchCommissionBase, 2) }}</span>
+                            </div>
                             <div class="flex justify-between items-center text-slate-600 font-semibold">
                                 <span>Batch Net Margin:</span>
-                                <span id="batch_net_margin_val" data-sales="{{ $batchGross }}" data-tax="{{ $batchTax }}" data-value="{{ $batchNetMargin }}" class="font-bold text-slate-900 text-sm font-sans">${{ number_format($batchNetMargin, 2) }}</span>
+                                <span id="batch_net_margin_val" data-sales="{{ $batchCommissionBase }}" data-value="{{ $batchNetMargin }}" class="font-bold text-slate-900 text-sm font-sans">${{ number_format($batchNetMargin, 2) }}</span>
                             </div>
                             <div class="flex justify-between items-center text-slate-600 font-semibold border-t border-slate-200/80 pt-2">
                                 <span>Rep Payout Total:</span>
@@ -397,15 +404,22 @@ function recalcBatchRepEarned() {
     const feeInput = document.getElementById('batch_fee_deduction');
     if (!netMarginEl || !payoutEl || !rateInput) return;
 
-    const baseSales = parseFloat(netMarginEl.dataset.sales || 0);
-    const tax = parseFloat(netMarginEl.dataset.tax || 0);
+    const baseDueToTca = parseFloat(netMarginEl.dataset.sales || 0);
+    const hasMfgInput = mfgInput && mfgInput.value !== '';
     const mfg = parseFloat(mfgInput?.value || 0);
     const tariff = parseFloat(tariffInput?.value || 0);
     const fee = parseFloat(feeInput?.value || 0);
     const rate = parseFloat(rateInput.value || 0);
 
-    const totalExpense = mfg + tax + tariff + fee;
-    const netMargin = Math.max(0, baseSales - totalExpense);
+    if (!hasMfgInput && tariff <= 0 && fee <= 0) {
+        netMarginEl.textContent = '$0.00';
+        netMarginEl.dataset.value = 0;
+        payoutEl.textContent = '$0.00';
+        return;
+    }
+
+    const totalExpense = mfg + tariff + fee;
+    const netMargin = Math.max(0, baseDueToTca - totalExpense);
     const earned = Math.max(0, netMargin * (rate / 100.0));
 
     netMarginEl.textContent = '$' + netMargin.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

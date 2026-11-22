@@ -371,8 +371,9 @@ class OnlinePaymentTotalPaidAndBatchScopeTest extends TestCase
         $hamptonOrder->refresh();
         $this->assertEquals(1100.00, (float) $hamptonOrder->manufacturing_cost);
         $this->assertEquals(2135.00, (float) $hamptonOrder->wholesale_cost);
-        $this->assertEquals(1185.00, (float) $hamptonOrder->net_margin);
-        $this->assertEquals(592.50, (float) $hamptonOrder->rep_commission_earned);
+        // Net Margin is based on Due to TCA ($2,135) - Factory Cost ($1,100) - Tariff ($100) = $935.00
+        $this->assertEquals(935.00, (float) $hamptonOrder->net_margin);
+        $this->assertEquals(467.50, (float) $hamptonOrder->rep_commission_earned);
 
         $afterFin = ParentOrder::calculateBatchFinancials(collect([$hamptonOrder]), $store);
         $this->assertEquals(2385.00, $afterFin['total_sales']);
