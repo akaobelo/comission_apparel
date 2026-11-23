@@ -88,6 +88,7 @@ class OrderPinEditTest extends TestCase
             'athlete_last_name'  => 'Smith',
             'parent_email'       => 'parent@example.com',
             'parent_phone'       => '5551234567',
+            'shipping_address'   => '123 Main St, Tampa, FL 33602',
             'gender'             => 'Mens / Boys',
             'edit_pin'           => '5821',
             'items'              => [

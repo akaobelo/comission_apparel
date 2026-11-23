@@ -1483,6 +1483,21 @@ class CoachController extends Controller
 
     public function finalizeDirectOrders(Request $request)
     {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'shipping_address' => 'required|string|max:1000',
+        ], [
+            'shipping_address.required' => 'Please enter a shipping address before submitting your order.',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->route('coach.dashboard')
+                ->withErrors($validator)
+                ->withInput()
+                ->with('activeCoachTab', 'create_order');
+        }
+
+        $shippingAddress = trim($request->shipping_address);
+
         $user = $request->user();
         $activeStoreId = session('active_coach_store_id');
         $activeStore = $activeStoreId ? $user->teamStores()->find($activeStoreId) : $user->teamStores()->first();
@@ -1518,6 +1533,7 @@ class CoachController extends Controller
             $order->update([
                 'subtotal'           => $orderSubtotal,
                 'total_retail_price' => $orderSubtotal,
+                'shipping_address'   => $shippingAddress,
             ]);
             $subtotal += $orderSubtotal;
         }

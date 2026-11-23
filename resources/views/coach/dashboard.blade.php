@@ -762,15 +762,21 @@
                         </div>
 
                         <div class="border-t border-slate-200 pt-4 mt-4" x-data="{ agreed: false }">
-                            <label class="flex items-start gap-2 cursor-pointer mb-4">
-                                <input type="checkbox" x-model="agreed" class="mt-0.5 rounded border-slate-300 text-primary focus:ring-primary">
-                                <span class="text-[11px] text-slate-600 leading-tight">
-                                    I understand and agree that <strong class="text-slate-900">all sales are final and nonrefundable</strong>. Orders will be submitted to production immediately upon submission.
-                                </span>
-                            </label>
-
                             <form action="{{ route('coach.direct-order.finalize') }}" method="POST" @if(!$isCheckPayment) target="_blank" @endif>
                                 @csrf
+                                <div class="mb-4">
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Shipping Address <span class="text-red-500">*</span></label>
+                                    <textarea name="shipping_address" required rows="3" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-3 text-sm focus:bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-slate-900 placeholder:text-slate-400" placeholder="Street Address&#10;City, State ZIP">{{ old('shipping_address') }}</textarea>
+                                    @error('shipping_address')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
+                                </div>
+
+                                <label class="flex items-start gap-2 cursor-pointer mb-4">
+                                    <input type="checkbox" x-model="agreed" class="mt-0.5 rounded border-slate-300 text-primary focus:ring-primary">
+                                    <span class="text-[11px] text-slate-600 leading-tight">
+                                        I understand and agree that <strong class="text-slate-900">all sales are final and nonrefundable</strong>. Orders will be submitted to production immediately upon submission.
+                                    </span>
+                                </label>
+
                                 @if($isCheckPayment)
                                     <button type="submit" :disabled="!agreed" :class="agreed ? 'bg-secondary hover:bg-[#a11825] cursor-pointer' : 'bg-slate-300 cursor-not-allowed opacity-60'" class="btn text-white w-full py-3.5 text-xs font-bold uppercase tracking-widest shadow-sm flex items-center justify-center gap-2 transition-all">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -982,8 +988,9 @@
                                         </div>
 
                                         <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl mb-4">
-                                            <label class="block text-sm text-slate-700 mb-2 font-medium">Please enter your shipping address exactly as it should appear on the label:</label>
-                                            <textarea name="shipping_address" required rows="3" class="w-full bg-slate-100 border border-slate-200 rounded-lg p-3 text-sm focus:bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-inner text-slate-900" placeholder="Street Address&#10;City, State ZIP"></textarea>
+                                            <label class="block text-sm text-slate-700 mb-2 font-medium">Please enter your shipping address exactly as it should appear on the label: <span class="text-red-500">*</span></label>
+                                            <textarea name="shipping_address" required rows="3" class="w-full bg-slate-100 border border-slate-200 rounded-lg p-3 text-sm focus:bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-inner text-slate-900" placeholder="Street Address&#10;City, State ZIP">{{ old('shipping_address') }}</textarea>
+                                            @error('shipping_address')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
                                         </div>
 
                                         {{-- Unpaid Orders Acknowledgment or Check Payment Waived Banner --}}

@@ -210,6 +210,13 @@
                     </div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Athletes Ordered</span><span class="font-bold text-slate-900">{{ $orders->count() }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Total Items</span><span class="font-bold text-slate-900">{{ $financials['total_items_sold'] ?? 0 }}</span></div>
+                    @php
+                        $batchShippingAddress = $orders->first(fn($o) => !empty($o->shipping_address))?->shipping_address ?? $store?->shipping_address;
+                    @endphp
+                    <div class="pt-2 border-t border-slate-100">
+                        <span class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Shipping Address</span>
+                        <p class="text-sm font-medium text-slate-800 whitespace-pre-line">{{ $batchShippingAddress ?: 'Not provided' }}</p>
+                    </div>
                     <div class="flex justify-between text-sm items-center">
                         <span class="text-slate-500">Payment</span>
                         @if($firstOrder->payment_status === 'paid')

@@ -79,6 +79,7 @@ class ManufacturerExcelGenderSafeguardsTest extends TestCase
             'athlete_last_name'  => 'Runner',
             'parent_email'       => 'alex@example.com',
             'parent_phone'       => '5551112222',
+            'shipping_address'   => '456 Track Ave, Austin, TX 78701',
             'gender'             => 'Womens / Girls',
             'edit_pin'           => '1234',
             'items'              => [
