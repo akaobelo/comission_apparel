@@ -623,6 +623,27 @@ class ManufacturerExcelExportService
                                     }
                                 }
                             }
+                            // Fallback when an older order recorded set slots (warmup_set / warmup_set_2 or uniform_set / uniform_set_2)
+                            // but the package was later updated to separate top & bottom pieces (warmup_top / warmup_bottom).
+                            if (empty($linkedDesignId)) {
+                                $setFallbackCandidates = match ($typeKey) {
+                                    'warmup_set'    => ['warmup_top', 'warmup_bottom'],
+                                    'warmup_set_2'  => ['warmup_bottom', 'warmup_top'],
+                                    'uniform_set'   => ['uniform_top', 'uniform_bottom'],
+                                    'uniform_set_2' => ['uniform_bottom', 'uniform_top'],
+                                    default         => [],
+                                };
+                                foreach ($setFallbackCandidates as $fallbackType) {
+                                    if ($genderSuffix && !empty($componentDesignIds["{$fallbackType}{$genderSuffix}"])) {
+                                        $linkedDesignId = (int) $componentDesignIds["{$fallbackType}{$genderSuffix}"];
+                                        break;
+                                    }
+                                    if (!empty($componentDesignIds[$fallbackType])) {
+                                        $linkedDesignId = (int) $componentDesignIds[$fallbackType];
+                                        break;
+                                    }
+                                }
+                            }
                         }
 
                         if (!empty($linkedDesignId)) {

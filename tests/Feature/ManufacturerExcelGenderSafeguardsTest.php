@@ -750,5 +750,28 @@ class ManufacturerExcelGenderSafeguardsTest extends TestCase
         $this->assertContains('DWTC Warm-up (bottom)', $headers);
         $this->assertNotContains('DWTC Uni Package #3 - Warm-up (top/bottom)', $headers);
         $this->assertNotContains('DWTC Uni Package #3 - Warm-up #2 (set)', $headers);
+
+        // Also verify when the package itself is later updated from warmup_set / warmup_set_2
+        // to warmup_top / warmup_bottom, existing orders that still have warmup_set / warmup_set_2
+        // in items_json still resolve to the linked Warm-up Top and Warm-up Bottom columns.
+        $pkg3->update([
+            'types'                => ['warmup_top', 'warmup_bottom'],
+            'component_design_ids' => [
+                'warmup_top'    => $warmupTop->id,
+                'warmup_bottom' => $warmupBottom->id,
+            ],
+        ]);
+
+        $xlsxPath2 = $service->generateXlsx(collect([$order]), $store->fresh(), 'Dayton Wolverines Export After Package Fix');
+        $rows2 = $this->extractSheet1Rows($xlsxPath2);
+        @unlink($xlsxPath2);
+
+        $headerRows2 = array_values(array_filter($rows2, fn($r) => ($r[0] ?? '') === 'Order Type'));
+        $this->assertCount(1, $headerRows2);
+        $headers2 = $headerRows2[0];
+        $this->assertContains('DWTC Warm-up Top (jogger)', $headers2);
+        $this->assertContains('DWTC Warm-up (bottom)', $headers2);
+        $this->assertNotContains('DWTC Uni Package #3 - Warm-up (top/bottom)', $headers2);
+        $this->assertNotContains('DWTC Uni Package #3 - Warm-up #2 (set)', $headers2);
     }
 }
