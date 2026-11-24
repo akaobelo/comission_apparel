@@ -15,7 +15,7 @@ class MandatoryShippingAddressTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_team_store_order_requires_shipping_address()
+    public function test_team_store_order_allows_optional_shipping_address()
     {
         Mail::fake();
         Notification::fake();
@@ -38,7 +38,7 @@ class MandatoryShippingAddressTest extends TestCase
             'retail_price'    => 45.00,
         ]);
 
-        // Missing shipping_address should fail validation
+        // Missing shipping_address should succeed for parent/athlete team store orders
         $missingResponse = $this->post(route('store.order.submit', $store->slug), [
             'athlete_first_name' => 'Jordan',
             'athlete_last_name'  => 'Smith',
@@ -55,18 +55,22 @@ class MandatoryShippingAddressTest extends TestCase
             ],
         ]);
 
-        $missingResponse->assertSessionHasErrors('shipping_address');
-        $this->assertDatabaseCount('parent_orders', 0);
-
-        // Providing shipping_address should succeed and persist trimmed value
-        $validResponse = $this->post(route('store.order.submit', $store->slug), [
+        $missingResponse->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('parent_orders', [
+            'team_store_id'      => $store->id,
             'athlete_first_name' => 'Jordan',
+            'shipping_address'   => null,
+        ]);
+
+        // Providing shipping_address optionally should also succeed and persist trimmed value
+        $validResponse = $this->post(route('store.order.submit', $store->slug), [
+            'athlete_first_name' => 'Taylor',
             'athlete_last_name'  => 'Smith',
-            'parent_email'       => 'parent@example.com',
-            'parent_phone'       => '555-123-4567',
+            'parent_email'       => 'parent2@example.com',
+            'parent_phone'       => '555-123-4568',
             'shipping_address'   => '  123 Main St, Tampa, FL 33602  ',
             'gender'             => 'Mens / Boys',
-            'edit_pin'           => '1234',
+            'edit_pin'           => '5678',
             'items'              => [
                 $item->id => [
                     'selected' => '1',
@@ -78,8 +82,9 @@ class MandatoryShippingAddressTest extends TestCase
 
         $validResponse->assertSessionHasNoErrors();
         $this->assertDatabaseHas('parent_orders', [
-            'team_store_id'    => $store->id,
-            'shipping_address' => '123 Main St, Tampa, FL 33602',
+            'team_store_id'      => $store->id,
+            'athlete_first_name' => 'Taylor',
+            'shipping_address'   => '123 Main St, Tampa, FL 33602',
         ]);
     }
 
