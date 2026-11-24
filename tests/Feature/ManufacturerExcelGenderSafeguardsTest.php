@@ -654,4 +654,101 @@ class ManufacturerExcelGenderSafeguardsTest extends TestCase
         $this->assertContains('Club Uni #4 Top', $headers);
         $this->assertContains('Club Uni #4 Bottom', $headers);
     }
+
+    public function test_warmup_set_and_warmup_set_2_package_slots_respect_linked_single_warmup_pieces_in_excel(): void
+    {
+        $service = app(ManufacturerExcelExportService::class);
+
+        // Compatibility checks: warmup_set / warmup_set_2 accept single warm-up top/bottom pieces,
+        // while still rejecting unrelated garment types like uniform_top or backpack.
+        $this->assertTrue($service->isGarmentTypeCompatible('warmup_set', ['warmup_bottom'], 'DWTC Warm-up (bottom)'));
+        $this->assertTrue($service->isGarmentTypeCompatible('warmup_set_2', ['warmup_top'], 'DWTC Warm-up Top (jogger)'));
+        $this->assertTrue($service->isGarmentTypeCompatible('uniform_set', ['uniform_top'], 'DWTC Uni #2 Top'));
+        $this->assertTrue($service->isGarmentTypeCompatible('uniform_set_2', ['uniform_bottom'], 'DWTC Uni #2 (bottom)'));
+        $this->assertFalse($service->isGarmentTypeCompatible('warmup_set', ['uniform_top'], 'DWTC Uni #2 Top'));
+        $this->assertFalse($service->isGarmentTypeCompatible('warmup_set_2', ['backpack'], 'DWTC Backpack'));
+
+        $coach = User::factory()->create(['role' => 'coach']);
+        $store = TeamStore::create([
+            'user_id'            => $coach->id,
+            'name'               => 'Dayton Wolverines',
+            'slug'               => 'dayton-wolverines-' . uniqid(),
+            'status'             => 'active',
+            'payment_mode'       => 'coach_pays',
+            'fulfillment_method' => 'bulk',
+        ]);
+
+        $warmupTop = DesignCatalog::create([
+            'name'            => 'DWTC Warm-up Top (jogger)',
+            'category'        => 'individual',
+            'type'            => 'warmup_top',
+            'types'           => ['warmup_top'],
+            'wholesale_price' => 45.00,
+        ]);
+        $warmupBottom = DesignCatalog::create([
+            'name'            => 'DWTC Warm-up (bottom)',
+            'category'        => 'individual',
+            'type'            => 'warmup_bottom',
+            'types'           => ['warmup_bottom'],
+            'wholesale_price' => 40.00,
+        ]);
+
+        foreach ([$warmupTop, $warmupBottom] as $idx => $d) {
+            StoreItem::create([
+                'team_store_id'     => $store->id,
+                'design_catalog_id' => $d->id,
+                'name'              => $d->name,
+                'types'             => $d->types,
+                'sort_order'        => $idx + 1,
+                'retail_price'      => 50.00,
+            ]);
+        }
+
+        $pkg3 = StoreItem::create([
+            'team_store_id'        => $store->id,
+            'name'                 => 'DWTC Uni Package #3',
+            'types'                => ['warmup_set', 'warmup_set_2'],
+            'component_design_ids' => [
+                'warmup_set'   => $warmupBottom->id,
+                'warmup_set_2' => $warmupTop->id,
+            ],
+            'sort_order'           => 10,
+            'retail_price'         => 180.00,
+        ]);
+
+        $order = ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'athlete_first_name' => 'Jordan',
+            'athlete_last_name'  => 'Wolverine',
+            'parent_email'       => 'jordan@example.com',
+            'parent_phone'       => '5550004444',
+            'gender'             => 'Female',
+            'status'             => 'Submitted',
+            'payment_status'     => 'not_applicable',
+            'items_json'         => [[
+                'id'     => $pkg3->id,
+                'name'   => $pkg3->name,
+                'types'  => ['warmup_set', 'warmup_set_2'],
+                'qty'    => 1,
+                'gender' => 'Female',
+                'sizes'  => [
+                    'warmup_set'   => 'YM',
+                    'warmup_set_2' => 'YM',
+                ],
+            ]],
+        ]);
+
+        $xlsxPath = $service->generateXlsx(collect([$order]), $store->fresh(), 'Dayton Wolverines Export');
+        $rows = $this->extractSheet1Rows($xlsxPath);
+        @unlink($xlsxPath);
+
+        $headerRows = array_values(array_filter($rows, fn($r) => ($r[0] ?? '') === 'Order Type'));
+        $this->assertCount(1, $headerRows);
+
+        $headers = $headerRows[0];
+        $this->assertContains('DWTC Warm-up Top (jogger)', $headers);
+        $this->assertContains('DWTC Warm-up (bottom)', $headers);
+        $this->assertNotContains('DWTC Uni Package #3 - Warm-up (top/bottom)', $headers);
+        $this->assertNotContains('DWTC Uni Package #3 - Warm-up #2 (set)', $headers);
+    }
 }

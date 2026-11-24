@@ -761,7 +761,10 @@
                                                             $candTypes = is_array($candDesign->types) ? $candDesign->types : ($candDesign->type ? [$candDesign->type] : []);
                                                             $baseTKey = \App\Services\ManufacturerExcelExportService::normalizeBaseGarmentType((string) $tKey);
                                                             $candBaseTypes = array_map(fn($ct) => \App\Services\ManufacturerExcelExportService::normalizeBaseGarmentType((string) $ct), $candTypes);
-                                                            $isMatchingType = in_array((string) $tKey, $candTypes, true) || in_array($baseTKey, $candBaseTypes, true);
+                                                            $isMatchingType = in_array((string) $tKey, $candTypes, true)
+                                                                || in_array($baseTKey, $candBaseTypes, true)
+                                                                || ($baseTKey === 'warmup_set' && (in_array('warmup_top', $candBaseTypes, true) || in_array('warmup_bottom', $candBaseTypes, true)))
+                                                                || ($baseTKey === 'uniform_set' && (in_array('uniform_top', $candBaseTypes, true) || in_array('uniform_bottom', $candBaseTypes, true)));
                                                         @endphp
                                                         <option value="{{ $candDesign->id }}" {{ (string) $selectedCompDesignId === (string) $candDesign->id ? 'selected' : '' }} class="{{ $isMatchingType ? 'font-bold text-slate-900 bg-blue-50' : 'text-slate-600' }}">
                                                             {{ $isMatchingType ? '★ ' : '' }}{{ $candDesign->name }} ({{ $candDesign->type_label }})
@@ -815,7 +818,10 @@
                                                                         $candTypes = is_array($candDesign->types) ? $candDesign->types : ($candDesign->type ? [$candDesign->type] : []);
                                                                         $baseTKey = \App\Services\ManufacturerExcelExportService::normalizeBaseGarmentType((string) $tKey);
                                                                         $candBaseTypes = array_map(fn($ct) => \App\Services\ManufacturerExcelExportService::normalizeBaseGarmentType((string) $ct), $candTypes);
-                                                                        $isMatchingType = in_array((string) $tKey, $candTypes, true) || in_array($baseTKey, $candBaseTypes, true);
+                                                                        $isMatchingType = in_array((string) $tKey, $candTypes, true)
+                                                                            || in_array($baseTKey, $candBaseTypes, true)
+                                                                            || ($baseTKey === 'warmup_set' && (in_array('warmup_top', $candBaseTypes, true) || in_array('warmup_bottom', $candBaseTypes, true)))
+                                                                            || ($baseTKey === 'uniform_set' && (in_array('uniform_top', $candBaseTypes, true) || in_array('uniform_bottom', $candBaseTypes, true)));
                                                                     @endphp
                                                                     <option value="{{ $candDesign->id }}" {{ (string) $selOverrideId === (string) $candDesign->id ? 'selected' : '' }}>
                                                                         {{ $isMatchingType ? '★ ' : '' }}{{ $candDesign->name }} ({{ $candDesign->type_label }})

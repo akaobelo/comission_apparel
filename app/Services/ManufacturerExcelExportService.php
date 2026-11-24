@@ -1336,7 +1336,23 @@ class ManufacturerExcelExportService
         }
 
         if (count($itemTypes) === 1) {
-            return $this->matchSingleGarmentTypeScore($baseTarget, [$baseItemTypes[0]], $itemName) !== null;
+            if ($this->matchSingleGarmentTypeScore($baseTarget, [$baseItemTypes[0]], $itemName) !== null) {
+                return true;
+            }
+
+            // Allow a Warm-up Set or Uniform Set slot (e.g. warmup_set, warmup_set_2, uniform_set, uniform_set_2)
+            // to be explicitly linked to a compatible single Warm-up or Uniform Top/Bottom piece.
+            if ($baseTarget === 'warmup_set') {
+                return $this->matchSingleGarmentTypeScore('warmup_top', [$baseItemTypes[0]], $itemName) !== null
+                    || $this->matchSingleGarmentTypeScore('warmup_bottom', [$baseItemTypes[0]], $itemName) !== null;
+            }
+
+            if ($baseTarget === 'uniform_set') {
+                return $this->matchSingleGarmentTypeScore('uniform_top', [$baseItemTypes[0]], $itemName) !== null
+                    || $this->matchSingleGarmentTypeScore('uniform_bottom', [$baseItemTypes[0]], $itemName) !== null;
+            }
+
+            return false;
         }
 
         return false;
