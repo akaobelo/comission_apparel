@@ -115,40 +115,40 @@ class CoachController extends Controller
         $salesSummary = [
             'orders_count' => 0,
             'total_sales' => 0,
+            'total_wholesale' => 0,
+            'net_proceeds' => 0,
+            'coach_profit_owed' => 0,
             'total_items_sold' => 0,
             'average_order_value' => 0,
             'order_rows' => [],
         ];
 
         if ($store) {
-            $priceByItemId = $store->items->keyBy('id');
+            $batchFinancials = \App\Models\ParentOrder::calculateBatchFinancials($store->parentOrders, $store);
             $orderRows = [];
-            $totalSales = 0;
-            $totalWholesale = 0;
-            $totalItemsSold = 0;
 
             foreach ($store->parentOrders as $order) {
                 $orderTotal = 0;
-                $orderWholesaleTotal = 0;
                 $orderItemsCount = 0;
                 $items = is_array($order->items_json) ? $order->items_json : [];
 
                 foreach ($items as $orderedItem) {
-                    $itemId = isset($orderedItem['id']) ? (int) $orderedItem['id'] : null;
                     $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
                     $orderItemsCount += $qty;
-
-                    $prices = \App\Models\ParentOrder::getItemPrices($orderedItem, $store);
-                    $retailPrice = $prices['retail_price'];
-                    $wholesalePrice = $prices['wholesale_price'];
-                    
-                    $orderTotal += ($retailPrice * $qty);
-                    $orderWholesaleTotal += ($wholesalePrice * $qty);
                 }
 
-                $totalSales += $orderTotal;
-                $totalWholesale += $orderWholesaleTotal;
-                $totalItemsSold += $orderItemsCount;
+                if ($order->isPaid() || (float) ($order->subtotal ?? 0) > 0) {
+                    $orderTotal = (float) ($order->subtotal ?? 0);
+                    if ($orderTotal <= 0) {
+                        $orderTotal = (float) ($order->total_retail_price ?? 0);
+                    }
+                } else {
+                    foreach ($items as $orderedItem) {
+                        $qty = max(1, (int) ($orderedItem['qty'] ?? 1));
+                        $prices = \App\Models\ParentOrder::getItemPrices($orderedItem, $store);
+                        $orderTotal += ((float) $prices['retail_price'] * $qty);
+                    }
+                }
 
                 $orderRows[] = [
                     'athlete_name' => $order->athlete_name,
@@ -158,14 +158,14 @@ class CoachController extends Controller
                 ];
             }
 
-            $ordersCount = count($orderRows);
             $salesSummary = [
-                'orders_count' => $ordersCount,
-                'total_sales' => $totalSales,
-                'total_wholesale' => $totalWholesale,
-                'net_proceeds' => $totalSales - $totalWholesale,
-                'total_items_sold' => $totalItemsSold,
-                'average_order_value' => $ordersCount > 0 ? $totalSales / $ordersCount : 0,
+                'orders_count' => $batchFinancials['orders_count'] ?? count($orderRows),
+                'total_sales' => $batchFinancials['total_sales'] ?? 0,
+                'total_wholesale' => $batchFinancials['total_wholesale'] ?? 0,
+                'net_proceeds' => $batchFinancials['net_proceeds'] ?? 0,
+                'coach_profit_owed' => $batchFinancials['coach_profit_owed'] ?? $batchFinancials['net_proceeds'] ?? 0,
+                'total_items_sold' => $batchFinancials['total_items_sold'] ?? 0,
+                'average_order_value' => $batchFinancials['average_order_value'] ?? 0,
                 'order_rows' => $orderRows,
             ];
         }

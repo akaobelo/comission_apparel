@@ -1767,9 +1767,9 @@
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Due to The Commission Apparel</p>
                 <p class="text-3xl font-black text-red-600">${{ number_format($salesSummary['total_wholesale'] ?? 0, 2) }}</p>
             </div>
-            <div class="bg-white border-2 border-green-200 rounded-xl shadow-sm p-5">
-                <p class="text-xs font-bold uppercase tracking-wider text-green-600 mb-1">Net Proceeds</p>
-                <p class="text-3xl font-black text-green-700">${{ number_format($salesSummary['net_proceeds'] ?? 0, 2) }}</p>
+            <div class="bg-white border-2 border-indigo-200 rounded-xl shadow-sm p-5">
+                <p class="text-xs font-bold uppercase tracking-wider text-indigo-900 mb-1">Store Profit</p>
+                <p class="text-3xl font-black text-indigo-600">${{ number_format($salesSummary['coach_profit_owed'] ?? $salesSummary['net_proceeds'] ?? 0, 2) }}</p>
             </div>
         </div>
 
@@ -2021,8 +2021,23 @@
                                                         </div>
                                                         <div class="flex justify-between text-sm"><span class="text-slate-500">Processing Fee (Stripe)</span><span class="font-bold text-slate-600">${{ number_format($financials['total_fees'] ?? 0, 2) }}</span></div>
                                                         <div class="flex justify-between text-sm pt-1 border-t border-slate-100"><span class="font-bold text-emerald-600">Online Payment (Stripe)</span><span class="font-bold text-emerald-600">${{ number_format($financials['total_online_paid'] ?? 0, 2) }}</span></div>
+                                                    @else
+                                                        @php
+                                                            $estTaxRate = $isTaxExempt ? 0.00 : (float) config('services.stripe.tax_rate', 0.075);
+                                                            $estTaxBase = (!$isMaster || $firstOrder->teamStore?->isInHousePayment()) ? (float) ($financials['total_wholesale'] ?? 0) : (float) ($financials['total_sales'] ?? 0);
+                                                            $estimatedSalesTax = ($financials['total_tax'] ?? 0) > 0
+                                                                ? (float) $financials['total_tax']
+                                                                : ($isTaxExempt ? 0.00 : round($estTaxBase * $estTaxRate, 2));
+                                                        @endphp
+                                                        <div class="flex justify-between text-sm">
+                                                            <span class="text-slate-500">Estimated Sales Tax {{ $isTaxExempt ? '(501(c)(3) Waived)' : '(7.5%)' }}</span>
+                                                            <span class="font-bold {{ $isTaxExempt ? 'text-blue-700' : 'text-slate-700' }}">${{ number_format($estimatedSalesTax, 2) }}</span>
+                                                        </div>
                                                     @endif
                                                     <div class="flex justify-between text-sm pt-1 border-t border-slate-100"><span class="font-bold text-secondary">Due to TCA</span><span class="font-bold text-secondary">${{ number_format($financials['total_wholesale'] ?? 0, 2) }}</span></div>
+                                                    @if($isMaster || ($financials['coach_profit_owed'] ?? 0) > 0)
+                                                        <div class="flex justify-between text-sm pt-1.5 border-t border-slate-100"><span class="text-indigo-900 font-bold">Store Profit Owed</span><span class="font-black text-indigo-600">${{ number_format($financials['coach_profit_owed'] ?? $financials['net_proceeds'] ?? 0, 2) }}</span></div>
+                                                    @endif
                                                     @if($isBatchInHouseUnpaid && $firstOrder->teamStore && ($financials['total_wholesale'] ?? 0) > 0)
                                                         <div class="pt-3 mt-2 border-t border-slate-200">
                                                             <form action="{{ route('coach.store.batch.pay', [$firstOrder->teamStore, $batchId]) }}" method="POST">
