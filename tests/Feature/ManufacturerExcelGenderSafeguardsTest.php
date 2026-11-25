@@ -764,6 +764,7 @@ class ManufacturerExcelGenderSafeguardsTest extends TestCase
 
         $xlsxPath2 = $service->generateXlsx(collect([$order]), $store->fresh(), 'Dayton Wolverines Export After Package Fix');
         $rows2 = $this->extractSheet1Rows($xlsxPath2);
+        $sharedStrings2 = $this->extractSharedStrings($xlsxPath2);
         @unlink($xlsxPath2);
 
         $headerRows2 = array_values(array_filter($rows2, fn($r) => ($r[0] ?? '') === 'Order Type'));
@@ -773,5 +774,13 @@ class ManufacturerExcelGenderSafeguardsTest extends TestCase
         $this->assertContains('DWTC Warm-up (bottom)', $headers2);
         $this->assertNotContains('DWTC Uni Package #3 - Warm-up (top/bottom)', $headers2);
         $this->assertNotContains('DWTC Uni Package #3 - Warm-up #2 (set)', $headers2);
+
+        // Sheet 2 (Full Order Roster) must also display the updated Warm-up (top) / Warm-up (bottom) labels
+        // instead of the stale Warm-up (top/bottom) / Warm-up #2 (set) keys saved on older orders.
+        $allRosterText = implode("\n", $sharedStrings2);
+        $this->assertStringContainsString('Warm-up (top), Warm-up (bottom)', $allRosterText);
+        $this->assertStringContainsString('Warm-up (top) (DWTC Warm-up Top (jogger)): YM | Warm-up (bottom) (DWTC Warm-up (bottom)): YM', $allRosterText);
+        $this->assertStringNotContainsString('Warm-up #2 (set)', $allRosterText);
+        $this->assertStringNotContainsString('Warm-up (top/bottom)', $allRosterText);
     }
 }

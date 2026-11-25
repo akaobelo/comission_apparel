@@ -595,6 +595,7 @@ class ManufacturerExcelExportService
                         $linkedDesignId = ($genderOverrideKey && !empty($componentDesignIds[$genderOverrideKey]))
                             ? (int) $componentDesignIds[$genderOverrideKey]
                             : (!empty($componentDesignIds[$typeKey]) ? (int) $componentDesignIds[$typeKey] : null);
+                        $resolvedType = $typeKey;
 
                         // Fallback for numbered garment slots (e.g. order has 'uniform_top' while package maps 'uniform_2_top')
                         if (empty($linkedDesignId) && !empty($componentDesignIds)) {
@@ -636,10 +637,12 @@ class ManufacturerExcelExportService
                                 foreach ($setFallbackCandidates as $fallbackType) {
                                     if ($genderSuffix && !empty($componentDesignIds["{$fallbackType}{$genderSuffix}"])) {
                                         $linkedDesignId = (int) $componentDesignIds["{$fallbackType}{$genderSuffix}"];
+                                        $resolvedType = $fallbackType;
                                         break;
                                     }
                                     if (!empty($componentDesignIds[$fallbackType])) {
                                         $linkedDesignId = (int) $componentDesignIds[$fallbackType];
+                                        $resolvedType = $fallbackType;
                                         break;
                                     }
                                 }
@@ -660,17 +663,24 @@ class ManufacturerExcelExportService
                                 $linkedIsMulti = count($linkedTypes) > 1;
 
                                 if ($this->isGarmentTypeCompatible($typeKey, $linkedTypes, $linkedName)) {
+                                    // If a legacy set slot resolved to a single-piece garment (e.g. warmup_set_2 -> warmup_bottom),
+                                    // display the single-piece garment type on the Full Order Roster instead of the stale set label.
+                                    if (count($linkedTypes) === 1 && in_array($typeKey, ['warmup_set', 'warmup_set_2', 'uniform_set', 'uniform_set_2'], true)) {
+                                        $resolvedType = (string) $linkedTypes[0];
+                                    }
+
                                     $colLabel = ($linkedIsMulti && $tLabel !== '') ? "{$linkedName} - {$tLabel}" : $linkedName;
                                     $colKey = $linkedIsMulti ? "{$linkedIdentifier}_{$typeKey}" : $linkedIdentifier;
                                     $img = $resolveGarmentImage($linkedStoreItem, $linkedDesign, $linkedName, $typeKey, $itemGender, $linkedIsMulti);
 
                                     return [
-                                        'col_key'     => $colKey,
-                                        'label'       => $colLabel,
-                                        'image'       => $img,
-                                        'sort_order'  => $linkedSort,
-                                        'sub_order'   => $linkedIsMulti ? ($typeSortWeight[$typeKey] ?? 50) : 0,
-                                        'linked_name' => $linkedName,
+                                        'col_key'       => $colKey,
+                                        'label'         => $colLabel,
+                                        'image'         => $img,
+                                        'sort_order'    => $linkedSort,
+                                        'sub_order'     => $linkedIsMulti ? ($typeSortWeight[$typeKey] ?? 50) : 0,
+                                        'linked_name'   => $linkedName,
+                                        'resolved_type' => $resolvedType,
                                     ];
                                 }
                             }
@@ -681,12 +691,13 @@ class ManufacturerExcelExportService
                         $img = $resolveGarmentImage($storeItem, $design, $itemName, $typeKey, $itemGender, $defaultMulti);
 
                         return [
-                            'col_key'     => $colKey,
-                            'label'       => $colLabel,
-                            'image'       => $img,
-                            'sort_order'  => $baseSort,
-                            'sub_order'   => $typeSortWeight[$typeKey] ?? 50,
-                            'linked_name' => null,
+                            'col_key'       => $colKey,
+                            'label'         => $colLabel,
+                            'image'         => $img,
+                            'sort_order'    => $baseSort,
+                            'sub_order'     => $typeSortWeight[$typeKey] ?? 50,
+                            'linked_name'   => null,
+                            'resolved_type' => $resolvedType,
                         ];
                     };
 
@@ -698,7 +709,7 @@ class ManufacturerExcelExportService
                             $pieces[] = [
                                 'col_key'     => $mapped['col_key'],
                                 'label'       => $mapped['label'],
-                                'type'        => $typeKey,
+                                'type'        => $mapped['resolved_type'] ?? $typeKey,
                                 'size'        => trim((string) $s),
                                 'qty'         => $itemQty,
                                 'image'       => $mapped['image'],
@@ -715,7 +726,7 @@ class ManufacturerExcelExportService
                         $pieces[] = [
                             'col_key'     => $mapped['col_key'],
                             'label'       => $mapped['label'],
-                            'type'        => $nsType,
+                            'type'        => $mapped['resolved_type'] ?? $nsType,
                             'size'        => 'One Size',
                             'qty'         => $itemQty,
                             'image'       => $mapped['image'],
@@ -788,6 +799,14 @@ class ManufacturerExcelExportService
                     }
                 }
 
+                $resolvedRosterTypes = array_values(array_unique(array_filter(
+                    array_column($pieces, 'type'),
+                    fn($t) => is_string($t) && $t !== '' && !in_array($t, ['component', 'item', 'default'], true)
+                )));
+                $displayTypes = !empty($resolvedRosterTypes)
+                    ? $resolvedRosterTypes
+                    : ($item['types'] ?? [$item['type'] ?? '']);
+
                 $flatRoster[] = [
                     'order_id'       => $order->id,
                     'date'           => $order->created_at ? $order->created_at->format('Y-m-d') : '',
@@ -798,7 +817,7 @@ class ManufacturerExcelExportService
                     'jersey_number'  => $athleteRow['jersey_number'],
                     'backpack_name'  => $athleteRow['backpack_name'],
                     'item_name'      => $itemName,
-                    'types'          => implode(', ', array_map(fn($t) => DesignCatalog::formatTypeLabel((string) $t), $item['types'] ?? [$item['type'] ?? ''])),
+                    'types'          => implode(', ', array_map(fn($t) => DesignCatalog::formatTypeLabel((string) $t), $displayTypes)),
                     'sizes'          => implode(' | ', $sizesSummary),
                     'qty'            => $itemQty,
                     'payment_status' => $order->isPaid() ? 'Paid' : 'Unpaid',
