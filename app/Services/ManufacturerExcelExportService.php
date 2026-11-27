@@ -1558,6 +1558,19 @@ class ManufacturerExcelExportService
             return null;
         }
 
+        if ($targetGarmentType === 'uniform_singlet') {
+            if ($nameSaysWarmup) {
+                return null;
+            }
+            if ($actualType === 'uniform_singlet') {
+                return 30;
+            }
+            if (str_contains($nameLower, 'singlet')) {
+                return 25;
+            }
+            return null;
+        }
+
         if ($targetGarmentType === 'arm_sleeve') {
             if ($actualType === 'arm_sleeve') {
                 return 30;
@@ -1705,7 +1718,7 @@ class ManufacturerExcelExportService
         $isFemale = str_contains($genderLower, 'fem') || str_contains($genderLower, 'girl') || str_contains($genderLower, 'wom') || str_contains($parentLower, 'racerback') || str_contains($parentLower, 'female') || str_contains($parentLower, 'girl');
         $isMale = (!$isFemale) && (str_contains($genderLower, 'male') || str_contains($genderLower, 'boy') || str_contains($genderLower, 'men') || str_contains($parentLower, 'tank') || str_contains($parentLower, 'male'));
 
-        $styleKeywords = ['racerback', 'tank', 'spandex', 'compression', 'jogger', 'hoodie', 'zipper', 'qt. zip', 'quarter zip', 'pullover', 'drifit', 'alt', 'alternate', 'primary', 'secondary'];
+        $styleKeywords = ['racerback', 'tank', 'singlet', 'spandex', 'compression', 'jogger', 'hoodie', 'zipper', 'qt. zip', 'quarter zip', 'pullover', 'drifit', 'alt', 'alternate', 'primary', 'secondary'];
 
         $bestImg = null;
         $bestScore = -999;
@@ -1719,7 +1732,7 @@ class ManufacturerExcelExportService
 
             // If the parent is a numbered Uniform Set (not a Package, e.g. "Legacy Uni #6 Set" or "Legacy Uni #1 Set"),
             // do NOT pull a single garment from a different uniform number (#1 vs #6)!
-            if (!$isPackage && $parentNum !== null && in_array($baseGarmentType, ['uniform_top', 'uniform_bottom'], true)) {
+            if (!$isPackage && $parentNum !== null && in_array($baseGarmentType, ['uniform_top', 'uniform_bottom', 'uniform_singlet'], true)) {
                 if ($candNum !== $parentNum) {
                     continue;
                 }
@@ -1737,10 +1750,12 @@ class ManufacturerExcelExportService
                 }
             }
 
-            // Bonus when the candidate explicitly says 'top' for *_top or 'bottom' for *_bottom
+            // Bonus when the candidate explicitly says 'top' for *_top, 'bottom' for *_bottom, or 'singlet' for uniform_singlet
             if (str_ends_with($garmentType, '_top') && (str_contains($cName, 'top') || str_contains($cName, 'jacket') || str_contains($cName, 'hoodie'))) {
                 $score += 10;
             } elseif (str_ends_with($garmentType, '_bottom') && (str_contains($cName, 'bottom') || str_contains($cName, 'jogger') || str_contains($cName, 'legging') || str_contains($cName, 'pant'))) {
+                $score += 10;
+            } elseif ($garmentType === 'uniform_singlet' && str_contains($cName, 'singlet')) {
                 $score += 10;
             }
 

@@ -783,4 +783,134 @@ class ManufacturerExcelGenderSafeguardsTest extends TestCase
         $this->assertStringNotContainsString('Warm-up #2 (set)', $allRosterText);
         $this->assertStringNotContainsString('Warm-up (top/bottom)', $allRosterText);
     }
+
+    public function test_uniform_singlet_orders_and_package_export_in_manufacturer_visual_excel(): void
+    {
+        $service = app(ManufacturerExcelExportService::class);
+
+        // 1. Compatibility & formatting checks for uniform_singlet
+        $this->assertSame('Uniform (Singlet)', DesignCatalog::formatTypeLabel('uniform_singlet'));
+        $this->assertContains('uniform_singlet', DesignCatalog::sizedTypes());
+        $this->assertTrue($service->isGarmentTypeCompatible('uniform_singlet', ['uniform_singlet'], 'Elevate V2 Singlet'));
+        $this->assertTrue($service->isGarmentTypeCompatible('uniform_singlet', ['uniform_top'], 'Legacy Singlet'));
+        $this->assertFalse($service->isGarmentTypeCompatible('uniform_singlet', ['warmup_top'], 'Warm-up Top'));
+
+        $coach = User::factory()->create(['role' => 'coach']);
+        $store = TeamStore::create([
+            'user_id'            => $coach->id,
+            'name'               => 'Stoic Strength Wrestling',
+            'slug'               => 'stoic-strength-wrestling-' . uniqid(),
+            'status'             => 'active',
+            'payment_mode'       => 'coach_pays',
+            'fulfillment_method' => 'bulk',
+        ]);
+
+        $singletDesign = DesignCatalog::create([
+            'name'             => 'Stoic Elevate V2 Singlet',
+            'category'         => 'individual',
+            'type'             => null,
+            'types'            => ['uniform_singlet'],
+            'has_name_field'   => true,
+            'has_number_field' => false,
+            'wholesale_price'  => 55.00,
+        ]);
+        $warmupDesign = DesignCatalog::create([
+            'name'            => 'Stoic Warm-up Hoodie',
+            'category'        => 'individual',
+            'type'            => null,
+            'types'           => ['warmup_top'],
+            'wholesale_price' => 45.00,
+        ]);
+
+        $singletStoreItem = StoreItem::create([
+            'team_store_id'     => $store->id,
+            'design_catalog_id' => $singletDesign->id,
+            'name'              => $singletDesign->name,
+            'types'             => ['uniform_singlet'],
+            'retail_price'      => 65.00,
+            'sort_order'        => 1,
+        ]);
+        StoreItem::create([
+            'team_store_id'     => $store->id,
+            'design_catalog_id' => $warmupDesign->id,
+            'name'              => $warmupDesign->name,
+            'types'             => ['warmup_top'],
+            'retail_price'      => 55.00,
+            'sort_order'        => 2,
+        ]);
+
+        $singletPkg = StoreItem::create([
+            'team_store_id'        => $store->id,
+            'name'                 => 'Stoic Singlet Kit Package',
+            'types'                => ['uniform_singlet', 'warmup_top'],
+            'component_design_ids' => [
+                'uniform_singlet' => $singletDesign->id,
+                'warmup_top'      => $warmupDesign->id,
+            ],
+            'retail_price'         => 110.00,
+            'sort_order'           => 3,
+        ]);
+
+        // Standalone singlet order + package order containing a singlet
+        $order1 = ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'athlete_first_name' => 'Alex',
+            'athlete_last_name'  => 'Carter',
+            'parent_email'       => 'alex@example.com',
+            'parent_phone'       => '5550005551',
+            'gender'             => 'Mens / Boys',
+            'jersey_name'        => 'CARTER',
+            'status'             => 'Submitted',
+            'payment_status'     => 'not_applicable',
+            'items_json'         => [[
+                'id'     => $singletStoreItem->id,
+                'name'   => $singletStoreItem->name,
+                'types'  => ['uniform_singlet'],
+                'qty'    => 2,
+                'gender' => 'Mens / Boys',
+                'sizes'  => ['uniform_singlet' => 'AL'],
+            ]],
+        ]);
+
+        $order2 = ParentOrder::create([
+            'team_store_id'      => $store->id,
+            'athlete_first_name' => 'Maya',
+            'athlete_last_name'  => 'Brooks',
+            'parent_email'       => 'maya@example.com',
+            'parent_phone'       => '5550005552',
+            'gender'             => 'Womens / Girls',
+            'jersey_name'        => 'BROOKS',
+            'status'             => 'Submitted',
+            'payment_status'     => 'not_applicable',
+            'items_json'         => [[
+                'id'     => $singletPkg->id,
+                'name'   => $singletPkg->name,
+                'types'  => ['uniform_singlet', 'warmup_top'],
+                'qty'    => 1,
+                'gender' => 'Womens / Girls',
+                'sizes'  => [
+                    'uniform_singlet' => 'AS',
+                    'warmup_top'      => 'AM',
+                ],
+            ]],
+        ]);
+
+        $xlsxPath = $service->generateXlsx(collect([$order1, $order2]), $store->fresh(), 'Stoic Singlet Export');
+        $sheet1Rows = $this->extractSheet1Rows($xlsxPath);
+        $sharedStrings = $this->extractSharedStrings($xlsxPath);
+        @unlink($xlsxPath);
+
+        $headerRows = array_values(array_filter($sheet1Rows, fn($r) => ($r[0] ?? '') === 'Order Type'));
+        $this->assertCount(2, $headerRows, 'Expected separate Female and Male staircase sections.');
+
+        // Both Female (via linked package) and Male (standalone) sections must include the Singlet column
+        $this->assertContains('Stoic Elevate V2 Singlet', $headerRows[0]);
+        $this->assertContains('Stoic Warm-up Hoodie', $headerRows[0]);
+        $this->assertContains('Stoic Elevate V2 Singlet', $headerRows[1]);
+
+        // Full Order Roster & summary strings must show the human-readable "Uniform (Singlet)" label
+        $allText = implode("\n", $sharedStrings);
+        $this->assertStringContainsString('Uniform (Singlet)', $allText);
+        $this->assertStringContainsString('Uniform (Singlet) (Stoic Elevate V2 Singlet): AS | Warm-up (top) (Stoic Warm-up Hoodie): AM', $allText);
+    }
 }
