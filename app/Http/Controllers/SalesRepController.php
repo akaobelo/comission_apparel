@@ -245,6 +245,7 @@ class SalesRepController extends Controller
             'uniform_top' => 'Uniform (top)',
             'uniform_bottom' => 'Uniform (bottom)',
             'uniform_set' => 'Uniform Set (top/bottom)',
+            'uniform_singlet' => 'Uniform (Singlet)',
             'uniform_2_top' => 'Uniform #2 (top)',
             'uniform_2_bottom' => 'Uniform #2 (bottom)',
             'uniform_set_2' => 'Uniform #2 (Set)',
