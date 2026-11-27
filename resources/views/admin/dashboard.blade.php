@@ -1647,15 +1647,92 @@
                         @endif
                     </form>
                 </div>
-                <div id="quote-inquiries-full-results">
+                <div id="quote-inquiries-full-results"
+                     x-data="{
+                        selectedQuotes: [],
+                        allPageQuoteIds: @js($quoteRequests->pluck('id')->map(fn($id) => (string) $id)->values()->all()),
+                        lastClickedIndex: null,
+                        toggleAll(checked) {
+                            this.selectedQuotes = checked ? [...this.allPageQuoteIds] : [];
+                            this.lastClickedIndex = null;
+                        },
+                        handleCheckboxClick(event, id, index) {
+                            const strId = String(id);
+                            if (event.shiftKey && this.lastClickedIndex !== null && this.lastClickedIndex !== index) {
+                                const start = Math.min(this.lastClickedIndex, index);
+                                const end = Math.max(this.lastClickedIndex, index);
+                                const rangeIds = this.allPageQuoteIds.slice(start, end + 1);
+                                const shouldCheck = event.target.checked;
+                                if (shouldCheck) {
+                                    const set = new Set([...this.selectedQuotes, ...rangeIds]);
+                                    this.selectedQuotes = Array.from(set);
+                                } else {
+                                    const rangeSet = new Set(rangeIds);
+                                    this.selectedQuotes = this.selectedQuotes.filter(qId => !rangeSet.has(qId));
+                                }
+                            }
+                            this.lastClickedIndex = index;
+                        }
+                     }">
                     @if($quoteRequests->isEmpty())
                         <div class="p-12 text-center text-slate-400 text-sm">No quote inquiries found.</div>
                     @else
+                        {{-- Bulk Selection & Delete Toolbar --}}
+                        <div class="px-6 py-3 border-b border-slate-200 bg-slate-50/90 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-10">
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <label class="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-slate-700 hover:text-slate-900">
+                                    <input type="checkbox"
+                                           :checked="allPageQuoteIds.length > 0 && selectedQuotes.length === allPageQuoteIds.length"
+                                           x-effect="$el.indeterminate = selectedQuotes.length > 0 && selectedQuotes.length < allPageQuoteIds.length"
+                                           @change="toggleAll($event.target.checked)"
+                                           class="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer">
+                                    <span>Select All on Page ({{ $quoteRequests->count() }})</span>
+                                </label>
+                                <span x-show="selectedQuotes.length > 0" x-cloak class="inline-flex items-center gap-2">
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-red-100 text-red-700 border border-red-200" x-text="selectedQuotes.length + ' selected'"></span>
+                                    <button type="button" @click="selectedQuotes = []; lastClickedIndex = null;" class="text-xs font-semibold text-slate-500 hover:text-slate-800 underline">Clear</button>
+                                </span>
+                                <span class="hidden sm:inline text-[11px] text-slate-400">Tip: Hold Shift + click to select a range</span>
+                            </div>
+
+                            <form action="{{ route('admin.quotes.bulk-delete') }}"
+                                  method="POST"
+                                  class="flex items-center"
+                                  @submit="if (selectedQuotes.length === 0) { $event.preventDefault(); } else if (!confirm('Permanently delete ' + selectedQuotes.length + ' selected ' + (selectedQuotes.length === 1 ? 'lead' : 'leads') + '? This cannot be undone.')) { $event.preventDefault(); }">
+                                @csrf
+                                @method('DELETE')
+                                <template x-for="id in selectedQuotes" :key="id">
+                                    <input type="hidden" name="quote_ids[]" :value="id">
+                                </template>
+                                <button type="submit"
+                                        :disabled="selectedQuotes.length === 0"
+                                        :class="selectedQuotes.length > 0
+                                            ? 'bg-red-600 text-white hover:bg-red-700 border-red-600 shadow-sm cursor-pointer'
+                                            : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'"
+                                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 border rounded-lg text-xs font-bold uppercase tracking-wider transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    <span x-text="selectedQuotes.length > 0 ? 'Delete Selected (' + selectedQuotes.length + ')' : 'Delete Selected'"></span>
+                                </button>
+                            </form>
+                        </div>
+
                         <div class="divide-y divide-slate-100">
                             @foreach($quoteRequests as $quoteRequest)
-                            <div class="p-6 hover:bg-slate-50/60 transition-colors" data-quote-card="{{ $quoteRequest->id }}" data-quote-view="full">
+                            <div class="p-6 transition-colors"
+                                 :class="selectedQuotes.includes('{{ $quoteRequest->id }}') ? 'bg-red-50/40 ring-1 ring-inset ring-red-200/80' : 'hover:bg-slate-50/60'"
+                                 data-quote-card="{{ $quoteRequest->id }}"
+                                 data-quote-view="full">
                                 <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
-                                    <div class="min-w-0 flex-1">
+                                    <div class="min-w-0 flex-1 flex items-start gap-3.5">
+                                        <div class="pt-1 flex-shrink-0">
+                                            <input type="checkbox"
+                                                   value="{{ $quoteRequest->id }}"
+                                                   x-model="selectedQuotes"
+                                                   @click="handleCheckboxClick($event, '{{ $quoteRequest->id }}', {{ $loop->index }})"
+                                                   aria-label="Select {{ $quoteRequest->organization_name }}"
+                                                   class="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer">
+                                        </div>
+                                        <div class="min-w-0 flex-1">
                                         <div class="flex items-center gap-2.5 flex-wrap">
                                             <span class="font-black text-slate-900 text-base">{{ $quoteRequest->organization_name }}</span>
                                             <span class="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md border border-slate-200">{{ $quoteRequest->apparel_category }}</span>
@@ -1727,6 +1804,7 @@
                                                 {{ $quoteRequest->design_vision }}
                                             </div>
                                         @endif
+                                        </div>
                                     </div>
                                     <div class="flex flex-col items-end gap-2 flex-shrink-0">
                                         <span class="text-xs text-slate-400 font-medium">{{ $quoteRequest->created_at->format('M d, Y') }} ({{ $quoteRequest->created_at->diffForHumans() }})</span>

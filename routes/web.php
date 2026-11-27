@@ -520,6 +520,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
 
     // Quotes
     Route::get('/admin/quotes/export', [AdminController::class, 'exportQuotesCSV'])->name('admin.quotes.export');
+    Route::delete('/admin/quotes/bulk-delete', [AdminController::class, 'bulkDeleteQuotes'])->name('admin.quotes.bulk-delete');
     Route::post('/admin/quote/{quoteRequest}/mark-addressed', [AdminController::class, 'markQuoteAddressed'])->name('admin.quote.mark-addressed');
     Route::post('/admin/quotes/{quoteRequest}/mark-addressed', [AdminController::class, 'markQuoteAddressed'])->name('admin.quotes.mark-addressed');
     Route::post('/admin/quote/{quoteRequest}/unmark-addressed', [AdminController::class, 'unmarkQuoteAddressed'])->name('admin.quote.unmark-addressed');

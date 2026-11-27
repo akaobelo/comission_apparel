@@ -4383,6 +4383,20 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Quote inquiry deleted successfully.');
     }
 
+    public function bulkDeleteQuotes(Request $request)
+    {
+        $validated = $request->validate([
+            'quote_ids'   => ['required', 'array', 'min:1'],
+            'quote_ids.*' => ['integer', 'exists:quote_requests,id'],
+        ]);
+
+        $deletedCount = QuoteRequest::whereIn('id', $validated['quote_ids'])->delete();
+
+        $label = $deletedCount === 1 ? 'quote inquiry' : 'quote inquiries';
+
+        return redirect()->back()->with('success', "{$deletedCount} {$label} deleted successfully.");
+    }
+
     // ─── PUBLIC OUR TEAM ────────────────────────────────────────────────────────
     public function publicOurTeam(Request $request)
     {
