@@ -474,4 +474,50 @@ class MultiBatchSelectionAndPersonalizationTest extends TestCase
         $this->assertSame('', $byItem['Plain Shorts']['F'] ?? '');
         $this->assertSame('', $byItem['Plain Shorts']['G'] ?? '');
     }
+
+    public function test_coach_dashboard_shows_reopen_button_when_deadline_passed_and_reopen_clears_expired_deadline()
+    {
+        $coach = User::factory()->create(['role' => 'coach']);
+        $store = TeamStore::create([
+            'user_id'          => $coach->id,
+            'name'             => 'Hampton Boys Basketball',
+            'slug'             => 'hampton-boys-basketball',
+            'status'           => 'approved',
+            'pricing_approved' => true,
+            'order_deadline'   => now()->subDays(8),
+        ]);
+
+        // Store is closed because its deadline is in the past
+        $this->assertTrue($store->isClosed());
+
+        // Coach dashboard accurately shows Closed — Deadline Passed and the Re-Open Store button
+        $dashResp = $this->actingAs($coach)->get(route('coach.dashboard', ['store_id' => $store->id]));
+        $dashResp->assertOk();
+        $dashResp->assertSee('Closed — Deadline Passed');
+        $dashResp->assertSee('Re-Open Store');
+
+        // Re-opening without a new deadline clears the expired deadline so the store is actually open again
+        $reopenResp = $this->actingAs($coach)->post(route('coach.store.reopen', $store));
+        $reopenResp->assertRedirect();
+
+        $store->refresh();
+        $this->assertSame('approved', $store->status);
+        $this->assertNull($store->order_deadline);
+        $this->assertFalse($store->isClosed());
+
+        // Re-opening a submitted_to_admin store with a future deadline sets that deadline and opens the store
+        $store->update([
+            'status'         => 'submitted_to_admin',
+            'order_deadline' => now()->subDays(3),
+        ]);
+        $futureDate = now()->addDays(10)->format('Y-m-d');
+        $this->actingAs($coach)->post(route('coach.store.reopen', $store), [
+            'order_deadline' => $futureDate,
+        ])->assertRedirect();
+
+        $store->refresh();
+        $this->assertSame('approved', $store->status);
+        $this->assertSame($futureDate, $store->order_deadline->format('Y-m-d'));
+        $this->assertFalse($store->isClosed());
+    }
 }

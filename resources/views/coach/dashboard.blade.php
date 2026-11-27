@@ -940,18 +940,23 @@
             @endif
 
             {{-- Store status bar --}}
+            @php
+                $isDeadlinePassed = $store && $store->order_deadline && $store->order_deadline->isPast();
+            @endphp
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 class="text-xl font-black uppercase text-slate-900">{{ $store->name }}</h2>
                     <div class="flex items-center gap-3 mt-1.5 flex-wrap">
                         @if($isLocked)
                             <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">✓ Submitted to Production</span>
+                        @elseif($isDeadlinePassed)
+                            <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider bg-red-100 text-red-700 border border-red-200">Closed — Deadline Passed</span>
                         @else
                             <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">● Live & Accepting Orders</span>
                         @endif
                         <span class="text-xs text-slate-500">Package: <strong class="text-slate-700 uppercase">{{ str_replace('_', ' ', $store->package_type ?? 'custom') }}</strong></span>
                         @if($store->order_deadline)
-                            <span class="text-xs text-slate-500">Deadline: <strong class="text-slate-700">{{ $store->order_deadline->format('M d, Y') }}</strong></span>
+                            <span class="text-xs {{ $isDeadlinePassed ? 'text-red-600 font-bold' : 'text-slate-500' }}">Deadline: <strong class="{{ $isDeadlinePassed ? 'text-red-700' : 'text-slate-700' }}">{{ $store->order_deadline->format('M d, Y') }}</strong></span>
                         @endif
                     </div>
                 </div>
@@ -1081,11 +1086,34 @@
                                 </div>
                             </div>
                         </div>
-                        @elseif($isLocked)
-                        <form action="{{ route('coach.store.reopen', $store) }}" method="POST" onsubmit="return confirm('Are you sure you want to re-open the store for a NEW batch of orders? WARNING: This will permanently clear all previous parent orders. Ensure you have exported them if needed.')">
-                            @csrf
-                            <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors">Re-Open Store</button>
-                        </form>
+                        @endif
+                        @if($isLocked || $isDeadlinePassed)
+                        <div x-data="{ openReopenModal: false }" class="inline-block">
+                            <button type="button" @click="openReopenModal = true" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">Re-Open Store</button>
+
+                            <div x-show="openReopenModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" x-cloak>
+                                <div @click.away="openReopenModal = false" class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative text-left">
+                                    <button type="button" @click="openReopenModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-red-500">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                    <h3 class="text-lg font-black uppercase tracking-tight text-slate-900 mb-2">Re-Open Team Store</h3>
+                                    <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+                                        Re-open <strong>{{ $store->name }}</strong> for a new round of parent orders. Any previously finalized batches stay safely saved under your <strong>Order Status</strong> tab.
+                                    </p>
+                                    <form action="{{ route('coach.store.reopen', $store) }}" method="POST" class="space-y-4">
+                                        @csrf
+                                        <div>
+                                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">New Order Deadline <span class="text-slate-400 font-normal normal-case">(Optional — leave blank for Open Ended)</span></label>
+                                            <input type="date" name="order_deadline" min="{{ now()->format('Y-m-d') }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none">
+                                        </div>
+                                        <div class="flex justify-end gap-2 pt-2">
+                                            <button type="button" @click="openReopenModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold uppercase rounded-lg transition-colors">Cancel</button>
+                                            <button type="submit" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase rounded-lg transition-colors shadow-sm">Re-Open Store</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                         @endif
                     </div>
             </div>

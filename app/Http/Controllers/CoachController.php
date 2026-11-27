@@ -1211,11 +1211,24 @@ class CoachController extends Controller
     {
         if ($store->user_id !== $request->user()->id) abort(403);
 
-        // Unlock the store. Previous orders have already been batched.
-        $store->update(['status' => 'approved']);
+        $validated = $request->validate([
+            'order_deadline' => ['nullable', 'date', 'after_or_equal:today'],
+        ]);
 
-        return redirect()->route('coach.dashboard')
-            ->with('success', 'Store has been re-opened for new orders! The active roster is now clear for the new batch.');
+        $updateData = ['status' => 'approved'];
+
+        if (!empty($validated['order_deadline'])) {
+            $updateData['order_deadline'] = \Carbon\Carbon::parse($validated['order_deadline'])->endOfDay();
+        } elseif ($store->order_deadline && $store->order_deadline->isPast()) {
+            // Clear expired deadline so the storefront actually opens for new orders
+            $updateData['order_deadline'] = null;
+        }
+
+        // Unlock the store. Previous finalized orders remain safely stored in their batches.
+        $store->update($updateData);
+
+        return redirect()->route('coach.dashboard', ['store_id' => $store->id, 'tab' => 'overview'])
+            ->with('success', 'Store has been re-opened for new orders! Parents can now place orders again.');
     }
     public function updateCoverImage(Request $request, TeamStore $store)
     {
