@@ -282,14 +282,18 @@
                                 <input type="number" name="sort_order" value="{{ old('sort_order') }}" placeholder="Auto" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
                         </div>
-                        <div class="flex gap-4">
+                        <div class="flex flex-wrap gap-4">
                             <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
                                 <input type="checkbox" name="has_name_field" value="1" {{ old('has_name_field') ? 'checked' : '' }} class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
                                 <span class="text-xs font-bold uppercase tracking-wide">Name on Item</span>
                             </label>
                             <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                                <input type="checkbox" name="has_backpack_name_field" value="1" {{ old('has_backpack_name_field') ? 'checked' : '' }} class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                <span class="text-xs font-bold uppercase tracking-wide">Name on Backpack</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
                                 <input type="checkbox" name="has_number_field" value="1" {{ old('has_number_field') ? 'checked' : '' }} class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
-                                <span class="text-xs font-bold uppercase tracking-wide">Player Number</span>
+                                <span class="text-xs font-bold uppercase tracking-wide">Number on Jersey</span>
                             </label>
                         </div>
                         <button type="submit" class="w-full py-2.5 bg-secondary hover:bg-[#a11825] text-white text-sm font-bold uppercase tracking-wider rounded-lg transition-colors">
@@ -437,14 +441,18 @@
                                 <input type="number" name="sort_order" value="{{ old('sort_order') }}" placeholder="Auto" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm">
                             </div>
                         </div>
-                        <div class="flex gap-4">
+                        <div class="flex flex-wrap gap-4">
                             <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
                                 <input type="checkbox" name="has_name_field" value="1" {{ old('has_name_field') ? 'checked' : '' }} class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
                                 <span class="text-xs font-bold uppercase tracking-wide">Name on Item</span>
                             </label>
                             <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                                <input type="checkbox" name="has_backpack_name_field" value="1" {{ old('has_backpack_name_field') ? 'checked' : '' }} class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
+                                <span class="text-xs font-bold uppercase tracking-wide">Name on Backpack</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
                                 <input type="checkbox" name="has_number_field" value="1" {{ old('has_number_field') ? 'checked' : '' }} class="rounded border-slate-300 text-primary focus:ring-primary shadow-sm">
-                                <span class="text-xs font-bold uppercase tracking-wide">Player Number</span>
+                                <span class="text-xs font-bold uppercase tracking-wide">Number on Jersey</span>
                             </label>
                         </div>
                         <button type="submit" class="w-full py-2.5 bg-secondary hover:bg-[#a11825] text-white text-sm font-bold uppercase tracking-wider rounded-lg transition-colors">
@@ -787,13 +795,17 @@
                                             </div>
                                         </div>
                                         <div class="flex flex-wrap gap-3">
-                                            <label class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                                            <label class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 cursor-pointer">
                                                 <input type="checkbox" name="has_name_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary" {{ $design->has_name_field ? 'checked' : '' }}>
                                                 Name on Item
                                             </label>
-                                            <label class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                                            <label class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 cursor-pointer">
+                                                <input type="checkbox" name="has_backpack_name_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary" {{ $design->has_backpack_name_field ? 'checked' : '' }}>
+                                                Name on Backpack
+                                            </label>
+                                            <label class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 cursor-pointer">
                                                 <input type="checkbox" name="has_number_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary" {{ $design->has_number_field ? 'checked' : '' }}>
-                                                Player Number
+                                                Number on Jersey
                                             </label>
                                         </div>
                                         <div class="flex items-center gap-3">

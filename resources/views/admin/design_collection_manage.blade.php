@@ -282,6 +282,9 @@
                                         @if($design->has_name_field)
                                             <input type="hidden" name="has_name_field" value="1" form="edit-design-{{ $design->id }}">
                                         @endif
+                                        @if($design->has_backpack_name_field)
+                                            <input type="hidden" name="has_backpack_name_field" value="1" form="edit-design-{{ $design->id }}">
+                                        @endif
                                         @if($design->has_number_field)
                                             <input type="hidden" name="has_number_field" value="1" form="edit-design-{{ $design->id }}">
                                         @endif

@@ -1310,16 +1310,18 @@ class AdminController extends Controller
             'category'         => ['required', 'string', 'max:255'],
             'images'           => ['nullable', 'array', 'max:100'],
             'images.*'         => ['image', 'max:10240'], // max 10MB per image
-            'has_name_field'   => ['boolean'],
-            'has_number_field' => ['boolean'],
-            'notes'            => ['nullable', 'string'],
-            'description'      => ['nullable', 'string'],
-            'wholesale_price'  => ['nullable', 'numeric', 'min:0'],
-            'sort_order'       => ['nullable', 'integer'],
+            'has_name_field'          => ['boolean'],
+            'has_number_field'        => ['boolean'],
+            'has_backpack_name_field' => ['boolean'],
+            'notes'                   => ['nullable', 'string'],
+            'description'             => ['nullable', 'string'],
+            'wholesale_price'         => ['nullable', 'numeric', 'min:0'],
+            'sort_order'              => ['nullable', 'integer'],
         ]);
 
-        $validated['has_name_field']   = $request->boolean('has_name_field');
-        $validated['has_number_field'] = $request->boolean('has_number_field');
+        $validated['has_name_field']          = $request->boolean('has_name_field');
+        $validated['has_number_field']        = $request->boolean('has_number_field');
+        $validated['has_backpack_name_field'] = $request->boolean('has_backpack_name_field');
 
         $cleanComponentIds = [];
         if (is_array($request->input('component_design_ids'))) {
@@ -1418,16 +1420,18 @@ class AdminController extends Controller
             'category'         => ['required', 'string', 'max:255'],
             'images'           => ['nullable', 'array', 'max:100'],
             'images.*'         => ['image', 'max:10240'],
-            'has_name_field'   => ['boolean'],
-            'has_number_field' => ['boolean'],
-            'notes'            => ['nullable', 'string'],
-            'description'      => ['nullable', 'string'],
-            'wholesale_price'  => ['nullable', 'numeric', 'min:0'],
-            'sort_order'       => ['nullable', 'integer'],
+            'has_name_field'          => ['boolean'],
+            'has_number_field'        => ['boolean'],
+            'has_backpack_name_field' => ['boolean'],
+            'notes'                   => ['nullable', 'string'],
+            'description'             => ['nullable', 'string'],
+            'wholesale_price'         => ['nullable', 'numeric', 'min:0'],
+            'sort_order'              => ['nullable', 'integer'],
         ]);
 
         $validated['has_name_field'] = $request->boolean('has_name_field');
         $validated['has_number_field'] = $request->boolean('has_number_field');
+        $validated['has_backpack_name_field'] = $request->boolean('has_backpack_name_field');
 
         $cleanComponentIds = [];
         if (is_array($request->input('component_design_ids'))) {
@@ -2108,21 +2112,17 @@ class AdminController extends Controller
             ->sortByDesc(fn($b) => $b->submitted_at ? $b->submitted_at->timestamp : 0)
             ->values();
 
-        $selectedBatchId = $request->query('batch_id');
+        $selectedBatchIds = $this->extractRequestedBatchIds($request);
+        $selectedBatchId = count($selectedBatchIds) === 1 ? $selectedBatchIds[0] : null;
         $activeBatch = null;
 
-        if ($selectedBatchId === 'unbatched') {
-            $displayedOrders = $allStoreOrders->whereNull('batch_id')->values();
+        if (!empty($selectedBatchIds)) {
+            $displayedOrders = $this->filterOrdersByBatchIds($allStoreOrders, $selectedBatchIds);
             if ($displayedOrders->isEmpty()) {
+                $selectedBatchIds = [];
                 $selectedBatchId = null;
                 $displayedOrders = $allStoreOrders;
-            }
-        } elseif (!empty($selectedBatchId)) {
-            $displayedOrders = $allStoreOrders->where('batch_id', $selectedBatchId)->values();
-            if ($displayedOrders->isEmpty()) {
-                $selectedBatchId = null;
-                $displayedOrders = $allStoreOrders;
-            } else {
+            } elseif (count($selectedBatchIds) === 1 && $selectedBatchId !== 'unbatched') {
                 $activeBatch = $storeBatches->firstWhere('batch_id', $selectedBatchId);
             }
         } else {
@@ -2141,6 +2141,7 @@ class AdminController extends Controller
             'allStoreOrders',
             'storeBatches',
             'selectedBatchId',
+            'selectedBatchIds',
             'activeBatch'
         ));
     }
@@ -3077,16 +3078,143 @@ class AdminController extends Controller
 
     // ─── CSV EXPORT ──────────────────────────────────────────────────────────────
 
-    public function exportOrderCSV(TeamStore $store)
+    /**
+     * Normalize single `batch_id` or multi `batch_ids` query/body params into a unique list of strings.
+     */
+    protected function extractRequestedBatchIds(Request $request): array
+    {
+        $raw = $request->input('batch_ids', []);
+        if (is_string($raw)) {
+            $raw = explode(',', $raw);
+        } elseif (!is_array($raw)) {
+            $raw = [];
+        }
+
+        $single = $request->input('batch_id');
+        if (is_string($single) && trim($single) !== '') {
+            $raw[] = $single;
+        }
+
+        $normalized = [];
+        foreach ($raw as $val) {
+            $s = trim((string) $val);
+            if ($s !== '') {
+                $normalized[] = $s;
+            }
+        }
+
+        return array_values(array_unique($normalized));
+    }
+
+    /**
+     * Filter a ParentOrder collection to orders matching any of the selected batch IDs
+     * (including the special 'unbatched' token for orders with batch_id = null).
+     */
+    protected function filterOrdersByBatchIds(\Illuminate\Support\Collection $orders, array $batchIds): \Illuminate\Support\Collection
+    {
+        if (empty($batchIds)) {
+            return $orders->values();
+        }
+
+        $includeUnbatched = in_array('unbatched', $batchIds, true);
+        $concreteBatchIds = array_values(array_filter($batchIds, fn($id) => $id !== 'unbatched'));
+
+        return $orders->filter(function ($order) use ($includeUnbatched, $concreteBatchIds) {
+            if ($includeUnbatched && empty($order->batch_id)) {
+                return true;
+            }
+            return !empty($order->batch_id) && in_array((string) $order->batch_id, $concreteBatchIds, true);
+        })->values();
+    }
+
+    /**
+     * Resolve whether a CSV roster line item should display Jersey Name, Jersey Number,
+     * and Backpack Name based on its StoreItem / DesignCatalog flags.
+     *
+     * @return array{name: bool, number: bool, backpack: bool}
+     */
+    protected function resolveCsvItemPersonalization(array $item, ?\Illuminate\Support\Collection $storeItems = null): array
+    {
+        $itemName = trim((string) ($item['name'] ?? ''));
+        $itemId = isset($item['id']) && is_numeric($item['id']) ? (int) $item['id'] : null;
+
+        $storeItem = null;
+        if ($storeItems && $storeItems->isNotEmpty()) {
+            if ($itemId) {
+                $storeItem = $storeItems->firstWhere('id', $itemId) ?? $storeItems->firstWhere('design_catalog_id', $itemId);
+            }
+            if (!$storeItem && $itemName !== '') {
+                $storeItem = $storeItems->first(fn($si) => strcasecmp(trim((string) $si->name), $itemName) === 0);
+            }
+        }
+
+        $design = $storeItem?->designCatalog;
+        if (!$design && $itemId) {
+            $design = \App\Models\DesignCatalog::find($itemId);
+        }
+
+        $allTypes = array_unique(array_merge(
+            is_array($item['types'] ?? null) ? $item['types'] : (!empty($item['type']) ? [(string) $item['type']] : []),
+            is_array($storeItem?->types) ? $storeItem->types : (!empty($storeItem?->type) ? [(string) $storeItem->type] : []),
+            is_array($design?->types) ? $design->types : (!empty($design?->type) ? [(string) $design->type] : [])
+        ));
+
+        $requiresBackpack = in_array('backpack', $allTypes, true) || stripos($itemName, 'backpack') !== false;
+
+        $linkedDesigns = [];
+        if ($design) {
+            $linkedDesigns[$design->id] = $design;
+        }
+        if ($storeItem && $storeItem->relationLoaded('components')) {
+            foreach ($storeItem->components as $comp) {
+                if ($comp->designCatalog) {
+                    $linkedDesigns[$comp->designCatalog->id] = $comp->designCatalog;
+                }
+            }
+        }
+        $componentDesignIds = is_array($storeItem?->component_design_ids) && !empty($storeItem->component_design_ids)
+            ? $storeItem->component_design_ids
+            : (is_array($design?->component_design_ids) ? $design->component_design_ids : []);
+        $componentDesignIds = array_values(array_filter($componentDesignIds, fn($cId) => !empty($cId) && is_numeric($cId)));
+        if (!empty($componentDesignIds)) {
+            foreach (\App\Models\DesignCatalog::whereIn('id', $componentDesignIds)->get() as $cd) {
+                $linkedDesigns[$cd->id] = $cd;
+            }
+        }
+
+        if (empty($linkedDesigns)) {
+            return ['name' => true, 'number' => true, 'backpack' => $requiresBackpack];
+        }
+
+        $requiresName = false;
+        $requiresNumber = false;
+        $requiresBackpackFromDesign = false;
+        foreach ($linkedDesigns as $d) {
+            if (!empty($d->has_name_field)) $requiresName = true;
+            if (!empty($d->has_number_field)) $requiresNumber = true;
+            if (!empty($d->has_backpack_name_field)) $requiresBackpackFromDesign = true;
+        }
+
+        return ['name' => $requiresName, 'number' => $requiresNumber, 'backpack' => $requiresBackpackFromDesign];
+    }
+
+    public function exportOrderCSV(Request $request, TeamStore $store)
     {
         $this->authorizeStoreAccess($store);
 
-        $store->load(['items', 'parentOrders' => function($q) {
-            $q->where('is_archived', false)->where('status', '!=', 'Pending Payment');
-        }]);
-        $orders = $store->parentOrders;
+        $store->load([
+            'items.designCatalog',
+            'items.components.designCatalog',
+            'parentOrders' => function($q) {
+                $q->where('is_archived', false)->where('status', '!=', 'Pending Payment');
+            }
+        ]);
+        $batchIds = $this->extractRequestedBatchIds($request);
+        $orders = $this->filterOrdersByBatchIds($store->parentOrders, $batchIds);
 
-        $filename = "{$store->slug}-master-order.csv";
+        $filename = !empty($batchIds)
+            ? "{$store->slug}-selected-batches-order.csv"
+            : "{$store->slug}-master-order.csv";
         $headers = [
             "Content-type"        => "text/csv",
             "Content-Disposition" => "attachment; filename=$filename",
@@ -3137,6 +3265,7 @@ class AdminController extends Controller
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
 
                         $qty = $item['qty'] ?? 1;
+                        $pers = $this->resolveCsvItemPersonalization($item, $store->items);
 
                         fputcsv($file, [
                             $store->name,
@@ -3148,9 +3277,9 @@ class AdminController extends Controller
                             $order->parent_phone ?? '',
                             $order->shipping_address ?? '',
                             $item['gender'] ?? $order->gender ?? 'Not Specified',
-                            $order->jersey_name ?? '',
-                            $order->jersey_number ?? '',
-                            $order->backpack_name ?? '',
+                            $pers['name'] ? (trim((string) ($item['jersey_name'] ?? '')) !== '' ? trim((string) $item['jersey_name']) : ($order->jersey_name ?? '')) : '',
+                            $pers['number'] ? (trim((string) ($item['jersey_number'] ?? '')) !== '' ? trim((string) $item['jersey_number']) : ($order->jersey_number ?? '')) : '',
+                            $pers['backpack'] ? (trim((string) ($item['backpack_name'] ?? '')) !== '' ? trim((string) $item['backpack_name']) : ($order->backpack_name ?? '')) : '',
                             $item['name'] ?? 'Unknown Item',
                             $typesStr,
                             $sizesStr,
@@ -3266,14 +3395,14 @@ class AdminController extends Controller
 
     public function exportBatchCSV(Request $request, $batchId)
     {
-        $orders = ParentOrder::with(['teamStore.items'])
+        $orders = ParentOrder::with(['teamStore.items.designCatalog', 'teamStore.items.components.designCatalog'])
             ->where('batch_id', $batchId)
             ->where('is_archived', false)
             ->where('status', '!=', 'Pending Payment')
             ->get();
 
         if ($orders->isEmpty()) {
-            $orders = ParentOrder::with(['teamStore.items'])
+            $orders = ParentOrder::with(['teamStore.items.designCatalog', 'teamStore.items.components.designCatalog'])
                 ->where('batch_id', $batchId)
                 ->where('is_archived', true)
                 ->where('status', '!=', 'Pending Payment')
@@ -3340,6 +3469,7 @@ class AdminController extends Controller
                         $sizesStr = !empty($sizesArr) ? implode(' | ', $sizesArr) : ($item['size'] ?? 'N/A');
 
                         $qty = $item['qty'] ?? 1;
+                        $pers = $this->resolveCsvItemPersonalization($item, $order->teamStore?->items);
 
                         fputcsv($file, [
                             $order->athlete_first_name,
@@ -3348,9 +3478,9 @@ class AdminController extends Controller
                             $order->parent_phone ?? '',
                             $order->shipping_address ?? '',
                             $item['gender'] ?? $order->gender ?? 'Not Specified',
-                            $order->jersey_name ?? '',
-                            $order->jersey_number ?? '',
-                            $order->backpack_name ?? '',
+                            $pers['name'] ? (trim((string) ($item['jersey_name'] ?? '')) !== '' ? trim((string) $item['jersey_name']) : ($order->jersey_name ?? '')) : '',
+                            $pers['number'] ? (trim((string) ($item['jersey_number'] ?? '')) !== '' ? trim((string) $item['jersey_number']) : ($order->jersey_number ?? '')) : '',
+                            $pers['backpack'] ? (trim((string) ($item['backpack_name'] ?? '')) !== '' ? trim((string) $item['backpack_name']) : ($order->backpack_name ?? '')) : '',
                             $item['name'] ?? 'Unknown Item',
                             $typesStr,
                             $sizesStr,
@@ -3479,7 +3609,124 @@ class AdminController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    public function exportStoreManufacturerXlsx(TeamStore $store, \App\Services\ManufacturerExcelExportService $excelService)
+    public function exportStoreAggregationCSV(Request $request, TeamStore $store)
+    {
+        $this->authorizeStoreAccess($store);
+
+        $store->load(['items', 'parentOrders' => function ($q) {
+            $q->where('is_archived', false)->where('status', '!=', 'Pending Payment');
+        }]);
+
+        $batchIds = $this->extractRequestedBatchIds($request);
+        $orders = $this->filterOrdersByBatchIds($store->parentOrders, $batchIds);
+
+        if ($orders->isEmpty()) {
+            abort(404);
+        }
+
+        $filename = !empty($batchIds)
+            ? "{$store->slug}-selected-batches-aggregate.csv"
+            : "{$store->slug}-aggregate.csv";
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = ['Item Name', 'Gender', 'Garment Type', 'Size', 'Total Quantity'];
+        $aggregated = [];
+
+        foreach ($orders as $order) {
+            if (is_array($order->items_json)) {
+                foreach ($order->items_json as $item) {
+                    $itemQty = (int) ($item['qty'] ?? 1);
+                    $gender = $item['gender'] ?? $order->gender ?? 'Not Specified';
+
+                    if (isset($item['components']) && is_array($item['components'])) {
+                        foreach ($item['components'] as $comp) {
+                            $cName = $comp['name'] ?? 'Component';
+                            $cQty = $itemQty * (int) ($comp['qty'] ?? 1);
+                            if (isset($comp['sizes']) && is_array($comp['sizes'])) {
+                                foreach ($comp['sizes'] as $t => $s) {
+                                    if (empty($s)) continue;
+                                    $key = "{$cName}|{$gender}|{$t}|{$s}";
+                                    $aggregated[$key] = ($aggregated[$key] ?? 0) + $cQty;
+                                }
+                            } elseif (!empty($comp['size'])) {
+                                $t = $comp['type'] ?? 'N/A';
+                                $key = "{$cName}|{$gender}|{$t}|{$comp['size']}";
+                                $aggregated[$key] = ($aggregated[$key] ?? 0) + $cQty;
+                            }
+                        }
+                    } else {
+                        $name = $item['name'] ?? 'Unknown Item';
+                        if (isset($item['sizes']) && is_array($item['sizes']) && !empty($item['sizes'])) {
+                            foreach ($item['sizes'] as $t => $s) {
+                                if (empty($s)) continue;
+                                $key = "{$name}|{$gender}|{$t}|{$s}";
+                                $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
+                            }
+                        } elseif (!empty($item['size'])) {
+                            $type = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
+                            $size = $item['size'];
+                            $key = "{$name}|{$gender}|{$type}|{$size}";
+                            $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
+                        } else {
+                            $type = isset($item['types']) ? implode(', ', $item['types']) : ($item['type'] ?? 'N/A');
+                            $key = "{$name}|{$gender}|{$type}|N/A";
+                            $aggregated[$key] = ($aggregated[$key] ?? 0) + $itemQty;
+                        }
+                    }
+                }
+            }
+        }
+
+        $callback = function () use ($aggregated, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+            foreach ($aggregated as $key => $qty) {
+                $parts = explode('|', $key);
+                fputcsv($file, [$parts[0], $parts[1], $parts[2], $parts[3], $qty]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function updateStoreBatchesStatus(Request $request, TeamStore $store)
+    {
+        $this->authorizeStoreAccess($store);
+
+        $validated = $request->validate([
+            'batch_ids'   => ['required', 'array', 'min:1'],
+            'batch_ids.*' => ['required', 'string'],
+            'status'      => ['required', 'string', 'max:255'],
+        ]);
+
+        $concreteBatchIds = array_values(array_filter(
+            $validated['batch_ids'],
+            fn($id) => trim((string) $id) !== '' && $id !== 'unbatched'
+        ));
+
+        if (empty($concreteBatchIds)) {
+            return back()->with('error', 'No finalized batches were selected to update.');
+        }
+
+        ParentOrder::where('team_store_id', $store->id)
+            ->whereIn('batch_id', $concreteBatchIds)
+            ->update(['status' => $validated['status']]);
+
+        \Illuminate\Support\Facades\Cache::forget('admin_global_sales_summary');
+
+        $count = count($concreteBatchIds);
+        return back()->with('success', "Updated {$count} selected batch(es) to {$validated['status']}.");
+    }
+
+    public function exportStoreManufacturerXlsx(Request $request, TeamStore $store, \App\Services\ManufacturerExcelExportService $excelService)
     {
         $this->authorizeStoreAccess($store);
 
@@ -3494,10 +3741,15 @@ class AdminController extends Controller
             }
         ]);
 
-        $orders = $store->parentOrders;
-        $title = $store->name . ' — Manufacturer Order Sheet';
+        $batchIds = $this->extractRequestedBatchIds($request);
+        $orders = $this->filterOrdersByBatchIds($store->parentOrders, $batchIds);
+        $title = !empty($batchIds)
+            ? $store->name . ' — Selected Batches (' . count($batchIds) . ') Manufacturer Order Sheet'
+            : $store->name . ' — Manufacturer Order Sheet';
         $xlsxPath = $excelService->generateXlsx($orders, $store, $title);
-        $filename = "{$store->slug}-manufacturer-visual-sheet.xlsx";
+        $filename = !empty($batchIds)
+            ? "{$store->slug}-selected-batches-manufacturer-visual-sheet.xlsx"
+            : "{$store->slug}-manufacturer-visual-sheet.xlsx";
 
         return response()->download($xlsxPath, $filename, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

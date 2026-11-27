@@ -21,6 +21,7 @@ class DesignCatalog extends Model
         'image_paths',
         'has_name_field',
         'has_number_field',
+        'has_backpack_name_field',
         'notes',
         'wholesale_price',
         'sort_order',
@@ -29,6 +30,7 @@ class DesignCatalog extends Model
     protected $casts = [
         'has_name_field' => 'boolean',
         'has_number_field' => 'boolean',
+        'has_backpack_name_field' => 'boolean',
         'wholesale_price' => 'decimal:2',
         'types' => 'array',
         'component_design_ids' => 'array',

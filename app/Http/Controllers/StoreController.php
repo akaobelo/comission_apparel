@@ -47,7 +47,7 @@ class StoreController extends Controller
         $store = TeamStore::where('slug', $slug)
             ->with(['items' => function($q) {
                 $q->orderBy('sort_order', 'asc');
-            }, 'items.designCatalog', 'parentOrders' => function($q) {
+            }, 'items.designCatalog', 'items.components.designCatalog', 'parentOrders' => function($q) {
                 $q->whereNull('batch_id')
                   ->where('is_archived', false)
                   ->where('status', '!=', 'Pending Payment');
@@ -92,14 +92,31 @@ class StoreController extends Controller
 
         // Build the rich items JSON — supporting per-unit sizing and legacy format
         $itemsJson = [];
+        $derivedJerseyName = null;
+        $derivedJerseyNumber = null;
+        $derivedBackpackName = null;
 
         foreach ($request->items as $itemId => $details) {
             if (!isset($details['selected']) || $details['selected'] != '1') {
                 continue;
             }
 
-            $storeItem = $store->items()->find($itemId);
+            $storeItem = $store->items()->with(['designCatalog', 'components.designCatalog'])->find($itemId);
             if (!$storeItem) continue;
+
+            $itemJerseyName = trim((string) ($details['jersey_name'] ?? ''));
+            $itemJerseyNumber = trim((string) ($details['jersey_number'] ?? ''));
+            $itemBackpackName = trim((string) ($details['backpack_name'] ?? ''));
+
+            if ($itemJerseyName !== '' && $derivedJerseyName === null) {
+                $derivedJerseyName = $itemJerseyName;
+            }
+            if ($itemJerseyNumber !== '' && $derivedJerseyNumber === null) {
+                $derivedJerseyNumber = $itemJerseyNumber;
+            }
+            if ($itemBackpackName !== '' && $derivedBackpackName === null) {
+                $derivedBackpackName = $itemBackpackName;
+            }
 
             $qty = max(1, intval($details['qty'] ?? 1));
             $types = $storeItem->types ?? [$storeItem->type];
@@ -186,6 +203,16 @@ class StoreController extends Controller
                     'sizes'           => [],
                 ];
 
+                if ($itemJerseyName !== '') {
+                    $entry['jersey_name'] = $itemJerseyName;
+                }
+                if ($itemJerseyNumber !== '') {
+                    $entry['jersey_number'] = $itemJerseyNumber;
+                }
+                if ($itemBackpackName !== '') {
+                    $entry['backpack_name'] = $itemBackpackName;
+                }
+
                 if ($storeItem->isPackage() && isset($unitData['components'])) {
                     $componentsData = [];
                     foreach ($storeItem->components as $component) {
@@ -252,9 +279,9 @@ class StoreController extends Controller
             'parent_email'        => trim($request->parent_email),
             'parent_phone'        => trim($request->parent_phone),
             'gender'              => $request->filled('gender') ? trim($request->gender) : ($itemsJson[0]['gender'] ?? 'Mens / Boys'),
-            'jersey_name'         => $request->jersey_name,
-            'jersey_number'       => $request->jersey_number,
-            'backpack_name'       => $request->backpack_name,
+            'jersey_name'         => $request->filled('jersey_name') ? trim((string) $request->jersey_name) : $derivedJerseyName,
+            'jersey_number'       => $request->filled('jersey_number') ? trim((string) $request->jersey_number) : $derivedJerseyNumber,
+            'backpack_name'       => $request->filled('backpack_name') ? trim((string) $request->backpack_name) : $derivedBackpackName,
             'shipping_address'    => $request->filled('shipping_address') ? trim($request->shipping_address) : null,
             'special_notes'       => $request->special_notes,
             'edit_pin'            => trim($request->edit_pin),

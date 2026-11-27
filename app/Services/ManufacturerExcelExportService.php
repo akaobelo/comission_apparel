@@ -807,15 +807,28 @@ class ManufacturerExcelExportService
                     ? $resolvedRosterTypes
                     : ($item['types'] ?? [$item['type'] ?? '']);
 
+                $personalization = $this->resolveItemPersonalizationFlags(
+                    $storeItem,
+                    $design,
+                    $item,
+                    $itemName,
+                    $resolvedRosterTypes,
+                    $designsById
+                );
+
+                $itemJerseyName = trim((string) ($item['jersey_name'] ?? ''));
+                $itemJerseyNumber = trim((string) ($item['jersey_number'] ?? ''));
+                $itemBackpackName = trim((string) ($item['backpack_name'] ?? ''));
+
                 $flatRoster[] = [
                     'order_id'       => $order->id,
                     'date'           => $order->created_at ? $order->created_at->format('Y-m-d') : '',
                     'first_name'     => $athleteRow['first_name'],
                     'last_name'      => $athleteRow['last_name'],
                     'gender'         => $itemGender,
-                    'jersey_name'    => $athleteRow['jersey_name'],
-                    'jersey_number'  => $athleteRow['jersey_number'],
-                    'backpack_name'  => $athleteRow['backpack_name'],
+                    'jersey_name'    => $personalization['name'] ? ($itemJerseyName !== '' ? $itemJerseyName : $athleteRow['jersey_name']) : '',
+                    'jersey_number'  => $personalization['number'] ? ($itemJerseyNumber !== '' ? $itemJerseyNumber : $athleteRow['jersey_number']) : '',
+                    'backpack_name'  => $personalization['backpack'] ? ($itemBackpackName !== '' ? $itemBackpackName : $athleteRow['backpack_name']) : '',
                     'item_name'      => $itemName,
                     'types'          => implode(', ', array_map(fn($t) => DesignCatalog::formatTypeLabel((string) $t), $displayTypes)),
                     'sizes'          => implode(' | ', $sizesSummary),
@@ -885,6 +898,83 @@ class ManufacturerExcelExportService
             'sizeTotals'   => $sizeTotals,
             'allSizesUsed' => $allSizesUsed,
             'flatRoster'   => $flatRoster,
+        ];
+    }
+
+    /**
+     * Determine whether a specific ordered item requires Name on Item (jersey_name),
+     * Jersey # (jersey_number), and/or Backpack Name (backpack_name) based on its
+     * DesignCatalog flags (and any linked package component designs).
+     *
+     * @return array{name: bool, number: bool, backpack: bool}
+     */
+    protected function resolveItemPersonalizationFlags(
+        ?StoreItem $storeItem,
+        ?DesignCatalog $design,
+        array $item,
+        string $itemName,
+        array $resolvedTypes,
+        Collection $designsById
+    ): array {
+        $allTypes = array_unique(array_merge(
+            $resolvedTypes,
+            is_array($item['types'] ?? null) ? $item['types'] : (!empty($item['type']) ? [(string) $item['type']] : []),
+            is_array($storeItem?->types) ? $storeItem->types : (!empty($storeItem?->type) ? [(string) $storeItem->type] : []),
+            is_array($design?->types) ? $design->types : (!empty($design?->type) ? [(string) $design->type] : [])
+        ));
+
+        $requiresBackpack = in_array('backpack', $allTypes, true)
+            || stripos($itemName, 'backpack') !== false;
+
+        $linkedDesigns = [];
+        if ($design) {
+            $linkedDesigns[$design->id] = $design;
+        }
+        if ($storeItem && $storeItem->relationLoaded('components')) {
+            foreach ($storeItem->components as $comp) {
+                if ($comp->designCatalog) {
+                    $linkedDesigns[$comp->designCatalog->id] = $comp->designCatalog;
+                }
+            }
+        }
+
+        $componentDesignIds = is_array($storeItem?->component_design_ids) && !empty($storeItem->component_design_ids)
+            ? $storeItem->component_design_ids
+            : (is_array($design?->component_design_ids) ? $design->component_design_ids : []);
+        foreach ($componentDesignIds as $cId) {
+            if (!empty($cId) && is_numeric($cId) && isset($designsById[(int) $cId])) {
+                $linkedDesigns[(int) $cId] = $designsById[(int) $cId];
+            }
+        }
+
+        if (empty($linkedDesigns)) {
+            // No linked DesignCatalog record (legacy/custom item): keep order-level values
+            return [
+                'name'     => true,
+                'number'   => true,
+                'backpack' => $requiresBackpack,
+            ];
+        }
+
+        $requiresName = false;
+        $requiresNumber = false;
+        $requiresBackpackFromDesign = false;
+        foreach ($linkedDesigns as $d) {
+            if (!empty($d->has_name_field)) {
+                $requiresName = true;
+            }
+            if (!empty($d->has_number_field)) {
+                $requiresNumber = true;
+            }
+            if (!empty($d->has_backpack_name_field)) {
+                $requiresBackpackFromDesign = true;
+            }
+        }
+
+        return [
+            'name'     => $requiresName,
+            'number'   => $requiresNumber,
+            'backpack' => $requiresBackpackFromDesign,
         ];
     }
 

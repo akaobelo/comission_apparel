@@ -451,7 +451,9 @@ Route::middleware(['auth', AdminOrSalesRepMiddleware::class])->group(function ()
     Route::post('/admin/stores/{store}/package/{package}/reassign-gender-orders', [AdminController::class, 'reassignPackageGenderOrders'])->name('admin.store.package.reassign-gender-orders');
     Route::delete('/admin/stores/{store}/package/{package}/detach/{component}', [AdminController::class, 'detachPackageComponent'])->name('admin.store.package.detach');
     Route::get('/admin/stores/{store}/export', [AdminController::class, 'exportOrderCSV'])->name('admin.stores.export');
+    Route::get('/admin/stores/{store}/export-aggregate', [AdminController::class, 'exportStoreAggregationCSV'])->name('admin.stores.export-aggregate');
     Route::get('/admin/stores/{store}/export-manufacturer', [AdminController::class, 'exportStoreManufacturerXlsx'])->name('admin.stores.export-manufacturer');
+    Route::post('/admin/stores/{store}/batches/status', [AdminController::class, 'updateStoreBatchesStatus'])->name('admin.stores.batches.status.update');
     Route::post('/admin/stores/{store}/finalize-batch', [AdminController::class, 'finalizeStoreBatch'])->name('admin.stores.finalize-batch');
     Route::post('/admin/stores/{store}/sync-stripe', [AdminController::class, 'syncStoreStripePayments'])->name('admin.stores.sync-stripe');
     Route::get('/admin/direct-batch/{batch_id}', [AdminController::class, 'showDirectBatch'])->name('admin.direct-batch.show');

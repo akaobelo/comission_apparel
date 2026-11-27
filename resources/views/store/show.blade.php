@@ -506,23 +506,6 @@
                             </div>
                         </div>
 
-                        <div class="md:col-span-2">
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Shipping Address <span class="text-slate-400 lowercase tracking-normal font-medium ml-1">(Optional)</span></label>
-                            <textarea name="shipping_address" placeholder="e.g. 123 Main St, Apt 4B, New York, NY 10001" rows="2" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-bold transition-all">{{ old('shipping_address') }}</textarea>
-                            @error('shipping_address')<p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>@enderror
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Name on Jersey (if applicable)</label>
-                            <input type="text" name="jersey_name" placeholder="e.g. SMITH" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Jersey Number (if applicable)</label>
-                            <input type="text" name="jersey_number" placeholder="e.g. 24" maxlength="3" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1">Name on Backpack (if applicable)</label>
-                            <input type="text" name="backpack_name" placeholder="e.g. Jordan Smith" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium transition-all">
-                        </div>
                         <div class="md:col-span-2 p-4 bg-amber-50/80 border border-amber-200/90 rounded-2xl">
                             <label class="block text-[11px] font-black uppercase tracking-widest text-slate-800 mb-1.5 flex items-center gap-2">
                                 <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
@@ -761,11 +744,29 @@
                             @foreach($store->items as $item)
                             @php
                                 $types = $item->types ?? [$item->type];
-                                $isBackpack = in_array('backpack', $types);
                                 $sizedTypes = \App\Models\DesignCatalog::sizedTypes();
                                 $itemSizedTypes = array_intersect($types, $sizedTypes);
-                                $hasNumber  = $item->designCatalog?->has_number_field ?? false;
-                                $hasNameField = $item->designCatalog?->has_name_field ?? false;
+                                $hasNumber       = (bool) ($item->designCatalog?->has_number_field ?? false);
+                                $hasNameField    = (bool) ($item->designCatalog?->has_name_field ?? false);
+                                $hasBackpackName = (bool) ($item->designCatalog?->has_backpack_name_field ?? false);
+                                if ($item->relationLoaded('components')) {
+                                    foreach ($item->components as $comp) {
+                                        if ($comp->designCatalog?->has_name_field) $hasNameField = true;
+                                        if ($comp->designCatalog?->has_number_field) $hasNumber = true;
+                                        if ($comp->designCatalog?->has_backpack_name_field) $hasBackpackName = true;
+                                    }
+                                }
+                                $compDesignIds = is_array($item->component_design_ids) && !empty($item->component_design_ids)
+                                    ? $item->component_design_ids
+                                    : (is_array($item->designCatalog?->component_design_ids) ? $item->designCatalog->component_design_ids : []);
+                                $compDesignIds = array_values(array_filter($compDesignIds, fn($id) => !empty($id) && is_numeric($id)));
+                                if (!empty($compDesignIds) && (!$hasNameField || !$hasNumber || !$hasBackpackName)) {
+                                    foreach (\App\Models\DesignCatalog::whereIn('id', $compDesignIds)->get() as $cd) {
+                                        if ($cd->has_name_field) $hasNameField = true;
+                                        if ($cd->has_number_field) $hasNumber = true;
+                                        if ($cd->has_backpack_name_field) $hasBackpackName = true;
+                                    }
+                                }
                             @endphp
 
                             <div x-show="activeItemId === '{{ $item->id }}'" class="space-y-6">
@@ -960,6 +961,46 @@
                                                 @endforeach
                                             </div>
                                             @endfor
+                                        </div>
+                                    @endif
+
+                                    @if($hasNameField || $hasNumber || $hasBackpackName)
+                                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                                            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                                                <span class="text-xs font-black uppercase tracking-wider text-slate-900">Item Personalization</span>
+                                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Applies to this item</span>
+                                            </div>
+                                            @if($hasNameField)
+                                                <div>
+                                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Name on Item</label>
+                                                    <input type="text"
+                                                           name="items[{{ $item->id }}][jersey_name]"
+                                                           :disabled="!items['{{ $item->id }}'].selected && activeItemId !== '{{ $item->id }}'"
+                                                           placeholder="e.g. SMITH"
+                                                           class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium shadow-sm">
+                                                </div>
+                                            @endif
+                                            @if($hasBackpackName)
+                                                <div>
+                                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Name on Backpack</label>
+                                                    <input type="text"
+                                                           name="items[{{ $item->id }}][backpack_name]"
+                                                           :disabled="!items['{{ $item->id }}'].selected && activeItemId !== '{{ $item->id }}'"
+                                                           placeholder="e.g. Jordan Smith"
+                                                           class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium shadow-sm">
+                                                </div>
+                                            @endif
+                                            @if($hasNumber)
+                                                <div>
+                                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">Number on Jersey</label>
+                                                    <input type="text"
+                                                           name="items[{{ $item->id }}][jersey_number]"
+                                                           :disabled="!items['{{ $item->id }}'].selected && activeItemId !== '{{ $item->id }}'"
+                                                           placeholder="e.g. 24"
+                                                           maxlength="3"
+                                                           class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium shadow-sm">
+                                                </div>
+                                            @endif
                                         </div>
                                     @endif
                                 </div>

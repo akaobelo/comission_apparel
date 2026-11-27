@@ -621,13 +621,17 @@ if (!isset($typeOptions)) {
                                             </div>
                                         </div>
                                         <div class="flex flex-wrap gap-3">
-                                            <label class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                                            <label class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 cursor-pointer">
                                                 <input type="checkbox" name="has_name_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary" {{ $design->has_name_field ? 'checked' : '' }}>
                                                 Name on Item
                                             </label>
-                                            <label class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                                            <label class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 cursor-pointer">
+                                                <input type="checkbox" name="has_backpack_name_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary" {{ $design->has_backpack_name_field ? 'checked' : '' }}>
+                                                Name on Backpack
+                                            </label>
+                                            <label class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 cursor-pointer">
                                                 <input type="checkbox" name="has_number_field" value="1" class="rounded border-slate-300 text-primary focus:ring-primary" {{ $design->has_number_field ? 'checked' : '' }}>
-                                                Player Number
+                                                Number on Jersey
                                             </label>
                                         </div>
                                         <div class="flex items-center gap-3">
