@@ -882,7 +882,12 @@ class AdminController extends Controller
 
         $stores = TeamStore::where('sales_rep_id', $user->id)
             ->orWhereIn('user_id', $clientIds)
-            ->with(['user'])
+            ->with([
+                'user',
+                'batchedOrders' => function ($q) {
+                    $q->select('id', 'team_store_id', 'batch_id', 'status', 'submitted_at', 'paid_at', 'created_at', 'is_archived');
+                },
+            ])
             ->withCount('parentOrders')
             ->latest()
             ->get();

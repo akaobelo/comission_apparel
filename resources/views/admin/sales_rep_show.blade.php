@@ -1071,10 +1071,10 @@
                                 data-name="{{ strtolower($st->name) }}"
                                 data-org="{{ strtolower(($st->user?->organization ?? '') . ' ' . ($st->user?->name ?? '')) }}"
                                 data-category="{{ strtolower($st->sport ?: ($st->user?->sport ?: 'Athletics')) }}"
-                                data-status="{{ strtolower($st->status) }}"
+                                data-status="{{ strtolower($st->display_status) }}"
                                 data-orders="{{ $st->parent_orders_count }}"
                                 data-deadline="{{ $st->order_deadline ? \Carbon\Carbon::parse($st->order_deadline)->timestamp : 0 }}"
-                                x-show="!storeSearch || '{{ strtolower(addslashes($st->name . ' ' . ($st->user?->organization ?? '') . ' ' . ($st->user?->name ?? '') . ' ' . ($st->sport ?: ($st->user?->sport ?: 'Athletics')) . ' ' . $st->status)) }}'.includes(storeSearch.toLowerCase().trim())"
+                                x-show="!storeSearch || '{{ strtolower(addslashes($st->name . ' ' . ($st->user?->organization ?? '') . ' ' . ($st->user?->name ?? '') . ' ' . ($st->sport ?: ($st->user?->sport ?: 'Athletics')) . ' ' . $st->display_status . ' ' . $st->status)) }}'.includes(storeSearch.toLowerCase().trim())"
                             >
                                 {{-- Sort # --}}
                                 <td class="px-4 py-4 text-center drag-handle cursor-grab active:cursor-grabbing select-none group" title="Drag to reorder">
@@ -1115,9 +1115,8 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <span class="inline-flex px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full border
-                                        {{ $st->status === 'approved' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($st->status === 'pending' ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-slate-100 text-slate-700 border-slate-200') }}">
-                                        {{ $st->status }}
+                                    <span class="inline-flex px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full border {{ $st->display_status_badge_classes }}">
+                                        {{ $st->display_status }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center font-bold text-slate-900">{{ $st->parent_orders_count }}</td>

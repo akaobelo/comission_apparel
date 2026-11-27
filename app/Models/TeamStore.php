@@ -148,6 +148,70 @@ class TeamStore extends Model
         return $this->hasMany(ParentOrder::class);
     }
 
+    public function batchedOrders()
+    {
+        return $this->hasMany(ParentOrder::class)
+            ->whereNotNull('batch_id')
+            ->where('status', '!=', 'Pending Payment');
+    }
+
+    /**
+     * Resolve the human-readable status to display on dashboards.
+     * Once a store is finalized (submitted_to_admin), reflect the latest
+     * finalized batch's production/order status saved by Super Admin
+     * (e.g. "Processing", "In Production", "Shipped", "Delivered", "Completed").
+     */
+    public function getDisplayStatusAttribute(): string
+    {
+        if ($this->status === 'submitted_to_admin') {
+            $batchedOrders = $this->relationLoaded('batchedOrders')
+                ? $this->batchedOrders
+                : $this->batchedOrders()
+                    ->select('id', 'team_store_id', 'batch_id', 'status', 'submitted_at', 'paid_at', 'created_at', 'is_archived')
+                    ->get();
+
+            $activeBatched = $batchedOrders->where('is_archived', false);
+            $candidates = $activeBatched->isNotEmpty() ? $activeBatched : $batchedOrders;
+
+            if ($candidates->isNotEmpty()) {
+                $latestBatch = $candidates
+                    ->groupBy('batch_id')
+                    ->sortByDesc(function ($group) {
+                        $maxDate = $group->max(fn ($o) => $o->submitted_at ?? $o->paid_at ?? $o->created_at);
+                        return $maxDate ? \Carbon\Carbon::parse($maxDate)->timestamp : 0;
+                    })
+                    ->first();
+
+                $batchStatus = trim((string) ($latestBatch?->first()?->status ?? ''));
+                if ($batchStatus !== '') {
+                    return $batchStatus;
+                }
+            }
+
+            return 'Submitted to Admin';
+        }
+
+        return match ($this->status) {
+            'approved' => 'Approved',
+            'pending'  => 'Pending',
+            'declined' => 'Declined',
+            default    => ucwords(str_replace('_', ' ', (string) $this->status)),
+        };
+    }
+
+    public function getDisplayStatusBadgeClassesAttribute(): string
+    {
+        return match (strtolower($this->display_status)) {
+            'approved', 'completed' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+            'processing'            => 'bg-blue-50 text-blue-800 border-blue-200',
+            'in production'         => 'bg-orange-50 text-orange-800 border-orange-200',
+            'shipped'               => 'bg-indigo-50 text-indigo-800 border-indigo-200',
+            'delivered'             => 'bg-teal-50 text-teal-800 border-teal-200',
+            'declined'              => 'bg-red-50 text-red-800 border-red-200',
+            default                 => 'bg-amber-50 text-amber-800 border-amber-200',
+        };
+    }
+
     public function orders()
     {
         return $this->parentOrders();

@@ -614,5 +614,89 @@ class SalesRepPlatformTest extends TestCase
             ->delete(route('admin.order.delete', $assignedOrder))
             ->assertRedirect('/login');
     }
+
+    /**
+     * Test that finalized store status on the Sales Rep dashboard and Admin partner view
+     * reflects the production/order status saved on the latest batch by Super Admin
+     * (e.g. "In Production") instead of raw "submitted_to_admin".
+     */
+    public function test_agent_store_status_reflects_admin_saved_batch_order_status()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $rep = User::factory()->create([
+            'role'            => 'sales_rep',
+            'commission_rate' => 40.0,
+        ]);
+        $coach = User::factory()->create([
+            'role'         => 'coach',
+            'organization' => 'Aurora Flyers',
+            'sales_rep_id' => $rep->id,
+        ]);
+
+        $finalizedStore = TeamStore::create([
+            'user_id'      => $coach->id,
+            'sales_rep_id' => $rep->id,
+            'name'         => 'Aurora Flyers Team Store',
+            'slug'         => 'aurora-flyers-team-store',
+            'status'       => 'submitted_to_admin',
+        ]);
+
+        $openStore = TeamStore::create([
+            'user_id'      => $coach->id,
+            'sales_rep_id' => $rep->id,
+            'name'         => 'KJ Speed 2027 Indoor Uniform',
+            'slug'         => 'kj-speed-2027-indoor-uniform',
+            'status'       => 'approved',
+        ]);
+
+        // Older completed batch + newer batch that Super Admin will move to "In Production"
+        ParentOrder::create([
+            'team_store_id'      => $finalizedStore->id,
+            'user_id'            => $coach->id,
+            'sales_rep_id'       => $rep->id,
+            'batch_id'           => 'batch-aurora-old',
+            'athlete_first_name' => 'Older',
+            'athlete_last_name'  => 'Order',
+            'items_json'         => [],
+            'status'             => 'Completed',
+            'submitted_at'       => now()->subDays(10),
+        ]);
+
+        ParentOrder::create([
+            'team_store_id'      => $finalizedStore->id,
+            'user_id'            => $coach->id,
+            'sales_rep_id'       => $rep->id,
+            'batch_id'           => 'batch-aurora-latest',
+            'athlete_first_name' => 'Latest',
+            'athlete_last_name'  => 'Order',
+            'items_json'         => [],
+            'status'             => 'Submitted to Admin',
+            'submitted_at'       => now()->subDay(),
+        ]);
+
+        // Super Admin updates the latest batch status to "In Production"
+        $this->actingAs($admin)
+            ->post(route('admin.batch.status.update', 'batch-aurora-latest'), [
+                'status' => 'In Production',
+            ])
+            ->assertRedirect();
+
+        $this->assertEquals('In Production', $finalizedStore->fresh()->display_status);
+        $this->assertEquals('Approved', $openStore->fresh()->display_status);
+
+        // Agent / Sales Rep dashboard shows "In Production" instead of "submitted_to_admin"
+        $repResponse = $this->actingAs($rep)->get(route('rep.dashboard', ['tab' => 'stores']));
+        $repResponse->assertOk();
+        $repResponse->assertSee('Aurora Flyers Team Store');
+        $repResponse->assertSee('In Production');
+        $repResponse->assertSee('Approved');
+        $repResponse->assertDontSee('>submitted_to_admin<', false);
+
+        // Admin view of the Sales Rep also reflects "In Production"
+        $adminRepResponse = $this->actingAs($admin)->get(route('admin.sales-rep.show', ['user' => $rep, 'tab' => 'stores']));
+        $adminRepResponse->assertOk();
+        $adminRepResponse->assertSee('Aurora Flyers Team Store');
+        $adminRepResponse->assertSee('In Production');
+    }
 }
 

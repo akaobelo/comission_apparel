@@ -908,8 +908,8 @@
                                 data-org="{{ strtolower($s->user?->organization ?? '') }}"
                                 data-orders="{{ $s->parent_orders_count }}"
                                 data-deadline="{{ $s->order_deadline ? $s->order_deadline->timestamp : 0 }}"
-                                data-status="{{ strtolower($s->status) }}"
-                                x-show="!storeSearch || '{{ strtolower(addslashes($s->name . ' ' . ($s->user?->organization ?? '') . ' ' . ($s->user?->name ?? '') . ' ' . ($s->sport ?: ($s->user?->sport ?: 'Athletics')) . ' ' . $s->status)) }}'.includes(storeSearch.toLowerCase().trim())"
+                                data-status="{{ strtolower($s->display_status) }}"
+                                x-show="!storeSearch || '{{ strtolower(addslashes($s->name . ' ' . ($s->user?->organization ?? '') . ' ' . ($s->user?->name ?? '') . ' ' . ($s->sport ?: ($s->user?->sport ?: 'Athletics')) . ' ' . $s->display_status . ' ' . $s->status)) }}'.includes(storeSearch.toLowerCase().trim())"
                             >
                                 {{-- Sort # --}}
                                 <td class="px-4 py-4 text-center drag-handle cursor-grab active:cursor-grabbing select-none group" title="Drag to reorder">
@@ -952,9 +952,8 @@
                                     {{ $s->order_deadline ? $s->order_deadline->format('M d, Y') : 'Open Ended' }}
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="inline-flex px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-full border
-                                        {{ $s->status === 'approved' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200' }}">
-                                        {{ $s->status }}
+                                    <span class="inline-flex px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-full border {{ $s->display_status_badge_classes }}">
+                                        {{ $s->display_status }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-right whitespace-nowrap">
