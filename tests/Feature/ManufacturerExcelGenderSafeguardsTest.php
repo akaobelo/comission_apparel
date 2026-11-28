@@ -913,4 +913,215 @@ class ManufacturerExcelGenderSafeguardsTest extends TestCase
         $this->assertStringContainsString('Uniform (Singlet)', $allText);
         $this->assertStringContainsString('Uniform (Singlet) (Stoic Elevate V2 Singlet): AS | Warm-up (top) (Stoic Warm-up Hoodie): AM', $allText);
     }
+
+    public function test_athlete_visual_chart_is_exported_as_third_tab_with_mockups_and_size_summary(): void
+    {
+        $coach = User::factory()->create(['role' => 'coach']);
+        $collection = \App\Models\DesignCollection::create(['name' => 'Legacy Runners Visual Test']);
+
+        // Create a real 1x1 PNG in public/images so drawing embedding is exercised end-to-end
+        $tmpImgDir = public_path('images/test_excel_mockups');
+        if (!is_dir($tmpImgDir)) {
+            mkdir($tmpImgDir, 0777, true);
+        }
+        $imgRelPath = 'images/test_excel_mockups/test_hoodie.png';
+        $imgAbsPath = public_path($imgRelPath);
+        $pngData = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+        file_put_contents($imgAbsPath, $pngData);
+
+        try {
+            $hoodieDesign = DesignCatalog::create([
+                'design_collection_id' => $collection->id,
+                'name'                 => 'Legacy Hoodie',
+                'type'                 => 'hoodie',
+                'types'                => ['hoodie'],
+                'image_paths'          => [$imgRelPath],
+                'wholesale_price'      => 28.00,
+                'sort_order'           => 1,
+            ]);
+
+            $backpackDesign = DesignCatalog::create([
+                'design_collection_id'    => $collection->id,
+                'name'                    => 'Legacy Backpack',
+                'type'                    => 'backpack',
+                'types'                   => ['backpack'],
+                'has_backpack_name_field' => true,
+                'image_paths'             => [$imgRelPath],
+                'wholesale_price'         => 35.00,
+                'sort_order'              => 2,
+            ]);
+
+            $store = TeamStore::create([
+                'user_id' => $coach->id,
+                'name'    => 'Legacy Runners Elite',
+                'slug'    => 'legacy-runners-visual-tab-test',
+                'status'  => 'approved',
+            ]);
+
+            $hoodieItem = StoreItem::create([
+                'team_store_id'     => $store->id,
+                'design_catalog_id' => $hoodieDesign->id,
+                'name'              => $hoodieDesign->name,
+                'type'              => 'hoodie',
+                'types'             => ['hoodie'],
+                'image_paths'       => [$imgRelPath],
+                'retail_price'      => 45.00,
+                'sort_order'        => 1,
+            ]);
+
+            $backpackItem = StoreItem::create([
+                'team_store_id'     => $store->id,
+                'design_catalog_id' => $backpackDesign->id,
+                'name'              => $backpackDesign->name,
+                'type'              => 'backpack',
+                'types'             => ['backpack'],
+                'image_paths'       => [$imgRelPath],
+                'retail_price'      => 55.00,
+                'sort_order'        => 2,
+            ]);
+
+            $order1 = ParentOrder::create([
+                'team_store_id'      => $store->id,
+                'athlete_first_name' => 'Jershawnti',
+                'athlete_last_name'  => 'Walton',
+                'parent_email'       => 'walton@example.com',
+                'parent_phone'       => '5550009991',
+                'gender'             => 'Womens / Girls',
+                'backpack_name'      => 'Walton',
+                'status'             => 'Submitted',
+                'payment_status'     => 'not_applicable',
+                'items_json'         => [
+                    [
+                        'id'     => $hoodieItem->id,
+                        'name'   => $hoodieItem->name,
+                        'types'  => ['hoodie'],
+                        'qty'    => 2,
+                        'gender' => 'Womens / Girls',
+                        'sizes'  => ['hoodie' => 'AM'],
+                    ],
+                    [
+                        'id'     => $backpackItem->id,
+                        'name'   => $backpackItem->name,
+                        'types'  => ['backpack'],
+                        'qty'    => 1,
+                        'gender' => 'Womens / Girls',
+                        'sizes'  => [],
+                    ],
+                ],
+            ]);
+
+            $order2 = ParentOrder::create([
+                'team_store_id'      => $store->id,
+                'athlete_first_name' => 'Andrew',
+                'athlete_last_name'  => 'Joshua',
+                'parent_email'       => 'joshua@example.com',
+                'parent_phone'       => '5550009992',
+                'gender'             => 'Mens / Boys',
+                'status'             => 'Submitted',
+                'payment_status'     => 'not_applicable',
+                'items_json'         => [
+                    [
+                        'id'     => $hoodieItem->id,
+                        'name'   => $hoodieItem->name,
+                        'types'  => ['hoodie'],
+                        'qty'    => 1,
+                        'gender' => 'Mens / Boys',
+                        'sizes'  => ['hoodie' => 'YL'],
+                    ],
+                ],
+            ]);
+
+            $service = app(ManufacturerExcelExportService::class);
+            $xlsxPath = $service->generateXlsx(collect([$order1, $order2]), $store->fresh(), 'Legacy Runners Elite');
+
+            $zip = new \ZipArchive();
+            $this->assertTrue($zip->open($xlsxPath) === true);
+
+            $workbookXml = $zip->getFromName('xl/workbook.xml');
+            $workbookRelsXml = $zip->getFromName('xl/_rels/workbook.xml.rels');
+            $contentTypesXml = $zip->getFromName('[Content_Types].xml');
+            $sheet3Xml = $zip->getFromName('xl/worksheets/sheet3.xml');
+            $sheet3RelsXml = $zip->getFromName('xl/worksheets/_rels/sheet3.xml.rels');
+            $drawing2Xml = $zip->getFromName('xl/drawings/drawing2.xml');
+            $drawing2RelsXml = $zip->getFromName('xl/drawings/_rels/drawing2.xml.rels');
+            $sharedStrings = $this->extractSharedStrings($xlsxPath);
+
+            $zip->close();
+            @unlink($xlsxPath);
+
+            // Verify 3 tabs in exact order: Quantity by Size Chart, Full Order Roster, Athlete Visual Chart
+            $wbDoc = new \SimpleXMLElement($workbookXml);
+            $wbDoc->registerXPathNamespace('m', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
+            $sheets = $wbDoc->xpath('//m:sheets/m:sheet');
+            $this->assertCount(3, $sheets);
+            $this->assertSame('Quantity by Size Chart', (string) $sheets[0]['name']);
+            $this->assertSame('Full Order Roster', (string) $sheets[1]['name']);
+            $this->assertSame('Athlete Visual Chart', (string) $sheets[2]['name']);
+
+            // Verify workbook rels, content types, and Sheet 3 drawings wiring
+            $this->assertStringContainsString('Target="worksheets/sheet3.xml"', $workbookRelsXml);
+            $this->assertStringContainsString('PartName="/xl/worksheets/sheet3.xml"', $contentTypesXml);
+            $this->assertStringContainsString('PartName="/xl/drawings/drawing2.xml"', $contentTypesXml);
+            $this->assertNotFalse($sheet3Xml);
+            $this->assertNotFalse($sheet3RelsXml);
+            $this->assertStringContainsString('Target="../drawings/drawing2.xml"', $sheet3RelsXml);
+            $this->assertNotFalse($drawing2Xml);
+            $this->assertNotFalse($drawing2RelsXml);
+
+            // Parse Sheet 3 rows and verify headers, athlete data, and size breakdown summary
+            $s3Doc = new \SimpleXMLElement($sheet3Xml);
+            $s3Doc->registerXPathNamespace('m', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
+            $sheet3Rows = [];
+            foreach ($s3Doc->xpath('//m:sheetData/m:row') as $row) {
+                $rData = [];
+                foreach ($row->c as $c) {
+                    $ref = (string) $c['r'];
+                    $letters = preg_replace('/[0-9]+/', '', $ref);
+                    $colIdx = 0;
+                    for ($i = 0; $i < strlen($letters); $i++) {
+                        $colIdx = $colIdx * 26 + (ord($letters[$i]) - 64);
+                    }
+                    $colIdx--;
+                    $type = (string) $c['t'];
+                    $val = isset($c->v) ? (string) $c->v : '';
+                    if ($type === 's' && $val !== '') {
+                        $val = $sharedStrings[(int) $val] ?? '';
+                    }
+                    $rData[$colIdx] = $val;
+                }
+                $sheet3Rows[] = $rData;
+            }
+
+            // Row 1: Banner, Row 2: Product Mockups, Row 3: Column Headers
+            $this->assertStringContainsString('Orders: 2', $sheet3Rows[0][0] ?? '');
+            $this->assertStringContainsString('Total Garment Units: 4', $sheet3Rows[0][0] ?? '');
+            $this->assertSame('PRODUCT MOCKUPS', $sheet3Rows[1][0] ?? '');
+            $this->assertSame('First Name', $sheet3Rows[2][0] ?? '');
+            $this->assertSame('Last Name', $sheet3Rows[2][1] ?? '');
+            $this->assertSame('Legacy Hoodie', $sheet3Rows[2][7] ?? '');
+            $this->assertSame('Legacy Backpack', $sheet3Rows[2][8] ?? '');
+
+            // Row 4: Jershawnti Walton (2x AM hoodie + Walton backpack)
+            $this->assertSame('Jershawnti', $sheet3Rows[3][0] ?? '');
+            $this->assertSame('Walton', $sheet3Rows[3][1] ?? '');
+            $this->assertSame('Walton', $sheet3Rows[3][5] ?? '');
+            $this->assertSame('AM (x2)', $sheet3Rows[3][7] ?? '');
+            $this->assertSame('Walton', $sheet3Rows[3][8] ?? '');
+
+            // Row 5: Andrew Joshua (1x YL hoodie)
+            $this->assertSame('Andrew', $sheet3Rows[4][0] ?? '');
+            $this->assertSame('YL', $sheet3Rows[4][7] ?? '');
+            $this->assertSame('', $sheet3Rows[4][8] ?? '');
+
+            // Size Breakdown Summary & Grand Total row at bottom
+            $lastRow = end($sheet3Rows);
+            $this->assertSame('TOTAL QUANTITY', $lastRow[5] ?? '');
+            $this->assertSame('4', $lastRow[6] ?? '');
+            $this->assertSame('3', $lastRow[7] ?? '');
+            $this->assertSame('1', $lastRow[8] ?? '');
+        } finally {
+            @unlink($imgAbsPath);
+            @rmdir($tmpImgDir);
+        }
+    }
 }

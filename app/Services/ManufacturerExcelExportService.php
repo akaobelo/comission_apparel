@@ -215,9 +215,10 @@ class ManufacturerExcelExportService
             }
         }
 
-        // Build the 2 Worksheets requested for manufacturer production:
+        // Build the 3 Worksheets requested for manufacturer production:
         // 1. Quantity by Size Chart (pieces needed by size & gender)
         // 2. Full Order Roster (flat roster to label pieces by athlete name)
+        // 3. Athlete Visual Chart (athlete-by-athlete visual matrix with product mockups & size summary)
         $sharedStrings = [];
         $sharedStringMap = [];
         $addSharedString = function (string $str) use (&$sharedStrings, &$sharedStringMap): int {
@@ -249,6 +250,18 @@ class ManufacturerExcelExportService
             $addSharedString
         );
 
+        // Sheet 3: Athlete Visual Chart (athlete-by-athlete matrix with product mockups & size summary)
+        $sheet3 = $this->buildAthleteVisualSheet(
+            $title,
+            $columns,
+            $athleteRows,
+            $sizeTotals,
+            $allSizesUsed,
+            $colMediaMap,
+            $mediaFiles,
+            $addSharedString
+        );
+
         // Package everything into a valid OpenXML .xlsx ZIP archive
         $xlsxPath = tempnam(sys_get_temp_dir(), 'mfg_sheet_') . '.xlsx';
         $zip = new \ZipArchive();
@@ -257,8 +270,9 @@ class ManufacturerExcelExportService
         }
 
         $hasDrawing1 = !empty($sheet1['drawings']);
+        $hasDrawing3 = !empty($sheet3['drawings']);
 
-        $zip->addFromString('[Content_Types].xml', $this->buildContentTypesXml($hasDrawing1, false, !empty($mediaFiles)));
+        $zip->addFromString('[Content_Types].xml', $this->buildContentTypesXml($hasDrawing1, $hasDrawing3, !empty($mediaFiles)));
         $zip->addFromString('_rels/.rels', $this->buildRootRelsXml());
         $zip->addFromString('xl/workbook.xml', $this->buildWorkbookXml());
         $zip->addFromString('xl/_rels/workbook.xml.rels', $this->buildWorkbookRelsXml());
@@ -275,6 +289,14 @@ class ManufacturerExcelExportService
 
         // Add Sheet 2: Full Order Roster
         $zip->addFromString('xl/worksheets/sheet2.xml', $sheet2['xml']);
+
+        // Add Sheet 3: Athlete Visual Chart
+        $zip->addFromString('xl/worksheets/sheet3.xml', $sheet3['xml']);
+        if ($hasDrawing3) {
+            $zip->addFromString('xl/worksheets/_rels/sheet3.xml.rels', $this->buildSheetRelsXml(2));
+            $zip->addFromString('xl/drawings/drawing2.xml', $sheet3['drawingXml']);
+            $zip->addFromString('xl/drawings/_rels/drawing2.xml.rels', $sheet3['drawingRelsXml']);
+        }
 
         // Add embedded PNG images into xl/media/
         foreach ($mediaFiles as $mIdx => $media) {
@@ -821,6 +843,16 @@ class ManufacturerExcelExportService
                 $itemJerseyNumber = trim((string) ($item['jersey_number'] ?? ''));
                 $itemBackpackName = trim((string) ($item['backpack_name'] ?? ''));
 
+                if ($personalization['name'] && $itemJerseyName !== '' && $athleteRow['jersey_name'] === '') {
+                    $athleteRow['jersey_name'] = $itemJerseyName;
+                }
+                if ($personalization['number'] && $itemJerseyNumber !== '' && $athleteRow['jersey_number'] === '') {
+                    $athleteRow['jersey_number'] = $itemJerseyNumber;
+                }
+                if ($personalization['backpack'] && $itemBackpackName !== '' && $athleteRow['backpack_name'] === '') {
+                    $athleteRow['backpack_name'] = $itemBackpackName;
+                }
+
                 $flatRoster[] = [
                     'order_id'       => $order->id,
                     'date'           => $order->created_at ? $order->created_at->format('Y-m-d') : '',
@@ -980,7 +1012,7 @@ class ManufacturerExcelExportService
     }
 
     /**
-     * Build Sheet 1: Athlete Visual Chart (matches Luke's bottom screenshot + size summary).
+     * Build Sheet 3: Athlete Visual Chart (athlete-by-athlete matrix with product mockups & size summary).
      */
     protected function buildAthleteVisualSheet(
         string $title,
@@ -1172,7 +1204,7 @@ class ManufacturerExcelExportService
     }
 
     /**
-     * Build Sheet 2: Quantity by Size Staircase Chart (matches Luke's top screenshot grouped by Female / Male).
+     * Build Sheet 1: Quantity by Size Staircase Chart (grouped by Female / Male).
      */
     protected function buildStaircaseAggregateSheet(
         string $title,
@@ -1354,7 +1386,7 @@ class ManufacturerExcelExportService
     }
 
     /**
-     * Build Sheet 3: Full Order Roster (complete flat line-item export for reference).
+     * Build Sheet 2: Full Order Roster (complete flat line-item export for reference).
      */
     protected function buildFullRosterSheet(
         string $title,
@@ -2091,6 +2123,7 @@ class ManufacturerExcelExportService
         $xml .= '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>';
         $xml .= '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
         $xml .= '<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+        $xml .= '<Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
         $xml .= '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
         $xml .= '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>';
         if ($hasDrawing1) {
@@ -2118,6 +2151,7 @@ class ManufacturerExcelExportService
             . '<sheets>'
             . '<sheet name="Quantity by Size Chart" sheetId="1" r:id="rId1"/>'
             . '<sheet name="Full Order Roster" sheetId="2" r:id="rId2"/>'
+            . '<sheet name="Athlete Visual Chart" sheetId="3" r:id="rId3"/>'
             . '</sheets>'
             . '</workbook>';
     }
@@ -2128,8 +2162,9 @@ class ManufacturerExcelExportService
             . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
             . '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>'
-            . '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
-            . '<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>'
+            . '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/>'
+            . '<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+            . '<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>'
             . '</Relationships>';
     }
 
